@@ -1,22 +1,19 @@
-include ../../rules.mk
-
-incl = -I../include
-libs = 
+include ../../../rules.mk
 
 srcs = $(wildcard *.cpp)
 objs = $(srcs:.cpp=.o)
 
-bin  = $(BIN_DIR)/hz_acquire
+bin  = $(BIN_DIR)/hz_analyse
 
 .PHONY: all
 all: $(bin)
 	@echo "All made!"
 
 $(bin): $(objs)
-	$(CPP) $(CPP_FLAG) -o $@ $^ $(libs)
+	$(CPP) $(CPP_FLAG) -o $@ $^ $(LIBS)
 
 .cpp.o:
-	$(CPP) $(CPP_FLAG) $(incl) -c $<
+	$(CPP) $(CPP_FLAG) $(INCLS) -c $<
 
 clean:
 	@echo "Deleting $(bin)"

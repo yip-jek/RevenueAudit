@@ -1,11 +1,33 @@
-BIN_DIR = ../bin
+BIN_DIR = ../../../bin
+LIB_DIR = ../../../libs
 
 ################################################################
+APP_INCL  = -I../include
+BASE_INCL = -I../../base/include
+
+################################################################
+BASE_LIB  = -L$(LIB_DIR) -lbase
+
+################################################################
+ifeq ($(shell uname -m), i686) # 32 bit OS
+OS_BITS = 32
+else # 64 bit OS
+OS_BITS = 64
+endif
+
 CPP = g++
-CPP_FLAG = -g -m64 -Wall -O2 -DLINUX
+CPP_FLAG = -g -m$(OS_BITS) -fPIC -Wall -O2 -DLINUX
+
+################################################################
+AR = ar
+AR_FLAG = rv
 
 ################################################################
 CP = cp
 MV = mv
 RM = rm -f
+
+################################################################
+INCLS = $(APP_INCL) $(BASE_INCL)
+LIBS  = $(BASE_LIB)
 
