@@ -1,15 +1,14 @@
 #pragma once
 
 #include "exception.h"
-#include "pubstr.h"
 
-class SQLException : public Exception
+class BusException : public Exception
 {
 public:
-	SQLException() {}
-	SQLException(int error, const std::string& descript): Exception(error, descript)
+	BusException() {}
+	BusException(int error, const std::string& descript): Exception(error, descript)
 	{}
-	SQLException(int error, const char* fmt, ...)
+	BusException(int error, const char* fmt, ...)
 	{
 		m_errorcode = error;
 
@@ -22,7 +21,7 @@ public:
 
 		m_descript = buf;
 	}
-	virtual ~SQLException();
+	virtual ~BusException();
 
 public:
 	void SetErrorInfo(int error, const char* fmt, ...)
@@ -41,7 +40,7 @@ public:
 
 	std::string GetErrorInfo() const
 	{
-		return ("[SQLException] "+m_descript+" ERROR_CODE: "+PubStr::LLong2Str(m_errorcode));
+		return ("[DSUException] "+m_descript+" ERROR_CODE: "+PubStr::LLong2Str(m_errorcode));
 	}
 };
 

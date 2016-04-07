@@ -13,12 +13,11 @@ public:
 	{}
 	Exception(int error, const char* format, ...): m_errorcode(error)
 	{
-		const MAX_BUF_SIZE = 2048;
-		char buf[MAX_BUF_SIZE] = "";
+		char buf[2048] = "";
 
 		va_list ap;
 		va_start(ap, format);
-		vsnprintf(buf, MAX_BUF_SIZE-1, format, ap);
+		vsnprintf(buf, sizeof(buf)-1, format, ap);
 		va_end(ap);
 
 		m_descript = buf;
@@ -38,12 +37,11 @@ public:
 
 	void Descript(const char* format, ...)
 	{
-		const MAX_BUF_SIZE = 2048;
-		char buf[MAX_BUF_SIZE] = "";
+		char buf[2048] = "";
 
 		va_list ap;
 		va_start(ap, format);
-		vsnprintf(buf, MAX_BUF_SIZE-1, format, ap);
+		vsnprintf(buf, sizeof(buf)-1, format, ap);
 		va_end(ap);
 
 		m_descript = buf;
