@@ -5,7 +5,7 @@ objs = $(srcs:.cpp=.o)
 
 lib  = $(LIB_DIR)/libbase.a
 
-.PHONY: all
+.PHONY: all clean
 all: $(lib)
 	@echo "All made!"
 

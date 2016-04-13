@@ -5,7 +5,7 @@ objs = $(srcs:.cpp=.o)
 
 bin  = $(BIN_DIR)/hz_acquire
 
-.PHONY: all
+.PHONY: all clean
 all: $(bin)
 	@echo "All made!"
 
