@@ -1,6 +1,5 @@
 BIN_DIR    = ../../../bin
 LIB_DIR    = ../../../lib
-#THRIFT_DIR = ../../thrift_hive
 LOCAL_DIR  = /usr/local
 
 ################################################################
