@@ -3,7 +3,7 @@ include ../../../rules.mk
 srcs = $(wildcard *.cpp)
 objs = $(srcs:.cpp=.o)
 
-bin  = $(BIN_DIR)/hz_analyse
+bin  = $(BIN_DIR)/HAnalyse
 
 .PHONY: all clean
 all: $(bin)

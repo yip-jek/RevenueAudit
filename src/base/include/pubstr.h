@@ -3,6 +3,9 @@
 #include <string>
 #include <list>
 
+namespace base
+{
+
 class PubStr
 {
 public:
@@ -14,4 +17,6 @@ public:
 	static float Str2Float(const std::string& str);
 	static int SplitStr(const std::string& str, const std::string& delim, std::list<std::string>& list, bool b_trim);
 };
+
+}	// namespace base
 

@@ -15,6 +15,8 @@
 
 #include "ThriftHive.h"
 
+#include "log.h"
+
 using namespace apache::thrift;
 using namespace apache::thrift::protocol;
 using namespace apache::thrift::transport;
@@ -23,8 +25,21 @@ using namespace Apache::Hadoop::Hive;
 
 int main(int argc, char** argv)
 {
+	base::Log::SetCCMID(99988);
+
+	base::AutoLogger alog;
+	base::Log* pLog = alog.Get();
+	pLog->SetPath(".");
+	pLog->Init();
+
+	pLog->Output("BOOST_VERSION: %d", BOOST_VERSION);
+	pLog->Output("BOOST_LIB_VERSION: %s", BOOST_LIB_VERSION);
+
   if (argc < 4) {
     std::cerr << "Invalid arguments!\n" << "Usage: DemoClient host port" << std::endl;
+
+	pLog->Output("Invalid arguments!");
+	pLog->Output("Usage: DemoClient host port");
     return -1;
   }
   bool isFramed = false;
@@ -43,15 +58,18 @@ int main(int argc, char** argv)
   	try {
     transport->open();
     std::cout << "Scanner begin" << std::endl;
+	pLog->Output("Scanner begin");
     
     std::string table(argv[3]);
     std::string qry1("select * from ");
     std::string qry = qry1 + table ;   
     std::vector<std::string> result;
     std::cout << "Query:" << qry << std::endl;
+	pLog->Output("Query: %s", qry.c_str());
     client.execute(qry);    
     std::cout << "Query return ok." << std::endl;
-    	
+	pLog->Output("Query return ok.");
+
     //client.fetchAll(result);
     client.fetchN(result, 10000);
     {
@@ -63,6 +81,7 @@ int main(int argc, char** argv)
     	client.fetchN(result, 10000);
     }while(result.size() > 0)
     std::cout << "get return ok." << std::endl;   	
+	pLog->Output("get return ok.");
     
     
     /*for(int i = 0; i < result.size(); ++i)
@@ -71,11 +90,14 @@ int main(int argc, char** argv)
     }*/
 
     std::cout << "Scanner finished" << std::endl;
+	pLog->Output("Scanner finished");
     transport->close();
     } catch(const TApplicationException&tx) {
     	std::cerr << "ERROR: "<< tx.what() << std::endl;
+		pLog->Output("ERROR: %s", tx.what());
     }catch (const TException &tx) {
     	std::cerr << "ERROR: " << tx.what() << std::endl;
+		pLog->Output("ERROR: %s", tx.what());
     }
 
     return 0;

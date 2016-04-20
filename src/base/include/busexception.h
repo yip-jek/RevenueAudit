@@ -2,6 +2,9 @@
 
 #include "exception.h"
 
+namespace base
+{
+
 class BusException : public Exception
 {
 public:
@@ -43,4 +46,6 @@ public:
 		return ("[DSUException] "+m_descript+" ERROR_CODE: "+PubStr::LLong2Str(m_errorcode));
 	}
 };
+
+}	// namespace base
 

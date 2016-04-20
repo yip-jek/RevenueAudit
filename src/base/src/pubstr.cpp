@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+namespace base
+{
+
 void PubStr::Trim(std::string& str)
 {
 	if ( !str.empty() )
@@ -90,4 +93,6 @@ int PubStr::SplitStr(const std::string& str, const std::string& delim, std::list
 
 	return list.size();
 }
+
+}	// namespace base
 

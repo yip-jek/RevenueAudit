@@ -4,6 +4,9 @@
 #include <string>
 #include <stdarg.h>
 
+namespace base
+{
+
 class Exception
 {
 public:
@@ -52,4 +55,6 @@ protected:
 	int 		m_errorcode;
 	std::string	m_descript;
 };
+
+}	// namespace base
 

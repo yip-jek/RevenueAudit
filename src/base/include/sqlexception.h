@@ -3,6 +3,9 @@
 #include "exception.h"
 #include "pubstr.h"
 
+namespace base
+{
+
 class SQLException : public Exception
 {
 public:
@@ -44,4 +47,6 @@ public:
 		return ("[SQLException] "+m_descript+" ERROR_CODE: "+PubStr::LLong2Str(m_errorcode));
 	}
 };
+
+}	// namespace base
 
