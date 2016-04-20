@@ -1,5 +1,4 @@
-#my_dir=~/workspaces/RevenueAudit
-my_dir=~/files/workspaces/RevenueAudit
+my_dir=/home/ng3ra/RevenueAudit
 
-nohup ${my_dir}/bin/hz_analyse &
+nohup ${my_dir}/bin/HAnalyse &
 

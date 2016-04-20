@@ -5,22 +5,17 @@ LOCAL_DIR  = /usr/local
 ################################################################
 APP_INCL    = -I../include
 BASE_INCL   = -I../../base/include
+XDBO_INCL   = -I$(RA_ROOT)/include
 THRIFT_INCL = -I../../thrift_hive/include -I$(LOCAL_DIR)/include/thrift
 
 ################################################################
 BASE_LIB    = -L$(LIB_DIR) -lbase
-
+XDBO_LIB    = -I$(RA_ROOT)/lib -lxdbo2
 THRIFT_LIB  = -L$(LOCAL_DIR)/lib -lthrift -L$(LIB_DIR) -lthrift_hive
 
 ################################################################
-ifeq ($(shell uname -m), i686) # 32 bit OS
-OS_BITS = 32
-else # 64 bit OS
-OS_BITS = 64
-endif
-
 CPP = g++
-CPP_FLAG = -g -m$(OS_BITS) -Wall -O2 -DLINUX
+CPP_FLAG = -g -m64 -Wall -O2 -DLINUX
 
 ################################################################
 AR = ar

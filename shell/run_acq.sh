@@ -1,5 +1,6 @@
-#my_dir=~/workspaces/RevenueAudit
-my_dir=~/files/workspaces/RevenueAudit
+export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
-nohup ${my_dir}/bin/hz_acquire &
+my_dir=/home/ng3ra/RevenueAudit
+
+nohup ${my_dir}/bin/HAcquire 172.16.1.181 10000 test1 &
 

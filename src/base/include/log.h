@@ -2,17 +2,11 @@
 
 #include <string>
 #include <fstream>
+#include "def.h"
 #include "exception.h"
 
 namespace base
 {
-
-// Log error code
-#define LE_CCMID_INVALID              (-100001)
-#define LE_FILE_PATH_EMPTY            (-100002)
-#define LE_FILE_PATH_INVALID          (-100003)
-#define LE_INIT_FAIL                  (-100004)
-#define LE_OPEN_FILE_FAIL             (-100005)
 
 class Log
 {
