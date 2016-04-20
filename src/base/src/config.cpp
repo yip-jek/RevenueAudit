@@ -1,7 +1,13 @@
 #include "config.h"
 #include <fstream>
+#include <iostream>
+#include <sys/stat.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include "def.h"
-#include "helper.h"
+
+namespace base
+{
 
 // class CfgItem
 CfgItem::CfgItem()
@@ -23,7 +29,7 @@ CfgItem::CfgItem(const std::string& segment, const std::string& name, const std:
 Config::Config(const std::string& cfg_file /*= std::string()*/)
 {
 	//SetCfgFile(cfg_file);
-	if ( !cfg_file.empty() && Helper::IsRegularFile(cfg_file) )
+	if ( !cfg_file.empty() && IsRegularFile(cfg_file) )
 	{
 		m_cfgFile = cfg_file;
 	}
@@ -36,7 +42,7 @@ void Config::SetCfgFile(const std::string& cfg_file) throw(Exception)
 		throw Exception(CFG_FILE_INVALID, "The configuration file_path is empty! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	if ( !Helper::IsRegularFile(cfg_file) )
+	if ( !IsRegularFile(cfg_file) )
 	{
 		throw Exception(CFG_FILE_INVALID, "The configuration file \"%s\" is not a regular file! [FILE:%s, LINE:%d]", cfg_file.c_str(), __FILE__, __LINE__);
 	}
@@ -46,11 +52,11 @@ void Config::SetCfgFile(const std::string& cfg_file) throw(Exception)
 
 bool Config::RegisterItem(std::string segment, std::string name)
 {
-	Helper::Trim(segment);
-	Helper::Upper(segment);
+	boost::trim(segment);
+	boost::to_upper(segment);
 
-	Helper::Trim(name);
-	Helper::Upper(name);
+	boost::trim(name);
+	boost::to_upper(name);
 
 	if ( FindItem(segment, name) )
 	{
@@ -63,11 +69,11 @@ bool Config::RegisterItem(std::string segment, std::string name)
 
 bool Config::UnregisterItem(std::string segment, std::string name)
 {
-	Helper::Trim(segment);
-	Helper::Upper(segment);
+	boost::trim(segment);
+	boost::to_upper(segment);
 
-	Helper::Trim(name);
-	Helper::Upper(name);
+	boost::trim(name);
+	boost::to_upper(name);
 
 	std::list<CfgItem>::iterator it;
 	if ( FindItem(segment, name, &it) )
@@ -118,7 +124,7 @@ void Config::ReadConfig() throw(Exception)
 		std::getline(m_fsCfg, strLine);
 
 		CleanComment(strLine);
-		Helper::Trim(strLine);
+		boost::trim(strLine);
 		if ( strLine.empty() )
 		{
 			continue;
@@ -145,11 +151,11 @@ void Config::ReadConfig() throw(Exception)
 
 std::string Config::GetCfgValue(std::string segment, std::string name) throw(Exception)
 {
-	Helper::Trim(segment);
-	Helper::Upper(segment);
+	boost::trim(segment);
+	boost::to_upper(segment);
 
-	Helper::Trim(name);
-	Helper::Upper(name);
+	boost::trim(name);
+	boost::to_upper(name);
 
 	std::list<CfgItem>::iterator it;
 	if ( FindItem(segment, name, &it) )
@@ -172,18 +178,34 @@ std::string Config::GetCfgValue(std::string segment, std::string name) throw(Exc
 
 float Config::GetCfgFloatVal(const std::string& segment, const std::string& name)
 {
-	return Helper::Str2Float(GetCfgValue(segment, name));
+	try
+	{
+		return boost::lexical_cast<float>(GetCfgValue(segment, name));
+	}
+	catch ( boost::bad_lexical_cast& e )
+	{
+		std::cerr << e.what() << std::endl;
+		return 0.0f;
+	}
 }
 
 long long Config::GetCfgLongVal(const std::string& segment, const std::string& name)
 {
-	return Helper::Str2LLong(GetCfgValue(segment, name));
+	try
+	{
+		return boost::lexical_cast<long long>(GetCfgValue(segment, name));
+	}
+	catch ( boost::bad_lexical_cast& e )
+	{
+		std::cerr << e.what() << std::endl;
+		return 0L;
+	}
 }
 
 bool Config::GetCfgBoolVal(const std::string& segment, const std::string& name)
 {
 	std::string strBool = GetCfgValue(segment, name);
-	Helper::Upper(strBool);
+	boost::to_upper(strBool);
 	return (std::string("TRUE") == strBool) || (std::string("YES") == strBool);
 }
 
@@ -216,8 +238,8 @@ bool Config::TryGetSegment(const std::string& str, std::string& segment) const
 	if ( str[0] == '[' && str[SIZE-1] == ']' )
 	{
 		segment = str.substr(1,SIZE-2);
-		Helper::Trim(segment);
-		Helper::Upper(segment);
+		boost::trim(segment);
+		boost::to_upper(segment);
 		return true;
 	}
 	return false;
@@ -235,11 +257,11 @@ bool Config::TryGetNameValue(const std::string& str, std::string& name, std::str
 	if ( equal_pos != std::string::npos && equal_pos > 0 )
 	{
 		name = str.substr(0,equal_pos);
-		Helper::Trim(name);
-		Helper::Upper(name);
+		boost::trim(name);
+		boost::to_upper(name);
 
 		value = str.substr(equal_pos+1);
-		Helper::Trim(value);
+		boost::trim(value);
 		return true;
 	}
 	return false;
@@ -261,4 +283,17 @@ void Config::CleanComment(std::string& str) const
 		str.erase(first_comm_pos);
 	}
 }
+
+bool Config::IsRegularFile(const std::string& file_path)
+{
+	struct stat st;
+	if ( stat(file_path.c_str(), &st) < 0 )
+	{
+		return false;
+	}
+
+	return S_ISREG(st.st_mode);
+}
+
+}	// namespace base
 

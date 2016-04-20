@@ -1,9 +1,11 @@
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#pragma once
 
 #include <string>
 #include <list>
 #include "exception.h"
+
+namespace base
+{
 
 class Config;
 
@@ -53,11 +55,12 @@ private:
 	bool TryGetSegment(const std::string& str, std::string& segment) const;
 	bool TryGetNameValue(const std::string& str, std::string& name, std::string& value) const;
 	void CleanComment(std::string& str) const;
+	bool IsRegularFile(const std::string& file_path);
 
 private:
 	std::string			m_cfgFile;
 	std::list<CfgItem>	m_listItems;
 };
 
-#endif	// _CONFIG_H_
+}	// namespace base
 

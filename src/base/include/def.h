@@ -10,6 +10,11 @@ namespace base
 #define LG_OPEN_FILE_FAIL             (-1000004)
 
 // Config error code
+#define CFG_FILE_INVALID              (-2000001)
+#define CFG_OPEN_FILE_FAIL            (-2000002)
+#define CFG_UNREGISTER_ITEM           (-2000003)
+#define CFG_ITEM_NOT_FOUND            (-2000004)
+#define CFG_VALUE_INVALID             (-2000005)
 
 // BaseFrameApp error code
 #define BFA_INIT_FAILED               (-3000001)
