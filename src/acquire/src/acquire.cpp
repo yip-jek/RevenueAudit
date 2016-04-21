@@ -1,32 +1,35 @@
 #include "acquire.h"
 #include <vector>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include "log.h"
 
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
+
+
 Acquire g_Acquire;
+
 
 Acquire::Acquire()
 :m_nKpiID(0)
 ,m_nEtlID(0)
 ,m_nHivePort(0)
+,m_pTHiveClient(NULL)
 {
 	g_pApp = &g_Acquire;
 }
 
 Acquire::~Acquire()
 {
+	Release();
 }
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.00.0013 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.00.0014 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
 {
-	GetParameterTaskInfo();
-
 	m_cfg.SetCfgFile(GetConfigFile());
 
 	m_cfg.RegisterItem("DATABASE", "DB_NAME");
@@ -44,19 +47,82 @@ void Acquire::LoadConfig() throw(base::Exception)
 
 	// Hive服务器配置
 	m_sHiveIP   = m_cfg.GetCfgValue("HIVE_SERVER", "IP_ADDRESS");
-	m_nHivePort = m_cfg.GetCfgLongVal("HIVE_SERVER", "PORT");
+	m_nHivePort = (int)m_cfg.GetCfgLongVal("HIVE_SERVER", "PORT");
 	if ( m_nHivePort <= 0 )
 	{
-		throw Exception(ACQERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
+		throw base::Exception(ACQERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
 	}
+
+	m_pLog->Output("Load configuration OK.");
 }
 
 void Acquire::Init() throw(base::Exception)
 {
+	GetParameterTaskInfo();
+
+	Release();
+
+	m_spSocket.reset(new T_THRIFT_SOCKET(m_sHiveIP, m_nHivePort));
+
+	m_spTransport.reset(new T_THRIFT_BUFFER_TRANSPORT(m_spSocket));
+
+	m_spProtocol.reset(new T_THRIFT_BINARY_PROTOCOL(m_spTransport));
+
+	m_pTHiveClient = new T_THRIFT_HIVE_CLIENT(m_spProtocol);
+
+	m_pLog->Output("Init OK.");
 }
 
 void Acquire::Run() throw(base::Exception)
 {
+	try
+	{
+		m_spTransport->open();
+		m_pLog->Output("[HIVE] Connect <Host:%s, Port:%d> OK.", m_sHiveIP.c_str(), m_nHivePort);
+
+		std::string test_sql = "select * from test1";
+		m_pLog->Output("[HIVE] Query sql: %s", test_sql.c_str());
+
+		m_pLog->Output("[HIVE] Execute query sql ...");
+		m_pTHiveClient->execute(test_sql);
+		m_pLog->Output("[HIVE] Execute query sql OK.");
+
+		std::vector<std::string> vec_str;
+		long total = 0;
+		do
+		{
+			vec_str.clear();
+
+			m_pTHiveClient->fetchN(vec_str, HIVE_MAX_FETCHN);
+
+			const int V_SIZE = vec_str.size();
+			for ( int i = 0; i < V_SIZE; ++i )
+			{
+				m_pLog->Output("[GET] %d> %s", ++total, vec_str[i].c_str());
+			}
+		} while ( vec_str.size() > 0 );
+		m_pLog->Output("[HIVE] Get result OK.");
+
+		m_spTransport->close();
+		m_pLog->Output("[HIVE] Disconnect.");
+	}
+	catch ( const apache::thrift::TApplicationException& ex )
+	{
+		throw base::Exception(ACQERR_APP_EXCEPTION, "[TApplicationException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+	}
+	catch ( const apache::thrift::TException& ex )
+	{
+		throw base::Exception(ACQERR_T_EXCEPTION, "[TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void Acquire::Release()
+{
+	if ( m_pTHiveClient != NULL )
+	{
+		delete m_pTHiveClient;
+		m_pTHiveClient = NULL;
+	}
 }
 
 void Acquire::GetParameterTaskInfo() throw(base::Exception)
