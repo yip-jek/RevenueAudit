@@ -32,27 +32,18 @@ void BaseFrameApp::SetArgv(char** pp_arg)
 	m_ppArgv = pp_arg;
 }
 
-void BaseFrameApp::LoadConfig()
+std::string BaseFrameApp::GetConfigFile()
 {
+	return m_ppArgv[3];
 }
 
 std::string BaseFrameApp::GetLogPathConfig()
 {
-	m_cfg.SetCfgFile(m_ppArgv[3]);
+	m_cfg.SetCfgFile(GetConfigFile());
 	m_cfg.RegisterItem("SYS", "LOG_PATH");
 	m_cfg.ReadConfig();
 
 	return m_cfg.GetCfgValue("SYS", "LOG_PATH");
-}
-
-void BaseFrameApp::Init() throw(Exception)
-{
-	throw Exception(BFA_INIT_FAILED, "BaseFrameApp initialization failed!");
-}
-
-void BaseFrameApp::Run() throw(Exception)
-{
-	throw Exception(BFA_EXECUTE_FAILED, "BaseFrameApp execution failed!");
 }
 
 }	// namespace base
@@ -64,9 +55,9 @@ BaseFrameApp* g_pApp = NULL;
 
 int main(int argc, char* argv[])
 {
-	if ( argc < 4 )
+	if ( argc < 5 )
 	{
-		std::cerr << "[usage] " << argv[0] << " daemon_flag ccm_id cfg_file ..." << std::endl;
+		std::cerr << "[usage] " << argv[0] << " daemon_flag ccm_id cfg_file [task_info]" << std::endl;
 		return -1;
 	}
 

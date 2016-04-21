@@ -16,9 +16,5 @@ namespace base
 #define CFG_ITEM_NOT_FOUND            (-2000004)
 #define CFG_VALUE_INVALID             (-2000005)
 
-// BaseFrameApp error code
-#define BFA_INIT_FAILED               (-3000001)
-#define BFA_EXECUTE_FAILED            (-3000002)
-
 }	// namespace base
 
