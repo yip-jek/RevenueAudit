@@ -80,7 +80,7 @@ void Acquire::Run() throw(base::Exception)
 		m_spTransport->open();
 		m_pLog->Output("[HIVE] Connect <Host:%s, Port:%d> OK.", m_sHiveIP.c_str(), m_nHivePort);
 
-		std::string test_sql = "select * from test1";
+		std::string test_sql = "select * from aa";
 		m_pLog->Output("[HIVE] Query sql: %s", test_sql.c_str());
 
 		m_pLog->Output("[HIVE] Execute query sql ...");
@@ -101,7 +101,7 @@ void Acquire::Run() throw(base::Exception)
 				m_pLog->Output("[GET] %d> %s", ++total, vec_str[i].c_str());
 			}
 		} while ( vec_str.size() > 0 );
-		m_pLog->Output("[HIVE] Get result OK.");
+		m_pLog->Output("[HIVE] Get %ld row(s)", total);
 
 		m_spTransport->close();
 		m_pLog->Output("[HIVE] Disconnect.");
