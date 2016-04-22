@@ -1,43 +1,24 @@
 #pragma once
 
-#include <boost/shared_ptr.hpp>
-#include <transport/TTransport.h>
-#include <protocol/TProtocol.h>
-#include <protocol/TBinaryProtocol.h>
-#include <transport/TSocket.h>
-#include <transport/TTransportUtils.h>
-#include "ThriftHive.h"
 #include "baseframeapp.h"
 
+class CHiveThrift;
 
 // 采集模块
 class Acquire : public base::BaseFrameApp
 {
 public:
-	typedef apache::thrift::transport::TTransport			T_THRIFT_TRANSPORT;
-	typedef apache::thrift::transport::TSocket				T_THRIFT_SOCKET;
-	typedef apache::thrift::transport::TBufferedTransport	T_THRIFT_BUFFER_TRANSPORT;
-
-	typedef apache::thrift::protocol::TProtocol				T_THRIFT_PROTOCOL;
-	typedef apache::thrift::protocol::TBinaryProtocol		T_THRIFT_BINARY_PROTOCOL;
-
-	typedef Apache::Hadoop::Hive::ThriftHiveClient			T_THRIFT_HIVE_CLIENT;
-
-public:
 	Acquire();
 	virtual ~Acquire();
 
 public:
-	static const int HIVE_MAX_FETCHN = 20000;
-
 	enum ACQ_ERROR
 	{
 		ACQERR_TASKINFO_ERROR    = -3000001,			// 任务信息异常
 		ACQERR_KPIID_INVALID     = -3000002,			// 指标ID无效
 		ACQERR_ETLID_INVALID     = -3000003,			// 采集规则ID无效
 		ACQERR_HIVE_PORT_INVALID = -3000004,			// Hive服务器端口无效
-		ACQERR_APP_EXCEPTION     = -3000005,			// TApplicationException异常
-		ACQERR_T_EXCEPTION       = -3000006,			// TException异常
+		ACQERR_INIT_FAILED       = -3000005,			// 初始化失败
 	};
 
 public:
@@ -72,9 +53,6 @@ private:
 	int			m_nHivePort;	// Hive服务器端口
 
 private:
-	boost::shared_ptr<T_THRIFT_TRANSPORT>	m_spSocket;
-	boost::shared_ptr<T_THRIFT_TRANSPORT>	m_spTransport;
-	boost::shared_ptr<T_THRIFT_PROTOCOL>	m_spProtocol;
-	T_THRIFT_HIVE_CLIENT*					m_pTHiveClient;
+	CHiveThrift*	m_pHiveThrift;
 };
 

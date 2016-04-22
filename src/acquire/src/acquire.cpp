@@ -1,9 +1,9 @@
 #include "acquire.h"
 #include <vector>
-#include "log.h"
-
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include "log.h"
+#include "chivethrift.h"
 
 
 Acquire g_Acquire;
@@ -13,7 +13,7 @@ Acquire::Acquire()
 :m_nKpiID(0)
 ,m_nEtlID(0)
 ,m_nHivePort(0)
-,m_pTHiveClient(NULL)
+,m_pHiveThrift(NULL)
 {
 	g_pApp = &g_Acquire;
 }
@@ -62,66 +62,32 @@ void Acquire::Init() throw(base::Exception)
 
 	Release();
 
-	m_spSocket.reset(new T_THRIFT_SOCKET(m_sHiveIP, m_nHivePort));
+	m_pHiveThrift = new CHiveThrift(m_sHiveIP, m_nHivePort);
+	if ( NULL == m_pHiveThrift )
+	{
+		throw base::Exception(ACQERR_INIT_FAILED, "new CHiveThrift failed: 无法申请到内存空间!");
+	}
 
-	m_spTransport.reset(new T_THRIFT_BUFFER_TRANSPORT(m_spSocket));
-
-	m_spProtocol.reset(new T_THRIFT_BINARY_PROTOCOL(m_spTransport));
-
-	m_pTHiveClient = new T_THRIFT_HIVE_CLIENT(m_spProtocol);
+	m_pHiveThrift->Init();
 
 	m_pLog->Output("Init OK.");
 }
 
 void Acquire::Run() throw(base::Exception)
 {
-	try
-	{
-		m_spTransport->open();
-		m_pLog->Output("[HIVE] Connect <Host:%s, Port:%d> OK.", m_sHiveIP.c_str(), m_nHivePort);
+	m_pHiveThrift->Connect();
 
-		std::string test_sql = "select * from aa";
-		m_pLog->Output("[HIVE] Query sql: %s", test_sql.c_str());
+	m_pHiveThrift->Test("");
 
-		m_pLog->Output("[HIVE] Execute query sql ...");
-		m_pTHiveClient->execute(test_sql);
-		m_pLog->Output("[HIVE] Execute query sql OK.");
-
-		std::vector<std::string> vec_str;
-		long total = 0;
-		do
-		{
-			vec_str.clear();
-
-			m_pTHiveClient->fetchN(vec_str, HIVE_MAX_FETCHN);
-
-			const int V_SIZE = vec_str.size();
-			for ( int i = 0; i < V_SIZE; ++i )
-			{
-				m_pLog->Output("[GET] %d> %s", ++total, vec_str[i].c_str());
-			}
-		} while ( vec_str.size() > 0 );
-		m_pLog->Output("[HIVE] Get %ld row(s)", total);
-
-		m_spTransport->close();
-		m_pLog->Output("[HIVE] Disconnect.");
-	}
-	catch ( const apache::thrift::TApplicationException& ex )
-	{
-		throw base::Exception(ACQERR_APP_EXCEPTION, "[TApplicationException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
-	}
-	catch ( const apache::thrift::TException& ex )
-	{
-		throw base::Exception(ACQERR_T_EXCEPTION, "[TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
-	}
+	m_pHiveThrift->Disconnect();
 }
 
 void Acquire::Release()
 {
-	if ( m_pTHiveClient != NULL )
+	if ( m_pHiveThrift != NULL )
 	{
-		delete m_pTHiveClient;
-		m_pTHiveClient = NULL;
+		delete m_pHiveThrift;
+		m_pHiveThrift = NULL;
 	}
 }
 
