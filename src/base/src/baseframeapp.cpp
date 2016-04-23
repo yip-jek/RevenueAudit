@@ -6,6 +6,8 @@
 #include <boost/lexical_cast.hpp>
 #include "def.h"
 #include "log.h"
+#include "basedb2.h"
+#include "basehivethrift.h"
 
 namespace base
 {
@@ -13,11 +15,24 @@ namespace base
 BaseFrameApp::BaseFrameApp()
 :m_pLog(Log::Instance())
 ,m_ppArgv(NULL)
+,m_pDB2(NULL)
+,m_pHiveThrift(NULL)
 {
 }
 
 BaseFrameApp::~BaseFrameApp()
 {
+	if ( m_pDB2 != NULL )
+	{
+		delete m_pDB2;
+		m_pDB2 = NULL;
+	}
+
+	if ( m_pHiveThrift != NULL )
+	{
+		delete m_pHiveThrift;
+		m_pHiveThrift = NULL;
+	}
 }
 
 const char* BaseFrameApp::Version()

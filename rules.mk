@@ -10,7 +10,7 @@ THRIFT_INCL = -I../../thrift_hive/include -I$(LOCAL_DIR)/include/thrift
 
 ################################################################
 BASE_LIB    = -L$(LIB_DIR) -lbase
-XDBO_LIB    = -I$(RA_ROOT)/lib -lxdbo2
+XDBO_LIB    = -L$(RA_ROOT)/lib -lxdbo2
 THRIFT_LIB  = -L$(LOCAL_DIR)/lib -lthrift -L$(LIB_DIR) -lthrift_hive
 
 ################################################################
@@ -27,6 +27,6 @@ MV = mv
 RM = rm -f
 
 ################################################################
-INCLS = $(APP_INCL) $(BASE_INCL) $(THRIFT_INCL)
-LIBS  = $(BASE_LIB) $(THRIFT_LIB)
+INCLS = $(APP_INCL) $(BASE_INCL) $(XDBO_INCL) $(THRIFT_INCL)
+LIBS  = $(BASE_LIB) $(XDBO_LIB) $(THRIFT_LIB)
 

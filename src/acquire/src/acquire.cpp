@@ -3,6 +3,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include "log.h"
+#include "cacqdb2.h"
 #include "chivethrift.h"
 
 
@@ -13,19 +14,19 @@ Acquire::Acquire()
 :m_nKpiID(0)
 ,m_nEtlID(0)
 ,m_nHivePort(0)
-,m_pHiveThrift(NULL)
+,m_pAcqDB2(NULL)
+,m_pCHive(NULL)
 {
 	g_pApp = &g_Acquire;
 }
 
 Acquire::~Acquire()
 {
-	Release();
 }
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.00.0014 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.00.0017 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -37,6 +38,11 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("DATABASE", "PASSWORD");
 	m_cfg.RegisterItem("HIVE_SERVER", "IP_ADDRESS");
 	m_cfg.RegisterItem("HIVE_SERVER", "PORT");
+
+	m_cfg.RegisterItem("TABLE", "TAB_KPI_RULE");
+	m_cfg.RegisterItem("TABLE", "TAB_ETL_RULE");
+	m_cfg.RegisterItem("TABLE", "TAB_ETL_DIM");
+	m_cfg.RegisterItem("TABLE", "TAB_ETL_VAL");
 
 	m_cfg.ReadConfig();
 
@@ -53,6 +59,11 @@ void Acquire::LoadConfig() throw(base::Exception)
 		throw base::Exception(ACQERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
 	}
 
+	m_tabKpiRule = m_cfg.GetCfgValue("TABLE", "TAB_KPI_RULE");
+	m_tabEtlRule = m_cfg.GetCfgValue("TABLE", "TAB_ETL_RULE");
+	m_tabEtlDim  = m_cfg.GetCfgValue("TABLE", "TAB_ETL_DIM");
+	m_tabEtlVal  = m_cfg.GetCfgValue("TABLE", "TAB_ETL_VAL");
+
 	m_pLog->Output("Load configuration OK.");
 }
 
@@ -60,35 +71,36 @@ void Acquire::Init() throw(base::Exception)
 {
 	GetParameterTaskInfo();
 
-	Release();
+	m_pDB2 = new CAcqDB2(m_sDBName, m_sUsrName, m_sPasswd);
+	if ( NULL == m_pDB2 )
+	{
+		throw base::Exception(ACQERR_INIT_FAILED, "new CAcqDB2 failed: 无法申请到内存空间!");
+	}
+	m_pAcqDB2 = dynamic_cast<CAcqDB2*>(m_pDB2);
 
 	m_pHiveThrift = new CHiveThrift(m_sHiveIP, m_nHivePort);
 	if ( NULL == m_pHiveThrift )
 	{
 		throw base::Exception(ACQERR_INIT_FAILED, "new CHiveThrift failed: 无法申请到内存空间!");
 	}
+	m_pCHive = dynamic_cast<CHiveThrift*>(m_pHiveThrift);
 
-	m_pHiveThrift->Init();
+	m_pCHive->Init();
 
 	m_pLog->Output("Init OK.");
 }
 
 void Acquire::Run() throw(base::Exception)
 {
-	m_pHiveThrift->Connect();
+	m_pAcqDB2->Connect();
 
-	m_pHiveThrift->Test("");
+	m_pCHive->Connect();
 
-	m_pHiveThrift->Disconnect();
-}
+	m_pCHive->Test("audit_bdzt_20160329");
 
-void Acquire::Release()
-{
-	if ( m_pHiveThrift != NULL )
-	{
-		delete m_pHiveThrift;
-		m_pHiveThrift = NULL;
-	}
+	m_pCHive->Disconnect();
+
+	m_pAcqDB2->Disconnect();
 }
 
 void Acquire::GetParameterTaskInfo() throw(base::Exception)
