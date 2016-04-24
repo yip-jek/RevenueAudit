@@ -21,6 +21,7 @@ public:
 	// 设置采集值规则表
 	void SetTabEtlVal(const std::string& t_etlval);
 
+	// 查询采集规则任务信息
 	void SelectEtlTaskInfo() throw(base::Exception);
 
 private:
