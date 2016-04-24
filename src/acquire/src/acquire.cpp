@@ -78,6 +78,11 @@ void Acquire::Init() throw(base::Exception)
 	}
 	m_pAcqDB2 = dynamic_cast<CAcqDB2*>(m_pDB2);
 
+	m_pAcqDB2->SetTabKpiRule(m_tabKpiRule);
+	m_pAcqDB2->SetTabEtlRule(m_tabEtlRule);
+	m_pAcqDB2->SetTabEtlDim(m_tabEtlDim);
+	m_pAcqDB2->SetTabEtlVal(m_tabEtlVal);
+
 	m_pHiveThrift = new CHiveThrift(m_sHiveIP, m_nHivePort);
 	if ( NULL == m_pHiveThrift )
 	{
@@ -116,7 +121,7 @@ void Acquire::GetParameterTaskInfo() throw(base::Exception)
 
 	try
 	{
-		m_nKpiID = boost::lexical_cast<long>(vec_str[1]);
+		m_nKpiID = boost::lexical_cast<int>(vec_str[1]);
 	}
 	catch ( boost::bad_lexical_cast& e )
 	{
@@ -125,7 +130,7 @@ void Acquire::GetParameterTaskInfo() throw(base::Exception)
 
 	try
 	{
-		m_nEtlID = boost::lexical_cast<long>(vec_str[2]);
+		m_nEtlID = boost::lexical_cast<int>(vec_str[2]);
 	}
 	catch ( boost::bad_lexical_cast& e )
 	{
