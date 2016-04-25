@@ -99,6 +99,13 @@ void Acquire::Run() throw(base::Exception)
 {
 	m_pAcqDB2->Connect();
 
+	AcqTaskInfo task_info;
+	task_info.KpiID     = m_nKpiID;
+	task_info.EtlRuleID = m_nEtlID;
+
+	// 查询采集任务信息
+	m_pAcqDB2->SelectEtlTaskInfo(task_info);
+
 	m_pCHive->Connect();
 
 	m_pCHive->Test("audit_bdzt_20160329");

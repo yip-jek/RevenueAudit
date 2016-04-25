@@ -26,5 +26,8 @@ namespace base
 // BaseHiveThrift error code
 #define BHT_CONNECT_FAILED                   (-1003001)
 
+// PubStr error code
+#define PS_TRANS_FAILED                      (-1004001)
+
 }	// namespace base
 

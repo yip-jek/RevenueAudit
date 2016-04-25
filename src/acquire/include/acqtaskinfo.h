@@ -18,6 +18,7 @@ public:
 	,EtlDimSrcName(dim.EtlDimSrcName)
 	{}
 
+public:
 	const OneEtlDim& operator = (const OneEtlDim& dim)
 	{
 		if ( this != &dim )
@@ -30,6 +31,16 @@ public:
 		}
 
 		return *this;
+	}
+
+	void Clear()
+	{
+		EtlDimID  = 0;
+		EtlDimSeq = 0;
+
+		EtlDimName.clear();
+		EtlDimDesc.clear();
+		EtlDimSrcName.clear();
 	}
 
 public:
@@ -52,6 +63,7 @@ public:
 		this->vecEtlDim.insert(this->vecEtlDim.begin(), dim.vecEtlDim.begin(), dim.vecEtlDim.end());
 	}
 
+public:
 	const AcqEtlDim& operator = (const AcqEtlDim& dim)
 	{
 		if ( this != &dim )
@@ -62,6 +74,13 @@ public:
 		}
 
 		return *this;
+	}
+
+	void Clear()
+	{
+		acqEtlDimID = 0;
+
+		std::vector<OneEtlDim>().swap(vecEtlDim);
 	}
 
 public:
@@ -84,6 +103,7 @@ public:
 	,EtlValSrcName(val.EtlValSrcName)
 	{}
 
+public:
 	const OneEtlVal& operator = (const OneEtlVal& val)
 	{
 		if ( this != &val )
@@ -96,6 +116,16 @@ public:
 		}
 
 		return *this;
+	}
+
+	void Clear()
+	{
+		EtlValID  = 0;
+		EtlValSeq = 0;
+
+		EtlValName.clear();
+		EtlValDesc.clear();
+		EtlValSrcName.clear();
 	}
 
 public:
@@ -118,6 +148,7 @@ public:
 		this->vecEtlVal.insert(this->vecEtlVal.begin(), val.vecEtlVal.begin(), val.vecEtlVal.end());
 	}
 
+public:
 	const AcqEtlVal& operator = (const AcqEtlVal& val)
 	{
 		if ( this != &val )
@@ -128,6 +159,13 @@ public:
 		}
 
 		return *this;
+	}
+
+	void Clear()
+	{
+		acqEtlValID = 0;
+
+		std::vector<OneEtlVal>().swap(vecEtlVal);
 	}
 
 public:
@@ -154,6 +192,7 @@ public:
 		this->vecEtlRuleVal.insert(this->vecEtlRuleVal.begin(), info.vecEtlRuleVal.begin(), info.vecEtlRuleVal.end());
 	}
 
+public:
 	const AcqTaskInfo& operator = (const AcqTaskInfo& info)
 	{
 		if ( this != &info )
@@ -170,6 +209,20 @@ public:
 		}
 
 		return *this;
+	}
+
+	void Clear()
+	{
+		EtlRuleID = 0;
+		KpiID     = 0;
+
+		EtlRuleTime.clear();
+		EtlRuleType.clear();
+		EtlRuleTarget.clear();
+
+		std::vector<std::string>().swap(vecEtlRuleDataSrc);
+		std::vector<AcqEtlDim>().swap(vecEtlRuleDim);
+		std::vector<AcqEtlVal>().swap(vecEtlRuleVal);
 	}
 
 public:

@@ -1,12 +1,20 @@
 #pragma once
 
 #include "basedb2.h"
+#include "acqtaskinfo.h"
 
 class CAcqDB2 : public base::BaseDB2
 {
 public:
 	CAcqDB2(const std::string& db_name, const std::string& usr, const std::string& pw);
 	virtual ~CAcqDB2();
+
+	enum ADB_ERROR
+	{
+		ADBERR_SEL_ETL_RULE = -2002001,			// 查询采集规则出错
+		ADBERR_SEL_ETL_DIM  = -2002002,			// 查询采集维度规则出错
+		ADBERR_SEL_ETL_VAL  = -2002003,			// 查询采集值规则出错
+	};
 
 public:
 	// 设置指标规则表
@@ -22,7 +30,17 @@ public:
 	void SetTabEtlVal(const std::string& t_etlval);
 
 	// 查询采集规则任务信息
-	void SelectEtlTaskInfo() throw(base::Exception);
+	void SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception);
+
+private:
+	// 查询采集规则信息
+	void SelectEtlRule(AcqTaskInfo& info) throw(base::Exception);
+
+	// 查询采集维度规则信息
+	void SelectEtlDim(int dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception);
+
+	// 查询采集值规则信息
+	void SelectEtlVal(int val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception);
 
 private:
 	// 数据库表名
