@@ -3,14 +3,14 @@
 #include <string>
 #include <vector>
 
-// 采集维度信息
-struct AcqEtlDim
+// 单个维度信息
+struct OneEtlDim
 {
 public:
-	AcqEtlDim(): EtlDimID(0), EtlDimSeq(0)
+	OneEtlDim(): EtlDimID(0), EtlDimSeq(0)
 	{}
 
-	AcqEtlDim(const AcqEtlDim& dim)
+	OneEtlDim(const OneEtlDim& dim)
 	:EtlDimID(dim.EtlDimID)
 	,EtlDimSeq(dim.EtlDimSeq)
 	,EtlDimName(dim.EtlDimName)
@@ -18,7 +18,7 @@ public:
 	,EtlDimSrcName(dim.EtlDimSrcName)
 	{}
 
-	const AcqEtlDim& operator = (const AcqEtlDim& dim)
+	const OneEtlDim& operator = (const OneEtlDim& dim)
 	{
 		if ( this != &dim )
 		{
@@ -40,14 +40,43 @@ public:
 	std::string	EtlDimSrcName;				// 维度对应源字段名称
 };
 
-// 采集值信息
-struct AcqEtlVal
+// 采集维度信息
+struct AcqEtlDim
 {
 public:
-	AcqEtlVal(): EtlValID(0), EtlValSeq(0)
+	AcqEtlDim(): acqEtlDimID(0)
 	{}
 
-	AcqEtlVal(const AcqEtlVal& val)
+	AcqEtlDim(const AcqEtlDim& dim): acqEtlDimID(dim.acqEtlDimID)
+	{
+		this->vecEtlDim.insert(this->vecEtlDim.begin(), dim.vecEtlDim.begin(), dim.vecEtlDim.end());
+	}
+
+	const AcqEtlDim& operator = (const AcqEtlDim& dim)
+	{
+		if ( this != &dim )
+		{
+			this->acqEtlDimID = dim.acqEtlDimID;
+
+			this->vecEtlDim.insert(this->vecEtlDim.begin(), dim.vecEtlDim.begin(), dim.vecEtlDim.end());
+		}
+
+		return *this;
+	}
+
+public:
+	int						acqEtlDimID;		// 采集维度ID
+	std::vector<OneEtlDim>	vecEtlDim;			// 维度信息集
+};
+
+// 采集值信息
+struct OneEtlVal
+{
+public:
+	OneEtlVal(): EtlValID(0), EtlValSeq(0)
+	{}
+
+	OneEtlVal(const OneEtlVal& val)
 	:EtlValID(val.EtlValID)
 	,EtlValSeq(val.EtlValSeq)
 	,EtlValName(val.EtlValName)
@@ -55,7 +84,7 @@ public:
 	,EtlValSrcName(val.EtlValSrcName)
 	{}
 
-	const AcqEtlVal& operator = (const AcqEtlVal& val)
+	const OneEtlVal& operator = (const OneEtlVal& val)
 	{
 		if ( this != &val )
 		{
@@ -77,6 +106,35 @@ public:
 	std::string	EtlValSrcName;				// 值对应源字段名称
 };
 
+// 采集值信息
+struct AcqEtlVal
+{
+public:
+	AcqEtlVal(): acqEtlValID(0)
+	{}
+
+	AcqEtlVal(const AcqEtlVal& val): acqEtlValID(val.acqEtlValID)
+	{
+		this->vecEtlVal.insert(this->vecEtlVal.begin(), val.vecEtlVal.begin(), val.vecEtlVal.end());
+	}
+
+	const AcqEtlVal& operator = (const AcqEtlVal& val)
+	{
+		if ( this != &val )
+		{
+			this->acqEtlValID = val.acqEtlValID;
+
+			this->vecEtlVal.insert(this->vecEtlVal.begin(), val.vecEtlVal.begin(), val.vecEtlVal.end());
+		}
+
+		return *this;
+	}
+
+public:
+	int						acqEtlValID;		// 采集值ID
+	std::vector<OneEtlVal>	vecEtlVal;			// 值信息集
+};
+
 // 采集规则任务信息
 struct AcqTaskInfo
 {
@@ -91,7 +149,27 @@ public:
 	,EtlRuleType(info.EtlRuleType)
 	,EtlRuleTarget(info.EtlRuleTarget)
 	{
-		vecEtlRuleDataSrc.insert(vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.end());
+		this->vecEtlRuleDataSrc.insert(this->vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.end());
+		this->vecEtlRuleDim.insert(this->vecEtlRuleDim.begin(), info.vecEtlRuleDim.begin(), info.vecEtlRuleDim.end());
+		this->vecEtlRuleVal.insert(this->vecEtlRuleVal.begin(), info.vecEtlRuleVal.begin(), info.vecEtlRuleVal.end());
+	}
+
+	const AcqTaskInfo& operator = (const AcqTaskInfo& info)
+	{
+		if ( this != &info )
+		{
+			EtlRuleID     = info.EtlRuleID    ;
+			KpiID         = info.KpiID        ;
+			EtlRuleTime   = info.EtlRuleTime  ;
+			EtlRuleType   = info.EtlRuleType  ;
+			EtlRuleTarget = info.EtlRuleTarget;
+
+			this->vecEtlRuleDataSrc.insert(this->vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.end());
+			this->vecEtlRuleDim.insert(this->vecEtlRuleDim.begin(), info.vecEtlRuleDim.begin(), info.vecEtlRuleDim.end());
+			this->vecEtlRuleVal.insert(this->vecEtlRuleVal.begin(), info.vecEtlRuleVal.begin(), info.vecEtlRuleVal.end());
+		}
+
+		return *this;
 	}
 
 public:
