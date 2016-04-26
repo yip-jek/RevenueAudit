@@ -26,7 +26,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.00.0017 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.00.0024 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -59,6 +59,7 @@ void Acquire::LoadConfig() throw(base::Exception)
 		throw base::Exception(ACQERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
 	}
 
+	// Tables
 	m_tabKpiRule = m_cfg.GetCfgValue("TABLE", "TAB_KPI_RULE");
 	m_tabEtlRule = m_cfg.GetCfgValue("TABLE", "TAB_ETL_RULE");
 	m_tabEtlDim  = m_cfg.GetCfgValue("TABLE", "TAB_ETL_DIM");
@@ -213,6 +214,7 @@ void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::string& hive_sql)
 			sub_sql = " select ";
 		}
 
+		std::string dim_sql;
 		AcqEtlDim& dim = info.vecEtlRuleDim[i];
 		size_t v_size = dim.vecEtlDim.size();
 		for ( size_t j = 0; j < v_size; ++j )
@@ -221,13 +223,15 @@ void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::string& hive_sql)
 
 			if ( j != 0 )
 			{
-				sub_sql += ", " + one.EtlDimSrcName;
+				dim_sql += ", " + one.EtlDimSrcName;
 			}
 			else
 			{
-				sub_sql += one.EtlDimSrcName;
+				dim_sql += one.EtlDimSrcName;
 			}
 		}
+
+		sub_sql += dim_sql;
 
 		AcqEtlVal& val = info.vecEtlRuleVal[i];
 		v_size = val.vecEtlVal.size();
@@ -235,12 +239,100 @@ void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::string& hive_sql)
 		{
 			OneEtlVal& one = val.vecEtlVal[k];
 
-			sub_sql += ", " + one.EtlValSrcName;
+			sub_sql += ", " + TransEtlValSrcName(one.EtlValSrcName);
 		}
 
-		sub_sql += " from " + info.vecEtlRuleDataSrc[i];
+		sub_sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]);
+		sub_sql += " group by " + dim_sql;
 
 		hive_sql += sub_sql;
+	}
+}
+
+std::string Acquire::TransEtlValSrcName(const std::string& val_srcname)
+{
+	std::string val = val_srcname;
+
+	boost::trim(val);
+	boost::to_upper(val);
+
+	if ( "<RECORD-COUNT>" == val )
+	{
+		val = "count(*)";
+	}
+	else
+	{
+		val = "sum(" + val + ")";
+	}
+
+	return val;
+}
+
+std::string Acquire::TransDataSrcDate(const std::string& time, const std::string& data_src) throw(base::Exception)
+{
+	std::string rule_time = time;
+
+	boost::trim(rule_time);
+	boost::to_upper(rule_time);
+
+	bool is_plus = true;
+	std::vector<std::string> vec_time;
+	if ( rule_time.find("+") != std::string::n_pos )
+	{
+		is_plus = true;
+
+		boost::split(vec_time, rule_time, boost::is_any_of("+"));
+	}
+	else if ( rule_time.find("-") != std::string::n_pos )
+	{
+		is_plus = false;
+
+		boost::split(vec_time, rule_time, boost::is_any_of("-"));
+	}
+	else
+	{
+		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "无法识别的采集时间字段(ETLRULE_TIME:%s) [FILE:%s, LINE:%d]", time.c_str(), __FILE__, __LINE__);
+	}
+
+	if ( vec_time.size() != 2 )
+	{
+		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "采集时间字段(ETLRULE_TIME:%s) 格式错误! [FILE:%s, LINE:%d]", time.c_str(), __FILE__, __LINE__);
+	}
+
+	unsigned int time_off = 0;
+	try
+	{
+		time_off = boost::lexical_cast<unsigned int>(vec_time[1]);
+	}
+	catch ( boost::bad_lexical_cast& ex )
+	{
+		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "(ETLRULE_TIME:%s) 采集时间偏移量转换失败: %s [FILE:%s, LINE:%d]", time.c_str(), vec_time[1].c_str(), __FILE__, __LINE__);
+	}
+
+	std::string confirm_time;
+	std::string& time_flag = vec_time[0];
+	boost::trim(time_flag);
+	if ( "DAY" == time_flag )
+	{
+	}
+	else if ( "MON" == time_flag )
+	{
+	}
+	else
+	{
+		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "(ETLRULE_TIME:%s) 无法识别的采集时间标识: %s [FILE:%s, LINE:%d]", time.c_str(), time_flag.c_str(), __FILE__, __LINE__);
+	}
+
+	std::string new_datasrc = data_src;
+
+	boost::trim(new_datasrc);
+	boost::to_upper(new_datasrc);
+
+	if ( 0 == time_off )
+	{
+	}
+	else
+	{
 	}
 }
 

@@ -16,12 +16,13 @@ public:
 public:
 	enum ACQ_ERROR
 	{
-		ACQERR_TASKINFO_ERROR    = -2000001,			// 任务信息异常
-		ACQERR_KPIID_INVALID     = -2000002,			// 指标ID无效
-		ACQERR_ETLID_INVALID     = -2000003,			// 采集规则ID无效
-		ACQERR_HIVE_PORT_INVALID = -2000004,			// Hive服务器端口无效
-		ACQERR_INIT_FAILED       = -2000005,			// 初始化失败
-		ACQERR_TASKINFO_INVALID  = -2000006,			// 任务信息无效
+		ACQERR_TASKINFO_ERROR       = -2000001,			// 任务信息异常
+		ACQERR_KPIID_INVALID        = -2000002,			// 指标ID无效
+		ACQERR_ETLID_INVALID        = -2000003,			// 采集规则ID无效
+		ACQERR_HIVE_PORT_INVALID    = -2000004,			// Hive服务器端口无效
+		ACQERR_INIT_FAILED          = -2000005,			// 初始化失败
+		ACQERR_TASKINFO_INVALID     = -2000006,			// 任务信息无效
+		ACQERR_TRANS_DATASRC_FAILED = -2000007,			// 源表转换失败
 	};
 
 public:
@@ -46,6 +47,12 @@ private:
 
 	// 分析采集任务规则，生成Hive_SQL
 	void TaskInfo2HiveSql(AcqTaskInfo& info, std::string& hive_sql);
+
+	// 采集值对应源字段名转换
+	std::string TransEtlValSrcName(const std::string& val_srcname);
+
+	// 采集源数据表名日期转换
+	std::string TransDataSrcDate(const std::string& time, const std::string& data_src) throw(base::Exception);
 
 private:
 	int			m_nKpiID;				// 指标ID

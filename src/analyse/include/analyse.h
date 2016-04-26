@@ -2,6 +2,9 @@
 
 #include "baseframeapp.h"
 
+class CAnaDB2;
+class CHiveThrift;
+
 // 分析模块
 class Analyse : public base::BaseFrameApp
 {
@@ -36,6 +39,9 @@ private:
 	// 获取参数任务信息
 	void GetParameterTaskInfo() throw(base::Exception);
 
+	// 更新维度取值范围
+	void UpdateDimValue();
+
 private:
 	long		m_nKpiID;				// 指标ID
 	long		m_nAnaID;				// 分析规则ID
@@ -46,5 +52,17 @@ private:
 
 	std::string m_sHiveIP;				// Hive服务器IP地址
 	int			m_nHivePort;			// Hive服务器端口
+
+private:
+	CAnaDB2*        m_pAnaDB2;			// DB2数据库接口
+	CHiveThrift*    m_pCHive;			// Hive接口
+
+private:
+	std::string m_tabKpiRule;
+	std::string m_tabKpiColumn;
+	std::string m_tabDimValue;
+	std::string m_tabEtlRule;
+	std::string m_tabAnaRule;
+	std::string m_tabAlarmRule;
 };
 
