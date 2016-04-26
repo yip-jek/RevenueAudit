@@ -20,5 +20,9 @@ public:
 
 public:
 	void Test(const std::string& table) throw(base::Exception);
+
+	void DropHiveTable(const std::string& tab_name);
+
+	void ExecuteSQL(const std::string& hive_sql) throw(base::Exception);
 };
 

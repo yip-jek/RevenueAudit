@@ -141,13 +141,38 @@ void CAcqDB2::SelectEtlDim(int dim_id, std::vector<OneEtlDim>& vec_dim) throw(ba
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
+	std::vector<OneEtlDim> v_dim;
+
+	OneEtlDim dim;
+	dim.EtlDimID = dim_id;
+
 	try
 	{
+		std::string sql = "select ETLDIM_SEQ, ETLDIM_NAME, ETLDIM_DESC, ETLDIM_SRCNAME from ";
+		sql += m_tabEtlDim + " where ETLDIM_ID = ? order by ETLDIM_SEQ asc";
+
+		rs.Prepare(sql.c_str(), CRecordset::forwardOnly);
+		rs.Parameter(0) = dim_id;
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			int col = 0;
+
+			dim.EtlDimSeq     = (int)rs[col++];
+			dim.EtlDimName    = (const char*)rs[col++];
+			dim.EtlDimDesc    = (const char*)rs[col++];
+			dim.EtlDimSrcName = (const char*)rs[col++];
+
+			v_dim.push_back(dim);
+		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
 		throw base::Exception(ADBERR_SEL_ETL_DIM, "Select ETL_DIM failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
+
+	v_dim.swap(vec_dim);
 }
 
 void CAcqDB2::SelectEtlVal(int val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception)
@@ -155,12 +180,39 @@ void CAcqDB2::SelectEtlVal(int val_id, std::vector<OneEtlVal>& vec_val) throw(ba
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
+
+	std::vector<OneEtlVal> v_val;
+
+	OneEtlVal val;
+	dim.EtlValID = val_id;
+
 	try
 	{
+		std::string sql = "select ETLVAL_SEQ, ETLVAL_NAME, ETLVAL_DESC, ETLVAL_SRCNAME from ";
+		sql += m_tabEtlVal + " where ETLVAL_ID = ? order by ETLVAL_SEQ asc";
+
+		rs.Prepare(sql.c_str(), CRecordset::forwardOnly);
+		rs.Parameter(0) = val_id;
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			int col = 0;
+
+			val.EtlValSeq     = (int)rs[col++];
+			val.EtlValName    = (const char*)rs[col++];
+			val.EtlValDesc    = (const char*)rs[col++];
+			val.EtlValSrcName = (const char*)rs[col++];
+
+			v_val.push_back(val);
+		}
+
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
 		throw base::Exception(ADBERR_SEL_ETL_VAL, "Select ETL_VAL failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
+
+	v_val.swap(vec_val);
 }
 

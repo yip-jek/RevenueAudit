@@ -1,6 +1,7 @@
 #pragma once
 
 #include "baseframeapp.h"
+#include "acqtaskinfo.h"
 
 class CAcqDB2;
 class CHiveThrift;
@@ -20,6 +21,7 @@ public:
 		ACQERR_ETLID_INVALID     = -2000003,			// 采集规则ID无效
 		ACQERR_HIVE_PORT_INVALID = -2000004,			// Hive服务器端口无效
 		ACQERR_INIT_FAILED       = -2000005,			// 初始化失败
+		ACQERR_TASKINFO_INVALID  = -2000006,			// 任务信息无效
 	};
 
 public:
@@ -38,6 +40,12 @@ public:
 private:
 	// 获取参数任务信息
 	void GetParameterTaskInfo() throw(base::Exception);
+
+	// 检查采集任务信息
+	void CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception);
+
+	// 分析采集任务规则，生成Hive_SQL
+	void TaskInfo2HiveSql(AcqTaskInfo& info, std::string& hive_sql);
 
 private:
 	int			m_nKpiID;				// 指标ID

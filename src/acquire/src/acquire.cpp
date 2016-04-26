@@ -99,16 +99,35 @@ void Acquire::Run() throw(base::Exception)
 {
 	m_pAcqDB2->Connect();
 
+	m_pCHive->Connect();
+
 	AcqTaskInfo task_info;
 	task_info.KpiID     = m_nKpiID;
 	task_info.EtlRuleID = m_nEtlID;
 
+	m_pLog->Output("采集: 查询采集任务规则信息");
+
 	// 查询采集任务信息
 	m_pAcqDB2->SelectEtlTaskInfo(task_info);
 
-	m_pCHive->Connect();
+	m_pLog->Output("采集: 检查采集任务规则信息 ...");
 
-	m_pCHive->Test("audit_bdzt_20160329");
+	CheckTaskInfo(task_info);
+
+	m_pLog->Output("采集: 分析采集规则 ...");
+
+	std::string hive_sql;
+	TaskInfo2HiveSql(task_info, hive_sql);
+
+	m_pLog->Output("采集: 尝试先清空采集目标数据 ...");
+
+	m_pCHive->DropHiveTable(task_info.EtlRuleTarget);
+
+	m_pLog->Output("采集: 执行数据采集 ...");
+
+	m_pCHive->ExecuteSQL(hive_sql);
+
+	m_pLog->Output("采集数据完成.");
 
 	m_pCHive->Disconnect();
 
@@ -142,6 +161,86 @@ void Acquire::GetParameterTaskInfo() throw(base::Exception)
 	catch ( boost::bad_lexical_cast& e )
 	{
 		throw base::Exception(ACQERR_ETLID_INVALID, "采集规则ID [%s] 无效! %s [FILE:%s, LINE:%d]", vec_str[2].c_str(), e.what(), __FILE__, __LINE__);
+	}
+}
+
+void Acquire::CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception)
+{
+	size_t src_size = info.vecEtlRuleDataSrc.size();
+	size_t dim_size = info.vecEtlRuleDim.size();
+	size_t val_size = info.vecEtlRuleVal.size();
+
+	if ( src_size != dim_size )
+	{
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集维度个数 (dim_size:%lu) 不一致! [FILE:%s, LINE:%d]", src_size, dim_size, __FILE__, __LINE__);
+	}
+
+	if ( src_size != val_size )
+	{
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集值个数 (val_size:%lu) 不一致! [FILE:%s, LINE:%d]", src_size, val_size, __FILE__, __LINE__);
+	}
+
+	for ( size_t i = 0; i < dim_size; ++i )
+	{
+		AcqEtlDim& dim = info.vecEtlRuleDim[i];
+		if ( dim.vecEtlDim.empty() )
+		{
+			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集维度为空! 无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		}
+
+		AcqEtlVal& val = info.vecEtlRuleVal[i];
+		if ( val.vecEtlVal.empty() )
+		{
+			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集值为空! 无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		}
+	}
+}
+
+void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::string& hive_sql)
+{
+	hive_sql = "create table " + info.EtlRuleTarget + " as ";
+
+	std::string sub_sql;
+	const size_t SRC_SIZE = info.vecEtlRuleDataSrc.size();
+	for ( size_t i = 0; i < SRC_SIZE; ++i )
+	{
+		if ( i != 0 )
+		{
+			sub_sql = " union all select ";
+		}
+		else
+		{
+			sub_sql = " select ";
+		}
+
+		AcqEtlDim& dim = info.vecEtlRuleDim[i];
+		size_t v_size = dim.vecEtlDim.size();
+		for ( size_t j = 0; j < v_size; ++j )
+		{
+			OneEtlDim& one = dim.vecEtlDim[j];
+
+			if ( j != 0 )
+			{
+				sub_sql += ", " + one.EtlDimSrcName;
+			}
+			else
+			{
+				sub_sql += one.EtlDimSrcName;
+			}
+		}
+
+		AcqEtlVal& val = info.vecEtlRuleVal[i];
+		v_size = val.vecEtlVal.size();
+		for ( size_t k = 0; k < v_size; ++k )
+		{
+			OneEtlVal& one = val.vecEtlVal[k];
+
+			sub_sql += ", " + one.EtlValSrcName;
+		}
+
+		sub_sql += " from " + info.vecEtlRuleDataSrc[i];
+
+		hive_sql += sub_sql;
 	}
 }
 
