@@ -12,22 +12,22 @@ CAcqDB2::~CAcqDB2()
 {
 }
 
-CAcqDB2::SetTabKpiRule(const std::string& t_kpirule)
+void CAcqDB2::SetTabKpiRule(const std::string& t_kpirule)
 {
 	m_tabKpiRule = t_kpirule;
 }
 
-CAcqDB2::SetTabEtlRule(const std::string& t_etlrule)
+void CAcqDB2::SetTabEtlRule(const std::string& t_etlrule)
 {
 	m_tabEtlRule = t_etlrule;
 }
 
-CAcqDB2::SetTabEtlDim(const std::string& t_etldim)
+void CAcqDB2::SetTabEtlDim(const std::string& t_etldim)
 {
 	m_tabEtlDim = t_etldim;
 }
 
-CAcqDB2::SetTabEtlVal(const std::string& t_etlval)
+void CAcqDB2::SetTabEtlVal(const std::string& t_etlval)
 {
 	m_tabEtlVal = t_etlval;
 }
@@ -70,7 +70,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 		std::string sql = "select ETLRULE_TIME, ELTRULE_TYPE, ETLRULE_DATASOURCE, ETLRULE_TARGET, ETLDIM_ID, ETLVAL_ID from ";
 		sql += m_tabEtlRule + " where ETLRULE_ID = ? and KPI_ID = ?";
 
-		rs.Prepare(sql.c_str(), CRecordset::forwardOnly);
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 		rs.Parameter(0) = info.EtlRuleID;
 		rs.Parameter(1) = info.KpiID;
 		rs.Execute();
@@ -151,7 +151,7 @@ void CAcqDB2::SelectEtlDim(int dim_id, std::vector<OneEtlDim>& vec_dim) throw(ba
 		std::string sql = "select ETLDIM_SEQ, ETLDIM_NAME, ETLDIM_DESC, ETLDIM_SRCNAME from ";
 		sql += m_tabEtlDim + " where ETLDIM_ID = ? order by ETLDIM_SEQ asc";
 
-		rs.Prepare(sql.c_str(), CRecordset::forwardOnly);
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 		rs.Parameter(0) = dim_id;
 		rs.Execute();
 
@@ -184,14 +184,14 @@ void CAcqDB2::SelectEtlVal(int val_id, std::vector<OneEtlVal>& vec_val) throw(ba
 	std::vector<OneEtlVal> v_val;
 
 	OneEtlVal val;
-	dim.EtlValID = val_id;
+	val.EtlValID = val_id;
 
 	try
 	{
 		std::string sql = "select ETLVAL_SEQ, ETLVAL_NAME, ETLVAL_DESC, ETLVAL_SRCNAME from ";
 		sql += m_tabEtlVal + " where ETLVAL_ID = ? order by ETLVAL_SEQ asc";
 
-		rs.Prepare(sql.c_str(), CRecordset::forwardOnly);
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 		rs.Parameter(0) = val_id;
 		rs.Execute();
 

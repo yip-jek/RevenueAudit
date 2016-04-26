@@ -3,6 +3,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include "log.h"
+#include "pubtime.h"
 #include "cacqdb2.h"
 #include "chivethrift.h"
 
@@ -256,7 +257,7 @@ std::string Acquire::TransEtlValSrcName(const std::string& val_srcname)
 	boost::trim(val);
 	boost::to_upper(val);
 
-	if ( "<RECORD-COUNT>" == val )
+	if ( "<RECORD>" == val )	// 记录数
 	{
 		val = "count(*)";
 	}
@@ -275,15 +276,16 @@ std::string Acquire::TransDataSrcDate(const std::string& time, const std::string
 	boost::trim(rule_time);
 	boost::to_upper(rule_time);
 
+	// 分析是“加”还是“减”
 	bool is_plus = true;
 	std::vector<std::string> vec_time;
-	if ( rule_time.find("+") != std::string::n_pos )
+	if ( rule_time.find("+") != std::string::npos )
 	{
 		is_plus = true;
 
 		boost::split(vec_time, rule_time, boost::is_any_of("+"));
 	}
-	else if ( rule_time.find("-") != std::string::n_pos )
+	else if ( rule_time.find("-") != std::string::npos )
 	{
 		is_plus = false;
 
@@ -299,9 +301,11 @@ std::string Acquire::TransDataSrcDate(const std::string& time, const std::string
 		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "采集时间字段(ETLRULE_TIME:%s) 格式错误! [FILE:%s, LINE:%d]", time.c_str(), __FILE__, __LINE__);
 	}
 
+	// 时间偏移量数值转换
 	unsigned int time_off = 0;
 	try
 	{
+		boost::trim(vec_time[1]);
 		time_off = boost::lexical_cast<unsigned int>(vec_time[1]);
 	}
 	catch ( boost::bad_lexical_cast& ex )
@@ -309,14 +313,35 @@ std::string Acquire::TransDataSrcDate(const std::string& time, const std::string
 		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "(ETLRULE_TIME:%s) 采集时间偏移量转换失败: %s [FILE:%s, LINE:%d]", time.c_str(), vec_time[1].c_str(), __FILE__, __LINE__);
 	}
 
+	std::string be_replace;
 	std::string confirm_time;
 	std::string& time_flag = vec_time[0];
 	boost::trim(time_flag);
 	if ( "DAY" == time_flag )
 	{
+		if ( is_plus )
+		{
+			confirm_time = base::PubTime::DateNowPlusDays(time_off);
+		}
+		else
+		{
+			confirm_time = base::PubTime::DateNowMinusDays(time_off);
+		}
+
+		be_replace = "YYYYMMDD";
 	}
 	else if ( "MON" == time_flag )
 	{
+		if ( is_plus )
+		{
+			confirm_time = base::PubTime::DateNowPlusMonths(time_off);
+		}
+		else
+		{
+			confirm_time = base::PubTime::DateNowMinusMonths(time_off);
+		}
+
+		be_replace = "YYYYMM";
 	}
 	else
 	{
@@ -328,11 +353,14 @@ std::string Acquire::TransDataSrcDate(const std::string& time, const std::string
 	boost::trim(new_datasrc);
 	boost::to_upper(new_datasrc);
 
-	if ( 0 == time_off )
+	size_t t_pos = new_datasrc.find(be_replace);
+	if ( std::string::npos == t_pos )
 	{
+		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "在源数据表名 (%s) 中找不到时间标记: %s [FILE:%s, LINE:%d]", data_src.c_str(), be_replace.c_str(), __FILE__, __LINE__);
 	}
-	else
-	{
-	}
+
+	new_datasrc.replace(t_pos, be_replace.size(), confirm_time);
+
+	return new_datasrc;
 }
 
