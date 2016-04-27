@@ -89,7 +89,7 @@ void BaseDB2::Commit() throw(Exception)
 	{
 		try
 		{
-			if ( !m_CDB.CommitTrans() )
+			if ( !m_CDB.CommitTrans(false) )
 			{
 				throw Exception(BDB_COMMIT_FAILED, "[DB2] Commit failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 			}

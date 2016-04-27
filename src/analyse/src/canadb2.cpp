@@ -12,217 +12,268 @@ CAnaDB2::~CAnaDB2()
 {
 }
 
-CAnaDB2::SetTabKpiRule(const std::string& t_kpirule)
+void CAnaDB2::SetTabKpiRule(const std::string& t_kpirule)
 {
 	m_tabKpiRule = t_kpirule;
 }
 
-CAnaDB2::SetTabKpiColumn(const std::string& t_kpicol)
+void CAnaDB2::SetTabKpiColumn(const std::string& t_kpicol)
 {
 	m_tabKpiColumn = t_kpicol;
 }
 
-CAnaDB2::SetTabDimValue(const std::string& t_dimval)
+void CAnaDB2::SetTabDimValue(const std::string& t_dimval)
 {
 	m_tabDimValue = t_dimval;
 }
 
-CAnaDB2::SetTabEtlRule(const std::string& t_etlrule)
+void CAnaDB2::SetTabEtlRule(const std::string& t_etlrule)
 {
 	m_tabEtlRule = t_etlrule;
 }
 
-CAnaDB2::SetTabAnaRule(const std::string& t_anarule)
+void CAnaDB2::SetTabAnaRule(const std::string& t_anarule)
 {
 	m_tabAnaRule = t_anarule;
 }
 
-CAnaDB2::SetTabAlarmRule(const std::string& t_alarmrule)
+void CAnaDB2::SetTabAlarmRule(const std::string& t_alarmrule)
 {
 	m_tabAlarmRule = t_alarmrule;
 }
 
-//void CAnaDB2::SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception)
-//{
-//	// 获取采集规则信息
-//	SelectEtlRule(info);
-//
-//	// 获取采集维度信息
-//	size_t vec_size = info.vecEtlRuleDim.size();
-//	for ( size_t i = 0; i < vec_size; ++i )
-//	{
-//		AcqEtlDim& dim = info.vecEtlRuleDim[i];
-//
-//		SelectEtlDim(dim.acqEtlDimID, dim.vecEtlDim);
-//	}
-//
-//	// 获取采集值信息
-//	vec_size = info.vecEtlRuleVal.size();
-//	for ( size_t i = 0; i < vec_size; ++i )
-//	{
-//		AcqEtlVal& val = info.vecEtlRuleVal[i];
-//
-//		SelectEtlVal(val.acqEtlValID, val.vecEtlVal);
-//	}
-//}
-//
-//void CAnaDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
-//{
-//	XDBO2::CRecordset rs(&m_CDB);
-//	rs.EnableWarning(true);
-//
-//	std::string data_source;
-//	std::string dim_id;
-//	std::string val_id;
-//
-//	try
-//	{
-//		std::string sql = "select ETLRULE_TIME, ELTRULE_TYPE, ETLRULE_DATASOURCE, ETLRULE_TARGET, ETLDIM_ID, ETLVAL_ID from ";
-//		sql += m_tabEtlRule + " where ETLRULE_ID = ? and KPI_ID = ?";
-//
-//		rs.Prepare(sql.c_str(), CRecordset::forwardOnly);
-//		rs.Parameter(0) = info.EtlRuleID;
-//		rs.Parameter(1) = info.KpiID;
-//		rs.Execute();
-//
-//		while ( !rs.IsEOF() )
-//		{
-//			int col = 0;
-//
-//			info.EtlRuleTime   = (const char*)rs[col++];
-//			info.EtlRuleType   = (const char*)rs[col++];
-//			data_source        = (const char*)rs[col++];
-//			info.EtlRuleTarget = (const char*)rs[col++];
-//			dim_id             = (const char*)rs[col++];
-//			val_id             = (const char*)rs[col++];
-//		}
-//	}
-//	catch ( const XDBO2::CDBException& ex )
-//	{
-//		throw base::Exception(ADBERR_SEL_ETL_RULE, "Select ETL_RULE failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
-//	}
-//
-//	boost::split(info.vecEtlRuleDataSrc, data_source, boost::is_any_of(","));
-//	size_t v_size = info.vecEtlRuleDataSrc.size();
-//	for ( size_t i = 0; i < v_size; ++i )
-//	{
-//		std::string& ref_data_src = info.vecEtlRuleDataSrc[i];
-//
-//		boost::trim(ref_data_src);
-//
-//		if ( ref_data_src.empty() )
-//		{
-//			throw base::Exception(ADBERR_SEL_ETL_RULE, "采集数据源(ETLRULE_DATASOURCE:%s)配置不正确: 第%lu个数据源为空值! [FILE:%s, LINE:%d]", data_source.c_str(), (i+1), __FILE__, __LINE__);
-//		}
-//	}
-//
-//	// 采集维度规则ID
-//	std::vector<int> vec_id;
-//	base::PubStr::Str2IntVector(dim_id, ",", vec_id);
-//
-//	std::vector<AcqEtlDim> vec_dim;
-//	AcqEtlDim dim;
-//	v_size = vec_id.size();
-//	for ( size_t i = 0; i < v_size; ++i )
-//	{
-//		dim.acqEtlDimID = vec_id[i];
-//
-//		vec_dim.push_back(dim);
-//	}
-//	vec_dim.swap(info.vecEtlRuleDim);
-//
-//	// 采集值规则ID
-//	base::PubStr::Str2IntVector(val_id, ",", vec_id);
-//
-//	std::vector<AcqEtlVal> vec_val;
-//	AcqEtlVal val;
-//	v_size = vec_id.size();
-//	for ( size_t i = 0; i < v_size; ++i )
-//	{
-//		val.acqEtlValID = vec_id[i];
-//
-//		vec_val.push_back(val);
-//	}
-//	vec_val.swap(info.vecEtlRuleVal);
-//}
-//
-//void CAnaDB2::SelectEtlDim(int dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception)
-//{
-//	XDBO2::CRecordset rs(&m_CDB);
-//	rs.EnableWarning(true);
-//
-//	std::vector<OneEtlDim> v_dim;
-//
-//	OneEtlDim dim;
-//	dim.EtlDimID = dim_id;
-//
-//	try
-//	{
-//		std::string sql = "select ETLDIM_SEQ, ETLDIM_NAME, ETLDIM_DESC, ETLDIM_SRCNAME from ";
-//		sql += m_tabEtlDim + " where ETLDIM_ID = ? order by ETLDIM_SEQ asc";
-//
-//		rs.Prepare(sql.c_str(), CRecordset::forwardOnly);
-//		rs.Parameter(0) = dim_id;
-//		rs.Execute();
-//
-//		while ( !rs.IsEOF() )
-//		{
-//			int col = 0;
-//
-//			dim.EtlDimSeq     = (int)rs[col++];
-//			dim.EtlDimName    = (const char*)rs[col++];
-//			dim.EtlDimDesc    = (const char*)rs[col++];
-//			dim.EtlDimSrcName = (const char*)rs[col++];
-//
-//			v_dim.push_back(dim);
-//		}
-//	}
-//	catch ( const XDBO2::CDBException& ex )
-//	{
-//		throw base::Exception(ADBERR_SEL_ETL_DIM, "Select ETL_DIM failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
-//	}
-//
-//	v_dim.swap(vec_dim);
-//}
-//
-//void CAnaDB2::SelectEtlVal(int val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception)
-//{
-//	XDBO2::CRecordset rs(&m_CDB);
-//	rs.EnableWarning(true);
-//
-//
-//	std::vector<OneEtlVal> v_val;
-//
-//	OneEtlVal val;
-//	dim.EtlValID = val_id;
-//
-//	try
-//	{
-//		std::string sql = "select ETLVAL_SEQ, ETLVAL_NAME, ETLVAL_DESC, ETLVAL_SRCNAME from ";
-//		sql += m_tabEtlVal + " where ETLVAL_ID = ? order by ETLVAL_SEQ asc";
-//
-//		rs.Prepare(sql.c_str(), CRecordset::forwardOnly);
-//		rs.Parameter(0) = val_id;
-//		rs.Execute();
-//
-//		while ( !rs.IsEOF() )
-//		{
-//			int col = 0;
-//
-//			val.EtlValSeq     = (int)rs[col++];
-//			val.EtlValName    = (const char*)rs[col++];
-//			val.EtlValDesc    = (const char*)rs[col++];
-//			val.EtlValSrcName = (const char*)rs[col++];
-//
-//			v_val.push_back(val);
-//		}
-//
-//	}
-//	catch ( const XDBO2::CDBException& ex )
-//	{
-//		throw base::Exception(ADBERR_SEL_ETL_VAL, "Select ETL_VAL failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
-//	}
-//
-//	v_val.swap(vec_val);
-//}
+void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
+{
+	// 获取指标规则数据
+	SelectKpiRule(info);
+
+	// 获取指标字段数据
+	SelectKpiColumn(info.KpiID, info.vecKpiDimCol, info.vecKpiValCol);
+}
+
+void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string str_etlruleid;
+	std::string str_alarmid;
+
+	int counter = 0;
+	try
+	{
+		std::string sql = "select DATA_SOURCE, ETLRULE_ID, KPI_CYCLE, ANALYSIS_ID, ALARM_ID, RESULT_TYPE, KPI_TABLENAME from ";
+		sql += m_tabKpiRule + " where KPI_ID = ?";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = info.KpiID;
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			++counter;
+
+			int index = 1;
+
+			info.DataSrcType   = (const char*)rs[index++];
+			str_etlruleid      = (const char*)rs[index++];
+			info.KpiCycle      = (const char*)rs[index++];
+			info.AnaRule.AnaID = (int)rs[index++];
+			str_analysisid     = (const char*)rs[index++];
+			str_alarmid        = (const char*)rs[index++];
+			info.ResultType    = (const char*)rs[index++];
+			info.TableName     = (const char*)rs[index++];
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_KPI_RULE, "[DB] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	if ( 0 == counter )
+	{
+		throw base::Exception(ADBERR_SEL_KPI_RULE, "[DB] Select %s failed! No record! [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[DB] Select %s successfully! [KPI_ID:%d] [ANALYSIS_ID:%d] [Record:%d]", m_tabKpiRule.c_str(), info.KpiID, info.AnaRule.AnaID, counter);
+
+	// 采集规则集
+	std::vector<int> vec_id;
+	base::PubStr::Str2IntVector(str_etlruleid, ",", vec_id);
+
+	std::vector<OneEtlRule>	vec_etl;
+	OneEtlRule one;
+	one.KpiID = info.KpiID;
+	size_t v_size = vec_id.size();
+	for ( size_t i = 0; i < v_size; ++i )
+	{
+		one.EtlRuleID = vec_id[i];
+
+		vec_etl.push_back(one);
+	}
+	vec_etl.swap(info.vecEtlRule);
+
+	// 告警规则集
+	base::PubStr::Str2IntVector(str_alarmid, ",", vec_id);
+
+	std::vector<AlarmRule>	vec_alarm;
+	AlarmRule alarm;
+	v_size = vec_id.size();
+	for ( size_t i = 0; i < v_size; ++i )
+	{
+		alarm.AlarmID = vec_id[i];
+
+		vec_alarm.push_back(alarm);
+	}
+	vec_alarm.swap(info.vecAlarm);
+}
+
+void CAnaDB2::SelectKpiColumn(int kpi_id, std::vector<KpiColumn>& vec_dim, std::vector<KpiColumn>& vec_val) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::vector<KpiColumn> v_dim;
+	std::vector<KpiColumn> v_val;
+
+	KpiColumn col;
+	col.KpiID = kpi_id;
+
+	try
+	{
+		std::string sql = "select COLUMN_TYPE, COLUMN_SEQ, DB_NAME, CN_NAME from ";
+		sql += m_tabKpiColumn + " where KPI_ID = ? order by COLUMN_TYPE, COLUMN_SEQ asc";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = kpi_id;
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			int index = 1;
+
+			col.ColType = (int)rs[index++];
+			col.ColSeq  = (int)rs[index++];
+			col.DBName  = (const char*)rs[index++];
+			col.CNName  = (const char*)rs[index++];
+
+			if ( 1 == col.ColSeq )		// 维度
+			{
+				v_dim.push_back(col);
+			}
+			else if ( 2 == col.ColSeq )		// 值
+			{
+				v_val.push_back(col);
+			}
+			else
+			{
+				throw base::Exception(ADBERR_SEL_KPI_COL, "[DB] Select %s failed! 无法识别的指标字段类型: %d [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), col.ColSeq, __FILE__, __LINE__);
+			}
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_KPI_COL, "[DB] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	if ( v_dim.empty() )
+	{
+		throw base::Exception(ADBERR_SEL_KPI_COL, "[DB] Select %s failed! 没有维度数据! [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), __FILE__, __LINE__);
+	}
+	if ( v_val.empty() )
+	{
+		throw base::Exception(ADBERR_SEL_KPI_COL, "[DB] Select %s failed! 没有值数据! [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[DB] Select %s successfully! [KPI_ID:%d] [ETLDIM size:%lu] [ETLVAL size:%lu]", m_tabKpiColumn.c_str(), kpi_id, v_dim.size(), v_val.size());
+
+	v_dim.swap(vec_dim);
+	v_val.swap(vec_val);
+}
+
+void CAnaDB2::SelectDimValue(int kpi_id, DimValDiffer& differ) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	DimVal d_v;
+	d_v.KpiID = kpi_id;
+
+	try
+	{
+		std::string sql = "select DB_NAME, DIM_VAL, VAL_CNAME from ";
+		sql += m_tabDimValue + " where KPI_ID = ?";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = kpi_id;
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			int index = 1;
+
+			d_v.DBName = (const char*)rs[index++];
+			d_v.Value  = (const char*)rs[index++];
+			d_v.CNName = (const char*)rs[index++];
+
+			differ.FetchDBDimVal(d_v);
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_DIM_VALUE, "[DB] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB] Select %s successfully! [KPI_ID:%d] [DIM_VAL size:%lu]", m_tabDimValue.c_str(), kpi_id, differ.GetDBDimValSize());
+}
+
+void CAnaDB2::InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	try
+	{
+		std::string sql = "insert into " + m_tabDimValue;
+		sql += "(KPI_ID, DB_NAME, DIM_VAL, VAL_CNAME) values(?, ?, ?, ?)";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		Begin();
+
+		const size_t V_SIZE = vec_dv.size();
+		for ( size_t i = 0; i < V_SIZE; ++i )
+		{
+			DimVal& dv = vec_dv[i];
+
+			rs.Parameter(1) = dv.KpiID;
+			rs.Parameter(2) = dv.DBName.c_str();
+			rs.Parameter(3) = dv.Value.c_str();
+			rs.Parameter(4) = dv.CNName.c_str();
+
+			rs.Execute();
+
+			// 每达到最大值提交一次
+			if ( i != 0 && (i % DB_MAX_COMMIT) == 0 )
+			{
+				m_pLog->Output("[DB] To commit [%s]: %lu", m_tabDimValue.c_str(), i);
+
+				Commit();
+			}
+		}
+
+		m_pLog->Output("[DB] Final commit [%s].", m_tabDimValue.c_str());
+		Commit();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_INS_DIM_VALUE, "[DB] Insert %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB] Insert [%s]: %lu", m_tabDimValue.c_str(), vec_dv.size());
+}
 

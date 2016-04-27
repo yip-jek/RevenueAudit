@@ -107,7 +107,7 @@ void Acquire::Run() throw(base::Exception)
 	task_info.KpiID     = m_nKpiID;
 	task_info.EtlRuleID = m_nEtlID;
 
-	m_pLog->Output("采集: 查询采集任务规则信息");
+	m_pLog->Output("采集: 查询采集任务规则信息 ...");
 
 	// 查询采集任务信息
 	m_pAcqDB2->SelectEtlTaskInfo(task_info);

@@ -108,8 +108,22 @@ void Analyse::Run() throw(base::Exception)
 
 	m_pCHive->Connect();
 
+	AnaTaskInfo task_info;
+	task_info.KpiID = m_nKpiID;
+
+	m_pLog->Output("分析：查询分析任务规则信息 ...");
+
+	m_pAnaDB2->SelectAnaTaskInfo(task_info);
+
+	m_pLog->Output("分析：检查分析任务规则信息 ...");
+
+	CheckAnaTaskInfo(task_info);
+
 	//m_pCHive->Test("audit_bdzt_20160329");
-	UpdateDimValue();
+
+	m_pLog->Output("分析：更新维度取值范围 ...");
+
+	UpdateDimValue(task_info.KpiID);
 
 	m_pCHive->Disconnect();
 
@@ -146,7 +160,35 @@ void Analyse::GetParameterTaskInfo() throw(base::Exception)
 	}
 }
 
-void Analyse::UpdateDimValue()
+void Analyse::FetchHiveSource(AnaTaskInfo& info) throw(base::Exception)
 {
+	m_pCHive->
+}
+
+void Analyse::UpdateDimValue(int kpi_id)
+{
+	m_pAnaDB2->SelectDimValue(kpi_id, m_DVDiffer);
+
+	m_pLog->Output("分析：从数据库中获取指标 (ID:%d) 的维度取值范围 size: %lu", kpi_id, m_DVDiffer.GetDBDimValSize());
+
+	std::vector<DimVal> vec_diff_dv;
+	m_DVDiffer.GetDimValDiff(vec_diff_dv);
+
+	m_pAnaDB2->InsertNewDimValue(vec_diff_dv);
+
+	m_pLog->Output("分析：更新维度取值范围成功! Update size: %lu", vec_diff_dv.size());
+}
+
+void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
+{
+	if ( info.vecKpiDimCol.empty() )
+	{
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标维度信息! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	if ( info.vecKpiValCol.empty() )
+	{
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标值信息! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
 }
 

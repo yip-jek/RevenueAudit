@@ -1,7 +1,8 @@
 #pragma once
 
+#include <map>
 #include "basedb2.h"
-//#include "acqtaskinfo.h"
+#include "dimvaldiffer.h"
 
 class CAnaDB2 : public base::BaseDB2
 {
@@ -9,11 +10,14 @@ public:
 	CAnaDB2(const std::string& db_name, const std::string& usr, const std::string& pw);
 	virtual ~CAnaDB2();
 
+	static const int DB_MAX_COMMIT = 10000;
+
 	enum ADB_ERROR
 	{
-		ADBERR_SEL_ETL_RULE = -3002001,			// 查询采集规则出错
-		ADBERR_SEL_ETL_DIM  = -3002002,			// 查询采集维度规则出错
-		ADBERR_SEL_ETL_VAL  = -3002003,			// 查询采集值规则出错
+		ADBERR_SEL_KPI_RULE  = -3002001,				// 查询指标规则出错
+		ADBERR_SEL_KPI_COL   = -3002002,				// 查询指标字段出错
+		ADBERR_SEL_DIM_VALUE = -3002003,				// 查询维度取值出错
+		ADBERR_INS_DIM_VALUE = -3002004,				// 插入维度取值出错
 	};
 
 public:
@@ -35,18 +39,21 @@ public:
 	// 设置告警规则表
 	void SetTabAlarmRule(const std::string& t_alarmrule);
 
-	//// 查询采集规则任务信息
-	//void SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception);
+	// 查询分析规则任务信息
+	void SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
+
+	// 查询维度取值表
+	void SelectDimValue(int kpi_id, DimValDiffer& differ) throw(base::Exception);
+
+	// 插入新的维度取值
+	void InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Exception);
 
 private:
-	//// 查询采集规则信息
-	//void SelectEtlRule(AcqTaskInfo& info) throw(base::Exception);
+	// 查询指标规则信息
+	void SelectKpiRule(AnaTaskInfo& info) throw(base::Exception);
 
-	//// 查询采集维度规则信息
-	//void SelectEtlDim(int dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception);
-
-	//// 查询采集值规则信息
-	//void SelectEtlVal(int val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception);
+	// 查询指标字段表
+	void SelectKpiColumn(int kpi_id, std::vector<KpiColumn>& vec_dim, std::vector<KpiColumn>& vec_val) throw(base::Exception);
 
 private:
 	// 数据库表名

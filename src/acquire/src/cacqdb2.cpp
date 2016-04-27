@@ -65,32 +65,43 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	std::string dim_id;
 	std::string val_id;
 
+	int counter = 0;
 	try
 	{
 		std::string sql = "select ETLRULE_TIME, ELTRULE_TYPE, ETLRULE_DATASOURCE, ETLRULE_TARGET, ETLDIM_ID, ETLVAL_ID from ";
 		sql += m_tabEtlRule + " where ETLRULE_ID = ? and KPI_ID = ?";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(0) = info.EtlRuleID;
-		rs.Parameter(1) = info.KpiID;
+		rs.Parameter(1) = info.EtlRuleID;
+		rs.Parameter(2) = info.KpiID;
 		rs.Execute();
 
 		while ( !rs.IsEOF() )
 		{
-			int col = 0;
+			++counter;
 
-			info.EtlRuleTime   = (const char*)rs[col++];
-			info.EtlRuleType   = (const char*)rs[col++];
-			data_source        = (const char*)rs[col++];
-			info.EtlRuleTarget = (const char*)rs[col++];
-			dim_id             = (const char*)rs[col++];
-			val_id             = (const char*)rs[col++];
+			int index = 1;
+
+			info.EtlRuleTime   = (const char*)rs[index++];
+			info.EtlRuleType   = (const char*)rs[index++];
+			data_source        = (const char*)rs[index++];
+			info.EtlRuleTarget = (const char*)rs[index++];
+			dim_id             = (const char*)rs[index++];
+			val_id             = (const char*)rs[index++];
+
+			rs.MoveNext();
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "Select ETL_RULE failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), ex.what(), __FILE__, __LINE__);
 	}
+
+	if ( 0 == counter )
+	{
+		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! No record! [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[DB] Select %s successfully! [KPI_ID:%d] [ETLRULE_ID:%d] [Record:%d]", m_tabEtlRule.c_str(), info.KpiID, info.EtlRuleID, counter);
 
 	boost::split(info.vecEtlRuleDataSrc, data_source, boost::is_any_of(","));
 	size_t v_size = info.vecEtlRuleDataSrc.size();
@@ -102,7 +113,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 
 		if ( ref_data_src.empty() )
 		{
-			throw base::Exception(ADBERR_SEL_ETL_RULE, "采集数据源(ETLRULE_DATASOURCE:%s)配置不正确: 第%lu个数据源为空值! [FILE:%s, LINE:%d]", data_source.c_str(), (i+1), __FILE__, __LINE__);
+			throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] 采集数据源(ETLRULE_DATASOURCE:%s)配置不正确: 第%lu个数据源为空值! [FILE:%s, LINE:%d]", data_source.c_str(), (i+1), __FILE__, __LINE__);
 		}
 	}
 
@@ -152,25 +163,33 @@ void CAcqDB2::SelectEtlDim(int dim_id, std::vector<OneEtlDim>& vec_dim) throw(ba
 		sql += m_tabEtlDim + " where ETLDIM_ID = ? order by ETLDIM_SEQ asc";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(0) = dim_id;
+		rs.Parameter(1) = dim_id;
 		rs.Execute();
 
 		while ( !rs.IsEOF() )
 		{
-			int col = 0;
+			int index = 1;
 
-			dim.EtlDimSeq     = (int)rs[col++];
-			dim.EtlDimName    = (const char*)rs[col++];
-			dim.EtlDimDesc    = (const char*)rs[col++];
-			dim.EtlDimSrcName = (const char*)rs[col++];
+			dim.EtlDimSeq     = (int)rs[index++];
+			dim.EtlDimName    = (const char*)rs[index++];
+			dim.EtlDimDesc    = (const char*)rs[index++];
+			dim.EtlDimSrcName = (const char*)rs[index++];
 
 			v_dim.push_back(dim);
+
+			rs.MoveNext();
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_DIM, "Select ETL_DIM failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), ex.what(), __FILE__, __LINE__);
 	}
+
+	if ( v_dim.empty() )
+	{
+		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB] Select %s failed! No record! [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[DB] Select %s successfully! [ETLDIM_ID:%d] [Record:%lu]", m_tabEtlDim.c_str(), dim_id, v_dim.size());
 
 	v_dim.swap(vec_dim);
 }
@@ -179,7 +198,6 @@ void CAcqDB2::SelectEtlVal(int val_id, std::vector<OneEtlVal>& vec_val) throw(ba
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
-
 
 	std::vector<OneEtlVal> v_val;
 
@@ -192,26 +210,34 @@ void CAcqDB2::SelectEtlVal(int val_id, std::vector<OneEtlVal>& vec_val) throw(ba
 		sql += m_tabEtlVal + " where ETLVAL_ID = ? order by ETLVAL_SEQ asc";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(0) = val_id;
+		rs.Parameter(1) = val_id;
 		rs.Execute();
 
 		while ( !rs.IsEOF() )
 		{
-			int col = 0;
+			int index = 1;
 
-			val.EtlValSeq     = (int)rs[col++];
-			val.EtlValName    = (const char*)rs[col++];
-			val.EtlValDesc    = (const char*)rs[col++];
-			val.EtlValSrcName = (const char*)rs[col++];
+			val.EtlValSeq     = (int)rs[index++];
+			val.EtlValName    = (const char*)rs[index++];
+			val.EtlValDesc    = (const char*)rs[index++];
+			val.EtlValSrcName = (const char*)rs[index++];
 
 			v_val.push_back(val);
+
+			rs.MoveNext();
 		}
 
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_VAL, "Select ETL_VAL failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), ex.what(), __FILE__, __LINE__);
 	}
+
+	if ( v_val.empty() )
+	{
+		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB] Select %s failed! No record! [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[DB] Select %s successfully! [ETLVAL_ID:%d] [Record:%lu]", m_tabEtlVal.c_str(), val_id, v_val.size());
 
 	v_val.swap(vec_val);
 }

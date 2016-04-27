@@ -1,6 +1,7 @@
 #pragma once
 
 #include "baseframeapp.h"
+#include "dimvaldiffer.h"
 
 class CAnaDB2;
 class CHiveThrift;
@@ -20,6 +21,7 @@ public:
 		ANAERR_ANAID_INVALID     = -3000003,			// 分析规则ID无效
 		ANAERR_HIVE_PORT_INVALID = -3000004,			// Hive服务器端口无效
 		ANAERR_INIT_FAILED       = -3000005,			// 初始化失败
+		ANAERR_TASKINFO_INVALID  = -3000006,			// 任务信息无效
 	};
 
 public:
@@ -39,8 +41,14 @@ private:
 	// 获取参数任务信息
 	void GetParameterTaskInfo() throw(base::Exception);
 
+	// 检查任务信息
+	void CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
+
+	// 获取Hive源数据
+	void FetchHiveSource(AnaTaskInfo& info) throw(base::Exception);
+
 	// 更新维度取值范围
-	void UpdateDimValue();
+	void UpdateDimValue(int kpi_id);
 
 private:
 	long		m_nKpiID;				// 指标ID
@@ -58,11 +66,15 @@ private:
 	CHiveThrift*    m_pCHive;			// Hive接口
 
 private:
-	std::string m_tabKpiRule;
-	std::string m_tabKpiColumn;
-	std::string m_tabDimValue;
-	std::string m_tabEtlRule;
-	std::string m_tabAnaRule;
-	std::string m_tabAlarmRule;
+	// 数据库表名
+	std::string	m_tabKpiRule;			// 指标规则表
+	std::string m_tabKpiColumn;			// 指标字段表
+	std::string m_tabDimValue;			// 维度取值表
+	std::string	m_tabEtlRule;			// 采集规则表
+	std::string m_tabAnaRule;			// 分析规则表
+	std::string m_tabAlarmRule;			// 告警规则表
+
+private:
+	DimValDiffer	m_DVDiffer;
 };
 
