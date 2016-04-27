@@ -1,4 +1,4 @@
-#include "cacqdb2.h"
+#include "canadb2.h"
 #include <boost/algorithm/string.hpp>
 #include "log.h"
 #include "pubstr.h"
@@ -49,6 +49,27 @@ void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 
 	// 获取指标字段数据
 	SelectKpiColumn(info.KpiID, info.vecKpiDimCol, info.vecKpiValCol);
+
+	// 获取采集规则数据
+	size_t v_size = info.vecEtlRule.size();
+	for ( size_t i = 0; i < v_size; ++i )
+	{
+		OneEtlRule& one = info.vecEtlRule[i];
+
+		SelectEtlRule(one);
+	}
+
+	// 获取分析规则数据
+	SelectAnaRule(info.AnaRule);
+
+	// 获取告警规则数据
+	v_size = info.vecAlarm.size();
+	for ( size_t i = 0; i < v_size; ++i )
+	{
+		AlarmRule& alarm = info.vecAlarm[i];
+
+		SelectAlarmRule(alarm);
+	}
 }
 
 void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
@@ -79,7 +100,6 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 			str_etlruleid      = (const char*)rs[index++];
 			info.KpiCycle      = (const char*)rs[index++];
 			info.AnaRule.AnaID = (int)rs[index++];
-			str_analysisid     = (const char*)rs[index++];
 			str_alarmid        = (const char*)rs[index++];
 			info.ResultType    = (const char*)rs[index++];
 			info.TableName     = (const char*)rs[index++];
@@ -275,5 +295,130 @@ void CAnaDB2::InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Excepti
 	}
 
 	m_pLog->Output("[DB] Insert [%s]: %lu", m_tabDimValue.c_str(), vec_dv.size());
+}
+
+void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	int counter = 0;
+	try
+	{
+		std::string sql = "select ETLRULE_TARGETPATCH from " + m_tabEtlRule;
+		sql += " where KPI_ID = ? and ETLRULE_ID = ?";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = one.KpiID;
+		rs.Parameter(2) = one.EtlRuleID;
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			++counter;
+
+			one.TargetPatch = (const char*)rs[1];
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	if ( 0 == counter )
+	{
+		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! No record [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB] Select %s: [KPI_ID:%d] [ETLRULE_ID:%d] [ETLRULE_TARGETPATCH:%s] [Record:%d]", m_tabEtlRule.c_str(), one.KpiID, one.EtlRuleID, one.TargetPatch.c_str(), counter);
+}
+
+void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	int counter = 0;
+	try
+	{
+		std::string sql = "select ANALYSIS_NAME, ANALYSIS_TYPE, ANALYSIS_EXPRESSION from ";
+		sql += m_tabAnaRule + " where ANALYSIS_ID = ?";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = ana.AnaID;
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			++counter;
+
+			int index = 1;
+
+			ana.AnaName    = (const char*)rs[index++];
+			ana.AnaType    = (const char*)rs[index++];
+			ana.AnaExpress = (const char*)rs[index++];
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_ANA_RULE, "[DB] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	if ( 0 == counter )
+	{
+		throw base::Exception(ADBERR_SEL_ANA_RULE, "[DB] Select %s failed! No record! [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB] Select %s: [ANALYSIS_ID:%d] [ANALYSIS_NAME:%s] [ANALYSIS_TYPE:%s] [ANALYSIS_EXPRESSION:%s] [Record:%d]", 
+		m_tabAnaRule.c_str(), ana.AnaID, ana.AnaName.c_str(), ana.AnaType.c_str(), ana.AnaExpress.c_str(), counter);
+}
+
+void CAnaDB2::SelectAlarmRule(AlarmRule& alarm) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	int counter = 0;
+	try
+	{
+		std::string sql = "select ALARM_NAME, ALARM_TYPE, ALARM_EXPRESSION, ALARM_EVENT, SEND_AMS, SEND_SMS from ";
+		sql += m_tabAlarmRule + " where ALARM_ID = ?";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = alarm.AlarmID;
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			++counter;
+
+			int index = 1;
+
+			alarm.AlarmName	   = (const char*)rs[index++];
+			alarm.AlarmType	   = (const char*)rs[index++];
+			alarm.AlarmExpress = (const char*)rs[index++];
+			alarm.AlarmEvent   = (const char*)rs[index++];
+			alarm.SendAms      = (const char*)rs[index++];
+			alarm.SendSms      = (const char*)rs[index++];
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_ALARM_RULE, "[DB] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmRule.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	if ( 0 == counter )
+	{
+		throw base::Exception(ADBERR_SEL_ALARM_RULE, "[DB] Select %s failed! No record! [FILE:%s, LINE:%d]", m_tabAlarmRule.c_str(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB] Select %s: [ALARM_ID:%d] [ALARM_NAME:%s] [ALARM_TYPE:%s] [Record:%d]", 
+		m_tabAlarmRule.c_str(), alarm.AlarmID, alarm.AlarmName.c_str(), alarm.AlarmType.c_str(), counter);
 }
 

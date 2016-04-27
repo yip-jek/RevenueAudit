@@ -119,7 +119,7 @@ void Analyse::Run() throw(base::Exception)
 
 	CheckAnaTaskInfo(task_info);
 
-	//m_pCHive->Test("audit_bdzt_20160329");
+	FetchHiveSource(task_info);
 
 	m_pLog->Output("分析：更新维度取值范围 ...");
 
@@ -162,7 +162,7 @@ void Analyse::GetParameterTaskInfo() throw(base::Exception)
 
 void Analyse::FetchHiveSource(AnaTaskInfo& info) throw(base::Exception)
 {
-	m_pCHive->
+	//m_pCHive->
 }
 
 void Analyse::UpdateDimValue(int kpi_id)

@@ -14,10 +14,13 @@ public:
 
 	enum ADB_ERROR
 	{
-		ADBERR_SEL_KPI_RULE  = -3002001,				// 查询指标规则出错
-		ADBERR_SEL_KPI_COL   = -3002002,				// 查询指标字段出错
-		ADBERR_SEL_DIM_VALUE = -3002003,				// 查询维度取值出错
-		ADBERR_INS_DIM_VALUE = -3002004,				// 插入维度取值出错
+		ADBERR_SEL_KPI_RULE   = -3002001,				// 查询指标规则出错
+		ADBERR_SEL_KPI_COL    = -3002002,				// 查询指标字段出错
+		ADBERR_SEL_DIM_VALUE  = -3002003,				// 查询维度取值出错
+		ADBERR_INS_DIM_VALUE  = -3002004,				// 插入维度取值出错
+		ADBERR_SEL_ETL_RULE   = -3002005,				// 查询采集规则出错
+		ADBERR_SEL_ANA_RULE   = -3002006,				// 查询分析规则出错
+		ADBERR_SEL_ALARM_RULE = -3002007,				// 查询告警规则出错
 	};
 
 public:
@@ -54,6 +57,15 @@ private:
 
 	// 查询指标字段表
 	void SelectKpiColumn(int kpi_id, std::vector<KpiColumn>& vec_dim, std::vector<KpiColumn>& vec_val) throw(base::Exception);
+
+	// 查询采集规则表
+	void SelectEtlRule(OneEtlRule& one) throw(base::Exception);
+
+	// 查询分析规则表
+	void SelectAnaRule(AnalyseRule& ana) throw(base::Exception);
+
+	// 查询告警规则表
+	void SelectAlarmRule(AlarmRule& alarm) throw(base::Exception);
 
 private:
 	// 数据库表名
