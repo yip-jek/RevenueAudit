@@ -40,11 +40,11 @@ void CHiveThrift::Test(const std::string& table) throw(base::Exception)
 	}
 	catch ( const apache::thrift::TApplicationException& ex )
 	{
-		throw base::Exception(HTERR_APP_EXCEPTION, "[TApplicationException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(HTERR_APP_EXCEPTION, "[HIVE] [TApplicationException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 	catch ( const apache::thrift::TException& ex )
 	{
-		throw base::Exception(HTERR_T_EXCEPTION, "[TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(HTERR_T_EXCEPTION, "[HIVE] [TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -60,11 +60,11 @@ void CHiveThrift::DropHiveTable(const std::string& tab_name)
 	}
 	catch ( const apache::thrift::TApplicationException& ex )
 	{
-		throw base::Exception(HTERR_APP_EXCEPTION, "[TApplicationException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(HTERR_APP_EXCEPTION, "[HIVE] [TApplicationException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 	catch ( const apache::thrift::TException& ex )
 	{
-		throw base::Exception(HTERR_T_EXCEPTION, "[TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(HTERR_T_EXCEPTION, "[HIVE] [TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -79,11 +79,11 @@ void CHiveThrift::ExecuteSQL(const std::string& hive_sql) throw(base::Exception)
 	}
 	catch ( const apache::thrift::TApplicationException& ex )
 	{
-		throw base::Exception(HTERR_APP_EXCEPTION, "[TApplicationException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(HTERR_APP_EXCEPTION, "[HIVE] [TApplicationException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 	catch ( const apache::thrift::TException& ex )
 	{
-		throw base::Exception(HTERR_T_EXCEPTION, "[TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(HTERR_T_EXCEPTION, "[HIVE] [TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 }
 

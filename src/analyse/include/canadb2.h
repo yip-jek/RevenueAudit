@@ -46,7 +46,7 @@ public:
 	void SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
 
 	// 查询维度取值表
-	void SelectDimValue(int kpi_id, DimValDiffer& differ) throw(base::Exception);
+	void SelectDimValue(const std::string& kpi_id, DimValDiffer& differ) throw(base::Exception);
 
 	// 插入新的维度取值
 	void InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Exception);
@@ -56,7 +56,7 @@ private:
 	void SelectKpiRule(AnaTaskInfo& info) throw(base::Exception);
 
 	// 查询指标字段表
-	void SelectKpiColumn(int kpi_id, std::vector<KpiColumn>& vec_dim, std::vector<KpiColumn>& vec_val) throw(base::Exception);
+	void SelectKpiColumn(const std::string& kpi_id, std::vector<KpiColumn>& vec_dim, std::vector<KpiColumn>& vec_val) throw(base::Exception);
 
 	// 查询采集规则表
 	void SelectEtlRule(OneEtlRule& one) throw(base::Exception);

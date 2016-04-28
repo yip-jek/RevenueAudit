@@ -7,7 +7,7 @@
 struct OneEtlRule
 {
 public:
-	OneEtlRule(): EtlRuleID(0), KpiID(0)
+	OneEtlRule()
 	{}
 
 	OneEtlRule(const OneEtlRule& one): EtlRuleID(one.EtlRuleID), KpiID(one.KpiID), TargetPatch(one.TargetPatch)
@@ -26,8 +26,8 @@ public:
 	}
 
 public:
-	int			EtlRuleID;			// 采集规则ID
-	int			KpiID;				// 指标ID
+	std::string	EtlRuleID;			// 采集规则ID
+	std::string	KpiID;				// 指标ID
 	std::string	TargetPatch;		// 采集目标数据表
 };
 
@@ -35,7 +35,7 @@ public:
 struct KpiColumn
 {
 public:
-	KpiColumn(): KpiID(0), ColType(0), ColSeq(0)
+	KpiColumn(): ColSeq(0)
 	{}
 
 	KpiColumn(const KpiColumn& col)
@@ -61,8 +61,8 @@ public:
 	}
 
 public:
-	int			KpiID;				// 指标ID
-	int			ColType;			// 字段类型
+	std::string	KpiID;				// 指标ID
+	std::string	ColType;			// 字段类型
 	int			ColSeq;				// 字段序号
 	std::string DBName;				// 字段名称
 	std::string CNName;				// 字段中文名称
@@ -72,7 +72,7 @@ public:
 struct DimVal
 {
 public:
-	DimVal(): KpiID(0)
+	DimVal()
 	{}
 
 	DimVal(const DimVal& d_v)
@@ -96,7 +96,7 @@ public:
 	}
 
 public:
-	int			KpiID;			// 指标ID
+	std::string	KpiID;			// 指标ID
 	std::string DBName;			// 维度字段名称
 	std::string Value;			// 维度取值
 	std::string CNName;			// 维度取值中文名称
@@ -106,7 +106,7 @@ public:
 struct AnalyseRule
 {
 public:
-	AnalyseRule(): AnaID(0)
+	AnalyseRule()
 	{}
 
 	AnalyseRule(const AnalyseRule& ana)
@@ -130,7 +130,7 @@ public:
 	}
 
 public:
-	int			AnaID;				// 分析规则ID
+	std::string	AnaID;				// 分析规则ID
 	std::string AnaName;			// 分析规则名称
 	std::string AnaType;			// 分析类型
 	std::string AnaExpress;			// 分析表达式
@@ -140,7 +140,7 @@ public:
 struct AlarmRule
 {
 public:
-	AlarmRule(): AlarmID(0)
+	AlarmRule()
 	{}
 
 	AlarmRule(const AlarmRule& alarm)
@@ -170,7 +170,7 @@ public:
 	}
 
 public:
-	int			AlarmID;				// 告警规则ID
+	std::string	AlarmID;				// 告警规则ID
 	std::string	AlarmName;				// 告警规则名称
 	std::string	AlarmType;				// 告警规则类型
 	std::string	AlarmExpress;			// 告警规则表达式
@@ -183,7 +183,7 @@ public:
 struct AnaTaskInfo
 {
 public:
-	AnaTaskInfo(): KpiID(0)
+	AnaTaskInfo()
 	{}
 
 	AnaTaskInfo(const AnaTaskInfo& info)
@@ -221,7 +221,7 @@ public:
 	}
 
 public:
-	int			KpiID;					// 指标ID
+	std::string	KpiID;					// 指标ID
 	std::string	DataSrcType;			// 数据源类型
 	std::string	KpiCycle;				// 指标周期
 	std::string	ResultType;				// 结果表类型

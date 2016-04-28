@@ -12,9 +12,7 @@ Acquire g_Acquire;
 
 
 Acquire::Acquire()
-:m_nKpiID(0)
-,m_nEtlID(0)
-,m_nHivePort(0)
+:m_nHivePort(0)
 ,m_pAcqDB2(NULL)
 ,m_pCHive(NULL)
 {
@@ -104,32 +102,32 @@ void Acquire::Run() throw(base::Exception)
 	m_pCHive->Connect();
 
 	AcqTaskInfo task_info;
-	task_info.KpiID     = m_nKpiID;
-	task_info.EtlRuleID = m_nEtlID;
+	task_info.KpiID     = m_sKpiID;
+	task_info.EtlRuleID = m_sEtlID;
 
-	m_pLog->Output("采集: 查询采集任务规则信息 ...");
+	m_pLog->Output("[Acquire] 查询采集任务规则信息 ...");
 
 	// 查询采集任务信息
 	m_pAcqDB2->SelectEtlTaskInfo(task_info);
 
-	m_pLog->Output("采集: 检查采集任务规则信息 ...");
+	m_pLog->Output("[Acquire] 检查采集任务规则信息 ...");
 
 	CheckTaskInfo(task_info);
 
-	m_pLog->Output("采集: 分析采集规则 ...");
+	m_pLog->Output("[Acquire] 分析采集规则 ...");
 
 	std::string hive_sql;
 	TaskInfo2HiveSql(task_info, hive_sql);
 
-	m_pLog->Output("采集: 尝试先清空采集目标数据 ...");
+	m_pLog->Output("[Acquire] 尝试先清空采集目标数据 ...");
 
 	m_pCHive->DropHiveTable(task_info.EtlRuleTarget);
 
-	m_pLog->Output("采集: 执行数据采集 ...");
+	m_pLog->Output("[Acquire] 执行数据采集 ...");
 
 	m_pCHive->ExecuteSQL(hive_sql);
 
-	m_pLog->Output("采集数据完成.");
+	m_pLog->Output("[Acquire] 采集数据完成.");
 
 	m_pCHive->Disconnect();
 
@@ -147,27 +145,33 @@ void Acquire::GetParameterTaskInfo() throw(base::Exception)
 		throw base::Exception(ACQERR_TASKINFO_ERROR, "参数任务信息异常(split size:%lu), 无法按格式拆分! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
 	}
 
-	try
+	m_sKpiID = vec_str[1];
+	boost::trim(m_sKpiID);
+	if ( m_sKpiID.empty() )
 	{
-		m_nKpiID = boost::lexical_cast<int>(vec_str[1]);
-	}
-	catch ( boost::bad_lexical_cast& e )
-	{
-		throw base::Exception(ACQERR_KPIID_INVALID, "指标ID [%s] 无效! %s [FILE:%s, LINE:%d]", vec_str[1].c_str(), e.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_KPIID_INVALID, "指标ID无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	try
+	m_sEtlID = vec_str[2];
+	boost::trim(m_sEtlID);
+	if ( m_sEtlID.empty() )
 	{
-		m_nEtlID = boost::lexical_cast<int>(vec_str[2]);
-	}
-	catch ( boost::bad_lexical_cast& e )
-	{
-		throw base::Exception(ACQERR_ETLID_INVALID, "采集规则ID [%s] 无效! %s [FILE:%s, LINE:%d]", vec_str[2].c_str(), e.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_ETLID_INVALID, "采集规则ID无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 }
 
 void Acquire::CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 {
+	if ( info.EtlRuleTime.empty() )
+	{
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集时间（周期）为空! 无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	if ( info.EtlRuleTarget.empty() )
+	{
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集目标表为空! 无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
 	size_t src_size = info.vecEtlRuleDataSrc.size();
 	size_t dim_size = info.vecEtlRuleDim.size();
 	size_t val_size = info.vecEtlRuleVal.size();

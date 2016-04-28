@@ -37,10 +37,10 @@ private:
 	void SelectEtlRule(AcqTaskInfo& info) throw(base::Exception);
 
 	// 查询采集维度规则信息
-	void SelectEtlDim(int dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception);
+	void SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception);
 
 	// 查询采集值规则信息
-	void SelectEtlVal(int val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception);
+	void SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception);
 
 private:
 	// 数据库表名

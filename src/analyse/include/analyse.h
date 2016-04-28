@@ -22,6 +22,7 @@ public:
 		ANAERR_HIVE_PORT_INVALID = -3000004,			// Hive服务器端口无效
 		ANAERR_INIT_FAILED       = -3000005,			// 初始化失败
 		ANAERR_TASKINFO_INVALID  = -3000006,			// 任务信息无效
+		ANAERR_ANA_RULE_FAILED   = -3000007,			// 解析分析规则失败
 	};
 
 public:
@@ -44,15 +45,27 @@ private:
 	// 检查任务信息
 	void CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
 
+	// 解析分析规则，生成Hive取数逻辑
+	void AnalyseRules(AnaTaskInfo& info, std::string& hive_sql) throw(base::Exception);
+
 	// 获取Hive源数据
-	void FetchHiveSource(AnaTaskInfo& info) throw(base::Exception);
+	void FetchHiveSource(const std::string& hive_sql) throw(base::Exception);
+
+	// 分析源数据，生成结果数据
+	void AnalyseSource();
+
+	// 结果数据入库 [DB2]
+	void StoreResult();
+
+	// 告警判断: 如果达到告警阀值，则生成告警
+	void AlarmJudgement();
 
 	// 更新维度取值范围
-	void UpdateDimValue(int kpi_id);
+	void UpdateDimValue(const std::string& kpi_id);
 
 private:
-	long		m_nKpiID;				// 指标ID
-	long		m_nAnaID;				// 分析规则ID
+	std::string	m_sKpiID;				// 指标ID
+	std::string	m_sAnaID;				// 分析规则ID
 
 	std::string m_sDBName;				// 数据库名称
 	std::string m_sUsrName;				// 用户名

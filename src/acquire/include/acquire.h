@@ -55,8 +55,8 @@ private:
 	std::string TransDataSrcDate(const std::string& time, const std::string& data_src) throw(base::Exception);
 
 private:
-	int			m_nKpiID;				// 指标ID
-	int			m_nEtlID;				// 采集规则ID
+	std::string	m_sKpiID;				// 指标ID
+	std::string	m_sEtlID;				// 采集规则ID
 
 	std::string m_sDBName;				// 数据库名称
 	std::string m_sUsrName;				// 用户名

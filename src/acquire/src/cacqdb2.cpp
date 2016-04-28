@@ -72,8 +72,8 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 		sql += m_tabEtlRule + " where ETLRULE_ID = ? and KPI_ID = ?";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(1) = info.EtlRuleID;
-		rs.Parameter(2) = info.KpiID;
+		rs.Parameter(1) = info.EtlRuleID.c_str();
+		rs.Parameter(2) = info.KpiID.c_str();
 		rs.Execute();
 
 		while ( !rs.IsEOF() )
@@ -101,7 +101,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	{
 		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! No record! [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB] Select %s successfully! [KPI_ID:%d] [ETLRULE_ID:%d] [Record:%d]", m_tabEtlRule.c_str(), info.KpiID, info.EtlRuleID, counter);
+	m_pLog->Output("[DB] Select %s successfully! [KPI_ID:%s] [ETLRULE_ID:%s] [Record:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), counter);
 
 	boost::split(info.vecEtlRuleDataSrc, data_source, boost::is_any_of(","));
 	size_t v_size = info.vecEtlRuleDataSrc.size();
@@ -118,8 +118,8 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	}
 
 	// 采集维度规则ID
-	std::vector<int> vec_id;
-	base::PubStr::Str2IntVector(dim_id, ",", vec_id);
+	std::vector<std::string> vec_id;
+	base::PubStr::Str2StrVector(dim_id, ",", vec_id);
 
 	std::vector<AcqEtlDim> vec_dim;
 	AcqEtlDim dim;
@@ -133,7 +133,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	vec_dim.swap(info.vecEtlRuleDim);
 
 	// 采集值规则ID
-	base::PubStr::Str2IntVector(val_id, ",", vec_id);
+	base::PubStr::Str2StrVector(val_id, ",", vec_id);
 
 	std::vector<AcqEtlVal> vec_val;
 	AcqEtlVal val;
@@ -147,7 +147,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	vec_val.swap(info.vecEtlRuleVal);
 }
 
-void CAcqDB2::SelectEtlDim(int dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception)
+void CAcqDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -163,7 +163,7 @@ void CAcqDB2::SelectEtlDim(int dim_id, std::vector<OneEtlDim>& vec_dim) throw(ba
 		sql += m_tabEtlDim + " where ETLDIM_ID = ? order by ETLDIM_SEQ asc";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(1) = dim_id;
+		rs.Parameter(1) = dim_id.c_str();
 		rs.Execute();
 
 		while ( !rs.IsEOF() )
@@ -189,12 +189,12 @@ void CAcqDB2::SelectEtlDim(int dim_id, std::vector<OneEtlDim>& vec_dim) throw(ba
 	{
 		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB] Select %s failed! No record! [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB] Select %s successfully! [ETLDIM_ID:%d] [Record:%lu]", m_tabEtlDim.c_str(), dim_id, v_dim.size());
+	m_pLog->Output("[DB] Select %s successfully! [ETLDIM_ID:%s] [Record:%lu]", m_tabEtlDim.c_str(), dim_id.c_str(), v_dim.size());
 
 	v_dim.swap(vec_dim);
 }
 
-void CAcqDB2::SelectEtlVal(int val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception)
+void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -210,7 +210,7 @@ void CAcqDB2::SelectEtlVal(int val_id, std::vector<OneEtlVal>& vec_val) throw(ba
 		sql += m_tabEtlVal + " where ETLVAL_ID = ? order by ETLVAL_SEQ asc";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(1) = val_id;
+		rs.Parameter(1) = val_id.c_str();
 		rs.Execute();
 
 		while ( !rs.IsEOF() )
@@ -237,7 +237,7 @@ void CAcqDB2::SelectEtlVal(int val_id, std::vector<OneEtlVal>& vec_val) throw(ba
 	{
 		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB] Select %s failed! No record! [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB] Select %s successfully! [ETLVAL_ID:%d] [Record:%lu]", m_tabEtlVal.c_str(), val_id, v_val.size());
+	m_pLog->Output("[DB] Select %s successfully! [ETLVAL_ID:%s] [Record:%lu]", m_tabEtlVal.c_str(), val_id.c_str(), v_val.size());
 
 	v_val.swap(vec_val);
 }

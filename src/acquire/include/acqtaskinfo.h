@@ -7,7 +7,7 @@
 struct OneEtlDim
 {
 public:
-	OneEtlDim(): EtlDimID(0), EtlDimSeq(0)
+	OneEtlDim(): EtlDimSeq(0)
 	{}
 
 	OneEtlDim(const OneEtlDim& dim)
@@ -35,16 +35,16 @@ public:
 
 	void Clear()
 	{
-		EtlDimID  = 0;
 		EtlDimSeq = 0;
 
+		EtlDimID.clear();
 		EtlDimName.clear();
 		EtlDimDesc.clear();
 		EtlDimSrcName.clear();
 	}
 
 public:
-	int			EtlDimID;					// 采集维度ID
+	std::string	EtlDimID;					// 采集维度ID
 	int			EtlDimSeq;					// 采集维度序号
 	std::string	EtlDimName;					// 采集维度名称
 	std::string	EtlDimDesc;					// 采集维度描述
@@ -55,7 +55,7 @@ public:
 struct AcqEtlDim
 {
 public:
-	AcqEtlDim(): acqEtlDimID(0)
+	AcqEtlDim()
 	{}
 
 	AcqEtlDim(const AcqEtlDim& dim): acqEtlDimID(dim.acqEtlDimID)
@@ -78,13 +78,13 @@ public:
 
 	void Clear()
 	{
-		acqEtlDimID = 0;
+		acqEtlDimID.clear();
 
 		std::vector<OneEtlDim>().swap(vecEtlDim);
 	}
 
 public:
-	int						acqEtlDimID;		// 采集维度ID
+	std::string				acqEtlDimID;		// 采集维度ID
 	std::vector<OneEtlDim>	vecEtlDim;			// 维度信息集
 };
 
@@ -92,7 +92,7 @@ public:
 struct OneEtlVal
 {
 public:
-	OneEtlVal(): EtlValID(0), EtlValSeq(0)
+	OneEtlVal(): EtlValSeq(0)
 	{}
 
 	OneEtlVal(const OneEtlVal& val)
@@ -120,16 +120,16 @@ public:
 
 	void Clear()
 	{
-		EtlValID  = 0;
 		EtlValSeq = 0;
 
+		EtlValID.clear();
 		EtlValName.clear();
 		EtlValDesc.clear();
 		EtlValSrcName.clear();
 	}
 
 public:
-	int			EtlValID;					// 采集值ID
+	std::string	EtlValID;					// 采集值ID
 	int			EtlValSeq;					// 采集值序号
 	std::string	EtlValName;					// 采集值名称
 	std::string	EtlValDesc;					// 采集值描述
@@ -140,7 +140,7 @@ public:
 struct AcqEtlVal
 {
 public:
-	AcqEtlVal(): acqEtlValID(0)
+	AcqEtlVal()
 	{}
 
 	AcqEtlVal(const AcqEtlVal& val): acqEtlValID(val.acqEtlValID)
@@ -163,13 +163,13 @@ public:
 
 	void Clear()
 	{
-		acqEtlValID = 0;
+		acqEtlValID.clear();
 
 		std::vector<OneEtlVal>().swap(vecEtlVal);
 	}
 
 public:
-	int						acqEtlValID;		// 采集值ID
+	std::string				acqEtlValID;		// 采集值ID
 	std::vector<OneEtlVal>	vecEtlVal;			// 值信息集
 };
 
@@ -177,7 +177,7 @@ public:
 struct AcqTaskInfo
 {
 public:
-	AcqTaskInfo(): EtlRuleID(0), KpiID(0)
+	AcqTaskInfo()
 	{}
 
 	AcqTaskInfo(const AcqTaskInfo& info)
@@ -213,9 +213,8 @@ public:
 
 	void Clear()
 	{
-		EtlRuleID = 0;
-		KpiID     = 0;
-
+		EtlRuleID.clear();
+		KpiID.clear();
 		EtlRuleTime.clear();
 		EtlRuleType.clear();
 		EtlRuleTarget.clear();
@@ -226,8 +225,8 @@ public:
 	}
 
 public:
-	int			EtlRuleID;					// 采集规则ID
-	int			KpiID;						// 指标ID
+	std::string	EtlRuleID;					// 采集规则ID
+	std::string	KpiID;						// 指标ID
 	std::string	EtlRuleTime;				// 采集时间(周期)
 	std::string	EtlRuleType;				// 采集处理方式
 	std::string	EtlRuleTarget;				// 采集目标数据存放
