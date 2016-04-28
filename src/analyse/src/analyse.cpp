@@ -239,6 +239,7 @@ void Analyse::AnalyseRules(AnaTaskInfo& info, std::string& hive_sql) throw(base:
 	}
 	else if ( "HIVE_SQL" == ana_type )		// 可执行的Hive SQL语句
 	{
+		hive_sql = info.AnaRule.AnaExpress;
 	}
 	else
 	{
