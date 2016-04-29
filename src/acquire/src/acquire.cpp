@@ -25,7 +25,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.00.0024 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.00.0029 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -98,7 +98,6 @@ void Acquire::Init() throw(base::Exception)
 void Acquire::Run() throw(base::Exception)
 {
 	m_pAcqDB2->Connect();
-
 	m_pCHive->Connect();
 
 	AcqTaskInfo task_info;
@@ -106,20 +105,18 @@ void Acquire::Run() throw(base::Exception)
 	task_info.EtlRuleID = m_sEtlID;
 
 	m_pLog->Output("[Acquire] 查询采集任务规则信息 ...");
-
-	// 查询采集任务信息
 	m_pAcqDB2->SelectEtlTaskInfo(task_info);
 
 	m_pLog->Output("[Acquire] 检查采集任务规则信息 ...");
-
 	CheckTaskInfo(task_info);
 
+	DoDataAcquisition();
 	m_pLog->Output("[Acquire] 分析采集规则 ...");
 
 	std::string hive_sql;
 	TaskInfo2HiveSql(task_info, hive_sql);
 
-	m_pLog->Output("[Acquire] 尝试先清空采集目标数据 ...");
+	m_pLog->Output("[Acquire] Re采集目标数据 ...");
 
 	m_pCHive->DropHiveTable(task_info.EtlRuleTarget);
 
@@ -130,7 +127,6 @@ void Acquire::Run() throw(base::Exception)
 	m_pLog->Output("[Acquire] 采集数据完成.");
 
 	m_pCHive->Disconnect();
-
 	m_pAcqDB2->Disconnect();
 }
 

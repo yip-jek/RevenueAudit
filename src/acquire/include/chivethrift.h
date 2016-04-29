@@ -14,15 +14,17 @@ public:
 
 	enum HT_ERROR
 	{
-		HTERR_APP_EXCEPTION     = -2001001,			// TApplicationException异常
-		HTERR_T_EXCEPTION       = -2001002,			// TException异常
+		HTERR_REBUILD_TABLE_FAILED  = -2001001,			// 重建Hive表失败
+		HTERR_EXECUTE_ACQSQL_FAILED = -2001002,			// 执行采集SQL失败
 	};
 
 public:
-	void Test(const std::string& table) throw(base::Exception);
+	//void Test(const std::string& table) throw(base::Exception);
 
-	void DropHiveTable(const std::string& tab_name);
+	// 重建表数据
+	void RebuildHiveTable(const std::string& tab_name, std::vector<std::string>& vec_field) throw(base::Exception);
 
-	void ExecuteSQL(const std::string& hive_sql) throw(base::Exception);
+	// 执行采集Hive SQL 
+	void ExecuteAcqSQL(const std::string& hive_sql) throw(base::Exception);
 };
 

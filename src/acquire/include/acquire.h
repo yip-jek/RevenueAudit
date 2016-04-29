@@ -45,6 +45,9 @@ private:
 	// 检查采集任务信息
 	void CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception);
 
+	// 进行数据采集
+	void DoDataAcquisition() throw(base::Exception);
+
 	// 分析采集任务规则，生成Hive_SQL
 	void TaskInfo2HiveSql(AcqTaskInfo& info, std::string& hive_sql);
 
