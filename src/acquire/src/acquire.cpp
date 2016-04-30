@@ -110,21 +110,7 @@ void Acquire::Run() throw(base::Exception)
 	m_pLog->Output("[Acquire] 检查采集任务规则信息 ...");
 	CheckTaskInfo(task_info);
 
-	DoDataAcquisition();
-	m_pLog->Output("[Acquire] 分析采集规则 ...");
-
-	std::string hive_sql;
-	TaskInfo2HiveSql(task_info, hive_sql);
-
-	m_pLog->Output("[Acquire] Re采集目标数据 ...");
-
-	m_pCHive->DropHiveTable(task_info.EtlRuleTarget);
-
-	m_pLog->Output("[Acquire] 执行数据采集 ...");
-
-	m_pCHive->ExecuteSQL(hive_sql);
-
-	m_pLog->Output("[Acquire] 采集数据完成.");
+	DoDataAcquisition(task_info);
 
 	m_pCHive->Disconnect();
 	m_pAcqDB2->Disconnect();
@@ -160,12 +146,12 @@ void Acquire::CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 {
 	if ( info.EtlRuleTime.empty() )
 	{
-		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集时间（周期）为空! 无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集时间（周期）为空! 无效! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( info.EtlRuleTarget.empty() )
 	{
-		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集目标表为空! 无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集目标表为空! 无效! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
 	size_t src_size = info.vecEtlRuleDataSrc.size();
@@ -174,12 +160,12 @@ void Acquire::CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 
 	if ( src_size != dim_size )
 	{
-		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集维度个数 (dim_size:%lu) 不一致! [FILE:%s, LINE:%d]", src_size, dim_size, __FILE__, __LINE__);
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集维度个数 (dim_size:%lu) 不一致! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", src_size, dim_size, info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( src_size != val_size )
 	{
-		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集值个数 (val_size:%lu) 不一致! [FILE:%s, LINE:%d]", src_size, val_size, __FILE__, __LINE__);
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集值个数 (val_size:%lu) 不一致! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", src_size, val_size, info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
 	for ( size_t i = 0; i < dim_size; ++i )
@@ -187,40 +173,107 @@ void Acquire::CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 		AcqEtlDim& dim = info.vecEtlRuleDim[i];
 		if ( dim.vecEtlDim.empty() )
 		{
-			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集维度为空! 无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集维度为空! 无效! [DIM_ID:%s] [FILE:%s, LINE:%d]", dim.acqEtlDimID.c_str(), __FILE__, __LINE__);
 		}
 
 		AcqEtlVal& val = info.vecEtlRuleVal[i];
 		if ( val.vecEtlVal.empty() )
 		{
-			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集值为空! 无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集值为空! 无效! [VAL_ID:%s] [FILE:%s, LINE:%d]", val.acqEtlValID.c_str(), __FILE__, __LINE__);
 		}
 	}
 }
 
-void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::string& hive_sql)
+void Acquire::DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 {
-	hive_sql = "create table " + info.EtlRuleTarget + " as ";
+	m_pLog->Output("[Acquire] 分析采集规则 ...");
 
-	std::string sub_sql;
+	std::vector<std::string> vec_fields;
+	TaskInfo2TargetFields(info, vec_fields);
+
+	std::vector<std::string> vec_hivesql;
+	TaskInfo2HiveSql(info, vec_hivesql);
+
+	m_pLog->Output("[Acquire] 重建采集目标表 ...");
+	m_pCHive->RebuildHiveTable(info.EtlRuleTarget, vec_fields);
+
+	m_pLog->Output("[Acquire] 执行数据采集 ...");
+	m_pCHive->ExecuteAcqSQL(vec_hivesql);
+
+	m_pLog->Output("[Acquire] 采集数据完成.");
+}
+
+void Acquire::TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>& vec_field) throw(base::Exception)
+{
+	if ( info.vecEtlRuleDim.empty() )
+	{
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "没有采集维度信息! 无法生成目标表字段! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
+
+	if ( info.vecEtlRuleVal.empty() )
+	{
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "没有采集值信息! 无法生成目标表字段! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
+
+	std::vector<std::string> v_field;
+
+	// 只取第一组采集维度，作为目标表字段的依据
+	AcqEtlDim& first_dim = info.vecEtlRuleDim[0];
+	size_t vec_size = first_dim.vecEtlDim.size();
+	for ( size_t i = 0; i < vec_size; ++i )
+	{
+		OneEtlDim& one = first_dim.vecEtlDim[i];
+
+		if ( one.EtlDimName.empty() )
+		{
+			throw base::Exception(ACQERR_TASKINFO_INVALID, "第 [%lu] 个采集维度名称没有设定! [DIM_ID:%s, DIM_SEQ:%d] [FILE:%s, LINE:%d]", (i+1), one.EtlDimID.c_str(), one.EtlDimSeq, __FILE__, __LINE__);
+		}
+
+		// 按顺序插入
+		v_field.push_back(one.EtlDimName);
+	}
+
+	// 只取第一组采集值，作为目标表字段的依据
+	AcqEtlVal& first_val = info.vecEtlRuleVal[0];
+	vec_size = first_val.vecEtlVal.size();
+	for ( size_t i = 0; i < vec_size; ++i )
+	{
+		OneEtlVal& one = first_val.vecEtlVal[i];
+
+		if ( one.EtlValName.empty() )
+		{
+			throw base::Exception(ACQERR_TASKINFO_INVALID, "第 [%lu] 个采集值名称没有设定! [VAL_ID:%s, VAL_SEQ:%d] [FILE:%s, LINE:%d]", (i+1), one.EtlValID.c_str(), one.EtlValSeq, __FILE__, __LINE__);
+		}
+
+		// 按顺序插入
+		v_field.push_back(one.EtlValName);
+	}
+
+	v_field.swap(vec_field);
+}
+
+void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql) throw(base::Exception)
+{
+	std::vector<std::string> v_sql;
+
+	std::string hive_sql;
+	std::string dim_sql;
 	const size_t SRC_SIZE = info.vecEtlRuleDataSrc.size();
 	for ( size_t i = 0; i < SRC_SIZE; ++i )
 	{
-		if ( i != 0 )
-		{
-			sub_sql = " union all select ";
-		}
-		else
-		{
-			sub_sql = " select ";
-		}
+		hive_sql = "insert into table " + info.EtlRuleTarget + " select ";
 
-		std::string dim_sql;
+		dim_sql.clear();
 		AcqEtlDim& dim = info.vecEtlRuleDim[i];
 		size_t v_size = dim.vecEtlDim.size();
 		for ( size_t j = 0; j < v_size; ++j )
 		{
 			OneEtlDim& one = dim.vecEtlDim[j];
+
+			if ( one.EtlDimSrcName.empty() )
+			{
+				throw base::Exception(ACQERR_TASKINFO_INVALID, "第 [%lu] 个采集维度的源字段名没有设定! [DIM_ID:%s, DIM_SEQ:%d] [FILE:%s, LINE:%d]", (j+1), one.EtlDimID.c_str(), one.EtlDimSeq, __FILE__, __LINE__);
+			}
 
 			if ( j != 0 )
 			{
@@ -228,26 +281,33 @@ void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::string& hive_sql)
 			}
 			else
 			{
-				dim_sql += one.EtlDimSrcName;
+				dim_sql = one.EtlDimSrcName;
 			}
 		}
 
-		sub_sql += dim_sql;
+		hive_sql += dim_sql;
 
 		AcqEtlVal& val = info.vecEtlRuleVal[i];
 		v_size = val.vecEtlVal.size();
-		for ( size_t k = 0; k < v_size; ++k )
+		for ( size_t j = 0; j < v_size; ++j )
 		{
-			OneEtlVal& one = val.vecEtlVal[k];
+			OneEtlVal& one = val.vecEtlVal[j];
 
-			sub_sql += ", " + TransEtlValSrcName(one.EtlValSrcName);
+			if ( one.EtlValSrcName.empty() )
+			{
+				throw base::Exception(ACQERR_TASKINFO_INVALID, "第 [%lu] 个采集值的源字段名没有设定! [VAL_ID:%s, VAL_SEQ:%d] [FILE:%s, LINE:%d]", (j+1), one.EtlValID.c_str(), one.EtlValSeq, __FILE__, __LINE__);
+			}
+
+			hive_sql += ", " + TransEtlValSrcName(one.EtlValSrcName);
 		}
 
-		sub_sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]);
-		sub_sql += " group by " + dim_sql;
+		hive_sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]);
+		hive_sql += " group by " + dim_sql;
 
-		hive_sql += sub_sql;
+		v_sql.push_back(hive_sql);
 	}
+
+	v_sql.swap(vec_sql);
 }
 
 std::string Acquire::TransEtlValSrcName(const std::string& val_srcname)
@@ -353,13 +413,16 @@ std::string Acquire::TransDataSrcDate(const std::string& time, const std::string
 	boost::trim(new_datasrc);
 	boost::to_upper(new_datasrc);
 
+	// 找到时间标记才进行替换
 	size_t t_pos = new_datasrc.find(be_replace);
-	if ( std::string::npos == t_pos )
+	if ( t_pos != std::string::npos )
 	{
-		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "在源数据表名 (%s) 中找不到时间标记: %s [FILE:%s, LINE:%d]", data_src.c_str(), be_replace.c_str(), __FILE__, __LINE__);
+		new_datasrc.replace(t_pos, be_replace.size(), confirm_time);
 	}
-
-	new_datasrc.replace(t_pos, be_replace.size(), confirm_time);
+	//if ( std::string::npos == t_pos )
+	//{
+	//	throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "在源数据表名 (%s) 中找不到时间标记: %s [FILE:%s, LINE:%d]", data_src.c_str(), be_replace.c_str(), __FILE__, __LINE__);
+	//}
 
 	return new_datasrc;
 }

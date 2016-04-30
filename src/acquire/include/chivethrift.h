@@ -25,6 +25,6 @@ public:
 	void RebuildHiveTable(const std::string& tab_name, std::vector<std::string>& vec_field) throw(base::Exception);
 
 	// 执行采集Hive SQL 
-	void ExecuteAcqSQL(const std::string& hive_sql) throw(base::Exception);
+	void ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exception);
 };
 

@@ -104,22 +104,32 @@ void CHiveThrift::RebuildHiveTable(const std::string& tab_name, std::vector<std:
 	}
 }
 
-void CHiveThrift::ExecuteSQL(const std::string& hive_sql) throw(base::Exception)
+void CHiveThrift::ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exception)
 {
+	if ( vec_sql.empty() )
+	{
+		throw base::Exception(HTERR_EXECUTE_ACQSQL_FAILED, "[HIVE] No sql to be executed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
 	try
 	{
-		m_pLog->Output("[HIVE] Query sql: %s", hive_sql.c_str());
+		const size_t VEC_SIZE = vec_sql.size();
+		for ( size_t i = 0; i < VEC_SIZE; ++i )
+		{
+			std::string& hive_sql = vec_sql[i];
 
-		m_spHiveClient->execute(hive_sql);
-		m_pLog->Output("[HIVE] Execute query sql OK.");
+			m_pLog->Output("[HIVE] Execute sql [%lu]: %s", (i+1), hive_sql.c_str());
+			m_spHiveClient->execute(hive_sql);
+			m_pLog->Output("[HIVE] Execute sql OK.");
+		}
 	}
 	catch ( const apache::thrift::TApplicationException& ex )
 	{
-		throw base::Exception(HTERR_APP_EXCEPTION, "[HIVE] [TApplicationException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(HTERR_EXECUTE_ACQSQL_FAILED, "[HIVE] Execute sql failed! [TApplicationException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 	catch ( const apache::thrift::TException& ex )
 	{
-		throw base::Exception(HTERR_T_EXCEPTION, "[HIVE] [TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(HTERR_EXECUTE_ACQSQL_FAILED, "[HIVE] Execute sql failed! [TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 }
 
