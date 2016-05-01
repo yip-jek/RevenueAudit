@@ -193,11 +193,15 @@ public:
 	,ResultType(info.ResultType)
 	,TableName(info.TableName)
 	,AnaRule(info.AnaRule)
+	,vecAlarm(info.vecAlarm)
+	,vecEtlRule(info.vecEtlRule)
+	,vecKpiDimCol(info.vecKpiDimCol)
+	,vecKpiValCol(info.vecKpiValCol)
 	{
-		this->vecAlarm.insert(this->vecAlarm.begin(), info.vecAlarm.begin(), info.vecAlarm.end());
-		this->vecEtlRule.insert(this->vecEtlRule.begin(), info.vecEtlRule.begin(), info.vecEtlRule.end());
-		this->vecKpiDimCol.insert(this->vecKpiDimCol.begin(), info.vecKpiDimCol.begin(), info.vecKpiDimCol.end());
-		this->vecKpiValCol.insert(this->vecKpiValCol.begin(), info.vecKpiValCol.begin(), info.vecKpiValCol.end());
+		//this->vecAlarm.insert(this->vecAlarm.begin(), info.vecAlarm.begin(), info.vecAlarm.end());
+		//this->vecEtlRule.insert(this->vecEtlRule.begin(), info.vecEtlRule.begin(), info.vecEtlRule.end());
+		//this->vecKpiDimCol.insert(this->vecKpiDimCol.begin(), info.vecKpiDimCol.begin(), info.vecKpiDimCol.end());
+		//this->vecKpiValCol.insert(this->vecKpiValCol.begin(), info.vecKpiValCol.begin(), info.vecKpiValCol.end());
 	}
 
 	const AnaTaskInfo& operator = (const AnaTaskInfo& info)
@@ -211,10 +215,14 @@ public:
 			this->TableName   = info.TableName ;
 			this->AnaRule     = info.AnaRule   ;
 
-			this->vecAlarm.insert(this->vecAlarm.begin(), info.vecAlarm.begin(), info.vecAlarm.end());
-			this->vecEtlRule.insert(this->vecEtlRule.begin(), info.vecEtlRule.begin(), info.vecEtlRule.end());
-			this->vecKpiDimCol.insert(this->vecKpiDimCol.begin(), info.vecKpiDimCol.begin(), info.vecKpiDimCol.end());
-			this->vecKpiValCol.insert(this->vecKpiValCol.begin(), info.vecKpiValCol.begin(), info.vecKpiValCol.end());
+			//this->vecAlarm.insert(this->vecAlarm.begin(), info.vecAlarm.begin(), info.vecAlarm.end());
+			//this->vecEtlRule.insert(this->vecEtlRule.begin(), info.vecEtlRule.begin(), info.vecEtlRule.end());
+			//this->vecKpiDimCol.insert(this->vecKpiDimCol.begin(), info.vecKpiDimCol.begin(), info.vecKpiDimCol.end());
+			//this->vecKpiValCol.insert(this->vecKpiValCol.begin(), info.vecKpiValCol.begin(), info.vecKpiValCol.end());
+			this->vecAlarm     = info.vecAlarm;
+			this->vecEtlRule   = info.vecEtlRule;
+			this->vecKpiDimCol = info.vecKpiDimCol;
+			this->vecKpiValCol = info.vecKpiValCol;
 		}
 
 		return *this;

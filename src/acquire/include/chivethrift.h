@@ -10,8 +10,7 @@ public:
 	virtual ~CHiveThrift();
 
 public:
-	static const int HIVE_MAX_FETCHN = 20000;
-
+	// 错误码（枚举）
 	enum HT_ERROR
 	{
 		HTERR_REBUILD_TABLE_FAILED  = -2001001,			// 重建Hive表失败
@@ -19,6 +18,7 @@ public:
 	};
 
 public:
+	//// 测试
 	//void Test(const std::string& table) throw(base::Exception);
 
 	// 重建表数据

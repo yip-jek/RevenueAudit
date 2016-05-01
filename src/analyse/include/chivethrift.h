@@ -10,19 +10,20 @@ public:
 	virtual ~CHiveThrift();
 
 public:
-	static const int HIVE_MAX_FETCHN = 20000;
+	// 一次获取的最大HIVE记录数
+	static const int HIVE_MAX_FETCHN = 40960;
 
+	// 错误码（枚举）
 	enum HT_ERROR
 	{
-		HTERR_APP_EXCEPTION     = -3001001,			// TApplicationException异常
-		HTERR_T_EXCEPTION       = -3001002,			// TException异常
+		HTERR_FETCH_SRCDATA_FAILED = -3001001,			// 获取源数据失败
 	};
 
 public:
-	void Test(const std::string& table) throw(base::Exception);
+	//// 测试
+	//void Test(const std::string& table) throw(base::Exception);
 
-	void DropHiveTable(const std::string& tab_name);
-
-	void ExecuteSQL(const std::string& hive_sql) throw(base::Exception);
+	// 获取源数据
+	void FetchSourceData(const std::string& hive_sql, const size_t& total_num_of_fields, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception);
 };
 

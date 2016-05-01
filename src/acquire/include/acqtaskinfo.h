@@ -58,9 +58,11 @@ public:
 	AcqEtlDim()
 	{}
 
-	AcqEtlDim(const AcqEtlDim& dim): acqEtlDimID(dim.acqEtlDimID)
+	AcqEtlDim(const AcqEtlDim& dim)
+	:acqEtlDimID(dim.acqEtlDimID)
+	,vecEtlDim(dim.vecEtlDim)
 	{
-		this->vecEtlDim.insert(this->vecEtlDim.begin(), dim.vecEtlDim.begin(), dim.vecEtlDim.end());
+		//this->vecEtlDim.insert(this->vecEtlDim.begin(), dim.vecEtlDim.begin(), dim.vecEtlDim.end());
 	}
 
 public:
@@ -70,7 +72,8 @@ public:
 		{
 			this->acqEtlDimID = dim.acqEtlDimID;
 
-			this->vecEtlDim.insert(this->vecEtlDim.begin(), dim.vecEtlDim.begin(), dim.vecEtlDim.end());
+			//this->vecEtlDim.insert(this->vecEtlDim.begin(), dim.vecEtlDim.begin(), dim.vecEtlDim.end());
+			this->vecEtlDim   = dim.vecEtlDim;
 		}
 
 		return *this;
@@ -143,9 +146,11 @@ public:
 	AcqEtlVal()
 	{}
 
-	AcqEtlVal(const AcqEtlVal& val): acqEtlValID(val.acqEtlValID)
+	AcqEtlVal(const AcqEtlVal& val)
+	:acqEtlValID(val.acqEtlValID)
+	,vecEtlVal(val.vecEtlVal)
 	{
-		this->vecEtlVal.insert(this->vecEtlVal.begin(), val.vecEtlVal.begin(), val.vecEtlVal.end());
+		//this->vecEtlVal.insert(this->vecEtlVal.begin(), val.vecEtlVal.begin(), val.vecEtlVal.end());
 	}
 
 public:
@@ -155,7 +160,8 @@ public:
 		{
 			this->acqEtlValID = val.acqEtlValID;
 
-			this->vecEtlVal.insert(this->vecEtlVal.begin(), val.vecEtlVal.begin(), val.vecEtlVal.end());
+			//this->vecEtlVal.insert(this->vecEtlVal.begin(), val.vecEtlVal.begin(), val.vecEtlVal.end());
+			this->vecEtlVal   = val.vecEtlVal;
 		}
 
 		return *this;
@@ -186,10 +192,13 @@ public:
 	,EtlRuleTime(info.EtlRuleTime)
 	,EtlRuleType(info.EtlRuleType)
 	,EtlRuleTarget(info.EtlRuleTarget)
+	,vecEtlRuleDataSrc(info.vecEtlRuleDataSrc)
+	,vecEtlRuleDim(info.vecEtlRuleDim)
+	,vecEtlRuleVal(info.vecEtlRuleVal)
 	{
-		this->vecEtlRuleDataSrc.insert(this->vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.end());
-		this->vecEtlRuleDim.insert(this->vecEtlRuleDim.begin(), info.vecEtlRuleDim.begin(), info.vecEtlRuleDim.end());
-		this->vecEtlRuleVal.insert(this->vecEtlRuleVal.begin(), info.vecEtlRuleVal.begin(), info.vecEtlRuleVal.end());
+		//this->vecEtlRuleDataSrc.insert(this->vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.end());
+		//this->vecEtlRuleDim.insert(this->vecEtlRuleDim.begin(), info.vecEtlRuleDim.begin(), info.vecEtlRuleDim.end());
+		//this->vecEtlRuleVal.insert(this->vecEtlRuleVal.begin(), info.vecEtlRuleVal.begin(), info.vecEtlRuleVal.end());
 	}
 
 public:
@@ -197,15 +206,18 @@ public:
 	{
 		if ( this != &info )
 		{
-			EtlRuleID     = info.EtlRuleID    ;
-			KpiID         = info.KpiID        ;
-			EtlRuleTime   = info.EtlRuleTime  ;
-			EtlRuleType   = info.EtlRuleType  ;
-			EtlRuleTarget = info.EtlRuleTarget;
+			this->EtlRuleID     = info.EtlRuleID    ;
+			this->KpiID         = info.KpiID        ;
+			this->EtlRuleTime   = info.EtlRuleTime  ;
+			this->EtlRuleType   = info.EtlRuleType  ;
+			this->EtlRuleTarget = info.EtlRuleTarget;
 
-			this->vecEtlRuleDataSrc.insert(this->vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.end());
-			this->vecEtlRuleDim.insert(this->vecEtlRuleDim.begin(), info.vecEtlRuleDim.begin(), info.vecEtlRuleDim.end());
-			this->vecEtlRuleVal.insert(this->vecEtlRuleVal.begin(), info.vecEtlRuleVal.begin(), info.vecEtlRuleVal.end());
+			//this->vecEtlRuleDataSrc.insert(this->vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.end());
+			//this->vecEtlRuleDim.insert(this->vecEtlRuleDim.begin(), info.vecEtlRuleDim.begin(), info.vecEtlRuleDim.end());
+			//this->vecEtlRuleVal.insert(this->vecEtlRuleVal.begin(), info.vecEtlRuleVal.begin(), info.vecEtlRuleVal.end());
+			this->vecEtlRuleDataSrc = info.vecEtlRuleDataSrc;
+			this->vecEtlRuleDim     = info.vecEtlRuleDim;
+			this->vecEtlRuleVal     = info.vecEtlRuleVal;
 		}
 
 		return *this;

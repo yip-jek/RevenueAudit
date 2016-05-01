@@ -57,8 +57,11 @@ private:
 	// 解析分析规则，生成Hive取数逻辑
 	void AnalyseRules(AnaTaskInfo& info, std::string& hive_sql) throw(base::Exception);
 
+	// 目标表的字段总数
+	size_t GetTotalNumOfTargetFields(AnaTaskInfo& info);
+
 	// 获取Hive源数据
-	void FetchHiveSource(const std::string& hive_sql) throw(base::Exception);
+	void FetchHiveSource(const std::string& hive_sql, const size_t& total_num_of_fields, std::vector<std::vector<std::string> >& vv_fields) throw(base::Exception);
 
 	// 分析源数据，生成结果数据
 	void AnalyseSource();

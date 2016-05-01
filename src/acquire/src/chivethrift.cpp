@@ -90,7 +90,7 @@ void CHiveThrift::RebuildHiveTable(const std::string& tab_name, std::vector<std:
 		m_spHiveClient->execute(sql_drop);
 		m_pLog->Output("[HIVE] Drop table OK.");
 
-		m_pLog->Output("[HIVE] Create table: %s", tab_name.c_str());
+		m_pLog->Output("[HIVE] Create table: %s (SQL: %s)", tab_name.c_str(), sql_create.c_str());
 		m_spHiveClient->execute(sql_create);
 		m_pLog->Output("[HIVE] Create table ---- done!");
 	}

@@ -143,8 +143,14 @@ void Analyse::GetParameterTaskInfo() throw(base::Exception)
 	}
 }
 
-void Analyse::FetchHiveSource(const std::string& hive_sql) throw(base::Exception)
+size_t Analyse::GetTotalNumOfTargetFields(AnaTaskInfo& info)
 {
+}
+
+void Analyse::FetchHiveSource(const std::string& hive_sql, const size_t& total_num_of_fields, std::vector<std::vector<std::string> >& vv_fields) throw(base::Exception)
+{
+	m_pCHive->FetchSourceData(hive_sql, total_num_of_fields, vv_fields);
+	m_pLog->Output("[Analyse] 获取源数据记录数：%llu", vv_fields.size());
 }
 
 void Analyse::UpdateDimValue(const std::string& kpi_id)
@@ -216,8 +222,11 @@ void Analyse::DoDataAnalyse(AnaTaskInfo& info) throw(base::Exception)
 	std::string hive_sql;
 	AnalyseRules(task_info, hive_sql);
 
+	size_t total_num_of_fields = GetTotalNumOfTargetFields(task_info);
+
 	m_pLog->Output("[Analyse] 获取Hive源数据 ...");
-	FetchHiveSource(hive_sql);
+	std::vector<std::vector<std::string> > vec_vec_fields;
+	FetchHiveSource(hive_sql, total_num_of_fields, vec_vec_fields);
 
 	m_pLog->Output("[Analyse] 分析源数据 ...");
 	AnalyseSource();
@@ -257,13 +266,16 @@ void Analyse::AnalyseRules(AnaTaskInfo& info, std::string& hive_sql) throw(base:
 
 void Analyse::AnalyseSource()
 {
+	m_pLog->Output("[Analyse] 分析完成!");
 }
 
 void Analyse::StoreResult()
 {
+	m_pLog->Output("[Analyse] 结果数据存储完毕!");
 }
 
 void Analyse::AlarmJudgement()
 {
+	m_pLog->Output("[Analyse] 无告警产生!");
 }
 
