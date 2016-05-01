@@ -42,5 +42,5 @@ protected:
 	XDBO2::CDatabase	m_CDB;
 };
 
-}
+}	// namespace base
 

@@ -94,14 +94,14 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( 0 == counter )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! No record! [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! No record! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB] Select %s successfully! [KPI_ID:%s] [ETLRULE_ID:%s] [Record:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), counter);
+	m_pLog->Output("[DB] Select %s successfully! (KPI_ID:%s, ETLRULE_ID:%s) [Record:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), counter);
 
 	boost::split(info.vecEtlRuleDataSrc, data_source, boost::is_any_of(","));
 	size_t v_size = info.vecEtlRuleDataSrc.size();
@@ -113,7 +113,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 
 		if ( ref_data_src.empty() )
 		{
-			throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] 采集数据源(ETLRULE_DATASOURCE:%s)配置不正确: 第%lu个数据源为空值! [FILE:%s, LINE:%d]", data_source.c_str(), (i+1), __FILE__, __LINE__);
+			throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] 采集数据源(ETLRULE_DATASOURCE:%s)配置不正确: 第%lu个数据源为空值! (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", data_source.c_str(), (i+1), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 		}
 	}
 
@@ -182,14 +182,14 @@ void CAcqDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB] Select %s failed! (ETLDIM_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( v_dim.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB] Select %s failed! No record! [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB] Select %s failed! No record! (ETLDIM_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB] Select %s successfully! [ETLDIM_ID:%s] [Record:%lu]", m_tabEtlDim.c_str(), dim_id.c_str(), v_dim.size());
+	m_pLog->Output("[DB] Select %s successfully! (ETLDIM_ID:%s) [Record:%lu]", m_tabEtlDim.c_str(), dim_id.c_str(), v_dim.size());
 
 	v_dim.swap(vec_dim);
 }
@@ -230,14 +230,14 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB] Select %s failed! (ETLVAL_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( v_val.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB] Select %s failed! No record! [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB] Select %s failed! No record! (ETLVAL_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB] Select %s successfully! [ETLVAL_ID:%s] [Record:%lu]", m_tabEtlVal.c_str(), val_id.c_str(), v_val.size());
+	m_pLog->Output("[DB] Select %s successfully! (ETLVAL_ID:%s) [Record:%lu]", m_tabEtlVal.c_str(), val_id.c_str(), v_val.size());
 
 	v_val.swap(vec_val);
 }

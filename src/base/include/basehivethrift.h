@@ -54,5 +54,5 @@ protected:
 	bool			m_bConnected;
 };
 
-}
+}	// namespace base
 

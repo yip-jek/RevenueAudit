@@ -42,6 +42,9 @@ public:
 	// 设置告警规则表
 	void SetTabAlarmRule(const std::string& t_alarmrule);
 
+	// 设置告警事件表
+	void SetTabAlarmEvent(const std::string& t_alarmevent);
+
 	// 查询分析规则任务信息
 	void SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
 
@@ -75,5 +78,6 @@ private:
 	std::string	m_tabEtlRule;			// 采集规则表
 	std::string m_tabAnaRule;			// 分析规则表
 	std::string m_tabAlarmRule;			// 告警规则表
+	std::string m_tabAlarmEvent;		// 告警事件表
 };
 

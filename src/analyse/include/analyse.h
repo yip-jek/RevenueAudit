@@ -42,8 +42,17 @@ private:
 	// 获取参数任务信息
 	void GetParameterTaskInfo() throw(base::Exception);
 
+	// 设置任务信息
+	void SetTaskInfo(AnaTaskInfo& info);
+
+	// 获取任务信息
+	void FetchTaskInfo(AnaTaskInfo& info) throw(base::Exception);
+
 	// 检查任务信息
 	void CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
+
+	// 进行数据分析
+	void DoDataAnalyse(AnaTaskInfo& info) throw(base::Exception);
 
 	// 解析分析规则，生成Hive取数逻辑
 	void AnalyseRules(AnaTaskInfo& info, std::string& hive_sql) throw(base::Exception);
@@ -86,6 +95,7 @@ private:
 	std::string	m_tabEtlRule;			// 采集规则表
 	std::string m_tabAnaRule;			// 分析规则表
 	std::string m_tabAlarmRule;			// 告警规则表
+	std::string m_tabAlarmEvent;		// 告警事件表
 
 private:
 	DimValDiffer	m_DVDiffer;

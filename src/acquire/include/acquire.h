@@ -42,6 +42,12 @@ private:
 	// 获取参数任务信息
 	void GetParameterTaskInfo() throw(base::Exception);
 
+	// 设置任务信息
+	void SetTaskInfo(AcqTaskInfo& info);
+
+	// 获取任务信息
+	void FetchTaskInfo(AcqTaskInfo& info) throw(base::Exception);
+
 	// 检查采集任务信息
 	void CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception);
 

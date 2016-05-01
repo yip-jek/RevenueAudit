@@ -4,6 +4,7 @@
 #include <boost/lexical_cast.hpp>
 #include "log.h"
 #include "pubtime.h"
+#include "autodisconnect.h"
 #include "cacqdb2.h"
 #include "chivethrift.h"
 
@@ -25,7 +26,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.00.0029 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.00.0032 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -97,23 +98,15 @@ void Acquire::Init() throw(base::Exception)
 
 void Acquire::Run() throw(base::Exception)
 {
-	m_pAcqDB2->Connect();
-	m_pCHive->Connect();
+	base::AutoDisconnect a_disconn(m_pAcqDB2, m_pCHive);
+	a_disconn.Connect();
 
 	AcqTaskInfo task_info;
-	task_info.KpiID     = m_sKpiID;
-	task_info.EtlRuleID = m_sEtlID;
+	SetTaskInfo(task_info);
 
-	m_pLog->Output("[Acquire] 查询采集任务规则信息 ...");
-	m_pAcqDB2->SelectEtlTaskInfo(task_info);
-
-	m_pLog->Output("[Acquire] 检查采集任务规则信息 ...");
-	CheckTaskInfo(task_info);
+	FetchTaskInfo(task_info);
 
 	DoDataAcquisition(task_info);
-
-	m_pCHive->Disconnect();
-	m_pAcqDB2->Disconnect();
 }
 
 void Acquire::GetParameterTaskInfo() throw(base::Exception)
@@ -140,6 +133,21 @@ void Acquire::GetParameterTaskInfo() throw(base::Exception)
 	{
 		throw base::Exception(ACQERR_ETLID_INVALID, "采集规则ID无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
+}
+
+void Acquire::SetTaskInfo(AcqTaskInfo& info)
+{
+	info.KpiID     = m_sKpiID;
+	info.EtlRuleID = m_sEtlID;
+}
+
+void Acquire::FetchTaskInfo(AcqTaskInfo& info) throw(base::Exception)
+{
+	m_pLog->Output("[Acquire] 查询采集任务规则信息 ...");
+	m_pAcqDB2->SelectEtlTaskInfo(info);
+
+	m_pLog->Output("[Acquire] 检查采集任务规则信息 ...");
+	CheckTaskInfo(info);
 }
 
 void Acquire::CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception)

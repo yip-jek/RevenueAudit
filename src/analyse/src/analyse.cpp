@@ -3,6 +3,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include "log.h"
+#include "autodisconnect.h"
 #include "canadb2.h"
 #include "chivethrift.h"
 
@@ -24,7 +25,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.00.0023 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.00.0033 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -43,6 +44,7 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_RULE");
 	m_cfg.RegisterItem("TABLE", "TAB_ANA_RULE");
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_RULE");
+	m_cfg.RegisterItem("TABLE", "TAB_ALARM_EVENT");
 
 	m_cfg.ReadConfig();
 
@@ -66,6 +68,7 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_tabEtlRule   = m_cfg.GetCfgValue("TABLE", "TAB_ETL_RULE");
 	m_tabAnaRule   = m_cfg.GetCfgValue("TABLE", "TAB_ANA_RULE");
 	m_tabAlarmRule = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_RULE");
+	m_tabAlarmEvent = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_EVENT");
 
 	m_pLog->Output("Load configuration OK.");
 }
@@ -87,6 +90,7 @@ void Analyse::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabEtlRule(m_tabEtlRule);
 	m_pAnaDB2->SetTabAnaRule(m_tabAnaRule);
 	m_pAnaDB2->SetTabAlarmRule(m_tabAlarmRule);
+	m_pAnaDB2->SetTabAlarmEvent(m_tabAlarmEvent);
 
 	m_pHiveThrift = new CHiveThrift(m_sHiveIP, m_nHivePort);
 	if ( NULL == m_pHiveThrift )
@@ -102,49 +106,15 @@ void Analyse::Init() throw(base::Exception)
 
 void Analyse::Run() throw(base::Exception)
 {
-	m_pAnaDB2->Connect();
-
-	m_pCHive->Connect();
+	base::AutoDisconnect a_disconn(m_pAnaDB2, m_pCHive);
+	a_disconn.Connect();
 
 	AnaTaskInfo task_info;
-	task_info.KpiID = m_sKpiID;
+	SetTaskInfo(task_info);
 
-	m_pLog->Output("[Analyse] 查询分析任务规则信息 ...");
+	FetchTaskInfo(task_info);
 
-	m_pAnaDB2->SelectAnaTaskInfo(task_info);
-
-	m_pLog->Output("[Analyse] 检查分析任务规则信息 ...");
-
-	CheckAnaTaskInfo(task_info);
-
-	m_pLog->Output("[Analyse] 解析分析规则，生成Hive取数逻辑 ...");
-
-	std::string hive_sql;
-	AnalyseRules(task_info, hive_sql);
-
-	m_pLog->Output("[Analyse] 获取Hive源数据 ...");
-
-	FetchHiveSource(hive_sql);
-
-	m_pLog->Output("[Analyse] 分析源数据 ...");
-
-	AnalyseSource();
-
-	m_pLog->Output("[Analyse] 生成结果数据 ...");
-
-	StoreResult();
-
-	m_pLog->Output("[Analyse] 告警判断 ...");
-
-	AlarmJudgement();
-
-	m_pLog->Output("[Analyse] 更新维度取值范围 ...");
-
-	UpdateDimValue(task_info.KpiID);
-
-	m_pCHive->Disconnect();
-
-	m_pAnaDB2->Disconnect();
+	DoDataAnalyse(task_info);
 }
 
 void Analyse::GetParameterTaskInfo() throw(base::Exception)
@@ -191,37 +161,75 @@ void Analyse::UpdateDimValue(const std::string& kpi_id)
 	m_pLog->Output("[Analyse] 更新维度取值范围成功! Update size: %lu", vec_diff_dv.size());
 }
 
+void Analyse::SetTaskInfo(AnaTaskInfo& info)
+{
+	info.KpiID         = m_sKpiID;
+	info.AnaRule.AnaID = m_sAnaID;
+}
+
+void Analyse::FetchTaskInfo(AnaTaskInfo& info) throw(base::Exception)
+{
+	m_pLog->Output("[Analyse] 查询分析任务规则信息 ...");
+	m_pAnaDB2->SelectAnaTaskInfo(info);
+
+	m_pLog->Output("[Analyse] 检查分析任务规则信息 ...");
+	CheckAnaTaskInfo(info);
+}
+
 void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 {
 	if ( info.ResultType.empty() )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析结果表类型为空! 无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析结果表类型为空! 无效! [KPI_ID:%s] [ANA_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( info.TableName.empty() )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析结果表为空! 无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析结果表为空! 无效! [KPI_ID:%s] [ANA_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( info.AnaRule.AnaType.empty() )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析规则类型为空! 无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析规则类型为空! 无效! [KPI_ID:%s] [ANA_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( info.AnaRule.AnaExpress.empty() )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析规则表达式为空! 无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析规则表达式为空! 无效! [KPI_ID:%s] [ANA_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( info.vecKpiDimCol.empty() )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标维度信息! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标维度信息! [KPI_ID:%s] [ANA_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( info.vecKpiValCol.empty() )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标值信息! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标值信息! [KPI_ID:%s] [ANA_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
+}
+
+void Analyse::DoDataAnalyse(AnaTaskInfo& info) throw(base::Exception)
+{
+	m_pLog->Output("[Analyse] 解析分析规则 ...");
+
+	std::string hive_sql;
+	AnalyseRules(task_info, hive_sql);
+
+	m_pLog->Output("[Analyse] 获取Hive源数据 ...");
+	FetchHiveSource(hive_sql);
+
+	m_pLog->Output("[Analyse] 分析源数据 ...");
+	AnalyseSource();
+
+	m_pLog->Output("[Analyse] 生成结果数据 ...");
+	StoreResult();
+
+	m_pLog->Output("[Analyse] 告警判断 ...");
+	AlarmJudgement();
+
+	m_pLog->Output("[Analyse] 更新维度取值范围 ...");
+	UpdateDimValue(task_info.KpiID);
 }
 
 void Analyse::AnalyseRules(AnaTaskInfo& info, std::string& hive_sql) throw(base::Exception)
@@ -243,7 +251,7 @@ void Analyse::AnalyseRules(AnaTaskInfo& info, std::string& hive_sql) throw(base:
 	}
 	else
 	{
-		throw base::Exception(ANAERR_ANA_RULE_FAILED, "无法识别的分析类型: %s [FILE:%s, LINE:%d]", ana_type.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ANA_RULE_FAILED, "无法识别的分析类型: %s [KPI_ID:%s] [ANA_ID:%s] [FILE:%s, LINE:%d]", ana_type.c_str(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 }
 
