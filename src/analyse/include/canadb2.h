@@ -70,6 +70,12 @@ private:
 	// 查询采集规则表
 	void SelectEtlRule(OneEtlRule& one) throw(base::Exception);
 
+	// 查询采集维度规则表
+	void SelectEtlDim(OneEtlDim& dim) throw(base::Exception);
+
+	// 查询采集值规则表
+	void SelectEtlVal(OneEtlVal& val) throw(base::Exception);
+
 	// 查询分析规则表
 	void SelectAnaRule(AnalyseRule& ana) throw(base::Exception);
 

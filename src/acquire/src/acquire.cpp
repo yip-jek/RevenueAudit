@@ -26,7 +26,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.00.0034 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.01.0034 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -117,7 +117,7 @@ void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 
 	if ( vec_str.size() < 3 )
 	{
-		throw base::Exception(ACQERR_TASKINFO_ERROR, "参数任务信息异常(split size:%lu), 无法按格式拆分! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_TASKINFO_ERROR, "任务参数信息异常(split size:%lu), 无法按格式拆分! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
 	}
 
 	m_sKpiID = vec_str[1];
@@ -133,6 +133,8 @@ void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 	{
 		throw base::Exception(ACQERR_ETLID_INVALID, "采集规则ID无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
+
+	m_pLog->Output("[Acquire] 任务参数信息：指标ID [KPI_ID:%s], 采集规则ID [ETL_ID:%s]", m_sKpiID.c_str(), m_sEtlID.c_str());
 }
 
 void Acquire::SetTaskInfo(AcqTaskInfo& info)

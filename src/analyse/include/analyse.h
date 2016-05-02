@@ -17,15 +17,18 @@ public:
 public:
 	enum ANA_ERROR
 	{
-		ANAERR_TASKINFO_ERROR      = -3000001,			// 任务信息异常
-		ANAERR_KPIID_INVALID       = -3000002,			// 指标ID无效
-		ANAERR_ANAID_INVALID       = -3000003,			// 分析规则ID无效
-		ANAERR_HIVE_PORT_INVALID   = -3000004,			// Hive服务器端口无效
-		ANAERR_INIT_FAILED         = -3000005,			// 初始化失败
-		ANAERR_TASKINFO_INVALID    = -3000006,			// 任务信息无效
-		ANAERR_ANA_RULE_FAILED     = -3000007,			// 解析分析规则失败
-		ANAERR_GENERATE_TAB_FAILED = -3000008,			// 生成目标表名失败
-		ANAERR_GET_DBINFO_FAILED   = -3000009,			// 获取数据库信息失败
+		ANAERR_TASKINFO_ERROR         = -3000001,			// 任务信息异常
+		ANAERR_KPIID_INVALID          = -3000002,			// 指标ID无效
+		ANAERR_ANAID_INVALID          = -3000003,			// 分析规则ID无效
+		ANAERR_HIVE_PORT_INVALID      = -3000004,			// Hive服务器端口无效
+		ANAERR_INIT_FAILED            = -3000005,			// 初始化失败
+		ANAERR_TASKINFO_INVALID       = -3000006,			// 任务信息无效
+		ANAERR_ANA_RULE_FAILED        = -3000007,			// 解析分析规则失败
+		ANAERR_GENERATE_TAB_FAILED    = -3000008,			// 生成目标表名失败
+		ANAERR_GET_DBINFO_FAILED      = -3000009,			// 获取数据库信息失败
+		ANAERR_GET_SUMMARY_FAILED     = -3000010,			// 生成汇总对比HIVE SQL失败
+		ANAERR_GET_DETAIL_FAILED      = -3000011,			// 生成明细对比HIVE SQL失败
+		ANAERR_DETERMINE_GROUP_FAILED = -3000012,			// 确定数据组失败
 	};
 
 public:
@@ -60,11 +63,14 @@ private:
 	// 解析分析规则，生成Hive取数逻辑
 	void AnalyseRules(AnaTaskInfo& t_info, std::string& hive_sql, size_t& fields_num, AnaDBInfo& db_info) throw(base::Exception);
 
-	// 生成汇总类型的Hive SQL语句
-	std::string GetSummaryCompareHiveSQL(AnaTaskInfo& t_info);
+	// 生成汇总对比类型的Hive SQL语句
+	std::string GetSummaryCompareHiveSQL(AnaTaskInfo& t_info) throw(base::Exception);
 
 	// 生成明细对比类型的Hive SQL语句
-	std::string GetDetailCompareHiveSQL(AnaTaskInfo& t_info);
+	std::string GetDetailCompareHiveSQL(AnaTaskInfo& t_info) throw(base::Exception);
+
+	// 确定所属数据组
+	void DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception);
 
 	// 按类型生成目标表名称
 	std::string GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception);

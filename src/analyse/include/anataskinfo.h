@@ -3,6 +3,70 @@
 #include <string>
 #include <vector>
 
+// 单个采集维度信息
+struct OneEtlDim
+{
+public:
+	OneEtlDim(): EtlDimSeq(0)
+	{}
+
+	OneEtlDim(const OneEtlDim& dim)
+	:EtlDimID(dim.EtlDimID)
+	,EtlDimSeq(dim.EtlDimSeq)
+	,EtlDimName(dim.EtlDimName)
+	{}
+
+public:
+	const OneEtlDim& operator = (const OneEtlDim& dim)
+	{
+		if ( this != &dim )
+		{
+			this->EtlDimID      = dim.EtlDimID;
+			this->EtlDimSeq     = dim.EtlDimSeq;
+			this->EtlDimName    = dim.EtlDimName;
+		}
+
+		return *this;
+	}
+
+public:
+	std::string	EtlDimID;					// 采集维度ID
+	int			EtlDimSeq;					// 采集维度序号
+	std::string	EtlDimName;					// 采集维度名称
+};
+
+// 单个采集值信息
+struct OneEtlVal
+{
+public:
+	OneEtlVal(): EtlValSeq(0)
+	{}
+
+	OneEtlVal(const OneEtlVal& val)
+	:EtlValID(val.EtlValID)
+	,EtlValSeq(val.EtlValSeq)
+	,EtlValName(val.EtlValName)
+	{}
+
+public:
+	const OneEtlVal& operator = (const OneEtlVal& val)
+	{
+		if ( this != &val )
+		{
+			this->EtlValID      = val.EtlValID;
+			this->EtlValSeq     = val.EtlValSeq;
+			this->EtlValName    = val.EtlValName;
+		}
+
+		return *this;
+	}
+
+public:
+	std::string	EtlValID;					// 采集值ID
+	int			EtlValSeq;					// 采集值序号
+	std::string	EtlValName;					// 采集值名称
+};
+
 // 单个采集规则
 struct OneEtlRule
 {
@@ -29,6 +93,9 @@ public:
 	std::string	EtlRuleID;			// 采集规则ID
 	std::string	KpiID;				// 指标ID
 	std::string	TargetPatch;		// 采集目标数据表
+
+	OneEtlDim	EtlDim;				// 采集维度信息
+	OneEtlVal	EtlVal;				// 采集值信息
 };
 
 // 指标字段

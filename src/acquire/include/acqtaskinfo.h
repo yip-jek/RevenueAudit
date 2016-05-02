@@ -91,7 +91,7 @@ public:
 	std::vector<OneEtlDim>	vecEtlDim;			// 维度信息集
 };
 
-// 采集值信息
+// 单个采集值信息
 struct OneEtlVal
 {
 public:

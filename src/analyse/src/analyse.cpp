@@ -5,6 +5,7 @@
 #include "log.h"
 #include "simpletime.h"
 #include "autodisconnect.h"
+#include "pubstr.h"
 #include "canadb2.h"
 #include "chivethrift.h"
 #include "anadbinfo.h"
@@ -27,7 +28,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.00.0035 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.01.0035 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -127,7 +128,7 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 
 	if ( vec_str.size() < 3 )
 	{
-		throw base::Exception(ANAERR_TASKINFO_ERROR, "参数任务信息异常(split size:%lu), 无法按格式拆分! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_ERROR, "任务参数信息异常(split size:%lu), 无法按格式拆分! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
 	}
 
 	m_sKpiID = vec_str[1];
@@ -143,6 +144,8 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 	{
 		throw base::Exception(ANAERR_ANAID_INVALID, "分析规则ID无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
+
+	m_pLog->Output("[Analyse] 任务参数信息：指标ID [KPI_ID:%s], 分析规则ID [ANA_ID:%s]", m_sKpiID.c_str(), m_sAnaID.c_str());
 }
 
 size_t Analyse::GetTotalNumOfTargetFields(AnaTaskInfo& info)
@@ -358,23 +361,30 @@ void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::string& hive_sql, size_t& f
 	boost::trim(ana_type);
 	boost::to_upper(ana_type);
 
-	// 分析类型
+	// 分析规则类型
 	if ( "SUMMARY" == ana_type )	// 汇总对比
 	{
+		m_pLog->Output("[Analyse] 分析规则类型：汇总对比 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
+		m_pLog->Output("[Analyse] 分析规则表达式：%s", t_info.AnaRule.AnaExpress.c_str());
+
 		hive_sql = GetSummaryCompareHiveSQL(t_info);
 	}
 	else if ( "DETAIL" == ana_type )	// 明细对比
 	{
+		m_pLog->Output("[Analyse] 分析规则类型：明细对比 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
+		m_pLog->Output("[Analyse] 分析规则表达式：%s", t_info.AnaRule.AnaExpress.c_str());
+
 		hive_sql = GetDetailCompareHiveSQL(t_info);
 	}
 	else if ( "HIVE_SQL" == ana_type )		// 可执行的Hive SQL语句
 	{
+		m_pLog->Output("[Analyse] 分析规则类型：可执行的HIVE SQL语句 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
 		// 分析表达式，即是可执行的Hive SQL语句
 		hive_sql = t_info.AnaRule.AnaExpress;
 	}
 	else
 	{
-		throw base::Exception(ANAERR_ANA_RULE_FAILED, "无法识别的分析类型: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_type.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ANA_RULE_FAILED, "无法识别的分析规则类型: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_type.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 统计从源数据插入到目标表的字段总数
@@ -384,14 +394,109 @@ void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::string& hive_sql, size_t& f
 	GetAnaDBInfo(t_info, db_info);
 }
 
-std::string Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info)
+// 暂时只支持两组数据的汇总对比
+std::string Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info) throw(base::Exception)
 {
+	if ( t_info.vecEtlRule.size() < 2 )
+	{
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "只有 %lu 份采集结果数据，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.vecEtlRule.size(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
+
+	// 格式样例: A-B, diff1:diff2
+	std::string& ana_exp = t_info.AnaRule.AnaExpress;
+
+	std::vector<std::string> vec_str;
+	base::PubStr::Str2StrVector(ana_exp, ",", vec_str);
+	if ( vec_str.size() != 2 )
+	{
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
+
+	int first_index  = -1;
+	int second_index = -1;
+	DetermineDataGroup(ana_exp, first_index, second_index);
+
+	// Todo ...
+
 	return std::string();
 }
 
-std::string Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info)
+// 暂时只支持两组数据的明细对比
+std::string Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info) throw(base::Exception)
 {
+	if ( t_info.vecEtlRule.size() < 2 )
+	{
+		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "只有 %lu 份采集结果数据，无法进行明细数据对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.vecEtlRule.size(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
+
+	// 格式样例: A-B
+	// 暂时只支持这一种表达式："A-B"
+	std::string& ana_exp = t_info.AnaRule.AnaExpress;
+
+	int first_index  = -1;
+	int second_index = -1;
+	DetermineDataGroup(ana_exp, first_index, second_index);
+
+	// Todo ...
+
 	return std::string();
+}
+
+void Analyse::DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception)
+{
+	std::vector<std::string> vec_str;
+	base::PubStr::Str2StrVector(exp, "-", vec_str);
+	if ( vec_str.size() != 2 )
+	{
+		throw base::Exception(ANAERR_DETERMINE_GROUP_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] [FILE:%s, LINE:%d]", exp.c_str(), __FILE__, __LINE__);
+	}
+
+	std::string& first_group  = vec_str[0];
+	std::string& second_group = vec_str[1];
+	boost::to_upper(first_group);
+	boost::to_upper(second_group);
+
+	int first_index  = -1;
+	int second_index = -1;
+
+	// 确定数据组
+	if ( first_group.size() != 1 )
+	{
+		throw base::Exception(ANAERR_DETERMINE_GROUP_FAILED, "分析规则表达式解析失败：不支持的数据组 [%s] [FILE:%s, LINE:%d]", first_group.c_str(), __FILE__, __LINE__);
+	}
+	else
+	{
+		first_index = first_group[0] - 'A';
+
+		// 是否为无效组
+		if ( first_index < 0 || first_index > 1 )
+		{
+			throw base::Exception(ANAERR_DETERMINE_GROUP_FAILED, "分析规则表达式解析失败：不支持的数据组 [%s] [FILE:%s, LINE:%d]", first_group.c_str(), __FILE__, __LINE__);
+		}
+	}
+
+	if ( second_group.size() != 1 )
+	{
+		throw base::Exception(ANAERR_DETERMINE_GROUP_FAILED, "分析规则表达式解析失败：不支持的数据组 [%s] [FILE:%s, LINE:%d]", second_group.c_str(), __FILE__, __LINE__);
+	}
+	else
+	{
+		second_index = second_group[0] - 'A';
+
+		// 是否为无效组
+		if ( second_index < 0 || second_index > 1 )
+		{
+			throw base::Exception(ANAERR_DETERMINE_GROUP_FAILED, "分析规则表达式解析失败：不支持的数据组 [%s] [FILE:%s, LINE:%d]", second_group.c_str(), __FILE__, __LINE__);
+		}
+	}
+
+	if ( first_index == second_index )
+	{
+		throw base::Exception(ANAERR_DETERMINE_GROUP_FAILED, "分析规则表达式解析失败：数据组 [%s] 重复! [FILE:%s, LINE:%d]", first_group.c_str(), __FILE__, __LINE__);
+	}
+
+	first  = first_index;
+	second = second_index;
 }
 
 std::string Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception)
