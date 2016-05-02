@@ -40,7 +40,7 @@ public:
 
 private:
 	// 获取参数任务信息
-	void GetParameterTaskInfo() throw(base::Exception);
+	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
 
 	// 设置任务信息
 	void SetTaskInfo(AcqTaskInfo& info);

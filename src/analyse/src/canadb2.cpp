@@ -2,6 +2,9 @@
 #include <boost/algorithm/string.hpp>
 #include "log.h"
 #include "pubstr.h"
+#include "simpletime.h"
+#include "anadbinfo.h"
+
 
 CAnaDB2::CAnaDB2(const std::string& db_name, const std::string& usr, const std::string& pw)
 :BaseDB2(db_name, usr, pw)
@@ -302,6 +305,85 @@ void CAnaDB2::InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Excepti
 	}
 
 	m_pLog->Output("[DB] Insert [%s]: %lu", m_tabDimValue.c_str(), vec_dv.size());
+}
+
+void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	if ( db_info.db2_sql.empty() )
+	{
+		throw base::Exception(ADBERR_INS_RESULT_DATA, "[DB] Insert result data to [%s] failed: no sql to be executed! [FILE:%s, LINE:%d]", db_info.target_table.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[DB] Insert result data to [%s], SQL: %s", db_info.target_table.c_str(), db_info.db2_sql.c_str());
+
+	const size_t FIELDS_SIZE = vec2_fields.size();
+
+	try
+	{
+		rs.Prepare(db_info.db2_sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		Begin();
+
+		if ( db_info.time_stamp )		// 带时间戳
+		{
+			// 时间格式：YYYYMMDDHHMISS (24小时制)
+			// 例如：20160501121212 表示2016年05月01日12时12分12秒
+			std::string date_time = base::SimpleTime::Now().Time14();
+
+			for ( size_t i = 0; i < FIELDS_SIZE; ++i )
+			{
+				std::vector<std::string>& v_data = vec2_fields[i];
+
+				int data_size = v_data.size();
+				for ( int j = 0; j < data_size; ++j )
+				{
+					rs.Parameter(j+1) = v_data[j].c_str();
+				}
+
+				// 绑定时间戳
+				rs.Parameter(data_size+1) = date_time.c_str();
+
+				rs.Execute();
+
+				// 每达到最大值提交一次
+				if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
+				{
+					Commit();
+				}
+			}
+		}
+		else		// 不带时间戳
+		{
+			for ( size_t i = 0; i < FIELDS_SIZE; ++i )
+			{
+				std::vector<std::string>& v_data = vec2_fields[i];
+
+				int data_size = v_data.size();
+				for ( int j = 0; j < data_size; ++j )
+				{
+					rs.Parameter(j+1) = v_data[j].c_str();
+				}
+
+				rs.Execute();
+
+				// 每达到最大值提交一次
+				if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
+				{
+					Commit();
+				}
+			}
+		}
+
+		Commit();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_INS_RESULT_DATA, "[DB] Insert result data to [%s] failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB] Insert result data to [%s]: %llu", db_info.target_table.c_str(), FIELDS_SIZE);
 }
 
 void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)

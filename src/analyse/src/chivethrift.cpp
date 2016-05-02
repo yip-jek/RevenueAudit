@@ -49,27 +49,26 @@ CHiveThrift::~CHiveThrift()
 //	}
 //}
 
-void CHiveThrift::FetchSourceData(const std::string& hive_sql, const size_t& total_num_of_fields, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception);
+void CHiveThrift::FetchSourceData(const std::string& hive_sql, const size_t& total_num_of_fields, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception)
 {
 	if ( hive_sql.empty() )
 	{
 		throw base::Exception(HTERR_FETCH_SRCDATA_FAILED, "[HIVE] Fetch source data failed: no sql to be executed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	std::vector<std::vector<std::string> >& vv_fields;
+	std::vector<std::vector<std::string> > vv_fields;
 
+	size_t total_count = 0;
 	try
 	{
-		m_pLog->Output("[HIVE] Execute fetch sql: %s", sql.c_str());
-		m_spHiveClient->execute(sql);
+		m_pLog->Output("[HIVE] Execute fetch sql: %s", hive_sql.c_str());
+		m_spHiveClient->execute(hive_sql);
 		m_pLog->Output("[HIVE] Execute fetch sql OK!");
 
 		std::vector<std::string> v_srcdata;
 		v_srcdata.reserve(HIVE_MAX_FETCHN);
 
 		m_pLog->Output("[HIVE] Fetch source data ...");
-
-		size_t total_count = 0;
 		std::vector<std::string> v_field;
 
 		while ( true )
@@ -91,7 +90,7 @@ void CHiveThrift::FetchSourceData(const std::string& hive_sql, const size_t& tot
 				base::PubStr::Str2StrVector(ref_srcdata, "\t", v_field);
 				if ( v_field.size() != total_num_of_fields )
 				{
-					throw base::Exception(HTERR_FETCH_SRCDATA_FAILED, "[HIVE] Fetch source data failed: 源数据的字段个数与目标表的字段个数不匹配! (Record_seq: %llu) [FILE:%s, LINE:%d]", (total_count+i+1), __FILE__, __LINE__);
+					throw base::Exception(HTERR_FETCH_SRCDATA_FAILED, "[HIVE] Fetch source data failed: 源数据的字段个数 (%lu) 与目标表的字段个数 (%lu) 不匹配! (Record_seq: %llu) [FILE:%s, LINE:%d]", v_field.size(), total_num_of_fields, (total_count+i+1), __FILE__, __LINE__);
 				}
 
 				vv_fields.push_back(v_field);

@@ -5,6 +5,7 @@
 
 class CAnaDB2;
 class CHiveThrift;
+struct AnaDBInfo;
 
 // 分析模块
 class Analyse : public base::BaseFrameApp
@@ -16,13 +17,15 @@ public:
 public:
 	enum ANA_ERROR
 	{
-		ANAERR_TASKINFO_ERROR    = -3000001,			// 任务信息异常
-		ANAERR_KPIID_INVALID     = -3000002,			// 指标ID无效
-		ANAERR_ANAID_INVALID     = -3000003,			// 分析规则ID无效
-		ANAERR_HIVE_PORT_INVALID = -3000004,			// Hive服务器端口无效
-		ANAERR_INIT_FAILED       = -3000005,			// 初始化失败
-		ANAERR_TASKINFO_INVALID  = -3000006,			// 任务信息无效
-		ANAERR_ANA_RULE_FAILED   = -3000007,			// 解析分析规则失败
+		ANAERR_TASKINFO_ERROR      = -3000001,			// 任务信息异常
+		ANAERR_KPIID_INVALID       = -3000002,			// 指标ID无效
+		ANAERR_ANAID_INVALID       = -3000003,			// 分析规则ID无效
+		ANAERR_HIVE_PORT_INVALID   = -3000004,			// Hive服务器端口无效
+		ANAERR_INIT_FAILED         = -3000005,			// 初始化失败
+		ANAERR_TASKINFO_INVALID    = -3000006,			// 任务信息无效
+		ANAERR_ANA_RULE_FAILED     = -3000007,			// 解析分析规则失败
+		ANAERR_GENERATE_TAB_FAILED = -3000008,			// 生成目标表名失败
+		ANAERR_GET_DBINFO_FAILED   = -3000009,			// 获取数据库信息失败
 	};
 
 public:
@@ -40,7 +43,7 @@ public:
 
 private:
 	// 获取参数任务信息
-	void GetParameterTaskInfo() throw(base::Exception);
+	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
 
 	// 设置任务信息
 	void SetTaskInfo(AnaTaskInfo& info);
@@ -52,25 +55,40 @@ private:
 	void CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
 
 	// 进行数据分析
-	void DoDataAnalyse(AnaTaskInfo& info) throw(base::Exception);
+	void DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception);
 
 	// 解析分析规则，生成Hive取数逻辑
-	void AnalyseRules(AnaTaskInfo& info, std::string& hive_sql) throw(base::Exception);
+	void AnalyseRules(AnaTaskInfo& t_info, std::string& hive_sql, size_t& fields_num, AnaDBInfo& db_info) throw(base::Exception);
 
-	// 目标表的字段总数
+	// 生成汇总类型的Hive SQL语句
+	std::string GetSummaryCompareHiveSQL(AnaTaskInfo& t_info);
+
+	// 生成明细对比类型的Hive SQL语句
+	std::string GetDetailCompareHiveSQL(AnaTaskInfo& t_info);
+
+	// 按类型生成目标表名称
+	std::string GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception);
+
+	// 统计从源数据插入到目标表的字段总数
 	size_t GetTotalNumOfTargetFields(AnaTaskInfo& info);
+
+	// 生成数据库信息
+	void GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception);
 
 	// 获取Hive源数据
 	void FetchHiveSource(const std::string& hive_sql, const size_t& total_num_of_fields, std::vector<std::vector<std::string> >& vv_fields) throw(base::Exception);
 
 	// 分析源数据，生成结果数据
-	void AnalyseSource();
+	void AnalyseSource(AnaTaskInfo& info, std::vector<std::vector<std::string> >& vec2_fields);
+
+	// 收集维度取值
+	void CollectDimVal(AnaTaskInfo& info, std::vector<std::vector<std::string> >& vec2_fields);
 
 	// 结果数据入库 [DB2]
-	void StoreResult();
+	void StoreResult(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception);
 
 	// 告警判断: 如果达到告警阀值，则生成告警
-	void AlarmJudgement();
+	void AlarmJudgement(AnaTaskInfo& info, std::vector<std::vector<std::string> >& vec2_fields);
 
 	// 更新维度取值范围
 	void UpdateDimValue(const std::string& kpi_id);

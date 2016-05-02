@@ -46,9 +46,19 @@ public:
 		return TimeFormat("%04d-%02d-%02d", year, mon, day);
 	}
 
-	std::string MonTime()
+	std::string MonTime6()
 	{
 		return TimeFormat("%04d%02d", year, mon);
+	}
+
+	std::string MonTime7()
+	{
+		return TimeFormat("%04d-%02d", year, mon);
+	}
+
+	std::string YearTime()
+	{
+		return TimeFormat("%04d", year);
 	}
 
 private:

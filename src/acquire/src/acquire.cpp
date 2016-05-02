@@ -26,7 +26,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.00.0032 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.00.0034 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -70,7 +70,7 @@ void Acquire::LoadConfig() throw(base::Exception)
 
 void Acquire::Init() throw(base::Exception)
 {
-	GetParameterTaskInfo();
+	GetParameterTaskInfo(m_ppArgv[4]);
 
 	m_pDB2 = new CAcqDB2(m_sDBName, m_sUsrName, m_sPasswd);
 	if ( NULL == m_pDB2 )
@@ -109,11 +109,11 @@ void Acquire::Run() throw(base::Exception)
 	DoDataAcquisition(task_info);
 }
 
-void Acquire::GetParameterTaskInfo() throw(base::Exception)
+void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exception)
 {
 	// 格式：启动批号|指标ID|采集规则ID|...
 	std::vector<std::string> vec_str;
-	boost::split(vec_str, m_ppArgv[4], boost::is_any_of("|"));
+	boost::split(vec_str, para, boost::is_any_of("|"));
 
 	if ( vec_str.size() < 3 )
 	{

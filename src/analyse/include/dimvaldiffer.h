@@ -4,6 +4,7 @@
 #include <vector>
 #include "anataskinfo.h"
 
+
 // 维度取值差异比较
 class DimValDiffer
 {
