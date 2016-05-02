@@ -35,6 +35,16 @@ void CAnaDB2::SetTabEtlRule(const std::string& t_etlrule)
 	m_tabEtlRule = t_etlrule;
 }
 
+void CAnaDB2::SetTabEtlDim(const std::string& t_etldim)
+{
+	m_tabEtlDim = t_etldim;
+}
+
+void CAnaDB2::SetTabEtlVal(const std::string& t_etlval)
+{
+	m_tabEtlVal = t_etlval;
+}
+
 void CAnaDB2::SetTabAnaRule(const std::string& t_anarule)
 {
 	m_tabAnaRule = t_anarule;
@@ -67,10 +77,10 @@ void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 		SelectEtlRule(one);
 
 		// 获取采集维度信息
-		SelectEtlDim(one.EtlDim);
+		SelectEtlDim(one.DimID, one.vecEtlDim);
 
 		// 获取采集值信息
-		SelectEtlVal(one.EtlVal);
+		SelectEtlVal(one.ValID, one.vecEtlVal);
 	}
 
 	// 获取分析规则数据
@@ -397,8 +407,6 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string dim_id;
-	std::string val_id;
 	int counter = 0;
 	try
 	{
@@ -417,8 +425,8 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 			int index = 1;
 
 			one.TargetPatch = (const char*)rs[index++];
-			dim_id          = (const char*)rs[index++];
-			val_id          = (const char*)rs[index++];
+			one.DimID       = (const char*)rs[index++];
+			one.ValID       = (const char*)rs[index++];
 
 			rs.MoveNext();
 		}
@@ -435,7 +443,7 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 
 	// 只取第一组维度
 	std::vector<std::string> vec_str;
-	base::PubStr::Str2StrVector(dim_id, ",", vec_str);
+	base::PubStr::Str2StrVector(one.DimID, ",", vec_str);
 	if ( vec_str.empty() )
 	{
 		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! No ETLDIM_ID! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
@@ -446,11 +454,11 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 	}
 	else
 	{
-		one.EtlDim.EtlDimID = vec_str[0];
+		one.DimID = vec_str[0];
 	}
 
 	// 只取第一组值
-	base::PubStr::Str2StrVector(val_id, ",", vec_str);
+	base::PubStr::Str2StrVector(one.ValID, ",", vec_str);
 	if ( vec_str.empty() )
 	{
 		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! No ETLVAL_ID! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
@@ -461,58 +469,100 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 	}
 	else
 	{
-		one.EtlVal.EtlValID = vec_str[0];
+		one.ValID = vec_str[0];
 	}
 
-	m_pLog->Output("[DB] Select %s: (KPI_ID:%s, ETLRULE_ID:%s) [ETLRULE_TARGETPATCH:%s] [Record:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), one.TargetPatch.c_str(), counter);
+	m_pLog->Output("[DB] Select %s: (KPI_ID:%s, ETLRULE_ID:%s) [ETLRULE_TARGETPATCH:%s] [DIM_ID:%s] [VAL_ID:%s] [Record:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), one.TargetPatch.c_str(), one.DimID.c_str(), one.ValID.c_str(), counter);
 }
 
-void CAnaDB2::SelectEtlDim(OneEtlDim& dim) throw(base::Exception)
+void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception)
 {
-	//XDBO2::CRecordset rs(&m_CDB);
-	//rs.EnableWarning(true);
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
 
-	//std::string dim_id;
-	//std::string val_id;
-	//int counter = 0;
-	//try
-	//{
-	//	std::string sql = "select ETLRULE_TARGET, ETLDIM_ID, ETLVAL_ID from " + m_tabEtlRule;
-	//	sql += " where KPI_ID = ? and ETLRULE_ID = ?";
+	std::vector<OneEtlDim> v_dim;
+	OneEtlDim one;
+	one.EtlDimID = dim_id;
 
-	//	rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-	//	rs.Parameter(1) = one.KpiID.c_str();
-	//	rs.Parameter(2) = one.EtlRuleID.c_str();
-	//	rs.Execute();
+	try
+	{
+		std::string sql = "select ETLDIM_SEQ, ETLDIM_NAME from " + m_tabEtlDim;
+		sql += " where ETLDIM_ID = ? order by ETLDIM_SEQ asc";
 
-	//	while ( !rs.IsEOF() )
-	//	{
-	//		++counter;
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = dim_id.c_str();
+		rs.Execute();
 
-	//		int index = 1;
+		while ( !rs.IsEOF() )
+		{
+			int index = 1;
 
-	//		one.TargetPatch = (const char*)rs[index++];
-	//		dim_id          = (const char*)rs[index++];
-	//		val_id          = (const char*)rs[index++];
+			one.EtlDimSeq  = (int)rs[index++];
+			one.EtlDimName = (const char*)rs[index++];
 
-	//		rs.MoveNext();
-	//	}
-	//}
-	//catch ( const XDBO2::CDBException& ex )
-	//{
-	//	throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), ex.what(), __FILE__, __LINE__);
-	//}
+			v_dim.push_back(one);
 
-	//if ( 0 == counter )
-	//{
-	//	throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! No record (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
-	//}
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB] Select %s failed! (ETLDIM_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), ex.what(), __FILE__, __LINE__);
+	}
 
-	//m_pLog->Output("[DB] Select %s: (KPI_ID:%s, ETLRULE_ID:%s) [ETLRULE_TARGETPATCH:%s] [Record:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), one.TargetPatch.c_str(), counter);
+	if ( v_dim.empty() )
+	{
+		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB] Select %s failed! No record (ETLDIM_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB] Select %s successfully! (ETLDIM_ID:%s) [Record:%lu]", m_tabEtlDim.c_str(), dim_id.c_str(), v_dim.size());
+
+	v_dim.swap(vec_dim);
 }
 
-void CAnaDB2::SelectEtlVal(OneEtlVal& val) throw(base::Exception)
+void CAnaDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception)
 {
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::vector<OneEtlVal> v_val;
+	OneEtlVal one;
+	one.EtlValID = val_id;
+
+	try
+	{
+		std::string sql = "select ETLVAL_SEQ, ETLVAL_NAME from " + m_tabEtlVal;
+		sql += " where ETLVAL_ID = ? order by ETLVAL_SEQ asc";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = val_id.c_str();
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			int index = 1;
+
+			one.EtlValSeq  = (int)rs[index++];
+			one.EtlValName = (const char*)rs[index++];
+
+			v_val.push_back(one);
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB] Select %s failed! (ETLVAL_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	if ( v_val.empty() )
+	{
+		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB] Select %s failed! No record (ETLVAL_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB] Select %s successfully! (ETLVAL_ID:%s) [Record:%lu]", m_tabEtlVal.c_str(), val_id.c_str(), v_val.size());
+
+	v_val.swap(vec_val);
 }
 
 void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)

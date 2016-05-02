@@ -74,7 +74,14 @@ public:
 	OneEtlRule()
 	{}
 
-	OneEtlRule(const OneEtlRule& one): EtlRuleID(one.EtlRuleID), KpiID(one.KpiID), TargetPatch(one.TargetPatch)
+	OneEtlRule(const OneEtlRule& one)
+	:EtlRuleID(one.EtlRuleID)
+	,KpiID(one.KpiID)
+	,TargetPatch(one.TargetPatch)
+	,DimID(one.DimID)
+	,ValID(one.ValID)
+	,vecEtlDim(one.vecEtlDim)
+	,vecEtlVal(one.vecEtlVal)
 	{}
 
 	const OneEtlRule& operator = (const OneEtlRule& one)
@@ -84,6 +91,10 @@ public:
 			this->EtlRuleID   = one.EtlRuleID;
 			this->KpiID       = one.KpiID;
 			this->TargetPatch = one.TargetPatch;
+			this->DimID       = one.DimID;
+			this->ValID       = one.ValID;
+			this->vecEtlDim   = one.vecEtlDim;
+			this->vecEtlVal   = one.vecEtlVal;
 		}
 
 		return *this;
@@ -93,9 +104,11 @@ public:
 	std::string	EtlRuleID;			// 采集规则ID
 	std::string	KpiID;				// 指标ID
 	std::string	TargetPatch;		// 采集目标数据表
+	std::string DimID;				// 采集维度规则ID
+	std::string ValID;				// 采集值规则ID
 
-	OneEtlDim	EtlDim;				// 采集维度信息
-	OneEtlVal	EtlVal;				// 采集值信息
+	std::vector<OneEtlDim>	vecEtlDim;			// 采集维度信息集
+	std::vector<OneEtlVal>	vecEtlVal;			// 采集值信息集
 };
 
 // 指标字段

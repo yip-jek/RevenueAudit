@@ -1,5 +1,6 @@
 #include "analyse.h"
 #include <vector>
+#include <set>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include "log.h"
@@ -45,6 +46,8 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_KPI_COLUMN");
 	m_cfg.RegisterItem("TABLE", "TAB_DIM_VALUE");
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_RULE");
+	m_cfg.RegisterItem("TABLE", "TAB_ETL_DIM");
+	m_cfg.RegisterItem("TABLE", "TAB_ETL_VAL");
 	m_cfg.RegisterItem("TABLE", "TAB_ANA_RULE");
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_RULE");
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_EVENT");
@@ -69,6 +72,8 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_tabKpiColumn = m_cfg.GetCfgValue("TABLE", "TAB_KPI_COLUMN");
 	m_tabDimValue  = m_cfg.GetCfgValue("TABLE", "TAB_DIM_VALUE");
 	m_tabEtlRule   = m_cfg.GetCfgValue("TABLE", "TAB_ETL_RULE");
+	m_tabEtlDim    = m_cfg.GetCfgValue("TABLE", "TAB_ETL_DIM");
+	m_tabEtlVal    = m_cfg.GetCfgValue("TABLE", "TAB_ETL_VAL");
 	m_tabAnaRule   = m_cfg.GetCfgValue("TABLE", "TAB_ANA_RULE");
 	m_tabAlarmRule = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_RULE");
 	m_tabAlarmEvent = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_EVENT");
@@ -91,6 +96,8 @@ void Analyse::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabKpiColumn(m_tabKpiColumn);
 	m_pAnaDB2->SetTabDimValue(m_tabDimValue);
 	m_pAnaDB2->SetTabEtlRule(m_tabEtlRule);
+	m_pAnaDB2->SetTabEtlDim(m_tabEtlDim);
+	m_pAnaDB2->SetTabEtlVal(m_tabEtlVal);
 	m_pAnaDB2->SetTabAnaRule(m_tabAnaRule);
 	m_pAnaDB2->SetTabAlarmRule(m_tabAlarmRule);
 	m_pAnaDB2->SetTabAlarmEvent(m_tabAlarmEvent);
@@ -414,11 +421,59 @@ std::string Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info) throw(base::E
 
 	int first_index  = -1;
 	int second_index = -1;
-	DetermineDataGroup(ana_exp, first_index, second_index);
+	DetermineDataGroup(vec_str[0], first_index, second_index);
 
-	// Todo ...
+	std::string diff_str = vec_str[1];
+	base::PubStr::Str2StrVector(diff_str, ":", vec_str);
+	if ( vec_str.empty() )
+	{
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
 
-	return std::string();
+	std::set<int> set_diff;
+	std::vector<int> vec_diff;
+	const int DIFF_SIZE = vec_str.size();
+	for ( int i = 0; i < DIFF_SIZE; ++i )
+	{
+		std::string& ref_str = vec_str[i];
+
+		boost::to_upper(ref_str);
+		size_t pos = ref_str.find("DIFF");
+		if ( std::string::npos == pos )
+		{
+			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		}
+
+		int diff_no = -1;
+		try
+		{
+			diff_no = boost::lexical_cast<int>(ref_str.substr(pos+4));
+		}
+		catch ( boost::bad_lexical_cast& ex )
+		{
+			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：[%s] 转换失败! [BOOST] %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_str.c_str(), ex.what(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		}
+
+		if ( diff_no < 0 || diff_no >= t_info.vecEtlRule[0].vecEtlVal.size() )
+		{
+			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：列值 [%d] 越界! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", diff_no, t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		}
+
+		if ( set_diff.find(diff_no) != set_diff.end() )
+		{
+			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：列值 [%d] 已经存在! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", diff_no, t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		}
+
+		set_diff.insert(diff_no);
+		vec_diff.push_back(diff_no);
+	}
+
+	OneEtlRule& first_one  = t_info.vecEtlRule[first_index];
+	OneEtlRule& second_one = t_info.vecEtlRule[second_index];
+
+	std::string hive_sql = "select ";
+
+	return hive_sql;
 }
 
 // 暂时只支持两组数据的明细对比
@@ -437,9 +492,12 @@ std::string Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info) throw(base::Ex
 	int second_index = -1;
 	DetermineDataGroup(ana_exp, first_index, second_index);
 
-	// Todo ...
+	OneEtlRule& first_one  = t_info.vecEtlRule[first_index];
+	OneEtlRule& second_one = t_info.vecEtlRule[second_index];
 
-	return std::string();
+	std::string hive_sql = "select ";
+
+	return hive_sql;
 }
 
 void Analyse::DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception)

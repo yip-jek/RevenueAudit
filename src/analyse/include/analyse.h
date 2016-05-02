@@ -120,6 +120,8 @@ private:
 	std::string m_tabKpiColumn;			// 指标字段表
 	std::string m_tabDimValue;			// 维度取值表
 	std::string	m_tabEtlRule;			// 采集规则表
+	std::string	m_tabEtlDim;			// 采集维度规则表
+	std::string	m_tabEtlVal;			// 采集值规则表
 	std::string m_tabAnaRule;			// 分析规则表
 	std::string m_tabAlarmRule;			// 告警规则表
 	std::string m_tabAlarmEvent;		// 告警事件表

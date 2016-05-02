@@ -24,6 +24,8 @@ public:
 		ADBERR_SEL_ANA_RULE    = -3002006,				// 查询分析规则出错
 		ADBERR_SEL_ALARM_RULE  = -3002007,				// 查询告警规则出错
 		ADBERR_INS_RESULT_DATA = -3002008,				// 插入结果数据出错
+		ADBERR_SEL_ETL_DIM     = -3002009,				// 查询采集维度规则出错
+		ADBERR_SEL_ETL_VAL     = -3002010,				// 查询采集值规则出错
 	};
 
 public:
@@ -38,6 +40,12 @@ public:
 
 	// 设置采集规则表
 	void SetTabEtlRule(const std::string& t_etlrule);
+
+	// 设置采集维度规则表
+	void SetTabEtlDim(const std::string& t_etldim);
+
+	// 设置采集值规则表
+	void SetTabEtlVal(const std::string& t_etlval);
 
 	// 设置分析规则表
 	void SetTabAnaRule(const std::string& t_anarule);
@@ -71,10 +79,10 @@ private:
 	void SelectEtlRule(OneEtlRule& one) throw(base::Exception);
 
 	// 查询采集维度规则表
-	void SelectEtlDim(OneEtlDim& dim) throw(base::Exception);
+	void SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception);
 
 	// 查询采集值规则表
-	void SelectEtlVal(OneEtlVal& val) throw(base::Exception);
+	void SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception);
 
 	// 查询分析规则表
 	void SelectAnaRule(AnalyseRule& ana) throw(base::Exception);
@@ -88,6 +96,8 @@ private:
 	std::string m_tabKpiColumn;			// 指标字段表
 	std::string m_tabDimValue;			// 维度取值表
 	std::string	m_tabEtlRule;			// 采集规则表
+	std::string	m_tabEtlDim;			// 采集维度规则表
+	std::string	m_tabEtlVal;			// 采集值规则表
 	std::string m_tabAnaRule;			// 分析规则表
 	std::string m_tabAlarmRule;			// 告警规则表
 	std::string m_tabAlarmEvent;		// 告警事件表
