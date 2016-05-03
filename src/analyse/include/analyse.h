@@ -29,6 +29,7 @@ public:
 		ANAERR_GET_SUMMARY_FAILED     = -3000010,			// 生成汇总对比HIVE SQL失败
 		ANAERR_GET_DETAIL_FAILED      = -3000011,			// 生成明细对比HIVE SQL失败
 		ANAERR_DETERMINE_GROUP_FAILED = -3000012,			// 确定数据组失败
+		ANAERR_SPLIT_HIVESQL_FAILED   = -3000013,			// 拆分可执行HIVE SQL失败
 	};
 
 public:
@@ -61,13 +62,22 @@ private:
 	void DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception);
 
 	// 解析分析规则，生成Hive取数逻辑
-	void AnalyseRules(AnaTaskInfo& t_info, std::string& hive_sql, size_t& fields_num, AnaDBInfo& db_info) throw(base::Exception);
+	void AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, size_t& fields_num, AnaDBInfo& db_info) throw(base::Exception);
 
 	// 生成汇总对比类型的Hive SQL语句
-	std::string GetSummaryCompareHiveSQL(AnaTaskInfo& t_info) throw(base::Exception);
+	void GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 生成明细对比类型的Hive SQL语句
-	std::string GetDetailCompareHiveSQL(AnaTaskInfo& t_info) throw(base::Exception);
+	void GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
+
+	// 生成一般统计类型的Hive SQL语句
+	void GetStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
+
+	// 生成报表统计类型的Hive SQL语句
+	void GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
+
+	// 拆分可执行Hive SQL语句
+	void SplitHiveSqlExpress(std::string exp, std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 确定所属数据组
 	void DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception);
@@ -82,7 +92,7 @@ private:
 	void GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception);
 
 	// 获取Hive源数据
-	void FetchHiveSource(const std::string& hive_sql, const size_t& total_num_of_fields, std::vector<std::vector<std::string> >& vv_fields) throw(base::Exception);
+	void FetchHiveSource(std::vector<std::string>& vec_hivesql, const size_t& total_num_of_fields, std::vector<std::vector<std::string> >& vv_fields) throw(base::Exception);
 
 	// 分析源数据，生成结果数据
 	void AnalyseSource(AnaTaskInfo& info, std::vector<std::vector<std::string> >& vec2_fields);

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <boost/algorithm/string.hpp>
 
 // 单个采集维度信息
 struct OneEtlDim
@@ -115,7 +116,16 @@ public:
 struct KpiColumn
 {
 public:
-	KpiColumn(): ColSeq(0)
+	// 字段类型
+	enum ColumnType
+	{
+		CTYPE_UNKNOWN	= 0,		// 未知类型
+		CTYPE_DIM		= 1,		// 维度类型
+		CTYPE_VAL		= 2,		// 值类型
+	};
+
+public:
+	KpiColumn(): ColType(CTYPE_UNKNOWN), ColSeq(0)
 	{}
 
 	KpiColumn(const KpiColumn& col)
@@ -140,9 +150,31 @@ public:
 		return *this;
 	}
 
+	bool SetColumnType(std::string type)
+	{
+		boost::trim(type);
+		boost::to_upper(type);
+
+		if ( "DIM" == type )
+		{
+			ColType = CTYPE_DIM;
+		}
+		else if ( "VAL" == type )
+		{
+			ColType = CTYPE_VAL;
+		}
+		else
+		{
+			ColType = CTYPE_UNKNOWN;
+			return false;
+		}
+
+		return true;
+	}
+
 public:
 	std::string	KpiID;				// 指标ID
-	std::string	ColType;			// 字段类型
+	ColumnType	ColType;			// 字段类型
 	int			ColSeq;				// 字段序号
 	std::string DBName;				// 字段名称
 	std::string CNName;				// 字段中文名称
@@ -186,7 +218,22 @@ public:
 struct AnalyseRule
 {
 public:
-	AnalyseRule()
+	// 分析规则类型
+	enum AnalyseType
+	{
+		ANATYPE_UNKNOWN				= 0,			// 未知类型
+		ANATYPE_SUMMARY_COMPARE		= 1,			// 汇总对比
+		ANATYPE_DETAIL_COMPARE		= 2,			// 明细对比
+		ANATYPE_STATISTICS			= 3,			// 一般统计
+		ANATYPE_REPORT_STATISTICS	= 4,			// 报表统计
+
+		// 可执行的HIVE SQL语句
+		// 分析规则表达式即是可执行的HIVE SQL语句
+		ANATYPE_HIVE_SQL	= 99
+	};
+
+public:
+	AnalyseRule(): AnaType(ANATYPE_UNKNOWN)
 	{}
 
 	AnalyseRule(const AnalyseRule& ana)
@@ -209,11 +256,46 @@ public:
 		return *this;
 	}
 
+	// 设置分析规则类型
+	bool SetAnalyseType(std::string type)
+	{
+		boost::trim(type);
+		boost::to_upper(type);
+
+		if ( "SUMMARY" == type )		// 汇总对比
+		{
+			AnaType = ANATYPE_SUMMARY_COMPARE;
+		}
+		else if ( "DETAIL" == type )		// 明细对比
+		{
+			AnaType = ANATYPE_DETAIL_COMPARE;
+		}
+		else if ( "STATISTICS" == type )	// 一般统计
+		{
+			AnaType = ANATYPE_STATISTICS;
+		}
+		else if ( "REPORT_STATISTICS" == type )		// 报表统计
+		{
+			AnaType = ANATYPE_REPORT_STATISTICS;
+		}
+		else if ( "HIVE_SQL" == type )		// 可执行的HIVE SQL语句
+		{
+			AnaType = ANATYPE_HIVE_SQL;
+		}
+		else		// 未知类型
+		{
+			AnaType = ANATYPE_UNKNOWN;
+			return false;
+		}
+
+		return true;
+	}
+
 public:
 	std::string	AnaID;				// 分析规则ID
 	std::string AnaName;			// 分析规则名称
-	std::string AnaType;			// 分析类型
-	std::string AnaExpress;			// 分析表达式
+	AnalyseType AnaType;			// 分析规则类型
+	std::string AnaExpress;			// 分析规则表达式
 };
 
 // 告警规则

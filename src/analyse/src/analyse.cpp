@@ -29,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.01.0035 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.01.0036 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -270,7 +270,7 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::
 	v_fields.swap(db_info.vec_fields);
 }
 
-void Analyse::FetchHiveSource(const std::string& hive_sql, const size_t& total_num_of_fields, std::vector<std::vector<std::string> >& vv_fields) throw(base::Exception)
+void Analyse::FetchHiveSource(std::vector<std::string>& vec_hivesql, const size_t& total_num_of_fields, std::vector<std::vector<std::string> >& vv_fields) throw(base::Exception)
 {
 	m_pCHive->FetchSourceData(hive_sql, total_num_of_fields, vv_fields);
 	m_pLog->Output("[Analyse] 获取源数据记录数：%llu", vv_fields.size());
@@ -315,9 +315,9 @@ void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析结果表为空! 无效! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
-	if ( info.AnaRule.AnaType.empty() )
+	if ( AnalyseRule::ANATYPE_UNKNOWN == info.AnaRule.AnaType )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析规则类型为空! 无效! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析规则类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( info.AnaRule.AnaExpress.empty() )
@@ -340,14 +340,14 @@ void Analyse::DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception)
 {
 	m_pLog->Output("[Analyse] 解析分析规则 ...");
 
-	std::string hive_sql;
+	std::vector<std::string> vec_hivesql;
 	size_t total_num_of_fields = 0;
 	AnaDBInfo db_info;
-	AnalyseRules(t_info, hive_sql, total_num_of_fields, db_info);
+	AnalyseRules(t_info, vec_hivesql, total_num_of_fields, db_info);
 
 	m_pLog->Output("[Analyse] 获取Hive源数据 ...");
 	std::vector<std::vector<std::string> > vec_vec_fields;
-	FetchHiveSource(hive_sql, total_num_of_fields, vec_vec_fields);
+	FetchHiveSource(vec_hivesql, total_num_of_fields, vec_vec_fields);
 
 	m_pLog->Output("[Analyse] 分析源数据 ...");
 	AnalyseSource(t_info, vec_vec_fields);
@@ -362,36 +362,41 @@ void Analyse::DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception)
 	UpdateDimValue(t_info.KpiID);
 }
 
-void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::string& hive_sql, size_t& fields_num, AnaDBInfo& db_info) throw(base::Exception)
+void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, size_t& fields_num, AnaDBInfo& db_info) throw(base::Exception)
 {
-	std::string& ana_type = t_info.AnaRule.AnaType;
-	boost::trim(ana_type);
-	boost::to_upper(ana_type);
+	AnalyseRule::AnalyseType& ana_type = t_info.AnaRule.AnaType;
 
 	// 分析规则类型
-	if ( "SUMMARY" == ana_type )	// 汇总对比
+	switch ( ana_type )
 	{
+	case AnalyseRule::ANATYPE_SUMMARY_COMPARE:		// 汇总对比
 		m_pLog->Output("[Analyse] 分析规则类型：汇总对比 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
 		m_pLog->Output("[Analyse] 分析规则表达式：%s", t_info.AnaRule.AnaExpress.c_str());
-
-		hive_sql = GetSummaryCompareHiveSQL(t_info);
-	}
-	else if ( "DETAIL" == ana_type )	// 明细对比
-	{
+		GetSummaryCompareHiveSQL(t_info, vec_hivesql);
+		break;
+	case AnalyseRule::ANATYPE_DETAIL_COMPARE:		// 明细对比
 		m_pLog->Output("[Analyse] 分析规则类型：明细对比 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
 		m_pLog->Output("[Analyse] 分析规则表达式：%s", t_info.AnaRule.AnaExpress.c_str());
-
-		hive_sql = GetDetailCompareHiveSQL(t_info);
-	}
-	else if ( "HIVE_SQL" == ana_type )		// 可执行的Hive SQL语句
-	{
+		GetDetailCompareHiveSQL(t_info, vec_hivesql);
+		break;
+	case AnalyseRule::ANATYPE_STATISTICS:			// 一般统计
+		m_pLog->Output("[Analyse] 分析规则类型：一般统计 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
+		m_pLog->Output("[Analyse] 分析规则表达式：%s", t_info.AnaRule.AnaExpress.c_str());
+		GetStatisticsHiveSQL(t_info, vec_hivesql);
+		break;
+	case AnalyseRule::ANATYPE_REPORT_STATISTICS:	// 报表统计
+		m_pLog->Output("[Analyse] 分析规则类型：报表统计 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
+		m_pLog->Output("[Analyse] 分析规则表达式：%s", t_info.AnaRule.AnaExpress.c_str());
+		GetReportStatisticsHiveSQL(t_info, vec_hivesql);
+		break;
+	case AnalyseRule::ANATYPE_HIVE_SQL:				// 可执行的HIVE SQL语句
 		m_pLog->Output("[Analyse] 分析规则类型：可执行的HIVE SQL语句 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
-		// 分析表达式，即是可执行的Hive SQL语句
-		hive_sql = t_info.AnaRule.AnaExpress;
-	}
-	else
-	{
-		throw base::Exception(ANAERR_ANA_RULE_FAILED, "无法识别的分析规则类型: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_type.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		// 分析表达式，即是可执行的Hive SQL语句（可多个，以分号分隔）
+		SplitHiveSqlExpress(t_info.AnaRule.AnaExpress, vec_hivesql);
+		break;
+	case AnalyseRule::ANATYPE_UNKNOWN:				// 未知类型
+	default:
+		throw base::Exception(ANAERR_ANA_RULE_FAILED, "无法识别的分析规则类型: ANATYPE_UNKNOWN (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 统计从源数据插入到目标表的字段总数
@@ -402,7 +407,7 @@ void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::string& hive_sql, size_t& f
 }
 
 // 暂时只支持两组数据的汇总对比
-std::string Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info) throw(base::Exception)
+void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
 {
 	if ( t_info.vecEtlRule.size() < 2 )
 	{
@@ -477,7 +482,7 @@ std::string Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info) throw(base::E
 }
 
 // 暂时只支持两组数据的明细对比
-std::string Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info) throw(base::Exception)
+void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
 {
 	if ( t_info.vecEtlRule.size() < 2 )
 	{
@@ -498,6 +503,40 @@ std::string Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info) throw(base::Ex
 	std::string hive_sql = "select ";
 
 	return hive_sql;
+}
+
+void Analyse::GetStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
+{
+}
+
+void Analyse::GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
+{
+}
+
+void Analyse::SplitHiveSqlExpress(std::string exp, std::vector<std::string>& vec_hivesql) throw(base::Exception)
+{
+	boost::trim(exp);
+	if ( exp.empty() )
+	{
+		throw base::Exception(ANAERR_SPLIT_HIVESQL_FAILED, "可执行Hive SQL语句为空! 无法拆分! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	// 删除最后的分号
+	const int LAST_INDEX = exp.size() - 1;
+	if ( ';' == exp[LAST_INDEX] )
+	{
+		exp.erase(LAST_INDEX);
+	}
+
+	std::vector<std::string> v_hive_sql;
+	base::PubStr::Str2StrVector(exp, ";", v_hive_sql);
+
+	if ( v_hive_sql.empty() )
+	{
+		throw base::Exception(ANAERR_SPLIT_HIVESQL_FAILED, "拆分失败：没有可执行Hive SQL语句! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	v_hive_sql.swap(vec_hivesql);
 }
 
 void Analyse::DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception)

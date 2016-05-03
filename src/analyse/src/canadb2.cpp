@@ -1,5 +1,4 @@
 #include "canadb2.h"
-#include <boost/algorithm/string.hpp>
 #include "log.h"
 #include "pubstr.h"
 #include "simpletime.h"
@@ -193,29 +192,34 @@ void CAnaDB2::SelectKpiColumn(const std::string& kpi_id, std::vector<KpiColumn>&
 		rs.Parameter(1) = kpi_id.c_str();
 		rs.Execute();
 
+		std::string col_type;
+
 		while ( !rs.IsEOF() )
 		{
 			int index = 1;
 
-			col.ColType = (const char*)rs[index++];
+			col_type    = (const char*)rs[index++];
 			col.ColSeq  = (int)rs[index++];
 			col.DBName  = (const char*)rs[index++];
 			col.CNName  = (const char*)rs[index++];
 
-			boost::trim(col.ColType);
-			boost::to_upper(col.ColType);
-
-			if ( "DIM" == col.ColType )		// 维度
+			if ( col.SetColumnType(col_type) )
 			{
-				v_dim.push_back(col);
-			}
-			else if ( "VAL" == col.ColType )		// 值
-			{
-				v_val.push_back(col);
+				switch ( col.ColType )
+				{
+				case KpiColumn::CTYPE_DIM:		// 维度
+					v_dim.push_back(col);
+					break;
+				case KpiColumn::CTYPE_VAL:		// 值
+					v_val.push_back(col);
+					break;
+				default:
+					throw base::Exception(ADBERR_SEL_KPI_COL, "[DB] Select %s failed! (KPI_ID:%s) 无法识别的指标字段类型: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), kpi_id.c_str(), col_type.c_str(), __FILE__, __LINE__);
+				}
 			}
 			else
 			{
-				throw base::Exception(ADBERR_SEL_KPI_COL, "[DB] Select %s failed! (KPI_ID:%s) 无法识别的指标字段类型: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), kpi_id.c_str(), col.ColType.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ADBERR_SEL_KPI_COL, "[DB] Select %s failed! (KPI_ID:%s) 无法识别的指标字段类型: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), kpi_id.c_str(), col_type.c_str(), __FILE__, __LINE__);
 			}
 
 			rs.MoveNext();
@@ -570,6 +574,7 @@ void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
+	std::string ana_type;
 	int counter = 0;
 	try
 	{
@@ -587,8 +592,13 @@ void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
 			int index = 1;
 
 			ana.AnaName    = (const char*)rs[index++];
-			ana.AnaType    = (const char*)rs[index++];
+			ana_type       = (const char*)rs[index++];
 			ana.AnaExpress = (const char*)rs[index++];
+
+			if ( !ana.SetAnalyseType(ana_type) )
+			{
+				throw base::Exception(ADBERR_SEL_ANA_RULE, "[DB] Select %s failed! (ANALYSIS_ID:%s) 无法识别的分析规则类型: %s [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), ana.AnaID.c_str(), ana_type.c_str(), __FILE__, __LINE__);
+			}
 
 			rs.MoveNext();
 		}
@@ -604,7 +614,7 @@ void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
 	}
 
 	m_pLog->Output("[DB] Select %s: [ANALYSIS_ID:%s] [ANALYSIS_NAME:%s] [ANALYSIS_TYPE:%s] [ANALYSIS_EXPRESSION:%s] [Record:%d]", 
-		m_tabAnaRule.c_str(), ana.AnaID.c_str(), ana.AnaName.c_str(), ana.AnaType.c_str(), ana.AnaExpress.c_str(), counter);
+		m_tabAnaRule.c_str(), ana.AnaID.c_str(), ana.AnaName.c_str(), ana_type.c_str(), ana.AnaExpress.c_str(), counter);
 }
 
 void CAnaDB2::SelectAlarmRule(AlarmRule& alarm) throw(base::Exception)

@@ -32,6 +32,11 @@ void PubStr::Str2IntVector(const std::string& src_str, const std::string& dim, s
 void PubStr::Str2StrVector(const std::string& src_str, const std::string& dim, std::vector<std::string>& s_vec, bool is_multi_dim)
 {
 	std::vector<std::string> vec_str;
+	if ( src_str.empty() )
+	{
+		vec_str.swap(s_vec);
+		return;
+	}
 
 	if ( is_multi_dim )
 	{
