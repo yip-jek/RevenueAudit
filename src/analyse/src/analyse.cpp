@@ -10,6 +10,7 @@
 #include "canadb2.h"
 #include "chivethrift.h"
 #include "anadbinfo.h"
+#include "taskinfoutil.h"
 
 
 Analyse g_Analyse;
@@ -409,23 +410,19 @@ void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hi
 // 暂时只支持两组数据的汇总对比
 void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
 {
-	if ( t_info.vecEtlRule.size() < 2 )
+	switch ( TaskInfoUtil::CheckDualEtlRule(t_info.vecEtlRule) )
 	{
+	case -1:	// 采集规则个数不够
 		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "只有 %lu 份采集结果数据，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.vecEtlRule.size(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-	}
-
-	int dim_size_1 = t_info.vecEtlRule[0].vecEtlDim.size();
-	int dim_size_2 = t_info.vecEtlRule[1].vecEtlDim.size();
-	if ( dim_size_1 != dim_size_2 )
-	{
+		break;
+	case -2:	// 维度不一致
 		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "采集规则的维度size不一致，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-	}
-
-	int val_size_1 = t_info.vecEtlRule[0].vecEtlVal.size();
-	int val_size_2 = t_info.vecEtlRule[1].vecEtlVal.size();
-	if ( val_size_1 != val_size_2 )
-	{
+		break;
+	case -3:	// 值不一致
 		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "采集规则的值size不一致，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		break;
+	default:
+		break;
 	}
 
 	// 格式样例: A-B, diff1:diff2
@@ -492,11 +489,11 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 	OneEtlRule& first_one  = t_info.vecEtlRule[first_index];
 	OneEtlRule& second_one = t_info.vecEtlRule[second_index];
 
-	std::string field_sql;
-	for (
-
 	// 1) 汇总：对平的Hive SQL语句
-	std::string hive_sql = "select ";
+	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFields(first_one, second_one);
+	hive_sql += " from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
+	hive_sql += " and " + TaskInfoUtil::GetCompareEqualVals(first_one, second_one) + ")";
 
 	// 2) 汇总：有差异的Hive SQL语句
 	hive_sql = 
@@ -505,9 +502,19 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 // 暂时只支持两组数据的明细对比
 void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
 {
-	if ( t_info.vecEtlRule.size() < 2 )
+	switch ( TaskInfoUtil::CheckDualEtlRule(t_info.vecEtlRule) )
 	{
-		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "只有 %lu 份采集结果数据，无法进行明细数据对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.vecEtlRule.size(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	case -1:	// 采集规则个数不够
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "只有 %lu 份采集结果数据，无法进行明细对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.vecEtlRule.size(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		break;
+	case -2:	// 维度不一致
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "采集规则的维度size不一致，无法进行明细对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		break;
+	case -3:	// 值不一致
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "采集规则的值size不一致，无法进行明细对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		break;
+	default:
+		break;
 	}
 
 	// 格式样例: A-B

@@ -93,7 +93,7 @@ void CHiveThrift::FetchSourceData(const std::string& hive_sql, const size_t& tot
 					throw base::Exception(HTERR_FETCH_SRCDATA_FAILED, "[HIVE] Fetch source data failed: 源数据的字段个数 (%lu) 与目标表的字段个数 (%lu) 不匹配! (Record_seq: %llu) [FILE:%s, LINE:%d]", v_field.size(), total_num_of_fields, (total_count+i+1), __FILE__, __LINE__);
 				}
 
-				vv_fields.push_back(v_field);
+				base::PubStr::VVectorSwapPushBack(vv_fields, v_field);
 			}
 
 			if ( V_SRC_SIZE > 0 )

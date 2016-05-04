@@ -150,6 +150,8 @@ public:
 		return *this;
 	}
 
+public:
+	// 设置字段类型
 	bool SetColumnType(std::string type)
 	{
 		boost::trim(type);
@@ -256,6 +258,7 @@ public:
 		return *this;
 	}
 
+public:
 	// 设置分析规则类型
 	bool SetAnalyseType(std::string type)
 	{
@@ -401,6 +404,8 @@ public:
 		return *this;
 	}
 
+public:
+	// 设置结果表类型
 	bool SetTableType(std::string type)
 	{
 		boost::trim(type);
