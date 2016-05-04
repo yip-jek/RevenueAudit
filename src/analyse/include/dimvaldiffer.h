@@ -12,6 +12,9 @@ private:	// noncopyable
 	DimValDiffer(const DimValDiffer& );
 	const DimValDiffer& operator = (const DimValDiffer& );
 
+	typedef std::map<std::string, DimVal>		MAP_VAL;			// 这里的key值为维度取值
+	typedef std::map<std::string, MAP_VAL>		MAP_DIM_VAL;		// 这里的key值为维度名称
+
 public:
 	DimValDiffer();
 	~DimValDiffer();
@@ -27,17 +30,20 @@ public:
 	void GetDimValDiff(std::vector<DimVal>& vec_dv);
 
 	// 获得数据库表的维度取值集size
-	size_t GetDBDimValSize() const;
+	size_t GetDBDimValSize();
 
 	// 获得源数据的维度取值集size
-	size_t GetSrcDimValSize() const;
+	size_t GetSrcDimValSize();
 
 private:
 	// 获取维度取值
-	void FetchDimVal(std::map<std::string, DimVal>& m_dv, const DimVal& dv);
+	void FetchDimVal(MAP_DIM_VAL& mm_dv, const DimVal& dv);
+
+	// 获取数据集的size
+	size_t GetMapDimValSize(MAP_DIM_VAL& mdv);
 
 private:
-	std::map<std::string, DimVal>	m_mSrcDimVal;			// 源数据的维度取值集: key值为[字段名称]+[维度取值]
-	std::map<std::string, DimVal>	m_mDBDimVal;			// 数据库表的维度取值集: key值为[字段名称]+[维度取值]
+	MAP_DIM_VAL	mmSrcDimVal;		// 源数据的维度取值集
+	MAP_DIM_VAL	mmDBDimVal;			// 数据库表的维度取值集
 };
 

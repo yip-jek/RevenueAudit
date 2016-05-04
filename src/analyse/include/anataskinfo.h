@@ -345,7 +345,18 @@ public:
 struct AnaTaskInfo
 {
 public:
-	AnaTaskInfo()
+	// 结果表类型
+	enum ResultTableType
+	{
+		TABTYPE_UNKNOWN		= 0,		// 未知类型
+		TABTYPE_COMMON		= 1,		// 普通表
+		TABTYPE_DAY			= 2,		// 天表
+		TABTYPE_MONTH		= 3,		// 月表
+		TABTYPE_YEAR		= 4,		// 年表
+	}
+
+public:
+	AnaTaskInfo(): ResultType(TABTYPE_UNKNOWN)
 	{}
 
 	AnaTaskInfo(const AnaTaskInfo& info)
@@ -390,13 +401,43 @@ public:
 		return *this;
 	}
 
+	bool SetTableType(std::string type)
+	{
+		boost::trim(type);
+		boost::to_upper(type);
+
+		if ( "COMMON_TABLE" == type )
+		{
+			ResultType = TABTYPE_COMMON;
+		}
+		else if ( "DAY_TABLE" == type )
+		{
+			ResultType = TABTYPE_DAY;
+		}
+		else if ( "MONTH_TABLE" == type )
+		{
+			ResultType = TABTYPE_MONTH;
+		}
+		else if ( "YEAR_TABLE" == type )
+		{
+			ResultType = TABTYPE_YEAR;
+		}
+		else
+		{
+			ResultType = TABTYPE_UNKNOWN;
+			return false;
+		}
+
+		return true;
+	}
+
 public:
-	std::string	KpiID;					// 指标ID
-	std::string	DataSrcType;			// 数据源类型
-	std::string	KpiCycle;				// 指标周期
-	std::string	ResultType;				// 结果表类型
-	std::string	TableName;				// 分析结果表
-	AnalyseRule	AnaRule;				// 分析规则
+	std::string		KpiID;					// 指标ID
+	std::string		DataSrcType;			// 数据源类型
+	std::string		KpiCycle;				// 指标周期
+	ResultTableType	ResultType;				// 结果表类型
+	std::string		TableName;				// 分析结果表
+	AnalyseRule		AnaRule;				// 分析规则
 
 	std::vector<AlarmRule>		vecAlarm;			// 告警规则集
 	std::vector<OneEtlRule>		vecEtlRule;			// 采集规则集

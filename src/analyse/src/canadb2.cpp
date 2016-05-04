@@ -113,6 +113,8 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 		rs.Parameter(1) = info.KpiID.c_str();
 		rs.Execute();
 
+		std::string result_type;
+
 		while ( !rs.IsEOF() )
 		{
 			++counter;
@@ -124,8 +126,13 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 			info.KpiCycle      = (const char*)rs[index++];
 			info.AnaRule.AnaID = (const char*)rs[index++];
 			str_alarmid        = (const char*)rs[index++];
-			info.ResultType    = (const char*)rs[index++];
+			result_type 	   = (const char*)rs[index++];
 			info.TableName     = (const char*)rs[index++];
+
+			if ( !info.SetTableType(result_type) )
+			{
+				throw base::Exception(ADBERR_SEL_KPI_RULE, "[DB] Select %s failed! (KPI_ID:%s) 无法识别的结果表类型: %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), result_type.c_str(), __FILE__, __LINE__);
+			}
 
 			rs.MoveNext();
 		}

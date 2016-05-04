@@ -305,9 +305,9 @@ void Analyse::FetchTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 
 void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 {
-	if ( info.ResultType.empty() )
+	if ( AnaTaskInfo::TABTYPE_UNKNOWN == info.ResultType )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析结果表类型为空! 无效! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析结果表类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( info.TableName.empty() )
@@ -414,6 +414,20 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "只有 %lu 份采集结果数据，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.vecEtlRule.size(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
+	int dim_size_1 = t_info.vecEtlRule[0].vecEtlDim.size();
+	int dim_size_2 = t_info.vecEtlRule[1].vecEtlDim.size();
+	if ( dim_size_1 != dim_size_2 )
+	{
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "采集规则的维度size不一致，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
+
+	int val_size_1 = t_info.vecEtlRule[0].vecEtlVal.size();
+	int val_size_2 = t_info.vecEtlRule[1].vecEtlVal.size();
+	if ( val_size_1 != val_size_2 )
+	{
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "采集规则的值size不一致，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
+
 	// 格式样例: A-B, diff1:diff2
 	std::string& ana_exp = t_info.AnaRule.AnaExpress;
 
@@ -435,8 +449,8 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
-	std::set<int> set_diff;
-	std::vector<int> vec_diff;
+	std::set<int> set_diff;			// 用于查重
+	std::vector<int> vec_col;
 	const int DIFF_SIZE = vec_str.size();
 	for ( int i = 0; i < DIFF_SIZE; ++i )
 	{
@@ -449,7 +463,7 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
 
-		int diff_no = -1;
+		int diff_no   = -1;
 		try
 		{
 			diff_no = boost::lexical_cast<int>(ref_str.substr(pos+4));
@@ -459,7 +473,7 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：[%s] 转换失败! [BOOST] %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_str.c_str(), ex.what(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
 
-		if ( diff_no < 0 || diff_no >= t_info.vecEtlRule[0].vecEtlVal.size() )
+		if ( diff_no < 1 || diff_no > val_size_1 )
 		{
 			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：列值 [%d] 越界! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", diff_no, t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
@@ -470,15 +484,22 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 		}
 
 		set_diff.insert(diff_no);
-		vec_diff.push_back(diff_no);
+
+		// 表达式中DIFF从1开始，而列序号是从0开始的
+		vec_col.push_back(diff_no-1);
 	}
 
 	OneEtlRule& first_one  = t_info.vecEtlRule[first_index];
 	OneEtlRule& second_one = t_info.vecEtlRule[second_index];
 
+	std::string field_sql;
+	for (
+
+	// 1) 汇总：对平的Hive SQL语句
 	std::string hive_sql = "select ";
 
-	return hive_sql;
+	// 2) 汇总：有差异的Hive SQL语句
+	hive_sql = 
 }
 
 // 暂时只支持两组数据的明细对比
@@ -598,32 +619,28 @@ void Analyse::DetermineDataGroup(const std::string& exp, int& first, int& second
 
 std::string Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception)
 {
-	std::string& type = info.ResultType;
-	boost::trim(type);
-	boost::to_upper(type);
+	AnaTaskInfo::ResultTableType& type = info.ResultType;
 
 	std::string tab_name = info.TableName;
 	boost::trim(tab_name);
 
-	if ( "SINGLE_TABLE" == type )		// 与最终目标表名一致
+	switch ( type )
 	{
+	case AnaTaskInfo::TABTYPE_COMMON:		// 普通表
 		// Do nothing
-	}
-	else if ( "DAY_TABLE" == type )		// 天表
-	{
+		break;
+	case AnaTaskInfo::TABTYPE_DAY:			// 天表
 		tab_name = tab_name + "_" + base::SimpleTime::Now().DayTime8();
-	}
-	else if ( "MONTH_TABLE" == type )	// 月表
-	{
+		break;
+	case AnaTaskInfo::TABTYPE_MONTH:		// 月表
 		tab_name = tab_name + "_" + base::SimpleTime::Now().MonTime6();
-	}
-	else if ( "YEAR_TABLE" == type )	// 年表
-	{
+		break;
+	case AnaTaskInfo::TABTYPE_YEAR:			// 年表
 		tab_name = tab_name + "_" + base::SimpleTime::Now().YearTime();
-	}
-	else
-	{
-		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "无法识别的目标表类型: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", type.c_str(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		break;
+	case AnaTaskInfo::TABTYPE_UNKNOWN:		// 未知类型
+	default:
+		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "无法识别的目标表类型: TABTYPE_UNKNOWN (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[Analyse] 最终目标表名：%s", tab_name.c_str());
