@@ -30,6 +30,8 @@ public:
 		ANAERR_GET_DETAIL_FAILED      = -3000011,			// 生成明细对比HIVE SQL失败
 		ANAERR_DETERMINE_GROUP_FAILED = -3000012,			// 确定数据组失败
 		ANAERR_SPLIT_HIVESQL_FAILED   = -3000013,			// 拆分可执行HIVE SQL失败
+		ANAERR_GET_STATISTICS_FAILED  = -3000014,			// 生成一般统计HIVE SQL失败
+		ANAERR_GET_REPORT_STAT_FAILED = -3000015,			// 生成报表统计HIVE SQL失败
 	};
 
 public:
@@ -62,7 +64,7 @@ private:
 	void DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception);
 
 	// 解析分析规则，生成Hive取数逻辑
-	void AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, size_t& fields_num, AnaDBInfo& db_info) throw(base::Exception);
+	void AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, AnaDBInfo& db_info) throw(base::Exception);
 
 	// 生成汇总对比类型的Hive SQL语句
 	void GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
@@ -85,29 +87,29 @@ private:
 	// 按类型生成目标表名称
 	std::string GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception);
 
-	// 统计从源数据插入到目标表的字段总数
-	size_t GetTotalNumOfTargetFields(AnaTaskInfo& info);
-
 	// 生成数据库信息
 	void GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception);
 
 	// 获取Hive源数据
-	void FetchHiveSource(std::vector<std::string>& vec_hivesql, const size_t& total_num_of_fields, std::vector<std::vector<std::string> >& vv_fields) throw(base::Exception);
+	void FetchHiveSource(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 分析源数据，生成结果数据
-	void AnalyseSource(AnaTaskInfo& info, std::vector<std::vector<std::string> >& vec2_fields);
+	void AnalyseSourceData(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception);
+
+	// 将Hive源数据转换为报表统计类型数据
+	void TransSrcDataToReportStatData();
 
 	// 收集维度取值
-	void CollectDimVal(AnaTaskInfo& info, std::vector<std::vector<std::string> >& vec2_fields);
+	void CollectDimVal(AnaTaskInfo& info);
 
 	// 结果数据入库 [DB2]
-	void StoreResult(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception);
+	void StoreResult(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception);
 
 	// 告警判断: 如果达到告警阀值，则生成告警
-	void AlarmJudgement(AnaTaskInfo& info, std::vector<std::vector<std::string> >& vec2_fields);
+	void AlarmJudgement(AnaTaskInfo& info);
 
 	// 更新维度取值范围
-	void UpdateDimValue(const std::string& kpi_id);
+	void UpdateDimValue(AnaTaskInfo& info);
 
 private:
 	std::string	m_sKpiID;				// 指标ID
@@ -137,6 +139,13 @@ private:
 	std::string m_tabAlarmEvent;		// 告警事件表
 
 private:
-	DimValDiffer	m_DVDiffer;
+	DimValDiffer	m_DVDiffer;			// 用于维度取值范围的比较
+
+private:
+	// 获取到的Hive源数据集
+	std::vector<std::vector<std::vector<std::string> > >	m_v3HiveSrcData;
+
+	// 报表统计类型的数据集
+	std::vector<std::vector<std::string> >					m_v2ReportStatData;
 };
 

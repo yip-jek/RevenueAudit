@@ -18,6 +18,9 @@ public:
 	// is_multi_dim为true时，表示多个连接的分隔符当作单个分隔符来处理
 	static void Str2StrVector(const std::string& src_str, const std::string& dim, std::vector<std::string>& s_vec, bool is_multi_dim = false);
 
+	// 计算std::vector<std::string>数量
+	static size_t CalcVVVectorStr(std::vector<std::vector<std::vector<std::string> >& vec3_str);
+
 public:
 	// 将Vector进行交换push back
 	template <typename T>

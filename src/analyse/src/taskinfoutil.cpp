@@ -59,9 +59,22 @@ int TaskInfoUtil::CheckPluralEtlRule(std::vector<OneEtlRule>& vec_etlrule)
 	return 0;
 }
 
-std::string TaskInfoUtil::GetCompareFields(OneEtlRule& rule_A, OneEtlRule& rule_B)
+std::string TaskInfoUtil::GetCompareFields(OneEtlRule& rule_A, OneEtlRule& rule_B, bool inverse /*= false*/)
 {
 	std::string fields_sql;
+
+	std::string a_tab_prefix;
+	std::string b_tab_prefix;
+	if ( inverse )		// 反转
+	{
+		a_tab_prefix = "b.";
+		b_tab_prefix = "a.";
+	}
+	else		// 不反转
+	{
+		a_tab_prefix = "a.";
+		b_tab_prefix = "b.";
+	}
 
 	// 采集规则A的维度
 	const int DIM_SIZE = rule_A.vecEtlDim.size();
@@ -71,30 +84,28 @@ std::string TaskInfoUtil::GetCompareFields(OneEtlRule& rule_A, OneEtlRule& rule_
 
 		if ( i != 0 )
 		{
-			fields_sql += ", a." + dim.EtlDimName;
+			fields_sql += ", " + a_tab_prefix + dim.EtlDimName;
 		}
 		else
 		{
-			fields_sql += "a." + dim.EtlDimName;
+			fields_sql += a_tab_prefix + dim.EtlDimName;
 		}
 	}
 
 	// 采集规则A的值
+	std::string v_sql_A;
+	std::string v_sql_B;
 	const int VAL_SIZE = rule_A.vecEtlVal.size();
 	for ( int i = 0; i < VAL_SIZE; ++i )
 	{
-		OneEtlVal& val = rule_A.vecEtlVal[i];
+		OneEtlVal& val_A = rule_A.vecEtlVal[i];
+		OneEtlVal& val_B = rule_B.vecEtlVal[i];
 
-		fields_sql += ", a." + val.EtlValName;
+		v_sql_A += ", " + a_tab_prefix + val_A.EtlValName;
+		v_sql_B += ", " + b_tab_prefix + val_B.EtlValName;
 	}
 
-	// 采集规则B的值
-	for ( int i = 0; i < VAL_SIZE; ++i )
-	{
-		OneEtlVal& val = rule_B.vecEtlVal[i];
-
-		fields_sql += ", b." + val.EtlValName;
-	}
+	fields_sql += v_sql_A + v_sql_B;
 
 	return fields_sql;
 }
@@ -166,5 +177,164 @@ std::string TaskInfoUtil::GetCompareUnequalVals(OneEtlRule& rule_A, OneEtlRule& 
 	}
 
 	return vals_sql;
+}
+
+std::string TaskInfoUtil::GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& rule_B, std::vector<int>& vec_col)
+{
+	std::string fields_sql;
+
+	// 采集规则A的维度
+	const int DIM_SIZE = rule_A.vecEtlDim.size();
+	for ( int i = 0; i < DIM_SIZE; ++i )
+	{
+		OneEtlDim& dim = rule_A.vecEtlDim[i];
+
+		if ( i != 0 )
+		{
+			fields_sql += ", a." + dim.EtlDimName;
+		}
+		else
+		{
+			fields_sql += "a." + dim.EtlDimName;
+		}
+	}
+
+	// 采集规则A和B的值
+	std::string v_sql_A;
+	std::string v_sql_B;
+	const int COL_SIZE = vec_col.size();
+	for ( int i = 0; i < COL_SIZE; ++i )
+	{
+		int& col_index = vec_col[i];
+		OneEtlVal& val_A = rule_A.vecEtlVal[col_index];
+		OneEtlVal& val_B = rule_B.vecEtlVal[col_index];
+
+		v_sql_A += ", a." + val_A.EtlValName;
+		v_sql_B += ", b." + val_B.EtlValName;
+	}
+
+	fields_sql += v_sql_A + v_sql_B;
+
+	return fields_sql;
+}
+
+std::string TaskInfoUtil::GetCompareEqualValsByCol(OneEtlRule& rule_A, OneEtlRule& rule_B, std::vector<int>& vec_col)
+{
+	std::string vals_sql;
+
+	const int COL_SIZE = vec_col.size();
+	for ( int i = 0; i < COL_SIZE; ++i )
+	{
+		int& col_index = vec_col[i];
+		OneEtlVal& val_a = rule_A.vecEtlVal[col_index];
+		OneEtlVal& val_b = rule_B.vecEtlVal[col_index];
+
+		if ( i != 0 )
+		{
+			vals_sql += " and a." + val_a.EtlValName + " = b." + val_b.EtlValName;
+		}
+		else
+		{
+			vals_sql += "a." + val_a.EtlValName + " = b." + val_b.EtlValName;
+		}
+	}
+
+	return vals_sql;
+}
+
+std::string TaskInfoUtil::GetCompareUnequalValsByCol(OneEtlRule& rule_A, OneEtlRule& rule_B, std::vector<int>& vec_col)
+{
+	std::string vals_sql;
+
+	const int COL_SIZE = vec_col.size();
+	for ( int i = 0; i < COL_SIZE; ++i )
+	{
+		int& col_index = vec_col[i];
+		OneEtlVal& val_a = rule_A.vecEtlVal[col_index];
+		OneEtlVal& val_b = rule_B.vecEtlVal[col_index];
+
+		if ( i != 0 )
+		{
+			vals_sql += " or a." + val_a.EtlValName + " != b." + val_b.EtlValName;
+		}
+		else
+		{
+			vals_sql += "a." + val_a.EtlValName + " != b." + val_b.EtlValName;
+		}
+	}
+
+	return vals_sql;
+}
+
+std::string TaskInfoUtil::GetOneRuleFields(OneEtlRule& rule, const std::string& tab_prefix /*= std::string()*/)
+{
+	std::string fields_sql;
+
+	int v_size = rule.vecEtlDim.size();
+	for ( int i = 0; i < v_size; ++i )
+	{
+		OneEtlDim& dim = rule.vecEtlDim[i];
+
+		if ( i != 0 )
+		{
+			fields_sql += ", " + tab_prefix + dim.EtlDimName;
+		}
+		else
+		{
+			fields_sql += tab_prefix + dim.EtlDimName;
+		}
+	}
+
+	v_size = rule.vecEtlVal.size();
+	for ( int i = 0; i < v_size; ++i )
+	{
+		OneEtlVal& val = rule.vecEtlVal[i];
+
+		fields_sql += ", " + tab_prefix + val.EtlValName;
+	}
+
+	return fields_sql;
+}
+
+std::string TaskInfoUtil::GetOneRuleValsNull(OneEtlRule& rule, const std::string& tab_prefix)
+{
+	std::string val_null_sql;
+
+	const int VAL_SIZE = rule.vecEtlVal.size();
+	for ( int i = 0; i < VAL_SIZE; ++i )
+	{
+		OneEtlVal& ref_val = rule.vecEtlVal[i];
+
+		//val_null_sql += ", NULL";
+		if ( i != 0 )
+		{
+			val_null_sql += " or " + tab_prefix + ref_val.EtlValName + " is null";
+		}
+		else
+		{
+			val_null_sql += tab_prefix + ref_val.EtlValName + " is null";
+		}
+	}
+
+	return val_null_sql;
+}
+
+void TaskInfoUtil::GetEtlStatisticsSQLs(std::vector<OneEtlRule>& vec_rules, std::vector<std::string>& vec_hivesql)
+{
+	std::vector<std::string> v_hive_sql;
+
+	std::string hive_sql;
+	const int RULE_SIZE = vec_rules.size();
+	for ( int i = 0; i < RULE_SIZE; ++i )
+	{
+		OneEtlRule& ref_rule = vec_rules[i];
+
+		hive_sql = "select " + GetOneRuleFields(ref_rule);
+		hive_sql += " from " + ref_rule.TargetPatch;
+
+		v_hive_sql.push_back(hive_sql);
+	}
+
+	v_hive_sql.swap(vec_hivesql);
 }
 

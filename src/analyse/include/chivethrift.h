@@ -24,6 +24,6 @@ public:
 	//void Test(const std::string& table) throw(base::Exception);
 
 	// 获取源数据
-	void FetchSourceData(const std::string& hive_sql, const size_t& total_num_of_fields, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception);
+	void FetchSourceData(const std::string& hive_sql, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception);
 };
 

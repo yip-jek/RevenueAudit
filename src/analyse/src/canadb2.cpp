@@ -346,7 +346,6 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 	m_pLog->Output("[DB] Insert result data to [%s], SQL: %s", db_info.target_table.c_str(), db_info.db2_sql.c_str());
 
 	const size_t FIELDS_SIZE = vec2_fields.size();
-
 	try
 	{
 		rs.Prepare(db_info.db2_sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -363,14 +362,14 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 			{
 				std::vector<std::string>& v_data = vec2_fields[i];
 
-				int data_size = v_data.size();
-				for ( int j = 0; j < data_size; ++j )
+				const int DATA_SIZE = v_data.size();
+				for ( int j = 0; j < DATA_SIZE; ++j )
 				{
 					rs.Parameter(j+1) = v_data[j].c_str();
 				}
 
 				// 绑定时间戳
-				rs.Parameter(data_size+1) = date_time.c_str();
+				rs.Parameter(DATA_SIZE+1) = date_time.c_str();
 
 				rs.Execute();
 
@@ -387,8 +386,8 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 			{
 				std::vector<std::string>& v_data = vec2_fields[i];
 
-				int data_size = v_data.size();
-				for ( int j = 0; j < data_size; ++j )
+				const int DATA_SIZE = v_data.size();
+				for ( int j = 0; j < DATA_SIZE; ++j )
 				{
 					rs.Parameter(j+1) = v_data[j].c_str();
 				}
@@ -403,6 +402,7 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 			}
 		}
 
+		// 最后提交一次
 		Commit();
 	}
 	catch ( const XDBO2::CDBException& ex )
@@ -411,6 +411,94 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 	}
 
 	m_pLog->Output("[DB] Insert result data to [%s]: %llu", db_info.target_table.c_str(), FIELDS_SIZE);
+}
+
+void CAnaDB2::DeleteReportStatData(AnaDBInfo& db_info, const std::string& day_time) throw(base::Exception)
+{
+	if ( day_time.empty() )
+	{
+		throw base::Exception(ADBERR_DEL_REPORT_DATA, "[DB] Delete report statistics data from [%s] failed: the day time is a blank! [FILE:%s, LINE:%d]", db_info.target_table.c_str(), __FILE__, __LINE__);
+	}
+
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	m_pLog->Output("[DB] Delete report statistics data from [%s]", db_info.target_table.c_str());
+
+	try
+	{
+		std::string sql = "delete from " + db_info.target_table;
+		// 时间字段在末尾
+		sql += " where " + db_info.vec_fields[db_info.vec_fields.size()-1] + " = ?";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		Begin();
+
+		rs.Parameter(1) = day_time.c_str();
+		rs.Execute();
+
+		Commit();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_DEL_REPORT_DATA, "[DB] Delete report statistics data from [%s] failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_reportdata) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	if ( db_info.db2_sql.empty() )
+	{
+		throw base::Exception(ADBERR_INS_REPORT_DATA, "[DB] Insert report statistics data to [%s] failed: no sql to be executed! [FILE:%s, LINE:%d]", db_info.target_table.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[DB] Insert report statistics data to [%s], SQL: %s", db_info.target_table.c_str(), db_info.db2_sql.c_str());
+
+	const size_t REPORT_DATA_SIZE = vec2_reportdata.size();
+	try
+	{
+		rs.Prepare(db_info.db2_sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		Begin();
+
+		// 时间格式：YYYYMMDD (24小时制)
+		// 例如：20160501 表示2016年05月01日
+		std::string now_day = base::SimpleTime::Now().DayTime8();
+
+		for ( size_t i = 0; i < REPORT_DATA_SIZE; ++i )
+		{
+			std::vector<std::string>& v_data = vec2_reportdata[i];
+
+			const int DATA_SIZE = v_data.size();
+			for ( int j = 0; j < DATA_SIZE; ++j )
+			{
+				rs.Parameter(j+1) = v_data[j].c_str();
+			}
+
+			// 绑定时间戳
+			rs.Parameter(DATA_SIZE+1) = now_day.c_str();
+
+			rs.Execute();
+
+			// 每达到最大值提交一次
+			if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
+			{
+				Commit();
+			}
+		}
+
+		// 最后提交一次
+		Commit();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_INS_REPORT_DATA, "[DB] Insert report statistics data to [%s] failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB] Insert report statistics data to [%s]: %llu", db_info.target_table.c_str(), REPORT_DATA_SIZE);
 }
 
 void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)

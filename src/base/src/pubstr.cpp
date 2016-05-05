@@ -56,5 +56,18 @@ void PubStr::Str2StrVector(const std::string& src_str, const std::string& dim, s
 	vec_str.swap(s_vec);
 }
 
+size_t PubStr::CalcVVVectorStr(std::vector<std::vector<std::vector<std::string> >& vec3_str)
+{
+	size_t calc_size = 0;
+
+	const int VEC3_SIZE = vec3_str.size();
+	for ( int i = 0; i < VEC3_SIZE; ++i )
+	{
+		calc_size += vec3_str[i].size();
+	}
+
+	return calc_size;
+}
+
 }	// namespace base
 
