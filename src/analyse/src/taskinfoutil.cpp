@@ -29,8 +29,8 @@ int TaskInfoUtil::CheckPluralEtlRule(std::vector<OneEtlRule>& vec_etlrule)
 		return -1;
 	}
 
-	int dim_size = -1;
-	int val_size = -1;
+	size_t dim_size = 0;
+	size_t val_size = 0;
 
 	const int V_RULE_SIZE = vec_etlrule.size();
 	for ( int i = 0; i < V_RULE_SIZE; ++i )
@@ -305,7 +305,6 @@ std::string TaskInfoUtil::GetOneRuleValsNull(OneEtlRule& rule, const std::string
 	{
 		OneEtlVal& ref_val = rule.vecEtlVal[i];
 
-		//val_null_sql += ", NULL";
 		if ( i != 0 )
 		{
 			val_null_sql += " or " + tab_prefix + ref_val.EtlValName + " is null";

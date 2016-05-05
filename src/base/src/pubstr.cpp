@@ -56,7 +56,7 @@ void PubStr::Str2StrVector(const std::string& src_str, const std::string& dim, s
 	vec_str.swap(s_vec);
 }
 
-size_t PubStr::CalcVVVectorStr(std::vector<std::vector<std::vector<std::string> >& vec3_str)
+size_t PubStr::CalcVVVectorStr(std::vector<std::vector<std::vector<std::string> > >& vec3_str)
 {
 	size_t calc_size = 0;
 

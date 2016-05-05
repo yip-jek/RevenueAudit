@@ -356,7 +356,7 @@ public:
 		TABTYPE_DAY			= 2,		// 天表
 		TABTYPE_MONTH		= 3,		// 月表
 		TABTYPE_YEAR		= 4,		// 年表
-	}
+	};
 
 public:
 	AnaTaskInfo(): ResultType(TABTYPE_UNKNOWN)

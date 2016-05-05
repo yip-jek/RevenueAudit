@@ -1,6 +1,7 @@
 #include "analyse.h"
 #include <vector>
 #include <set>
+#include <map>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include "log.h"
@@ -169,7 +170,7 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::
 
 		if ( col.DBName.empty() )
 		{
-			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "维度字段名为空! 无效! (KPI_ID=%s, COL_TYPE=%s, COL_SEQ=%d) [FILE:%s, LINE:%d]", col.KpiID.c_str(), col.ColType.c_str(), col.ColSeq, __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "维度字段名为空! 无效! (KPI_ID=%s, COL_TYPE=CTYPE_DIM, COL_SEQ=%d) [FILE:%s, LINE:%d]", col.KpiID.c_str(), col.ColSeq, __FILE__, __LINE__);
 		}
 
 		if ( col.ColSeq < 0 )
@@ -183,12 +184,12 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::
 				}
 				else
 				{
-					throw base::Exception(ANAERR_GET_DBINFO_FAILED, "时间戳维度字段重复设置: KPI_ID=%s, COL_TYPE=%s, COL_SEQ=%d, DB_NAME=%s [FILE:%s, LINE:%d]", col.KpiID.c_str(), col.ColType.c_str(), col.ColSeq, col.DBName.c_str(), __FILE__, __LINE__);
+					throw base::Exception(ANAERR_GET_DBINFO_FAILED, "时间戳维度字段重复设置: KPI_ID=%s, COL_TYPE=CTYPE_DIM, COL_SEQ=%d, DB_NAME=%s [FILE:%s, LINE:%d]", col.KpiID.c_str(), col.ColSeq, col.DBName.c_str(), __FILE__, __LINE__);
 				}
 			}
 			else
 			{
-				throw base::Exception(ANAERR_GET_DBINFO_FAILED, "无法识别的维度字段序号: %d (KPI_ID=%s, COL_TYPE=%s, DB_NAME=%s) [FILE:%s, LINE:%d]", col.ColSeq, col.KpiID.c_str(), col.ColType.c_str(), col.DBName.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_GET_DBINFO_FAILED, "无法识别的维度字段序号: %d (KPI_ID=%s, COL_TYPE=CTYPE_DIM, DB_NAME=%s) [FILE:%s, LINE:%d]", col.ColSeq, col.KpiID.c_str(), col.DBName.c_str(), __FILE__, __LINE__);
 			}
 		}
 		else
@@ -204,12 +205,12 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::
 
 		if ( col.DBName.empty() )
 		{
-			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "值字段名为空! 无效! (KPI_ID=%s, COL_TYPE=%s, COL_SEQ=%d) [FILE:%s, LINE:%d]", col.KpiID.c_str(), col.ColType.c_str(), col.ColSeq, __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "值字段名为空! 无效! (KPI_ID=%s, COL_TYPE=CTYPE_VAL, COL_SEQ=%d) [FILE:%s, LINE:%d]", col.KpiID.c_str(), col.ColSeq, __FILE__, __LINE__);
 		}
 
 		if ( col.ColSeq < 0 )
 		{
-			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "无法识别的值字段序号: %d (KPI_ID=%s, COL_TYPE=%s, DB_NAME=%s) [FILE:%s, LINE:%d]", col.ColSeq, col.KpiID.c_str(), col.ColType.c_str(), col.DBName.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "无法识别的值字段序号: %d (KPI_ID=%s, COL_TYPE=CTYPE_VAL, DB_NAME=%s) [FILE:%s, LINE:%d]", col.ColSeq, col.KpiID.c_str(), col.DBName.c_str(), __FILE__, __LINE__);
 		}
 
 		v_fields.push_back(col.DBName);
@@ -351,7 +352,7 @@ void Analyse::DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception)
 	UpdateDimValue(t_info);
 }
 
-void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, size_t& fields_num, AnaDBInfo& db_info) throw(base::Exception)
+void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, AnaDBInfo& db_info) throw(base::Exception)
 {
 	// 分析规则类型
 	switch ( t_info.AnaRule.AnaType )
@@ -429,6 +430,7 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
+	const int VAL_SIZE_1 = t_info.vecEtlRule[0].vecEtlVal.size();
 	std::set<int> set_diff;			// 用于查重
 	std::vector<int> vec_col;
 	const int DIFF_SIZE = vec_str.size();
@@ -453,7 +455,7 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：[%s] 转换失败! [BOOST] %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_str.c_str(), ex.what(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
 
-		if ( diff_no < 1 || diff_no > val_size_1 )
+		if ( diff_no < 1 || diff_no > VAL_SIZE_1 )
 		{
 			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：列值 [%d] 越界! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", diff_no, t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
@@ -579,7 +581,7 @@ void Analyse::GetStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>
 	// 暂不使用分析规则表达式
 	//std::string& ana_exp = t_info.AnaRule.AnaExpress;
 
-	TaskInfoUtil(t_info.vecEtlRule, vec_hivesql);
+	TaskInfoUtil::GetEtlStatisticsSQLs(t_info.vecEtlRule, vec_hivesql);
 }
 
 void Analyse::GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
@@ -609,7 +611,7 @@ void Analyse::GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::s
 	// 暂不使用分析规则表达式
 	//std::string& ana_exp = t_info.AnaRule.AnaExpress;
 
-	TaskInfoUtil(t_info.vecEtlRule, vec_hivesql);
+	TaskInfoUtil::GetEtlStatisticsSQLs(t_info.vecEtlRule, vec_hivesql);
 }
 
 void Analyse::SplitHiveSqlExpress(std::string exp, std::vector<std::string>& vec_hivesql) throw(base::Exception)
@@ -746,8 +748,69 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(b
 
 void Analyse::TransSrcDataToReportStatData()
 {
+	std::map<std::string, std::vector<std::string> > 	mReportStatData;
+	std::map<std::string, std::vector<std::string> >::iterator	it = mReportStatData.end();
+
+	std::string str_tmp;
+	std::string m_key;
+	const int VEC3_SIZE = m_v3HiveSrcData.size();
+	for ( int i = 0; i < VEC3_SIZE; ++i )
+	{
+		std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
+
+		const size_t VEC2_SIZE = ref_vec2.size();
+		for ( size_t j = 0; j < VEC2_SIZE; ++j )
+		{
+			std::vector<std::string>& ref_vec1 = ref_vec2[j];
+
+			// 组织key值
+			m_key.clear();
+			const int VEC1_SIZE = ref_vec1.size();
+			const int DIM_SIZE = VEC1_SIZE - 1;
+			for ( int k = 0; k < DIM_SIZE; ++k )
+			{
+				std::string& ref_str = ref_vec1[k];
+
+				boost::trim(ref_str);
+				m_key += ref_str;
+			}
+
+			// 值所在的列序号
+			const int VAL_INDEX = DIM_SIZE + i;
+
+			it = mReportStatData.find(m_key);
+			if ( it != mReportStatData.end() )		// key值存在
+			{
+				std::vector<std::string>& ref_m_v = it->second;
+
+				ref_m_v[VAL_INDEX] = ref_vec1[DIM_SIZE];
+			}
+			else		// key值不存在
+			{
+				str_tmp = ref_vec1[DIM_SIZE];
+				ref_vec1[DIM_SIZE] = "NULL";
+
+				const int TOTAL_SIZE = VEC3_SIZE + VEC1_SIZE - 1;
+				for ( int l = VEC1_SIZE; l < TOTAL_SIZE; ++l )
+				{
+					ref_vec1.push_back("NULL");
+				}
+				ref_vec1[VAL_INDEX] = str_tmp;
+
+				mReportStatData[m_key] = ref_vec1;
+			}
+		}
+	}
+
+	std::vector<std::vector<std::string> > vec2_reportdata;
+	for ( it = mReportStatData.begin(); it != mReportStatData.end(); ++it )
+	{
+		base::PubStr::VVectorSwapPushBack(vec2_reportdata, it->second);
+	}
+	vec2_reportdata.swap(m_v2ReportStatData);
+
 	// 释放Hive源数据
-	m_v3HiveSrcData.clear();
+	std::vector<std::vector<std::vector<std::string> > >().swap(m_v3HiveSrcData);
 }
 
 void Analyse::CollectDimVal(AnaTaskInfo& info)
