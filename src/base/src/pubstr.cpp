@@ -69,5 +69,77 @@ size_t PubStr::CalcVVVectorStr(std::vector<std::vector<std::vector<std::string> 
 	return calc_size;
 }
 
+// 返回值: 0-成功, 1-数值重复, -1-转换失败
+int PubStr::Express2IntSet(const std::string& src_str, std::set<int>& set_int)
+{
+	std::vector<std::string> vec_str;
+	Str2StrVector(src_str, ",", vec_str);
+
+	if ( vec_str.empty() )
+	{
+		return -1;
+	}
+
+	std::set<int> s_int;
+	std::vector<std::string> vec_section;
+
+	try
+	{
+		const int VEC_SIZE = vec_str.size();
+		for ( int i = 0; i < VEC_SIZE; ++i )
+		{
+			Str2StrVector(vec_str[i], "-", vec_section);
+
+			const int V_SIZE = vec_section.size();
+			if ( 1 == V_SIZE )		// 单个数字
+			{
+				const int VAL = boost::lexical_cast<int>(vec_section[0]);
+
+				// 是否重复
+				if ( s_int.find(VAL) != s_int.end() )
+				{
+					return 1;
+				}
+
+				s_int.insert(VAL);
+			}
+			else if ( 2 == V_SIZE )		// 数字区间
+			{
+				const int LEFT  = boost::lexical_cast<int>(vec_section[0]);	// 左值
+				const int RIGHT = boost::lexical_cast<int>(vec_section[1]);	// 右值
+
+				if ( LEFT < RIGHT )		// 区间有效
+				{
+					for ( int val = LEFT; val <= RIGHT; ++val )
+					{
+						// 是否重复
+						if ( s_int.find(val) != s_int.end() )
+						{
+							return 1;
+						}
+
+						s_int.insert(val);
+					}
+				}
+				else	// 区间无效!
+				{
+					return -1;
+				}
+			}
+			else	// ERROR!
+			{
+				return -1;
+			}
+		}
+	}
+	catch ( boost::bad_lexical_cast& ex )	// 转换为数值失败!
+	{
+		return -1;
+	}
+
+	s_int.swap(set_int);
+	return 0;
+}
+
 }	// namespace base
 

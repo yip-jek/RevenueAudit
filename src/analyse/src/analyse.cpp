@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.02.0040 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.02.0041 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -354,33 +354,36 @@ void Analyse::DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception)
 
 void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, AnaDBInfo& db_info) throw(base::Exception)
 {
+	std::string& ref_exp = t_info.AnaRule.AnaExpress;
+	boost::trim(ref_exp);
+
 	// 分析规则类型
 	switch ( t_info.AnaRule.AnaType )
 	{
 	case AnalyseRule::ANATYPE_SUMMARY_COMPARE:		// 汇总对比
 		m_pLog->Output("[Analyse] 分析规则类型：汇总对比 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
-		m_pLog->Output("[Analyse] 分析规则表达式：%s", t_info.AnaRule.AnaExpress.c_str());
+		m_pLog->Output("[Analyse] 分析规则表达式：%s", ref_exp.c_str());
 		GetSummaryCompareHiveSQL(t_info, vec_hivesql);
 		break;
 	case AnalyseRule::ANATYPE_DETAIL_COMPARE:		// 明细对比
 		m_pLog->Output("[Analyse] 分析规则类型：明细对比 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
-		m_pLog->Output("[Analyse] 分析规则表达式：%s", t_info.AnaRule.AnaExpress.c_str());
+		m_pLog->Output("[Analyse] 分析规则表达式：%s", ref_exp.c_str());
 		GetDetailCompareHiveSQL(t_info, vec_hivesql);
 		break;
 	case AnalyseRule::ANATYPE_STATISTICS:			// 一般统计
 		m_pLog->Output("[Analyse] 分析规则类型：一般统计 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
-		//m_pLog->Output("[Analyse] 分析规则表达式：%s", t_info.AnaRule.AnaExpress.c_str());
+		m_pLog->Output("[Analyse] 分析规则表达式：%s", ref_exp.c_str());
 		GetStatisticsHiveSQL(t_info, vec_hivesql);
 		break;
 	case AnalyseRule::ANATYPE_REPORT_STATISTICS:	// 报表统计
 		m_pLog->Output("[Analyse] 分析规则类型：报表统计 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
-		//m_pLog->Output("[Analyse] 分析规则表达式：%s", t_info.AnaRule.AnaExpress.c_str());
+		m_pLog->Output("[Analyse] 分析规则表达式：%s", ref_exp.c_str());
 		GetReportStatisticsHiveSQL(t_info, vec_hivesql);
 		break;
 	case AnalyseRule::ANATYPE_HIVE_SQL:				// 可执行的HIVE SQL语句
 		m_pLog->Output("[Analyse] 分析规则类型：可执行的HIVE SQL语句 (KPI_ID:%s, ANA_ID:%s)", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str());
 		// 分析表达式，即是可执行的Hive SQL语句（可多个，以分号分隔）
-		SplitHiveSqlExpress(t_info.AnaRule.AnaExpress, vec_hivesql);
+		SplitHiveSqlExpress(ref_exp, vec_hivesql);
 		break;
 	case AnalyseRule::ANATYPE_UNKNOWN:				// 未知类型
 	default:
@@ -578,10 +581,15 @@ void Analyse::GetStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>
 		break;
 	}
 
-	// 暂不使用分析规则表达式
-	//std::string& ana_exp = t_info.AnaRule.AnaExpress;
-
-	TaskInfoUtil::GetEtlStatisticsSQLs(t_info.vecEtlRule, vec_hivesql);
+	std::string& ana_exp = t_info.AnaRule.AnaExpress;
+	if ( ana_exp.empty() )	// 没有指定表达式，则取全量数据
+	{
+		TaskInfoUtil::GetEtlStatisticsSQLs(t_info.vecEtlRule, vec_hivesql);
+	}
+	else
+	{
+		GetStatisticsHiveSQLBySet(t_info, vec_hivesql);
+	}
 }
 
 void Analyse::GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
@@ -608,10 +616,49 @@ void Analyse::GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::s
 		throw base::Exception(ANAERR_GET_REPORT_STAT_FAILED, "采集规则的值不唯一，无法进行报表统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
-	// 暂不使用分析规则表达式
-	//std::string& ana_exp = t_info.AnaRule.AnaExpress;
+	std::string& ana_exp = t_info.AnaRule.AnaExpress;
+	if ( ana_exp.empty() )	// 没有指定表达式，则取全量数据
+	{
+		TaskInfoUtil::GetEtlStatisticsSQLs(t_info.vecEtlRule, vec_hivesql);
+	}
+	else
+	{
+		GetStatisticsHiveSQLBySet(t_info, vec_hivesql);
+	}
+}
 
-	TaskInfoUtil::GetEtlStatisticsSQLs(t_info.vecEtlRule, vec_hivesql);
+void Analyse::GetStatisticsHiveSQLBySet(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
+{
+	std::string& ana_exp = t_info.AnaRule.AnaExpress;
+
+	std::set<int> set_int;
+	const int RESULT = base::PubStr::Express2IntSet(ana_exp, set_int);
+
+	if ( -1 == RESULT )		// 转换失败
+	{
+		throw base::Exception(ANAERR_GET_STAT_BY_SET_FAILED, "分析规则解析失败：分析规则表达式转换失败! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
+	else if ( 1 == RESULT )		// 数据重复
+	{
+		throw base::Exception(ANAERR_GET_STAT_BY_SET_FAILED, "分析规则解析失败：分析规则表达式存在重复数据! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
+	else
+	{
+		const int MAX_ETL_RULE_SIZE = t_info.vecEtlRule.size();
+
+		// 检查合法性
+		for ( std::set<int>::iterator it = set_int.begin(); it != set_int.end(); ++it )
+		{
+			const int& VAL = *it;
+
+			if ( VAL < 1 || VAL > MAX_ETL_RULE_SIZE )
+			{
+				throw base::Exception(ANAERR_GET_STAT_BY_SET_FAILED, "分析规则解析失败：不存在指定的采集组 [%d] ! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", VAL, t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			}
+		}
+
+		TaskInfoUtil::GetEtlStatisticsSQLsBySet(t_info.vecEtlRule, set_int, vec_hivesql);
+	}
 }
 
 void Analyse::SplitHiveSqlExpress(std::string exp, std::vector<std::string>& vec_hivesql) throw(base::Exception)

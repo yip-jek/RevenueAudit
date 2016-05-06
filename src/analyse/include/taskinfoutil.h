@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include "anataskinfo.h"
 
 // 分析任务信息的工具类
@@ -45,5 +46,8 @@ public:
 
 	// 获取采集规则的统计SQL集 (外部保证正确性)
 	static void GetEtlStatisticsSQLs(std::vector<OneEtlRule>& vec_rules, std::vector<std::string>& vec_hivesql);
+
+	// 获取指定组的采集规则的统计SQL集 (外部保证正确性)
+	static void GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules, std::set<int>& set_int, std::vector<std::string>& vec_hivesql);
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <set>
 #include <vector>
 #include "exception.h"
 
@@ -20,6 +21,11 @@ public:
 
 	// 计算std::vector<std::string>数量
 	static size_t CalcVVVectorStr(std::vector<std::vector<std::vector<std::string> > >& vec3_str);
+
+	// 表达式转换为数值集合
+	// 如将 “1-3, 4, 6” 转换为: set[] = 1, 2, 3, 4, 6
+	// 返回值: 0-成功, 1-数值重复, -1-转换失败
+	static int Express2IntSet(const std::string& src_str, std::set<int>& set_int);
 
 public:
 	// 将Vector进行交换push back

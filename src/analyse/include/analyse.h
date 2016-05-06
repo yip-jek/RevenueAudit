@@ -32,6 +32,7 @@ public:
 		ANAERR_SPLIT_HIVESQL_FAILED   = -3000013,			// 拆分可执行HIVE SQL失败
 		ANAERR_GET_STATISTICS_FAILED  = -3000014,			// 生成一般统计HIVE SQL失败
 		ANAERR_GET_REPORT_STAT_FAILED = -3000015,			// 生成报表统计HIVE SQL失败
+		ANAERR_GET_STAT_BY_SET_FAILED = -3000016,			// 生成指定组的统计HIVE SQL失败
 	};
 
 public:
@@ -77,6 +78,9 @@ private:
 
 	// 生成报表统计类型的Hive SQL语句
 	void GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
+
+	// 生成指定组的统计类型的Hive SQL语句
+	void GetStatisticsHiveSQLBySet(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 拆分可执行Hive SQL语句
 	void SplitHiveSqlExpress(std::string exp, std::vector<std::string>& vec_hivesql) throw(base::Exception);

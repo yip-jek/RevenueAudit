@@ -337,3 +337,22 @@ void TaskInfoUtil::GetEtlStatisticsSQLs(std::vector<OneEtlRule>& vec_rules, std:
 	v_hive_sql.swap(vec_hivesql);
 }
 
+void TaskInfoUtil::GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules, std::set<int>& set_int, std::vector<std::string>& vec_hivesql)
+{
+	std::vector<std::string> v_hive_sql;
+
+	std::string hive_sql;
+	for ( std::set<int>::iterator it = set_int.begin(); it != set_int.end(); ++it )
+	{
+		// set<int>是从1开始的，用作索引需要减一
+		OneEtlRule& ref_rule = vec_rules[(*it)-1];
+
+		hive_sql = "select " + GetOneRuleFields(ref_rule);
+		hive_sql += " from " + ref_rule.TargetPatch;
+
+		v_hive_sql.push_back(hive_sql);
+	}
+
+	v_hive_sql.swap(vec_hivesql);
+}
+
