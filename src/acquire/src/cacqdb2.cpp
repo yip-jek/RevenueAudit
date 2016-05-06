@@ -64,12 +64,13 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	std::string data_source;
 	std::string dim_id;
 	std::string val_id;
+	std::string cond_type;
 
 	int counter = 0;
 	try
 	{
-		std::string sql = "select ETLRULE_TIME, ELTRULE_TYPE, ETLRULE_DATASOURCE, ETLRULE_TARGET, ETLDIM_ID, ETLVAL_ID from ";
-		sql += m_tabEtlRule + " where ETLRULE_ID = ? and KPI_ID = ?";
+		std::string sql = "select ETLRULE_TIME, ELTRULE_TYPE, ETLRULE_DATASOURCE, ETLRULE_TARGET, ETLDIM_ID, ETLVAL_ID";
+		sql += ", ETL_CONDITION_TYPE, ETL_CONDITION from " + m_tabEtlRule + " where ETLRULE_ID = ? and KPI_ID = ?";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 		rs.Parameter(1) = info.EtlRuleID.c_str();
@@ -88,6 +89,13 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 			info.EtlRuleTarget = (const char*)rs[index++];
 			dim_id             = (const char*)rs[index++];
 			val_id             = (const char*)rs[index++];
+			cond_type          = (const char*)rs[index++];
+			info.EtlCondition  = (const char*)rs[index++];
+
+			if ( !info.SetConditionType(cond_type) )
+			{
+				throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) 无法识别的采集条件类型: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), cond_type.c_str(), __FILE__, __LINE__);
+			}
 
 			rs.MoveNext();
 		}

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <boost/algorithm/string.hpp>
 
 // 单个维度信息
 struct OneEtlDim
@@ -183,7 +184,16 @@ public:
 struct AcqTaskInfo
 {
 public:
-	AcqTaskInfo()
+	// 采集条件类型
+	enum EtlConditionType
+	{
+		ETLCTYPE_NONE		= 0,		// 不带条件
+		ETLCTYPE_STRAIGHT	= 1,		// 直接条件
+		ETLCTYPE_OUTER_JOIN	= 2,		// 外连条件
+	};
+
+public:
+	AcqTaskInfo(): EtlCondType(ETLCTYPE_NONE)
 	{}
 
 	AcqTaskInfo(const AcqTaskInfo& info)
@@ -192,6 +202,8 @@ public:
 	,EtlRuleTime(info.EtlRuleTime)
 	,EtlRuleType(info.EtlRuleType)
 	,EtlRuleTarget(info.EtlRuleTarget)
+	,EtlCondType(info.EtlCondType)
+	,EtlCondition(info.EtlCondition)
 	,vecEtlRuleDataSrc(info.vecEtlRuleDataSrc)
 	,vecEtlRuleDim(info.vecEtlRuleDim)
 	,vecEtlRuleVal(info.vecEtlRuleVal)
@@ -211,6 +223,8 @@ public:
 			this->EtlRuleTime   = info.EtlRuleTime  ;
 			this->EtlRuleType   = info.EtlRuleType  ;
 			this->EtlRuleTarget = info.EtlRuleTarget;
+			this->EtlCondType	= info.EtlCondType  ;
+			this->EtlCondition	= info.EtlCondition ;
 
 			//this->vecEtlRuleDataSrc.insert(this->vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.end());
 			//this->vecEtlRuleDim.insert(this->vecEtlRuleDim.begin(), info.vecEtlRuleDim.begin(), info.vecEtlRuleDim.end());
@@ -230,18 +244,48 @@ public:
 		EtlRuleTime.clear();
 		EtlRuleType.clear();
 		EtlRuleTarget.clear();
+		EtlCondType = ETLCTYPE_NONE;
+		EtlCondition.clear();
 
 		std::vector<std::string>().swap(vecEtlRuleDataSrc);
 		std::vector<AcqEtlDim>().swap(vecEtlRuleDim);
 		std::vector<AcqEtlVal>().swap(vecEtlRuleVal);
 	}
 
+	bool SetConditionType(std::string c_type)
+	{
+		boost::trim(c_type);
+		boost::to_upper(c_type);
+
+		if ( "NONE" == c_type )		// 不带条件
+		{
+			EtlCondType = ETLCTYPE_NONE;
+		}
+		else if ( "STRAIGHT" == c_type )	// 直接条件
+		{
+			EtlCondType = ETLCTYPE_STRAIGHT;
+		}
+		else if ( "OUTER_JOIN" == c_type )	// 外连条件
+		{
+			EtlCondType = ETLCTYPE_OUTER_JOIN;
+		}
+		else	// ERROR: 未知条件
+		{
+			EtlCondType = ETLCTYPE_NONE;
+			return false;
+		}
+
+		return true;
+	}
+
 public:
-	std::string	EtlRuleID;					// 采集规则ID
-	std::string	KpiID;						// 指标ID
-	std::string	EtlRuleTime;				// 采集时间(周期)
-	std::string	EtlRuleType;				// 采集处理方式
-	std::string	EtlRuleTarget;				// 采集目标数据存放
+	std::string			EtlRuleID;					// 采集规则ID
+	std::string			KpiID;						// 指标ID
+	std::string			EtlRuleTime;				// 采集时间(周期)
+	std::string			EtlRuleType;				// 采集处理方式
+	std::string			EtlRuleTarget;				// 采集目标数据存放
+	EtlConditionType	EtlCondType;				// 采集条件类型
+	std::string			EtlCondition;				// 采集条件
 
 	std::vector<std::string>	vecEtlRuleDataSrc;			// 采集数据源
 	std::vector<AcqEtlDim>		vecEtlRuleDim;				// 采集维度信息
