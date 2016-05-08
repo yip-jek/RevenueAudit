@@ -227,7 +227,7 @@ std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_
 		}
 	}
 
-	int vec_size = etl_val.vecEtlVal.size();
+	vec_size = etl_val.vecEtlVal.size();
 	for ( int i = 0; i < vec_size; ++i )
 	{
 		OneEtlVal& val = etl_val.vecEtlVal[i];
