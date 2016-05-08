@@ -599,7 +599,15 @@ void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 			one.EtlDimSeq  = (int)rs[index++];
 			one.EtlDimName = (const char*)rs[index++];
 
-			v_dim.push_back(one);
+			if ( one.EtlDimSeq < 0 )
+			{
+				m_pLog->Output("[DB] Select [%s]: Ignore invalid ETLDIM_SEQ [%d] (ETLDIM_ID:%s, ETLDIM_NAME:%s)", 
+					m_tabEtlDim.c_str(), one.EtlDimSeq, dim_id.c_str(), one.EtlDimName.c_str());
+			}
+			else
+			{
+				v_dim.push_back(one);
+			}
 
 			rs.MoveNext();
 		}
@@ -644,7 +652,15 @@ void CAnaDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 			one.EtlValSeq  = (int)rs[index++];
 			one.EtlValName = (const char*)rs[index++];
 
-			v_val.push_back(one);
+			if ( one.EtlValSeq < 0 )
+			{
+				m_pLog->Output("[DB] Select [%s]: Ignore invalid ETLVAL_SEQ [%d] (ETLVAL_ID:%s, ETLVAL_NAME:%s)", 
+					m_tabEtlVal.c_str(), one.EtlValSeq, val_id.c_str(), one.EtlValName.c_str());
+			}
+			else
+			{
+				v_val.push_back(one);
+			}
 
 			rs.MoveNext();
 		}

@@ -109,6 +109,7 @@ public:
 	,EtlValName(val.EtlValName)
 	,EtlValDesc(val.EtlValDesc)
 	,EtlValSrcName(val.EtlValSrcName)
+	,EtlValMemo(val.EtlValMemo)
 	{}
 
 public:
@@ -121,6 +122,7 @@ public:
 			this->EtlValName    = val.EtlValName;
 			this->EtlValDesc    = val.EtlValDesc;
 			this->EtlValSrcName = val.EtlValSrcName;
+			this->EtlValMemo    = val.EtlValMemo;
 		}
 
 		return *this;
@@ -134,6 +136,7 @@ public:
 		EtlValName.clear();
 		EtlValDesc.clear();
 		EtlValSrcName.clear();
+		EtlValMemo.clear();
 	}
 
 public:
@@ -142,6 +145,7 @@ public:
 	std::string	EtlValName;					// 采集值名称
 	std::string	EtlValDesc;					// 采集值描述
 	std::string	EtlValSrcName;				// 值对应源字段名称
+	std::string	EtlValMemo;					// 备注
 };
 
 // 采集值信息

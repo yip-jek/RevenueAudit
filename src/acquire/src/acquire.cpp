@@ -4,9 +4,11 @@
 #include <boost/lexical_cast.hpp>
 #include "log.h"
 #include "pubtime.h"
+#include "pubstr.h"
 #include "autodisconnect.h"
 #include "cacqdb2.h"
 #include "chivethrift.h"
+#include "taskinfoutil.h"
 
 
 Acquire g_Acquire;
@@ -26,7 +28,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.02.0044 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.03.0046 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -164,6 +166,11 @@ void Acquire::CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集目标表为空! 无效! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
+	if ( info.vecEtlRuleDataSrc.empty() )
+	{
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "没有采集数据源! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
+
 	size_t src_size = info.vecEtlRuleDataSrc.size();
 	size_t dim_size = info.vecEtlRuleDim.size();
 	size_t val_size = info.vecEtlRuleVal.size();
@@ -204,14 +211,14 @@ void Acquire::DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 {
 	m_pLog->Output("[Acquire] 分析采集规则 ...");
 
-	std::vector<std::string> vec_fields;
-	TaskInfo2TargetFields(info, vec_fields);
+	std::vector<std::string> vec_field;
+	TaskInfo2TargetFields(info, vec_field);
 
 	std::vector<std::string> vec_hivesql;
-	TaskInfo2HiveSql(info, vec_fields, vec_hivesql);
+	TaskInfo2HiveSql(info, vec_hivesql);
 
 	m_pLog->Output("[Acquire] 重建采集目标表 ...");
-	m_pCHive->RebuildHiveTable(info.EtlRuleTarget, vec_fields);
+	m_pCHive->RebuildHiveTable(info.EtlRuleTarget, vec_field);
 
 	m_pLog->Output("[Acquire] 执行数据采集 ...");
 	m_pCHive->ExecuteAcqSQL(vec_hivesql);
@@ -243,6 +250,8 @@ void Acquire::TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>&
 		// 忽略无效维度
 		if ( one.EtlDimSeq < 0 )
 		{
+			m_pLog->Output("[目标表字段] 忽略维度: DIM_ID[%s], DIM_SEQ[%d], DIM_NAME[%s], DIM_SRCNAME[%s], DIM_MEMO[%s]",
+				one.EtlDimID.c_str(), one.EtlDimSeq, one.EtlDimName.c_str(), one.EtlDimSrcName.c_str(), one.EtlDimMemo.c_str());
 			continue;
 		}
 
@@ -265,6 +274,8 @@ void Acquire::TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>&
 		// 忽略无效值
 		if ( one.EtlValSeq < 0 )
 		{
+			m_pLog->Output("[目标表字段] 忽略值: VAL_ID[%s], VAL_SEQ[%d], VAL_NAME[%s], VAL_SRCNAME[%s], VAL_MEMO[%s]",
+				one.EtlValID.c_str(), one.EtlValSeq, one.EtlValName.c_str(), one.EtlValSrcName.c_str(), one.EtlValMemo.c_str());
 			continue;
 		}
 
@@ -280,57 +291,107 @@ void Acquire::TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>&
 	v_field.swap(vec_field);
 }
 
-void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_field, std::vector<std::string>& vec_sql) throw(base::Exception)
+void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql) throw(base::Exception)
 {
+	switch ( info.EtlCondType )
+	{
+	case AcqTaskInfo::ETLCTYPE_NONE:		// 不带条件
+	case AcqTaskInfo::ETLCTYPE_STRAIGHT:	// 直接条件
+		NoneOrStraight2HiveSql(info, vec_sql);
+		break;
+	case AcqTaskInfo::ETLCTYPE_OUTER_JOIN:	// 外连条件
+		OuterJoin2HiveSql(info, vec_sql);
+		break;
+	case AcqTaskInfo::ETLCTYPE_UNKNOWN:		// 未知类型
+	default:
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集规则解析失败：未知的采集条件类型! (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", info.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
+}
+
+void Acquire::OuterJoin2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql) throw(base::Exception)
+{
+	// 分析采集条件
+	// 格式：[外连表名]:[关联的维度字段(逗号分隔)]
+	std::string& etl_cond = info.EtlCondition;
+	boost::trim(etl_cond);
+
+	std::vector<std::string> vec_str;
+	base::PubStr::Str2StrVector(etl_cond, ":", vec_str);
+	if ( vec_str.empty() )
+	{
+		throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "采集规则解析失败：无法识别的采集条件 [%s] (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", etl_cond.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
+
+	const std::string OUTER_TABLE = vec_str[0];		// 外连表名
+	if ( OUTER_TABLE.empty() )
+	{
+		throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "采集规则解析失败：无法识别的采集条件 [%s] (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", etl_cond.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
+
+	// 拆分关联字段
+	const std::string OUTER_ON = vec_str[1];
+	base::PubStr::Str2StrVector(OUTER_ON, ",", vec_str);
+	if ( vec_str.empty() )
+	{
+		throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "采集规则解析失败：无法识别的采集条件 [%s] (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", etl_cond.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
+
 	std::vector<std::string> v_sql;
 
-	std::string hive_sql;
-	std::string dim_sql;
-	const size_t SRC_SIZE = info.vecEtlRuleDataSrc.size();
-	for ( size_t i = 0; i < SRC_SIZE; ++i )
+	const int OUTER_ON_SIZE = vec_str.size();
+	const int SRC_SIZE = info.vecEtlRuleDataSrc.size();
+	if ( 1 == SRC_SIZE )		// 单个源数据
 	{
-		hive_sql = "insert into table " + info.EtlRuleTarget + " select ";
-
-		dim_sql.clear();
-		AcqEtlDim& dim = info.vecEtlRuleDim[i];
-		size_t v_size = dim.vecEtlDim.size();
-		for ( size_t j = 0; j < v_size; ++j )
+		const int NUM_JOIN_ON = TaskInfoUtil::GetNumOfEtlDimJoinOn(info.vecEtlRuleDim[0]);
+		if ( OUTER_ON_SIZE != NUM_JOIN_ON )
 		{
-			OneEtlDim& one = dim.vecEtlDim[j];
-
-			if ( one.EtlDimSrcName.empty() )
-			{
-				throw base::Exception(ACQERR_TASKINFO_INVALID, "第 [%lu] 个采集维度的源字段名没有设定! [DIM_ID:%s, DIM_SEQ:%d] [FILE:%s, LINE:%d]", (j+1), one.EtlDimID.c_str(), one.EtlDimSeq, __FILE__, __LINE__);
-			}
-
-			if ( j != 0 )
-			{
-				dim_sql += ", " + one.EtlDimSrcName;
-			}
-			else
-			{
-				dim_sql = one.EtlDimSrcName;
-			}
+			throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "采集规则解析失败：采集条件的关联字段数 [%d] 与 维度规则的关联字段数 [%d] (ETLRULE_ID:%s, ETLDIM_ID:%s) [FILE:%s, LINE:%d]", OUTER_ON_SIZE, NUM_JOIN_ON, info.EtlRuleID.c_str(), info.vecEtlRuleDim[0].acqEtlDimID.c_str(), __FILE__, __LINE__);
 		}
 
-		hive_sql += dim_sql;
+		const std::string SRC_TABLE = TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[0]);
 
-		AcqEtlVal& val = info.vecEtlRuleVal[i];
-		v_size = val.vecEtlVal.size();
-		for ( size_t j = 0; j < v_size; ++j )
+		std::string hive_sql = "insert into table " + info.EtlRuleTarget + " ";
+		hive_sql += TaskInfoUtil::GetOuterJoinEtlSQL(info.vecEtlRuleDim[0], info.vecEtlRuleVal[0], SRC_TABLE, OUTER_TABLE, vec_str);
+
+		v_sql.push_back(hive_sql);
+	}
+	else	// 多个源数据
+	{
+		std::string target_dim_sql = TaskInfoUtil::GetTargetDimSql(info.vecEtlRuleDim[0]);
+
+		// Hive SQL head
+		std::string hive_sql = "insert into table " + info.EtlRuleTarget + " select ";
+		hive_sql += target_dim_sql + TaskInfoUtil::GetTargetValSql(info.vecEtlRuleVal[0]);
+		hive_sql += " from (";
+
+		int num_join_on = 0;
+		std::string src_table;
+
+		// Hive SQL body
+		for ( int i = 0; i < SRC_SIZE; ++i )
 		{
-			OneEtlVal& one = val.vecEtlVal[j];
-
-			if ( one.EtlValSrcName.empty() )
+			if ( i != 0 )
 			{
-				throw base::Exception(ACQERR_TASKINFO_INVALID, "第 [%lu] 个采集值的源字段名没有设定! [VAL_ID:%s, VAL_SEQ:%d] [FILE:%s, LINE:%d]", (j+1), one.EtlValID.c_str(), one.EtlValSeq, __FILE__, __LINE__);
+				hive_sql += " union all ";
 			}
 
-			hive_sql += ", " + TransEtlValSrcName(one.EtlValSrcName);
+			AcqEtlDim& ref_etl_dim = info.vecEtlRuleDim[i];
+
+			num_join_on = TaskInfoUtil::GetNumOfEtlDimJoinOn(ref_etl_dim);
+			if ( OUTER_ON_SIZE != num_join_on )
+			{
+				throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "采集规则解析失败：采集条件的关联字段数 [%d] 与 维度规则的关联字段数 [%d] (ETLRULE_ID:%s, ETLDIM_ID:%s) [FILE:%s, LINE:%d]", OUTER_ON_SIZE, num_join_on, info.EtlRuleID.c_str(), ref_etl_dim.acqEtlDimID.c_str(), __FILE__, __LINE__);
+			}
+
+			src_table = TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]);
+
+			AcqEtlVal& ref_etl_val = info.vecEtlRuleVal[i];
+
+			hive_sql += TaskInfoUtil::GetOuterJoinEtlSQL(ref_etl_dim, ref_etl_val, src_table, OUTER_TABLE, vec_str);
 		}
 
-		hive_sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]);
-		hive_sql += " group by " + dim_sql;
+		// Hive SQL tail
+		hive_sql += ") TMP group by " + target_dim_sql;
 
 		v_sql.push_back(hive_sql);
 	}
@@ -338,23 +399,82 @@ void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_
 	v_sql.swap(vec_sql);
 }
 
-std::string Acquire::TransEtlValSrcName(const std::string& val_srcname)
+void Acquire::NoneOrStraight2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql)
 {
-	std::string val = val_srcname;
-
-	boost::trim(val);
-	boost::to_upper(val);
-
-	if ( "<RECORD>" == val )	// 记录数
+	std::string condition;
+	// 是否为直接条件
+	if ( AcqTaskInfo::ETLCTYPE_STRAIGHT == info.EtlCondType )
 	{
-		val = "count(*)";
-	}
-	else
-	{
-		val = "sum(" + val + ")";
+		condition = info.EtlCondition;
+
+		boost::trim(condition);
+
+		std::string head_where = condition.substr(0, 5);
+		boost::to_upper(head_where);
+
+		// 加上"where"
+		if ( head_where != "WHERE" )
+		{
+			condition = " where " + condition;
+		}
+		else
+		{
+			condition = " " + condition;
+		}
 	}
 
-	return val;
+	std::vector<std::string> v_sql;
+
+	const int SRC_SIZE = info.vecEtlRuleDataSrc.size();
+	if ( 1 == SRC_SIZE )	// 单个源数据
+	{
+		std::string hive_sql = "insert into table " + info.EtlRuleTarget + " select ";
+		hive_sql += TaskInfoUtil::GetEtlDimSql(info.vecEtlRuleDim[0], true) + TaskInfoUtil::GetEtlValSql(info.vecEtlRuleVal[0]);
+		hive_sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[0]) + condition;
+		hive_sql += " group by " + TaskInfoUtil::GetEtlDimSql(info.vecEtlRuleDim[0], false);
+
+		v_sql.push_back(hive_sql);
+	}
+	else	// 多个源数据
+	{
+		std::string target_dim_sql = TaskInfoUtil::GetTargetDimSql(info.vecEtlRuleDim[0]);
+
+		// Hive SQL head
+		std::string hive_sql = "insert into table " + info.EtlRuleTarget + " select ";
+		hive_sql += target_dim_sql + TaskInfoUtil::GetTargetValSql(info.vecEtlRuleVal[0]);
+		hive_sql += " from (";
+
+		// Hive SQL body
+		std::string tab_alias;
+		std::string tab_pre;
+		for ( int i = 0; i < SRC_SIZE; ++i )
+		{
+			if ( i != 0 )
+			{
+				hive_sql += " union all select ";
+			}
+			else
+			{
+				hive_sql += "select ";
+			}
+
+			tab_alias = base::PubStr::TabIndex2TabAlias(i);
+			tab_pre = tab_alias + ".";
+			AcqEtlDim& dim = info.vecEtlRuleDim[i];
+			AcqEtlVal& val = info.vecEtlRuleVal[i];
+
+			hive_sql += TaskInfoUtil::GetEtlDimSql(dim, true, tab_pre) + TaskInfoUtil::GetEtlValSql(val, tab_pre);
+			hive_sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]) + " " + tab_alias;
+			hive_sql += " group by " + TaskInfoUtil::GetEtlDimSql(dim, false, tab_pre);
+		}
+
+		// Hive SQL tail
+		hive_sql += ") TMP " + condition + " group by " + target_dim_sql;
+
+		v_sql.push_back(hive_sql);
+	}
+
+	v_sql.swap(vec_sql);
 }
 
 std::string Acquire::TransDataSrcDate(const std::string& time, const std::string& data_src) throw(base::Exception)

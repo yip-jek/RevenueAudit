@@ -23,6 +23,7 @@ public:
 		ACQERR_INIT_FAILED          = -2000005,			// 初始化失败
 		ACQERR_TASKINFO_INVALID     = -2000006,			// 任务信息无效
 		ACQERR_TRANS_DATASRC_FAILED = -2000007,			// 源表转换失败
+		ACQERR_OUTER_JOIN_FAILED    = -2000008,			// 外连条件下生成Hive SQL失败
 	};
 
 public:
@@ -58,10 +59,13 @@ private:
 	void TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>& vec_field) throw(base::Exception);
 
 	// 分析采集任务规则，生成Hive_SQL
-	void TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_field, std::vector<std::string>& vec_sql) throw(base::Exception);
+	void TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql) throw(base::Exception);
 
-	// 采集值对应源字段名转换
-	std::string TransEtlValSrcName(const std::string& val_srcname);
+	// 外连条件下：分析采集规则，生成Hive_SQL
+	void OuterJoin2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql) throw(base::Exception);
+
+	// 不带条件或者直接条件下：分析采集规则，生成Hive_SQL
+	void NoneOrStraight2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql);
 
 	// 采集源数据表名日期转换
 	std::string TransDataSrcDate(const std::string& time, const std::string& data_src) throw(base::Exception);

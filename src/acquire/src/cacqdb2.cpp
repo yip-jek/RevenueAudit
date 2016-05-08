@@ -215,7 +215,7 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 
 	try
 	{
-		std::string sql = "select ETLVAL_SEQ, ETLVAL_NAME, ETLVAL_DESC, ETLVAL_SRCNAME from ";
+		std::string sql = "select ETLVAL_SEQ, ETLVAL_NAME, ETLVAL_DESC, ETLVAL_SRCNAME, ETLVAL_MEMO from ";
 		sql += m_tabEtlVal + " where ETLVAL_ID = ? order by ETLVAL_SEQ asc";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -230,6 +230,7 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 			val.EtlValName    = (const char*)rs[index++];
 			val.EtlValDesc    = (const char*)rs[index++];
 			val.EtlValSrcName = (const char*)rs[index++];
+			val.EtlValMemo	  = (const char*)rs[index++];
 
 			v_val.push_back(val);
 
