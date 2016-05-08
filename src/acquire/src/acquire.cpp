@@ -192,6 +192,12 @@ void Acquire::CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集值为空! 无效! [VAL_ID:%s] [FILE:%s, LINE:%d]", val.acqEtlValID.c_str(), __FILE__, __LINE__);
 		}
 	}
+
+	// 未知的采集条件类型
+	if ( AcqTaskInfo::ETLCTYPE_UNKNOWN == info.EtlCondType )
+	{
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "未知的采集条件类型: ETLCTYPE_UNKNOWN [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
 }
 
 void Acquire::DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception)

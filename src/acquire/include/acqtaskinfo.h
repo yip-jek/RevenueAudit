@@ -17,6 +17,7 @@ public:
 	,EtlDimName(dim.EtlDimName)
 	,EtlDimDesc(dim.EtlDimDesc)
 	,EtlDimSrcName(dim.EtlDimSrcName)
+	,EtlDimMemo(dim.EtlDimMemo)
 	{}
 
 public:
@@ -29,6 +30,7 @@ public:
 			this->EtlDimName    = dim.EtlDimName;
 			this->EtlDimDesc    = dim.EtlDimDesc;
 			this->EtlDimSrcName = dim.EtlDimSrcName;
+			this->EtlDimMemo    = dim.EtlDimMemo;
 		}
 
 		return *this;
@@ -42,6 +44,7 @@ public:
 		EtlDimName.clear();
 		EtlDimDesc.clear();
 		EtlDimSrcName.clear();
+		EtlDimMemo.clear();
 	}
 
 public:
@@ -50,6 +53,7 @@ public:
 	std::string	EtlDimName;					// 采集维度名称
 	std::string	EtlDimDesc;					// 采集维度描述
 	std::string	EtlDimSrcName;				// 维度对应源字段名称
+	std::string EtlDimMemo;					// 备注
 };
 
 // 采集维度信息
@@ -187,13 +191,14 @@ public:
 	// 采集条件类型
 	enum EtlConditionType
 	{
-		ETLCTYPE_NONE		= 0,		// 不带条件
-		ETLCTYPE_STRAIGHT	= 1,		// 直接条件
-		ETLCTYPE_OUTER_JOIN	= 2,		// 外连条件
+		ETLCTYPE_UNKNOWN	= 0,		// 未知类型
+		ETLCTYPE_NONE		= 1,		// 不带条件
+		ETLCTYPE_STRAIGHT	= 2,		// 直接条件
+		ETLCTYPE_OUTER_JOIN	= 3,		// 外连条件
 	};
 
 public:
-	AcqTaskInfo(): EtlCondType(ETLCTYPE_NONE)
+	AcqTaskInfo(): EtlCondType(ETLCTYPE_UNKNOWN)
 	{}
 
 	AcqTaskInfo(const AcqTaskInfo& info)
@@ -244,7 +249,7 @@ public:
 		EtlRuleTime.clear();
 		EtlRuleType.clear();
 		EtlRuleTarget.clear();
-		EtlCondType = ETLCTYPE_NONE;
+		EtlCondType = ETLCTYPE_UNKNOWN;
 		EtlCondition.clear();
 
 		std::vector<std::string>().swap(vecEtlRuleDataSrc);
@@ -271,7 +276,7 @@ public:
 		}
 		else	// ERROR: 未知条件
 		{
-			EtlCondType = ETLCTYPE_NONE;
+			EtlCondType = ETLCTYPE_UNKNOWN;
 			return false;
 		}
 

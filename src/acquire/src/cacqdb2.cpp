@@ -167,7 +167,7 @@ void CAcqDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 
 	try
 	{
-		std::string sql = "select ETLDIM_SEQ, ETLDIM_NAME, ETLDIM_DESC, ETLDIM_SRCNAME from ";
+		std::string sql = "select ETLDIM_SEQ, ETLDIM_NAME, ETLDIM_DESC, ETLDIM_SRCNAME, ETLDIM_MEMO from ";
 		sql += m_tabEtlDim + " where ETLDIM_ID = ? order by ETLDIM_SEQ asc";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -182,6 +182,7 @@ void CAcqDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 			dim.EtlDimName    = (const char*)rs[index++];
 			dim.EtlDimDesc    = (const char*)rs[index++];
 			dim.EtlDimSrcName = (const char*)rs[index++];
+			dim.EtlDimMemo    = (const char*)rs[index++];
 
 			v_dim.push_back(dim);
 
