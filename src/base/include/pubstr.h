@@ -27,6 +27,10 @@ public:
 	// 返回值: 0-成功, 1-数值重复, -1-转换失败
 	static int Express2IntSet(const std::string& src_str, std::set<int>& set_int);
 
+	// 表序号转换为表别名
+	// 序号从0开始，表别名从a开始
+	static std::string TabIndex2TabAlias(int index);
+
 public:
 	// 将Vector进行交换push back
 	template <typename T>

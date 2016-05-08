@@ -208,7 +208,7 @@ void Acquire::DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 	TaskInfo2TargetFields(info, vec_fields);
 
 	std::vector<std::string> vec_hivesql;
-	TaskInfo2HiveSql(info, vec_hivesql);
+	TaskInfo2HiveSql(info, vec_fields, vec_hivesql);
 
 	m_pLog->Output("[Acquire] 重建采集目标表 ...");
 	m_pCHive->RebuildHiveTable(info.EtlRuleTarget, vec_fields);
@@ -240,6 +240,12 @@ void Acquire::TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>&
 	{
 		OneEtlDim& one = first_dim.vecEtlDim[i];
 
+		// 忽略无效维度
+		if ( one.EtlDimSeq < 0 )
+		{
+			continue;
+		}
+
 		if ( one.EtlDimName.empty() )
 		{
 			throw base::Exception(ACQERR_TASKINFO_INVALID, "第 [%lu] 个采集维度名称没有设定! [DIM_ID:%s, DIM_SEQ:%d] [FILE:%s, LINE:%d]", (i+1), one.EtlDimID.c_str(), one.EtlDimSeq, __FILE__, __LINE__);
@@ -256,6 +262,12 @@ void Acquire::TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>&
 	{
 		OneEtlVal& one = first_val.vecEtlVal[i];
 
+		// 忽略无效值
+		if ( one.EtlValSeq < 0 )
+		{
+			continue;
+		}
+
 		if ( one.EtlValName.empty() )
 		{
 			throw base::Exception(ACQERR_TASKINFO_INVALID, "第 [%lu] 个采集值名称没有设定! [VAL_ID:%s, VAL_SEQ:%d] [FILE:%s, LINE:%d]", (i+1), one.EtlValID.c_str(), one.EtlValSeq, __FILE__, __LINE__);
@@ -268,7 +280,7 @@ void Acquire::TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>&
 	v_field.swap(vec_field);
 }
 
-void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql) throw(base::Exception)
+void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_field, std::vector<std::string>& vec_sql) throw(base::Exception)
 {
 	std::vector<std::string> v_sql;
 

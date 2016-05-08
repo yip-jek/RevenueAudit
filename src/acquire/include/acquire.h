@@ -58,7 +58,7 @@ private:
 	void TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>& vec_field) throw(base::Exception);
 
 	// 分析采集任务规则，生成Hive_SQL
-	void TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql) throw(base::Exception);
+	void TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_field, std::vector<std::string>& vec_sql) throw(base::Exception);
 
 	// 采集值对应源字段名转换
 	std::string TransEtlValSrcName(const std::string& val_srcname);

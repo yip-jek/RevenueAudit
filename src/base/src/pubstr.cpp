@@ -141,5 +141,31 @@ int PubStr::Express2IntSet(const std::string& src_str, std::set<int>& set_int)
 	return 0;
 }
 
+std::string PubStr::TabIndex2TabAlias(int index)
+{
+	if ( index < 0 ) 
+	{   
+		return std::string();
+	}   
+
+	int s = index;
+	int r = s % 26;
+
+	std::string tab_alias(1, char('a' + r));
+
+	s /= 26;
+	while ( s > 0 )
+	{
+		s -= 1;
+		r = s % 26; 
+
+		tab_alias = char('a' + r) + tab_alias;
+
+		s /= 26;
+	}
+
+	return tab_alias;
+}
+
 }	// namespace base
 
