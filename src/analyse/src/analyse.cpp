@@ -581,14 +581,17 @@ void Analyse::GetStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>
 		break;
 	}
 
+	// 当有多份采集结果数据时，采用联合语句
+	bool is_union_all = (t_info.vecEtlRule.size() > 1);
+
 	std::string& ana_exp = t_info.AnaRule.AnaExpress;
 	if ( ana_exp.empty() )	// 没有指定表达式，则取全量数据
 	{
-		TaskInfoUtil::GetEtlStatisticsSQLs(t_info.vecEtlRule, vec_hivesql);
+		TaskInfoUtil::GetEtlStatisticsSQLs(t_info.vecEtlRule, vec_hivesql, is_union_all);
 	}
 	else
 	{
-		GetStatisticsHiveSQLBySet(t_info, vec_hivesql);
+		GetStatisticsHiveSQLBySet(t_info, vec_hivesql, is_union_all);
 	}
 }
 
@@ -619,15 +622,15 @@ void Analyse::GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::s
 	std::string& ana_exp = t_info.AnaRule.AnaExpress;
 	if ( ana_exp.empty() )	// 没有指定表达式，则取全量数据
 	{
-		TaskInfoUtil::GetEtlStatisticsSQLs(t_info.vecEtlRule, vec_hivesql);
+		TaskInfoUtil::GetEtlStatisticsSQLs(t_info.vecEtlRule, vec_hivesql, false);
 	}
 	else
 	{
-		GetStatisticsHiveSQLBySet(t_info, vec_hivesql);
+		GetStatisticsHiveSQLBySet(t_info, vec_hivesql, false);
 	}
 }
 
-void Analyse::GetStatisticsHiveSQLBySet(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse::GetStatisticsHiveSQLBySet(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, bool union_all) throw(base::Exception)
 {
 	std::string& ana_exp = t_info.AnaRule.AnaExpress;
 
@@ -657,7 +660,7 @@ void Analyse::GetStatisticsHiveSQLBySet(AnaTaskInfo& t_info, std::vector<std::st
 			}
 		}
 
-		TaskInfoUtil::GetEtlStatisticsSQLsBySet(t_info.vecEtlRule, set_int, vec_hivesql);
+		TaskInfoUtil::GetEtlStatisticsSQLsBySet(t_info.vecEtlRule, set_int, vec_hivesql, union_all);
 	}
 }
 

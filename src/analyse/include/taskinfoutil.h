@@ -39,15 +39,15 @@ public:
 
 	// 获取采集规则的字段SQL (外部保证正确性)
 	// tab_prefix为字段前置，例如："a.", "b."等
-	static std::string GetOneRuleFields(OneEtlRule& rule, const std::string& tab_prefix = std::string());
+	static void GetOneRuleFields(std::string& dim_sql, std::string& val_sql, OneEtlRule& rule, bool set_as, const std::string& tab_prefix = std::string());
 
 	// 获取采集规则的 <NULL> 值SQL (外部保证正确性)
 	static std::string GetOneRuleValsNull(OneEtlRule& rule, const std::string& tab_prefix);
 
 	// 获取采集规则的统计SQL集 (外部保证正确性)
-	static void GetEtlStatisticsSQLs(std::vector<OneEtlRule>& vec_rules, std::vector<std::string>& vec_hivesql);
+	static void GetEtlStatisticsSQLs(std::vector<OneEtlRule>& vec_rules, std::vector<std::string>& vec_hivesql, bool union_all);
 
 	// 获取指定组的采集规则的统计SQL集 (外部保证正确性)
-	static void GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules, std::set<int>& set_int, std::vector<std::string>& vec_hivesql);
+	static void GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules, std::set<int>& set_int, std::vector<std::string>& vec_hivesql, bool union_all);
 };
 

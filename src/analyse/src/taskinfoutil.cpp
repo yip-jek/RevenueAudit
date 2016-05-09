@@ -1,4 +1,5 @@
 #include "taskinfoutil.h"
+#include "pubstr.h"
 
 int TaskInfoUtil::CheckDualEtlRule(std::vector<OneEtlRule>& vec_etlrule)
 {
@@ -266,9 +267,10 @@ std::string TaskInfoUtil::GetCompareUnequalValsByCol(OneEtlRule& rule_A, OneEtlR
 	return vals_sql;
 }
 
-std::string TaskInfoUtil::GetOneRuleFields(OneEtlRule& rule, const std::string& tab_prefix /*= std::string()*/)
+void TaskInfoUtil::GetOneRuleFields(std::string& dim_sql, std::string& val_sql, OneEtlRule& rule, bool set_as, const std::string& tab_prefix /*= std::string()*/)
 {
-	std::string fields_sql;
+	std::string sql_dim;
+	std::string sql_val;
 
 	int v_size = rule.vecEtlDim.size();
 	for ( int i = 0; i < v_size; ++i )
@@ -277,23 +279,36 @@ std::string TaskInfoUtil::GetOneRuleFields(OneEtlRule& rule, const std::string& 
 
 		if ( i != 0 )
 		{
-			fields_sql += ", " + tab_prefix + dim.EtlDimName;
+			sql_dim += ", " + tab_prefix + dim.EtlDimName;
 		}
 		else
 		{
-			fields_sql += tab_prefix + dim.EtlDimName;
+			sql_dim += tab_prefix + dim.EtlDimName;
 		}
 	}
 
 	v_size = rule.vecEtlVal.size();
-	for ( int i = 0; i < v_size; ++i )
+	if ( set_as )		// 带别名
 	{
-		OneEtlVal& val = rule.vecEtlVal[i];
+		for ( int i = 0; i < v_size; ++i )
+		{
+			OneEtlVal& val = rule.vecEtlVal[i];
 
-		fields_sql += ", " + tab_prefix + val.EtlValName;
+			sql_val += ", sum(" + tab_prefix + val.EtlValName + ") as " + val.EtlValName;
+		}
+	}
+	else		// 不带别名
+	{
+		for ( int i = 0; i < v_size; ++i )
+		{
+			OneEtlVal& val = rule.vecEtlVal[i];
+
+			sql_val += ", sum(" + tab_prefix + val.EtlValName + ")";
+		}
 	}
 
-	return fields_sql;
+	dim_sql = sql_dim;
+	val_sql = sql_val;
 }
 
 std::string TaskInfoUtil::GetOneRuleValsNull(OneEtlRule& rule, const std::string& tab_prefix)
@@ -318,39 +333,143 @@ std::string TaskInfoUtil::GetOneRuleValsNull(OneEtlRule& rule, const std::string
 	return val_null_sql;
 }
 
-void TaskInfoUtil::GetEtlStatisticsSQLs(std::vector<OneEtlRule>& vec_rules, std::vector<std::string>& vec_hivesql)
+void TaskInfoUtil::GetEtlStatisticsSQLs(std::vector<OneEtlRule>& vec_rules, std::vector<std::string>& vec_hivesql, bool union_all)
 {
 	std::vector<std::string> v_hive_sql;
-
-	std::string hive_sql;
-	const int RULE_SIZE = vec_rules.size();
-	for ( int i = 0; i < RULE_SIZE; ++i )
+	if ( vec_rules.empty() )
 	{
-		OneEtlRule& ref_rule = vec_rules[i];
+		v_hive_sql.swap(vec_hivesql);
+		return;
+	}
 
-		hive_sql = "select " + GetOneRuleFields(ref_rule);
-		hive_sql += " from " + ref_rule.TargetPatch;
+	if ( union_all )	// 通过union all联合多个语句
+	{
+		std::string gp_dim_sql;
+		std::string val_sql;
+
+		// HIVE SQL HEAD
+		GetOneRuleFields(gp_dim_sql, val_sql, vec_rules[0], false);
+		std::string hive_sql = "select " + gp_dim_sql + val_sql + " from (";
+
+		std::string dim_sql;
+		std::string tab_alias;
+		std::string tab_pre;
+
+		// HIVE SQL BODY
+		const int RULE_SIZE = vec_rules.size();
+		for ( int i = 0; i < RULE_SIZE; ++i )
+		{
+			OneEtlRule& ref_rule = vec_rules[i];
+
+			if ( i != 0 )
+			{
+				hive_sql += " union all ";
+			}
+
+			tab_alias = base::PubStr::TabIndex2TabAlias(i);
+			tab_pre   = tab_alias + ".";
+
+			GetOneRuleFields(dim_sql, val_sql, ref_rule, true, tab_pre);
+
+			hive_sql += "select " + dim_sql + val_sql + " from " + ref_rule.TargetPatch + " " + tab_alias;
+			hive_sql += " group by " + dim_sql;
+		}
+
+		// HIVE SQL TAIL
+		hive_sql += ") TMP group by " + gp_dim_sql;
 
 		v_hive_sql.push_back(hive_sql);
+	}
+	else	// 每个语句独立
+	{
+		std::string hive_sql;
+		std::string dim_sql;
+		std::string val_sql;
+
+		const int RULE_SIZE = vec_rules.size();
+		for ( int i = 0; i < RULE_SIZE; ++i )
+		{
+			OneEtlRule& ref_rule = vec_rules[i];
+
+			GetOneRuleFields(dim_sql, val_sql, ref_rule, false);
+
+			hive_sql = "select " + dim_sql + val_sql + " from ";
+			hive_sql += ref_rule.TargetPatch + " group by " + dim_sql;
+
+			v_hive_sql.push_back(hive_sql);
+		}
 	}
 
 	v_hive_sql.swap(vec_hivesql);
 }
 
-void TaskInfoUtil::GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules, std::set<int>& set_int, std::vector<std::string>& vec_hivesql)
+void TaskInfoUtil::GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules, std::set<int>& set_int, std::vector<std::string>& vec_hivesql, bool union_all)
 {
 	std::vector<std::string> v_hive_sql;
-
-	std::string hive_sql;
-	for ( std::set<int>::iterator it = set_int.begin(); it != set_int.end(); ++it )
+	if ( vec_rules.empty() )
 	{
-		// set<int>是从1开始的，用作索引需要减一
-		OneEtlRule& ref_rule = vec_rules[(*it)-1];
+		v_hive_sql.swap(vec_hivesql);
+		return;
+	}
 
-		hive_sql = "select " + GetOneRuleFields(ref_rule);
-		hive_sql += " from " + ref_rule.TargetPatch;
+	if ( union_all )	// 通过union all联合多个语句
+	{
+		std::string gp_dim_sql;
+		std::string val_sql;
+
+		// HIVE SQL HEAD
+		GetOneRuleFields(gp_dim_sql, val_sql, vec_rules[0], false);
+		std::string hive_sql = "select " + gp_dim_sql + val_sql + " from (";
+
+		std::string dim_sql;
+		std::string tab_alias;
+		std::string tab_pre;
+
+		// HIVE SQL BODY
+		for ( std::set<int>::iterator it = set_int.begin(); it != set_int.end(); ++it )
+		{
+			// set<int>是从1开始的，用作索引需要减一
+			int index = (*it) - 1;
+			OneEtlRule& ref_rule = vec_rules[index];
+
+			if ( it != set_int.begin() )
+			{
+				hive_sql += " union all ";
+			}
+
+			tab_alias = base::PubStr::TabIndex2TabAlias(index);
+			tab_pre   = tab_alias + ".";
+
+			GetOneRuleFields(dim_sql, val_sql, ref_rule, true, tab_pre);
+
+			hive_sql += "select " + dim_sql + val_sql + " from " + ref_rule.TargetPatch + " " + tab_alias;
+			hive_sql += " group by " + dim_sql;
+		}
+
+		// HIVE SQL TAIL
+		hive_sql += ") TMP group by " + gp_dim_sql;
 
 		v_hive_sql.push_back(hive_sql);
+	}
+	else	// 每个语句独立
+	{
+		std::string hive_sql;
+		std::string dim_sql;
+		std::string val_sql;
+
+		for ( std::set<int>::iterator it = set_int.begin(); it != set_int.end(); ++it )
+		{
+			// set<int>是从1开始的，用作索引需要减一
+			int index = (*it) - 1;
+			OneEtlRule& ref_rule = vec_rules[index];
+
+			GetOneRuleFields(dim_sql, val_sql, ref_rule, false);
+
+			hive_sql = "select " + dim_sql + val_sql + " from ";
+			hive_sql += ref_rule.TargetPatch + " group by " + dim_sql;
+
+			v_hive_sql.push_back(hive_sql);
+		}
 	}
 
 	v_hive_sql.swap(vec_hivesql);

@@ -80,7 +80,7 @@ private:
 	void GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 生成指定组的统计类型的Hive SQL语句
-	void GetStatisticsHiveSQLBySet(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void GetStatisticsHiveSQLBySet(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, bool union_all) throw(base::Exception);
 
 	// 拆分可执行Hive SQL语句
 	void SplitHiveSqlExpress(std::string exp, std::vector<std::string>& vec_hivesql) throw(base::Exception);
