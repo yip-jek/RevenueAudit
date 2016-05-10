@@ -5,6 +5,8 @@ std::string TaskInfoUtil::GetTargetDimSql(AcqEtlDim& target_dim)
 {
 	std::string dim_sql;
 
+	bool is_begin = true;
+
 	const int DIM_SIZE = target_dim.vecEtlDim.size();
 	for ( int i = 0; i < DIM_SIZE; ++i )
 	{
@@ -16,13 +18,14 @@ std::string TaskInfoUtil::GetTargetDimSql(AcqEtlDim& target_dim)
 			continue;
 		}
 
-		if ( i != 0 )
+		if ( is_begin )
 		{
-			dim_sql += ", " + dim.EtlDimName;
+			dim_sql += dim.EtlDimName;
+			is_begin = false;
 		}
 		else
 		{
-			dim_sql += dim.EtlDimName;
+			dim_sql += ", " + dim.EtlDimName;
 		}
 	}
 
@@ -181,6 +184,7 @@ std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_
 	std::string group_by_sql;
 	std::string tab_pre;
 
+	bool is_begin = true;
 	int join_on_index = 0;
 	int vec_size = etl_dim.vecEtlDim.size();
 	for ( int i = 0; i < vec_size; ++i )
@@ -215,15 +219,17 @@ std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_
 			tab_pre = "a.";
 		}
 
-		if ( i != 0 )
-		{
-			etl_sql += ", " + tab_pre + dim.EtlDimSrcName + " as " + dim.EtlDimName;
-			group_by_sql += ", " + tab_pre + dim.EtlDimSrcName;
-		}
-		else
+		if ( is_begin )
 		{
 			etl_sql += tab_pre + dim.EtlDimSrcName + " as " + dim.EtlDimName;
 			group_by_sql += tab_pre + dim.EtlDimSrcName;
+
+			is_begin = false;
+		}
+		else
+		{
+			etl_sql += ", " + tab_pre + dim.EtlDimSrcName + " as " + dim.EtlDimName;
+			group_by_sql += ", " + tab_pre + dim.EtlDimSrcName;
 		}
 	}
 
@@ -246,7 +252,7 @@ std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_
 			tab_pre = "a.";
 		}
 
-		etl_sql += ", " + tab_pre + val.EtlValSrcName + " as " + val.EtlValName;
+		etl_sql += ", " + TransEtlValSrcName(val.EtlValSrcName, tab_pre) + " as " + val.EtlValName;
 	}
 
 	etl_sql += " from " + src_tab + " a left outer join " + outer_tab;

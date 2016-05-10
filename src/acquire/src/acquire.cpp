@@ -28,7 +28,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.03.0046 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.03.0049 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -322,11 +322,14 @@ void Acquire::OuterJoin2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec
 		throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "采集规则解析失败：无法识别的采集条件 [%s] (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", etl_cond.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
-	const std::string OUTER_TABLE = vec_str[0];		// 外连表名
-	if ( OUTER_TABLE.empty() )
+	std::string outer_table = vec_str[0];		// 外连表名
+	if ( outer_table.empty() )
 	{
 		throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "采集规则解析失败：无法识别的采集条件 [%s] (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", etl_cond.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
+
+	// 外连表名也可通过采集周期来指定
+	outer_table = TransDataSrcDate(info.EtlRuleTime, outer_table);
 
 	// 拆分关联字段
 	const std::string OUTER_ON = vec_str[1];
@@ -351,7 +354,7 @@ void Acquire::OuterJoin2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec
 		const std::string SRC_TABLE = TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[0]);
 
 		std::string hive_sql = "insert into table " + info.EtlRuleTarget + " ";
-		hive_sql += TaskInfoUtil::GetOuterJoinEtlSQL(info.vecEtlRuleDim[0], info.vecEtlRuleVal[0], SRC_TABLE, OUTER_TABLE, vec_str);
+		hive_sql += TaskInfoUtil::GetOuterJoinEtlSQL(info.vecEtlRuleDim[0], info.vecEtlRuleVal[0], SRC_TABLE, outer_table, vec_str);
 
 		v_sql.push_back(hive_sql);
 	}
@@ -387,7 +390,7 @@ void Acquire::OuterJoin2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec
 
 			AcqEtlVal& ref_etl_val = info.vecEtlRuleVal[i];
 
-			hive_sql += TaskInfoUtil::GetOuterJoinEtlSQL(ref_etl_dim, ref_etl_val, src_table, OUTER_TABLE, vec_str);
+			hive_sql += TaskInfoUtil::GetOuterJoinEtlSQL(ref_etl_dim, ref_etl_val, src_table, outer_table, vec_str);
 		}
 
 		// Hive SQL tail

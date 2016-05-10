@@ -114,10 +114,11 @@ void CHiveThrift::FetchSourceData(const std::string& hive_sql, std::vector<std::
 		throw base::Exception(HTERR_FETCH_SRCDATA_FAILED, "[HIVE] Fetch source data failed! [TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 
-	if ( 0 == total_count )
-	{
-		throw base::Exception(HTERR_FETCH_SRCDATA_FAILED, "[HIVE] Fetch source data failed: no record! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
-	}
+	//if ( 0 == total_count )
+	//{
+	//	throw base::Exception(HTERR_FETCH_SRCDATA_FAILED, "[HIVE] Fetch source data failed: no record! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	//}
+	m_pLog->Output("[HIVE] Totally fetch count: %llu", total_count);
 
 	vv_fields.swap(vec2_fields);
 }

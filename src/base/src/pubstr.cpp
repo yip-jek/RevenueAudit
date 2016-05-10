@@ -167,5 +167,34 @@ std::string PubStr::TabIndex2TabAlias(int index)
 	return tab_alias;
 }
 
+void PubStr::ReplaceInStrVector2(std::vector<std::vector<std::string> >& vec2_str, const std::string& src_str, const std::string& des_str, bool trim, bool upper)
+{
+	const size_t VEC2_SIZE = vec2_str.size();
+	for ( size_t i = 0; i < VEC2_SIZE; ++i )
+	{
+		std::vector<std::string>& ref_vec = vec2_str[i];
+
+		const int VEC1_SIZE = ref_vec.size();
+		for ( int j = 0; j < VEC1_SIZE; ++j )
+		{
+			std::string& ref_str = ref_vec[j];
+
+			if ( trim )		// 去除前后空白符
+			{
+				boost::trim(ref_str);
+			}
+			if ( upper )	// 转换为大写
+			{
+				boost::to_upper(ref_str);
+			}
+
+			if ( src_str == ref_str )
+			{
+				ref_str = des_str;
+			}
+		}
+	}
+}
+
 }	// namespace base
 

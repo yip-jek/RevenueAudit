@@ -31,6 +31,9 @@ public:
 	// 序号从0开始，表别名从a开始
 	static std::string TabIndex2TabAlias(int index);
 
+	// 替换字符串数组中的字符串
+	static void ReplaceInStrVector2(std::vector<std::vector<std::string> >& vec2_str, const std::string& src_str, const std::string& des_str, bool trim, bool upper);
+
 public:
 	// 将Vector进行交换push back
 	template <typename T>

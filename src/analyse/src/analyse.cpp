@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.04.0047 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.04.0050 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -788,9 +788,23 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(b
 		TransSrcDataToReportStatData();
 		m_pLog->Output("[Analyse] 转换后, 数据大小为: %llu", m_v2ReportStatData.size());
 
+		// 将源数据中的空值字符串("NULL")转换为("0")
+		base::PubStr::ReplaceInStrVector2(m_v2ReportStatData, "NULL", "0", false, true);
+
 		std::string now_day = base::SimpleTime::Now().DayTime8();
 		m_pLog->Output("[Analyse] 删除已存在的旧报表统计数据, 时间为: %s", now_day.c_str());
 		m_pAnaDB2->DeleteReportStatData(db_info, now_day);
+	}
+	else
+	{
+		// 将源数据中的空值字符串("NULL")转换为("0")
+		const int VEC3_SIZE = m_v3HiveSrcData.size();
+		for ( int i = 0; i < VEC3_SIZE; ++i )
+		{
+			std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
+
+			base::PubStr::ReplaceInStrVector2(ref_vec2, "NULL", "0", false, true);
+		}
 	}
 
 	m_pLog->Output("[Analyse] 分析完成!");
@@ -838,12 +852,14 @@ void Analyse::TransSrcDataToReportStatData()
 			else		// key值不存在
 			{
 				str_tmp = ref_vec1[DIM_SIZE];
-				ref_vec1[DIM_SIZE] = "NULL";
+				//ref_vec1[DIM_SIZE] = "NULL";
+				ref_vec1[DIM_SIZE] = "";		// 置为空
 
 				const int TOTAL_SIZE = VEC3_SIZE + VEC1_SIZE - 1;
 				for ( int l = VEC1_SIZE; l < TOTAL_SIZE; ++l )
 				{
-					ref_vec1.push_back("NULL");
+					//ref_vec1.push_back("NULL");
+					ref_vec1.push_back("");		// 置为空
 				}
 				ref_vec1[VAL_INDEX] = str_tmp;
 
@@ -903,12 +919,14 @@ void Analyse::StoreResult(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::E
 	// 是否为报表统计类型
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )	// 报表统计类型
 	{
+		m_pLog->Output("[Analyse] 准备入库报表统计结果数据 ...");
 		m_pAnaDB2->InsertReportStatData(db_info, m_v2ReportStatData);
 	}
 	else		// 其他类型
 	{
 		for ( int i = 0; i < VEC3_SIZE; ++i )
 		{
+			m_pLog->Output("[Analyse] 准备入库第 %d 组结果数据 ...", i+1);
 			m_pAnaDB2->InsertResultData(db_info, m_v3HiveSrcData[i]);
 		}
 	}

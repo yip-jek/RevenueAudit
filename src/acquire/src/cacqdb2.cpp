@@ -127,7 +127,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 
 	// 采集维度规则ID
 	std::vector<std::string> vec_id;
-	base::PubStr::Str2StrVector(dim_id, ",", vec_id);
+	base::PubStr::Str2StrVector(dim_id, "|", vec_id);
 
 	std::vector<AcqEtlDim> vec_dim;
 	AcqEtlDim dim;
@@ -141,7 +141,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	vec_dim.swap(info.vecEtlRuleDim);
 
 	// 采集值规则ID
-	base::PubStr::Str2StrVector(val_id, ",", vec_id);
+	base::PubStr::Str2StrVector(val_id, "|", vec_id);
 
 	std::vector<AcqEtlVal> vec_val;
 	AcqEtlVal val;

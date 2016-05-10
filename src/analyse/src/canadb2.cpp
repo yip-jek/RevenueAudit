@@ -542,7 +542,7 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 
 	// 只取第一组维度
 	std::vector<std::string> vec_str;
-	base::PubStr::Str2StrVector(one.DimID, ",", vec_str);
+	base::PubStr::Str2StrVector(one.DimID, "|", vec_str);
 	if ( vec_str.empty() )
 	{
 		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! No ETLDIM_ID! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
@@ -557,7 +557,7 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 	}
 
 	// 只取第一组值
-	base::PubStr::Str2StrVector(one.ValID, ",", vec_str);
+	base::PubStr::Str2StrVector(one.ValID, "|", vec_str);
 	if ( vec_str.empty() )
 	{
 		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! No ETLVAL_ID! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
