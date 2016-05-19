@@ -124,8 +124,17 @@ public:
 		CTYPE_VAL		= 2,		// 值类型
 	};
 
+	// 前台显示方式
+	enum DisplayType
+	{
+		DTYPE_UNKNOWN	= 0,		// 未知显示方式
+		DTYPE_NULL		= 1,		// 不显示方式
+		DTYPE_LIST		= 2,		// 列表显示方式
+		DTYPE_TEXT		= 3,		// 文件显示方式
+	};
+
 public:
-	KpiColumn(): ColType(CTYPE_UNKNOWN), ColSeq(0)
+	KpiColumn(): ColType(CTYPE_UNKNOWN), ColSeq(0), DisType(DTYPE_UNKNOWN)
 	{}
 
 	KpiColumn(const KpiColumn& col)
@@ -134,6 +143,7 @@ public:
 	,ColSeq(col.ColSeq)
 	,DBName(col.DBName)
 	,CNName(col.CNName)
+	,DisType(col.DisType)
 	{}
 
 	const KpiColumn& operator = (const KpiColumn& col)
@@ -145,6 +155,7 @@ public:
 			this->ColSeq  = col.ColSeq ;
 			this->DBName  = col.DBName ;
 			this->CNName  = col.CNName ;
+			this->DisType = col.DisType;
 		}
 
 		return *this;
@@ -174,12 +185,40 @@ public:
 		return true;
 	}
 
+	// 设置前台显示方式
+	bool SetDisplayType(std::string type)
+	{
+		boost::trim(type);
+		boost::to_upper(type);
+
+		if ( "NULL" == type )
+		{
+			DisType = DTYPE_NULL;
+		}
+		else if ( "LIST" == type )
+		{
+			DisType = DTYPE_LIST;
+		}
+		else if ( "TEXT" == type )
+		{
+			DisType = DTYPE_TEXT;
+		}
+		else
+		{
+			DisType = DTYPE_UNKNOWN;
+			return false;
+		}
+
+		return true;
+	}
+
 public:
 	std::string	KpiID;				// 指标ID
 	ColumnType	ColType;			// 字段类型
 	int			ColSeq;				// 字段序号
 	std::string DBName;				// 字段名称
 	std::string CNName;				// 字段中文名称
+	DisplayType	DisType;			// 前台显示方式
 };
 
 // 维度取值

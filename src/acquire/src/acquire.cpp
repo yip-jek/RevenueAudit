@@ -115,7 +115,7 @@ void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 {
 	// 格式：启动批号|指标ID|采集规则ID|...
 	std::vector<std::string> vec_str;
-	boost::split(vec_str, para, boost::is_any_of("|"));
+	boost::split(vec_str, para, boost::is_any_of(":"));
 
 	if ( vec_str.size() < 3 )
 	{

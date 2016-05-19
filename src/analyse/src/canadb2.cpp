@@ -192,7 +192,7 @@ void CAnaDB2::SelectKpiColumn(const std::string& kpi_id, std::vector<KpiColumn>&
 
 	try
 	{
-		std::string sql = "select COLUMN_TYPE, COLUMN_SEQ, DB_NAME, CN_NAME from ";
+		std::string sql = "select COLUMN_TYPE, COLUMN_SEQ, DB_NAME, CN_NAME, DIS_TYPE from ";
 		sql += m_tabKpiColumn + " where KPI_ID = ? order by COLUMN_TYPE, COLUMN_SEQ asc";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -200,6 +200,7 @@ void CAnaDB2::SelectKpiColumn(const std::string& kpi_id, std::vector<KpiColumn>&
 		rs.Execute();
 
 		std::string col_type;
+		std::string dis_type;
 
 		while ( !rs.IsEOF() )
 		{
@@ -209,6 +210,12 @@ void CAnaDB2::SelectKpiColumn(const std::string& kpi_id, std::vector<KpiColumn>&
 			col.ColSeq  = (int)rs[index++];
 			col.DBName  = (const char*)rs[index++];
 			col.CNName  = (const char*)rs[index++];
+			dis_type  = (const char*)rs[index++];
+
+			if ( !col.SetDisplayType(dis_type) )
+			{
+				throw base::Exception(ADBERR_SEL_KPI_COL, "[DB] Select %s failed! (KPI_ID:%s) 无法识别的前台显示方式: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), kpi_id.c_str(), dis_type.c_str(), __FILE__, __LINE__);
+			}
 
 			if ( col.SetColumnType(col_type) )
 			{

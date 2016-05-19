@@ -133,7 +133,7 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 {
 	// 格式：启动批号|指标ID|分析规则ID|...
 	std::vector<std::string> vec_str;
-	boost::split(vec_str, para, boost::is_any_of("|"));
+	boost::split(vec_str, para, boost::is_any_of(":"));
 
 	if ( vec_str.size() < 3 )
 	{
@@ -887,7 +887,21 @@ void Analyse::CollectDimVal(AnaTaskInfo& info)
 	dv.KpiID = info.KpiID;
 
 	std::vector<KpiColumn>& v_dimcol = info.vecKpiDimCol;
-	const int DIM_SIZE = v_dimcol.size();
+	int vec_size = v_dimcol.size();
+
+	// 收集有效维度 index
+	std::vector<int> vec_dim_index;
+	for ( int i = 0; i < vec_size; ++i )
+	{
+		// 特殊维度，不存在于源数据中
+		if ( v_dimcol[i].ColSeq < 0 )
+		{
+			continue;
+		}
+
+		vec_dim_index.push_back(i);
+	}
+	vec_size = vec_dim_index.size();
 
 	const int VEC3_SIZE = m_v3HiveSrcData.size();
 	for ( int i = 0; i < VEC3_SIZE; ++i )
@@ -899,12 +913,19 @@ void Analyse::CollectDimVal(AnaTaskInfo& info)
 		{
 			std::vector<std::string>& ref_vec1 = ref_vec2[j];
 
-			for ( int k = 0; k < DIM_SIZE; ++k )
+			for ( int k = 0; k < vec_size; ++k )
 			{
-				dv.DBName = v_dimcol[k].DBName;
-				dv.Value  = ref_vec1[k];
+				int& index = vec_dim_index[k];
+				KpiColumn& ref_col = v_dimcol[index];
 
-				m_DVDiffer.FetchSrcDimVal(dv);
+				// 只收集列表显示类型
+				if ( KpiColumn::DTYPE_LIST == ref_col.DisType )
+				{
+					dv.DBName = ref_col.DBName;
+					dv.Value  = ref_vec1[k];
+
+					m_DVDiffer.FetchSrcDimVal(dv);
+				}
 			}
 		}
 	}
