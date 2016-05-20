@@ -34,6 +34,9 @@ void CAcqDB2::SetTabEtlVal(const std::string& t_etlval)
 
 void CAcqDB2::SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 {
+	// 获取指标数据源类型
+	SelectKpiDataSrcType(info);
+
 	// 获取采集规则信息
 	SelectEtlRule(info);
 
@@ -250,5 +253,48 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 	m_pLog->Output("[DB] Select %s successfully! (ETLVAL_ID:%s) [Record:%lu]", m_tabEtlVal.c_str(), val_id.c_str(), v_val.size());
 
 	v_val.swap(vec_val);
+}
+
+void CAcqDB2::SelectKpiDataSrcType(AcqTaskInfo& info) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	int counter = 0;
+	std::string data_src_type;
+
+	try
+	{
+		std::string sql = "select DATA_SOURCE from ";
+		sql += m_tabKpiRule + " where KPI_ID = ?";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = info.KpiID.c_str();
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			++counter;
+
+			data_src_type = (const char*)rs[1];
+			if ( !info.SetDataSourceType(data_src_type) )
+			{
+				throw base::Exception(ADBERR_SEL_DAT_SRC_TYPE, "[DB] Select %s failed! (KPI_ID:%s) 无法识别的数据源类型：%s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), data_src_type.c_str(), __FILE__, __LINE__);
+			}
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_DAT_SRC_TYPE, "[DB] Select %s failed! (KPI_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	if ( 0 == counter )
+	{
+		throw base::Exception(ADBERR_SEL_DAT_SRC_TYPE, "[DB] Select %s failed! (KPI_ID:%s) No record! [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB] Select %s successfully! (KPI_ID:%s) [Record:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), counter);
 }
 

@@ -201,8 +201,16 @@ public:
 		ETLCTYPE_OUTER_JOIN	= 3,		// 外连条件
 	};
 
+	// 数据源类型
+	enum DataSourceType
+	{
+		DSTYPE_UNKNOWN	= 0,			// 未知类型
+		DSTYPE_HIVE		= 1,			// HIVE类型
+		DSTYPE_DB2		= 2,			// DB2类型
+	};
+
 public:
-	AcqTaskInfo(): EtlCondType(ETLCTYPE_UNKNOWN)
+	AcqTaskInfo(): EtlCondType(ETLCTYPE_UNKNOWN), DataSrcType(DSTYPE_UNKNOWN)
 	{}
 
 	AcqTaskInfo(const AcqTaskInfo& info)
@@ -213,6 +221,7 @@ public:
 	,EtlRuleTarget(info.EtlRuleTarget)
 	,EtlCondType(info.EtlCondType)
 	,EtlCondition(info.EtlCondition)
+	,DataSrcType(info.DataSrcType)
 	,vecEtlRuleDataSrc(info.vecEtlRuleDataSrc)
 	,vecEtlRuleDim(info.vecEtlRuleDim)
 	,vecEtlRuleVal(info.vecEtlRuleVal)
@@ -234,6 +243,7 @@ public:
 			this->EtlRuleTarget = info.EtlRuleTarget;
 			this->EtlCondType	= info.EtlCondType  ;
 			this->EtlCondition	= info.EtlCondition ;
+			this->DataSrcType	= info.DataSrcType ;
 
 			//this->vecEtlRuleDataSrc.insert(this->vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.end());
 			//this->vecEtlRuleDim.insert(this->vecEtlRuleDim.begin(), info.vecEtlRuleDim.begin(), info.vecEtlRuleDim.end());
@@ -255,12 +265,14 @@ public:
 		EtlRuleTarget.clear();
 		EtlCondType = ETLCTYPE_UNKNOWN;
 		EtlCondition.clear();
+		DataSrcType = DSTYPE_UNKNOWN;
 
 		std::vector<std::string>().swap(vecEtlRuleDataSrc);
 		std::vector<AcqEtlDim>().swap(vecEtlRuleDim);
 		std::vector<AcqEtlVal>().swap(vecEtlRuleVal);
 	}
 
+	// 设置采集条件类型
 	bool SetConditionType(std::string c_type)
 	{
 		boost::trim(c_type);
@@ -287,6 +299,29 @@ public:
 		return true;
 	}
 
+	// 设置数据源类型
+	bool SetDataSourceType(std::string ds_type)
+	{
+		boost::trim(ds_type);
+		boost::to_upper(ds_type);
+
+		if ( "HIVE" == ds_type )		// HIVE类型
+		{
+			DataSrcType = DSTYPE_HIVE;
+		}
+		else if ( "DB2" == ds_type )		// DB2类型
+		{
+			DataSrcType = DSTYPE_DB2;
+		}
+		else	// ERROR: 未知类型
+		{
+			DataSrcType = DSTYPE_UNKNOWN;
+			return false;
+		}
+
+		return true;
+	}
+
 public:
 	std::string			EtlRuleID;					// 采集规则ID
 	std::string			KpiID;						// 指标ID
@@ -295,6 +330,7 @@ public:
 	std::string			EtlRuleTarget;				// 采集目标数据存放
 	EtlConditionType	EtlCondType;				// 采集条件类型
 	std::string			EtlCondition;				// 采集条件
+	DataSourceType		DataSrcType;				// 数据源类型
 
 	std::vector<std::string>	vecEtlRuleDataSrc;			// 采集数据源
 	std::vector<AcqEtlDim>		vecEtlRuleDim;				// 采集维度信息
