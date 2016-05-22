@@ -34,9 +34,6 @@ void CAcqDB2::SetTabEtlVal(const std::string& t_etlval)
 
 void CAcqDB2::SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 {
-	// 获取指标数据源类型
-	SelectKpiDataSrcType(info);
-
 	// 获取采集规则信息
 	SelectEtlRule(info);
 
@@ -65,6 +62,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	rs.EnableWarning(true);
 
 	std::string data_source;
+	std::string dat_src_type;
 	std::string dim_id;
 	std::string val_id;
 	std::string cond_type;
@@ -72,8 +70,8 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	int counter = 0;
 	try
 	{
-		std::string sql = "select ETLRULE_TIME, ELTRULE_TYPE, ETLRULE_DATASOURCE, ETLRULE_TARGET, ETLDIM_ID, ETLVAL_ID";
-		sql += ", ETL_CONDITION_TYPE, ETL_CONDITION from " + m_tabEtlRule + " where ETLRULE_ID = ? and KPI_ID = ?";
+		std::string sql = "select ETLRULE_TIME, ELTRULE_TYPE, ETLRULE_DATASOURCE, DATASOURCE_TYPE, ETLRULE_TARGET, ETLDIM_ID";
+		sql += ", ETLVAL_ID, ETL_CONDITION_TYPE, ETL_CONDITION from " + m_tabEtlRule + " where ETLRULE_ID = ? and KPI_ID = ?";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 		rs.Parameter(1) = info.EtlRuleID.c_str();
@@ -89,11 +87,17 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 			info.EtlRuleTime   = (const char*)rs[index++];
 			info.EtlRuleType   = (const char*)rs[index++];
 			data_source        = (const char*)rs[index++];
+			dat_src_type       = (const char*)rs[index++];
 			info.EtlRuleTarget = (const char*)rs[index++];
 			dim_id             = (const char*)rs[index++];
 			val_id             = (const char*)rs[index++];
 			cond_type          = (const char*)rs[index++];
 			info.EtlCondition  = (const char*)rs[index++];
+
+			if ( !info.SetDataSourceType(dat_src_type) )
+			{
+				throw
+			}
 
 			if ( !info.SetConditionType(cond_type) )
 			{
@@ -255,46 +259,46 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 	v_val.swap(vec_val);
 }
 
-void CAcqDB2::SelectKpiDataSrcType(AcqTaskInfo& info) throw(base::Exception)
-{
-	XDBO2::CRecordset rs(&m_CDB);
-	rs.EnableWarning(true);
-
-	int counter = 0;
-	std::string data_src_type;
-
-	try
-	{
-		std::string sql = "select DATA_SOURCE from ";
-		sql += m_tabKpiRule + " where KPI_ID = ?";
-
-		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(1) = info.KpiID.c_str();
-		rs.Execute();
-
-		while ( !rs.IsEOF() )
-		{
-			++counter;
-
-			data_src_type = (const char*)rs[1];
-			if ( !info.SetDataSourceType(data_src_type) )
-			{
-				throw base::Exception(ADBERR_SEL_DAT_SRC_TYPE, "[DB] Select %s failed! (KPI_ID:%s) 无法识别的数据源类型：%s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), data_src_type.c_str(), __FILE__, __LINE__);
-			}
-
-			rs.MoveNext();
-		}
-	}
-	catch ( const XDBO2::CDBException& ex )
-	{
-		throw base::Exception(ADBERR_SEL_DAT_SRC_TYPE, "[DB] Select %s failed! (KPI_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), ex.what(), __FILE__, __LINE__);
-	}
-
-	if ( 0 == counter )
-	{
-		throw base::Exception(ADBERR_SEL_DAT_SRC_TYPE, "[DB] Select %s failed! (KPI_ID:%s) No record! [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
-	}
-
-	m_pLog->Output("[DB] Select %s successfully! (KPI_ID:%s) [Record:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), counter);
-}
+//void CAcqDB2::SelectKpiDataSrcType(AcqTaskInfo& info) throw(base::Exception)
+//{
+//	XDBO2::CRecordset rs(&m_CDB);
+//	rs.EnableWarning(true);
+//
+//	int counter = 0;
+//	std::string data_src_type;
+//
+//	try
+//	{
+//		std::string sql = "select DATA_SOURCE from ";
+//		sql += m_tabKpiRule + " where KPI_ID = ?";
+//
+//		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+//		rs.Parameter(1) = info.KpiID.c_str();
+//		rs.Execute();
+//
+//		while ( !rs.IsEOF() )
+//		{
+//			++counter;
+//
+//			data_src_type = (const char*)rs[1];
+//			if ( !info.SetDataSourceType(data_src_type) )
+//			{
+//				throw base::Exception(ADBERR_SEL_DAT_SRC_TYPE, "[DB] Select %s failed! (KPI_ID:%s) 无法识别的数据源类型：%s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), data_src_type.c_str(), __FILE__, __LINE__);
+//			}
+//
+//			rs.MoveNext();
+//		}
+//	}
+//	catch ( const XDBO2::CDBException& ex )
+//	{
+//		throw base::Exception(ADBERR_SEL_DAT_SRC_TYPE, "[DB] Select %s failed! (KPI_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), ex.what(), __FILE__, __LINE__);
+//	}
+//
+//	if ( 0 == counter )
+//	{
+//		throw base::Exception(ADBERR_SEL_DAT_SRC_TYPE, "[DB] Select %s failed! (KPI_ID:%s) No record! [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
+//	}
+//
+//	m_pLog->Output("[DB] Select %s successfully! (KPI_ID:%s) [Record:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), counter);
+//}
 
