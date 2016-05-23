@@ -14,6 +14,7 @@ public:
 		ADBERR_SEL_ETL_RULE     = -2002001,			// 查询采集规则出错
 		ADBERR_SEL_ETL_DIM      = -2002002,			// 查询采集维度规则出错
 		ADBERR_SEL_ETL_VAL      = -2002003,			// 查询采集值规则出错
+		ADBERR_FETCH_ETL_DATA   = -2002004,			// 执行数据采集出错
 	};
 
 public:
@@ -31,6 +32,9 @@ public:
 
 	// 查询采集规则任务信息
 	void SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception);
+
+	// 执行数据采集
+	void FetchEtlData(const std::string& sql, int data_size, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
 
 private:
 	// 查询采集规则信息

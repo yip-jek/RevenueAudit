@@ -96,7 +96,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 
 			if ( !info.SetDataSourceType(dat_src_type) )
 			{
-				throw
+				throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) 无法识别的数据源类型: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), dat_src_type.c_str(), __FILE__, __LINE__);
 			}
 
 			if ( !info.SetConditionType(cond_type) )
@@ -259,46 +259,50 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 	v_val.swap(vec_val);
 }
 
-//void CAcqDB2::SelectKpiDataSrcType(AcqTaskInfo& info) throw(base::Exception)
-//{
-//	XDBO2::CRecordset rs(&m_CDB);
-//	rs.EnableWarning(true);
-//
-//	int counter = 0;
-//	std::string data_src_type;
-//
-//	try
-//	{
-//		std::string sql = "select DATA_SOURCE from ";
-//		sql += m_tabKpiRule + " where KPI_ID = ?";
-//
-//		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-//		rs.Parameter(1) = info.KpiID.c_str();
-//		rs.Execute();
-//
-//		while ( !rs.IsEOF() )
-//		{
-//			++counter;
-//
-//			data_src_type = (const char*)rs[1];
-//			if ( !info.SetDataSourceType(data_src_type) )
-//			{
-//				throw base::Exception(ADBERR_SEL_DAT_SRC_TYPE, "[DB] Select %s failed! (KPI_ID:%s) 无法识别的数据源类型：%s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), data_src_type.c_str(), __FILE__, __LINE__);
-//			}
-//
-//			rs.MoveNext();
-//		}
-//	}
-//	catch ( const XDBO2::CDBException& ex )
-//	{
-//		throw base::Exception(ADBERR_SEL_DAT_SRC_TYPE, "[DB] Select %s failed! (KPI_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), ex.what(), __FILE__, __LINE__);
-//	}
-//
-//	if ( 0 == counter )
-//	{
-//		throw base::Exception(ADBERR_SEL_DAT_SRC_TYPE, "[DB] Select %s failed! (KPI_ID:%s) No record! [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
-//	}
-//
-//	m_pLog->Output("[DB] Select %s successfully! (KPI_ID:%s) [Record:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), counter);
-//}
+void CAcqDB2::FetchEtlData(const std::string& sql, int data_size, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::vector<std::vector<std::string> > v2_data;
+	std::vector<std::string> v_dat;
+
+	try
+	{
+		m_pLog->Output("[DB] Execute acquire sql: %s", sql.c_str());
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			for ( int i = 1; i <= data_size; ++i )
+			{
+				v_dat.push_back((const char*)rs[i]);
+			}
+
+			base::PubStr::VVectorSwapPushBack(v2_data, v_dat);
+
+			rs.MoveNext();
+		}
+
+		m_pLog->Output("[DB] Execute acquire sql OK.");
+
+		const size_t V2_DAT_SIZE = v2_data.size();
+		if ( 0 == V2_DAT_SIZE )
+		{
+			m_pLog->Output("[DB] <WARNING> Fetch no data ! (size: 0)");
+		}
+		else
+		{
+			m_pLog->Output("[DB] Fetch acquire data size: %llu", v2_data.size());
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_FETCH_ETL_DATA, "[DB] Execute acquire sql failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+	}
+
+	v2_data.swap(vec2_data);
+}
 

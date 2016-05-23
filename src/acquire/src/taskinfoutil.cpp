@@ -94,23 +94,61 @@ std::string TaskInfoUtil::GetEtlDimSql(AcqEtlDim& etl_dim, bool set_as, const st
 	return dim_sql;
 }
 
-std::string TaskInfoUtil::TransEtlValSrcName(const std::string& val_srcname, const std::string& tab_prefix /*= std::string()*/)
+std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix /*= std::string()*/) throw(base::Exception)
 {
-	std::string val = val_srcname;
+	std::string val_src = val.EtlValSrcName;
 
-	boost::trim(val);
-	boost::to_upper(val);
+	boost::trim(val_src);
+	boost::to_upper(val_src);
 
-	if ( "<RECORD>" == val )	// 记录数
+	if ( "<RECORD>" == val_src )	// 记录数
 	{
-		val = "count(*)";
+		val_src = "count(*)";
 	}
 	else
 	{
-		val = "sum(" + tab_prefix + val + ")";
+		std::string memo = TrimUpperValMemo(val);
+		std::vector<std::string> vec_memo;
+		base::PubStr::Str2StrVector(memo, ":", vec_memo);
+
+		// 判断是否为运算结果值
+		if ( !vec_memo.empty() )
+		{
+			std::string& ref_calc = vec_memo[0];
+
+			if ( "CALC" == ref_calc )
+			{
+				if ( vec_memo.size() != 2 )
+				{
+					throw base::Exception(TERR_TRANS_VAL_SRC_NAME, "格式不正确！无法识别的备注类型：%s [FILE:%s, LINE:%d]", memo.c_str(), __FILE__, __LINE__);
+				}
+
+				std::string& ref_oper = vec_memo[1];
+				if ( "-" == ref_oper || "+" == ref_oper )	// 支持加(+)、减(-)运算
+				{
+					std::vector<std::string> vec_src;
+					base::PubStr::Str2StrVector(val_src, ",", vec_src);
+
+					if ( vec_src.size() != 2 )
+					{
+						throw base::Exception(TERR_TRANS_VAL_SRC_NAME, "源字段个数不匹配！无法识别的值对应源字段名称：%s [FILE:%s, LINE:%d]", val_src.c_str(), __FILE__, __LINE__);
+					}
+
+					val_src = "sum(" + tab_prefix + vec_src[0] + ref_oper + tab_prefix + vec_src[1] + ")";
+					return val_src;
+				}
+				else
+				{
+					throw base::Exception(TERR_TRANS_VAL_SRC_NAME, "不支持的运算符！无法识别的备注类型：%s [FILE:%s, LINE:%d]", memo.c_str(), __FILE__, __LINE__);
+				}
+			}
+		}
+
+		// 其他情况，直接取sum
+		val_src = "sum(" + tab_prefix + val_src + ")";
 	}
 
-	return val;
+	return val_src;
 }
 
 std::string TaskInfoUtil::GetEtlValSql(AcqEtlVal& etl_val, const std::string& tab_prefix /*= std::string()*/)
@@ -128,34 +166,39 @@ std::string TaskInfoUtil::GetEtlValSql(AcqEtlVal& etl_val, const std::string& ta
 	return val_sql;
 }
 
-bool TaskInfoUtil::IsOuterJoinOnDim(OneEtlDim& dim)
+std::string TaskInfoUtil::TrimUpperDimMemo(OneEtlDim& dim)
 {
 	std::string& memo = dim.EtlDimMemo;
 
 	boost::trim(memo);
 	boost::to_upper(memo);
 
-	return ("JOIN_ON" == memo);
+	return memo;
 }
 
-bool TaskInfoUtil::IsOuterTabJoinDim(OneEtlDim& dim)
-{
-	std::string& memo = dim.EtlDimMemo;
-
-	boost::trim(memo);
-	boost::to_upper(memo);
-
-	return ("JOIN_DIM" == memo);
-}
-
-bool TaskInfoUtil::IsOuterTabJoinVal(OneEtlVal& val)
+std::string TaskInfoUtil::TrimUpperValMemo(OneEtlVal& val)
 {
 	std::string& memo = val.EtlValMemo;
 
 	boost::trim(memo);
 	boost::to_upper(memo);
 
-	return ("JOIN_VAL" == memo);
+	return memo;
+}
+
+bool TaskInfoUtil::IsOuterJoinOnDim(OneEtlDim& dim)
+{
+	return ("JOIN_ON" == TrimUpperDimMemo(dim));
+}
+
+bool TaskInfoUtil::IsOuterTabJoinDim(OneEtlDim& dim)
+{
+	return ("JOIN_DIM" == TrimUpperDimMemo(dim));
+}
+
+bool TaskInfoUtil::IsOuterTabJoinVal(OneEtlVal& val)
+{
+	return ("JOIN_VAL" == TrimUpperValMemo(val));
 }
 
 int TaskInfoUtil::GetNumOfEtlDimJoinOn(AcqEtlDim& etl_dim)

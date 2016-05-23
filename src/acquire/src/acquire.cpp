@@ -28,7 +28,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.03.0049 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.05.0053 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -211,19 +211,65 @@ void Acquire::DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 {
 	m_pLog->Output("[Acquire] 分析采集规则 ...");
 
-	std::vector<std::string> vec_field;
-	TaskInfo2TargetFields(info, vec_field);
+	switch ( info.DataSrcType )
+	{
+	case AcqTaskInfo::DSTYPE_HIVE:
+		m_pLog->Output("[Acquire] 数据源类型：HIVE");
+		HiveDataAcquisition(info);
+		break;
+	case AcqTaskInfo::DSTYPE_DB2:
+		m_pLog->Output("[Acquire] 数据源类型：DB2");
+		DB2DataAcquisition(info);
+		break;
+	case AcqTaskInfo::DSTYPE_UNKNOWN:
+	default:
+		throw base::Exception(ACQERR_DATA_ACQ_FAILED, "未知的数据源类型: DSTYPE_UNKNOWN [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[Acquire] 采集数据完成.");
+}
+
+void Acquire::HiveDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
+{
+	RebuildHiveTable(info);
 
 	std::vector<std::string> vec_hivesql;
 	TaskInfo2HiveSql(info, vec_hivesql);
 
-	m_pLog->Output("[Acquire] 重建采集目标表 ...");
+	m_pLog->Output("[Acquire] [HIVE] 执行数据采集 ...");
+	m_pCHive->ExecuteAcqSQL(vec_hivesql);
+}
+
+void Acquire::DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception)
+{
+	RebuildHiveTable(info);
+
+	std::vector<std::string> vec_sql;
+	TaskInfo2HiveSql(info, vec_sql);
+
+	m_pLog->Output("[Acquire] [DB2] 执行数据采集 ...");
+	std::vector<std::vector<std::vector<std::string> > > vec3_data;
+
+	const int VEC_SIZE = vec_sql.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		std::vector<std::vector<std::string> > vec2_data;
+		m_pAcqDB2->FetchEtlData(vec_sql[i], , vec2_data);
+
+		base::PubStr::VVVectorSwapPushBack(vec3_data, vec2_data);
+	}
+}
+
+void Acquire::RebuildHiveTable(AcqTaskInfo& info) throw(base::Exception)
+{
+	m_pLog->Output("[Acquire] 重建 HIVE 采集目标表 ...");
+
+	std::vector<std::string> vec_field;
+	TaskInfo2TargetFields(info, vec_field);
+
 	m_pCHive->RebuildHiveTable(info.EtlRuleTarget, vec_field);
 
-	m_pLog->Output("[Acquire] 执行数据采集 ...");
-	m_pCHive->ExecuteAcqSQL(vec_hivesql);
-
-	m_pLog->Output("[Acquire] 采集数据完成.");
+	m_pLog->Output("[Acquire] HIVE 采集目标表 [%s] 重建完成!", info.EtlRuleTarget.c_str());
 }
 
 void Acquire::TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>& vec_field) throw(base::Exception)

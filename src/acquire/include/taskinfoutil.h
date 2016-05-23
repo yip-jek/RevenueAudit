@@ -1,10 +1,17 @@
 #pragma once
 
 #include "acqtaskinfo.h"
+#include "exception.h"
 
 // 采集任务信息的工具类
 class TaskInfoUtil
 {
+public:
+	enum TASK_INFO_UTIL_ERROR
+	{
+		TERR_TRANS_VAL_SRC_NAME = -2003001,			// 采集值对应源字段名转换失败
+	};
+
 public:
 	// 获取目标表的维度SQL
 	static std::string GetTargetDimSql(AcqEtlDim& target_dim);
@@ -16,10 +23,13 @@ public:
 	static std::string GetEtlDimSql(AcqEtlDim& etl_dim, bool set_as, const std::string& tab_prefix = std::string());
 
 	// 采集值对应源字段名转换
-	static std::string TransEtlValSrcName(const std::string& val_srcname, const std::string& tab_prefix = std::string());
+	static std::string TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix = std::string()) throw(base::Exception);
 
 	// 获取采集规则的值SQL
 	static std::string GetEtlValSql(AcqEtlVal& etl_val, const std::string& tab_prefix = std::string());
+
+	static std::string TrimUpperDimMemo(OneEtlDim& dim);
+	static std::string TrimUpperValMemo(OneEtlVal& val);
 
 	// 是否为外连关联维度字段
 	static bool IsOuterJoinOnDim(OneEtlDim& dim);

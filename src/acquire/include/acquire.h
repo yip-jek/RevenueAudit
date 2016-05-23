@@ -24,6 +24,7 @@ public:
 		ACQERR_TASKINFO_INVALID     = -2000006,			// 任务信息无效
 		ACQERR_TRANS_DATASRC_FAILED = -2000007,			// 源表转换失败
 		ACQERR_OUTER_JOIN_FAILED    = -2000008,			// 外连条件下生成Hive SQL失败
+		ACQERR_DATA_ACQ_FAILED      = -2000009,			// 数据采集失败
 	};
 
 public:
@@ -54,6 +55,15 @@ private:
 
 	// 进行数据采集
 	void DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception);
+
+	// HIVE数据采集
+	void HiveDataAcquisition(AcqTaskInfo& info) throw(base::Exception);
+
+	// DB2数据采集
+	void DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception);
+
+	// 重建Hive目标表
+	void RebuildHiveTable(AcqTaskInfo& info) throw(base::Exception);
 
 	// 分析采集规则，生成目标表字段
 	void TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>& vec_field) throw(base::Exception);
