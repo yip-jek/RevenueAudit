@@ -118,7 +118,7 @@ void Analyse::Init() throw(base::Exception)
 
 void Analyse::Run() throw(base::Exception)
 {
-	base::AutoDisconnect a_disconn(m_pAnaDB2, m_pCHive);
+	base::AutoDisconnect a_disconn(new base::HiveDB2Connector(m_pAnaDB2, m_pCHive));
 	a_disconn.Connect();
 
 	AnaTaskInfo task_info;
@@ -131,7 +131,7 @@ void Analyse::Run() throw(base::Exception)
 
 void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exception)
 {
-	// 格式：启动批号|指标ID|分析规则ID|...
+	// 格式：启动批号:指标ID:分析规则ID:...
 	std::vector<std::string> vec_str;
 	boost::split(vec_str, para, boost::is_any_of(":"));
 

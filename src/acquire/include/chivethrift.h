@@ -22,7 +22,7 @@ public:
 	//void Test(const std::string& table) throw(base::Exception);
 
 	// 重建表数据
-	void RebuildHiveTable(const std::string& tab_name, std::vector<std::string>& vec_field) throw(base::Exception);
+	void RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field) throw(base::Exception);
 
 	// 执行采集Hive SQL 
 	void ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exception);

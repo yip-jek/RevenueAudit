@@ -29,5 +29,8 @@ namespace base
 // PubStr error code
 #define PS_TRANS_FAILED                      (-1004001)
 
+// AutoDisconnect error code
+#define AUTODIS_UNABLE_CONNECT               (-1005001)
+
 }	// namespace base
 

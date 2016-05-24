@@ -48,7 +48,7 @@ CHiveThrift::~CHiveThrift()
 //	}
 //}
 
-void CHiveThrift::RebuildHiveTable(const std::string& tab_name, std::vector<std::string>& vec_field) throw(base::Exception)
+void CHiveThrift::RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field) throw(base::Exception)
 {
 	if ( tab_name.empty() )
 	{
@@ -82,7 +82,7 @@ void CHiveThrift::RebuildHiveTable(const std::string& tab_name, std::vector<std:
 			sql_create += str_field + " string";
 		}
 	}
-	sql_create += " ) ";
+	sql_create += " ) row format delimited fields terminated by '|' stored as textfile";
 
 	try
 	{
@@ -90,7 +90,7 @@ void CHiveThrift::RebuildHiveTable(const std::string& tab_name, std::vector<std:
 		m_spHiveClient->execute(sql_drop);
 		m_pLog->Output("[HIVE] Drop table OK.");
 
-		m_pLog->Output("[HIVE] Create table: %s (SQL: %s)", tab_name.c_str(), sql_create.c_str());
+		m_pLog->Output("[HIVE] Create table [%s]: %s", tab_name.c_str(), sql_create.c_str());
 		m_spHiveClient->execute(sql_create);
 		m_pLog->Output("[HIVE] Create table ---- done!");
 	}

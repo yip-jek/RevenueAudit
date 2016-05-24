@@ -2,6 +2,7 @@
 
 #include "baseframeapp.h"
 #include "acqtaskinfo.h"
+#include "hdfsconnector.h"
 
 class CAcqDB2;
 class CHiveThrift;
@@ -16,15 +17,19 @@ public:
 public:
 	enum ACQ_ERROR
 	{
-		ACQERR_TASKINFO_ERROR       = -2000001,			// 任务信息异常
-		ACQERR_KPIID_INVALID        = -2000002,			// 指标ID无效
-		ACQERR_ETLID_INVALID        = -2000003,			// 采集规则ID无效
-		ACQERR_HIVE_PORT_INVALID    = -2000004,			// Hive服务器端口无效
-		ACQERR_INIT_FAILED          = -2000005,			// 初始化失败
-		ACQERR_TASKINFO_INVALID     = -2000006,			// 任务信息无效
-		ACQERR_TRANS_DATASRC_FAILED = -2000007,			// 源表转换失败
-		ACQERR_OUTER_JOIN_FAILED    = -2000008,			// 外连条件下生成Hive SQL失败
-		ACQERR_DATA_ACQ_FAILED      = -2000009,			// 数据采集失败
+		ACQERR_TASKINFO_ERROR          = -2000001,			// 任务信息异常
+		ACQERR_KPIID_INVALID           = -2000002,			// 指标ID无效
+		ACQERR_ETLID_INVALID           = -2000003,			// 采集规则ID无效
+		ACQERR_HIVE_PORT_INVALID       = -2000004,			// Hive服务器端口无效
+		ACQERR_INIT_FAILED             = -2000005,			// 初始化失败
+		ACQERR_TASKINFO_INVALID        = -2000006,			// 任务信息无效
+		ACQERR_TRANS_DATASRC_FAILED    = -2000007,			// 源表转换失败
+		ACQERR_OUTER_JOIN_FAILED       = -2000008,			// 外连条件下生成Hive SQL失败
+		ACQERR_DATA_ACQ_FAILED         = -2000009,			// 数据采集失败
+		ACQERR_HDFS_PORT_INVALID       = -2000010,			// HDFS端口无效
+		ACQERR_OUTPUT_HDFS_FILE_FAILED = -2000011,			// 输出到HDFS文件失败
+		ACQERR_LOAD_HIVE_FAILED        = -2000012,			// 载入数据到HIVE失败
+		ACQERR_DEL_HDFS_FILE_FAILED    = -2000013,			// 删除HDFS文件失败
 	};
 
 public:
@@ -62,20 +67,37 @@ private:
 	// DB2数据采集
 	void DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception);
 
+	// 载入HDFS配置
+	void LoadHdfsConfig() throw(base::Exception);
+
+	// 生成hdfs临时文件名
+	std::string GeneralHdfsFileName();
+
+	// 将DB2数据写到HDFS文件
+	// 返回：文件存在于HDFS的详细路径
+	std::string DB2DataOutputHdfsFile(std::vector<std::vector<std::string> >& vec2_data, hdfsFS& hd_fs, const std::string& hdfs_file) throw(base::Exception);
+
+	// 从HDFS文件load数据到Hive
+	void LoadHdfsFile2Hive(const std::string& target_tab, const std::string& hdfs_file) throw(base::Exception);
+
+	// 将HDFS临时文件删除
+	void DeleteHdfsFile(hdfsFS& hd_fs, const std::string& hdfs_file) throw(base::Exception);
+
 	// 重建Hive目标表
-	void RebuildHiveTable(AcqTaskInfo& info) throw(base::Exception);
+	// 返回：目标表的字段数
+	int RebuildHiveTable(AcqTaskInfo& info) throw(base::Exception);
 
 	// 分析采集规则，生成目标表字段
 	void TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>& vec_field) throw(base::Exception);
 
-	// 分析采集任务规则，生成Hive_SQL
-	void TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql) throw(base::Exception);
+	// 分析采集任务规则，生成采集SQL
+	void TaskInfo2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
 
-	// 外连条件下：分析采集规则，生成Hive_SQL
-	void OuterJoin2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql) throw(base::Exception);
+	// 外连条件下：分析采集规则，生成采集SQL
+	void OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
 
-	// 不带条件或者直接条件下：分析采集规则，生成Hive_SQL
-	void NoneOrStraight2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql);
+	// 不带条件或者直接条件下：分析采集规则，生成采集SQL
+	void NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive);
 
 	// 采集源数据表名日期转换
 	std::string TransDataSrcDate(const std::string& time, const std::string& data_src) throw(base::Exception);
@@ -90,6 +112,10 @@ private:
 
 	std::string m_sHiveIP;				// Hive服务器IP地址
 	int			m_nHivePort;			// Hive服务器端口
+
+	std::string m_sHdfsHost;			// HDFS的主机信息
+	std::string m_sHdfsTmpPath;			// HDFS的临时目录
+	int			m_nHdfsPort;			// HDFS的端口
 
 private:
 	CAcqDB2*		m_pAcqDB2;			// DB2数据库接口

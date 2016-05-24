@@ -6,6 +6,7 @@
 #include "pubtime.h"
 #include "pubstr.h"
 #include "autodisconnect.h"
+#include "simpletime.h"
 #include "cacqdb2.h"
 #include "chivethrift.h"
 #include "taskinfoutil.h"
@@ -16,6 +17,7 @@ Acquire g_Acquire;
 
 Acquire::Acquire()
 :m_nHivePort(0)
+,m_nHdfsPort(0)
 ,m_pAcqDB2(NULL)
 ,m_pCHive(NULL)
 {
@@ -100,7 +102,7 @@ void Acquire::Init() throw(base::Exception)
 
 void Acquire::Run() throw(base::Exception)
 {
-	base::AutoDisconnect a_disconn(m_pAcqDB2, m_pCHive);
+	base::AutoDisconnect a_disconn(new base::HiveDB2Connector(m_pAcqDB2, m_pCHive));
 	a_disconn.Connect();
 
 	AcqTaskInfo task_info;
@@ -113,7 +115,7 @@ void Acquire::Run() throw(base::Exception)
 
 void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exception)
 {
-	// 格式：启动批号|指标ID|采集规则ID|...
+	// 格式：启动批号:指标ID:采集规则ID:...
 	std::vector<std::string> vec_str;
 	boost::split(vec_str, para, boost::is_any_of(":"));
 
@@ -234,7 +236,7 @@ void Acquire::HiveDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 	RebuildHiveTable(info);
 
 	std::vector<std::string> vec_hivesql;
-	TaskInfo2HiveSql(info, vec_hivesql);
+	TaskInfo2Sql(info, vec_hivesql, true);
 
 	m_pLog->Output("[Acquire] [HIVE] 执行数据采集 ...");
 	m_pCHive->ExecuteAcqSQL(vec_hivesql);
@@ -242,34 +244,186 @@ void Acquire::HiveDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 
 void Acquire::DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 {
-	RebuildHiveTable(info);
+	LoadHdfsConfig();
+
+	HdfsConnector* pHdfsConnector = new HdfsConnector(m_sHdfsHost, m_nHdfsPort);
+
+	base::AutoDisconnect a_disconn(pHdfsConnector);		// 资源自动释放
+	a_disconn.Connect();
+
+	int field_size = RebuildHiveTable(info);
 
 	std::vector<std::string> vec_sql;
-	TaskInfo2HiveSql(info, vec_sql);
+	TaskInfo2Sql(info, vec_sql, false);
 
 	m_pLog->Output("[Acquire] [DB2] 执行数据采集 ...");
-	std::vector<std::vector<std::vector<std::string> > > vec3_data;
 
+	hdfsFS hd_fs = pHdfsConnector->GetHdfsFS();
 	const int VEC_SIZE = vec_sql.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
 		std::vector<std::vector<std::string> > vec2_data;
-		m_pAcqDB2->FetchEtlData(vec_sql[i], , vec2_data);
+		m_pAcqDB2->FetchEtlData(vec_sql[i], field_size, vec2_data);
 
-		base::PubStr::VVVectorSwapPushBack(vec3_data, vec2_data);
+		std::string hdfsFile = GeneralHdfsFileName();
+		hdfsFile = DB2DataOutputHdfsFile(vec2_data, hd_fs, hdfsFile);
+
+		LoadHdfsFile2Hive(info.EtlRuleTarget, hdfsFile);
+
+		DeleteHdfsFile(hd_fs, hdfsFile);
 	}
 }
 
-void Acquire::RebuildHiveTable(AcqTaskInfo& info) throw(base::Exception)
+void Acquire::LoadHdfsConfig() throw(base::Exception)
+{
+	m_cfg.RegisterItem("HDFS", "HOST");
+	m_cfg.RegisterItem("HDFS", "TMP_PATH");
+	m_cfg.RegisterItem("HDFS", "PORT");
+
+	m_cfg.ReadConfig();
+
+	// HDFS配置
+	m_sHdfsHost    = m_cfg.GetCfgValue("HDFS", "HOST");
+	m_sHdfsTmpPath = m_cfg.GetCfgValue("HDFS", "TMP_PATH");
+	m_nHdfsPort    = (int)m_cfg.GetCfgLongVal("HDFS", "PORT");
+	if ( m_nHdfsPort <= 0 )
+	{
+		throw base::Exception(ACQERR_HDFS_PORT_INVALID, "HDFS端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHdfsPort, __FILE__, __LINE__);
+	}
+
+	// 加上末尾的斜杠
+	if ( m_sHdfsTmpPath[m_sHdfsTmpPath.size()-1] != '/' )
+	{
+		m_sHdfsTmpPath += "/";
+	}
+}
+
+std::string Acquire::GeneralHdfsFileName()
+{
+	return (m_sKpiID + "_" + m_sEtlID + "_" + base::SimpleTime::Now().Time14());
+}
+
+std::string Acquire::DB2DataOutputHdfsFile(std::vector<std::vector<std::string> >& vec2_data, hdfsFS& hd_fs, const std::string& hdfs_file) throw(base::Exception)
+{
+	const std::string FULL_FILE_PATH = m_sHdfsTmpPath + hdfs_file;
+
+	hdfsFile hd_file = hdfsOpenFile(hd_fs, FULL_FILE_PATH.c_str(), O_WRONLY|O_CREAT, 0, 0, 0);
+	if ( NULL == hd_file )
+	{
+		throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Open file failed: %s [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[Acquire] [HDFS] Open file [%s] OK.", FULL_FILE_PATH.c_str());
+
+	m_pLog->Output("[Acquire] [HDFS] Write file [%s] ...", FULL_FILE_PATH.c_str());
+
+	std::string str_buf;
+	const size_t VEC2_SIZE = vec2_data.size();
+	for ( size_t i = 0; i < VEC2_SIZE; ++i )
+	{
+		std::vector<std::string>& ref_vec1 = vec2_data[i];
+
+		str_buf.clear();
+
+		const int V1_SIZE = ref_vec1.size();
+		for ( int j = 0; j < V1_SIZE; ++j )
+		{
+			if ( j != 0 )
+			{
+				str_buf += "|" + ref_vec1[j];
+			}
+			else
+			{
+				str_buf += ref_vec1[j];
+			}
+		}
+
+		// 不是最后一行，则加上换行
+		if ( i < VEC2_SIZE - 1 )
+		{
+			str_buf += "\n";
+		}
+
+		if ( hdfsWrite(hd_fs, hd_file, (void*)str_buf.c_str(), str_buf.size()) < 0 )
+		{
+			throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Write file failed: %s (index:%llu) [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), i, __FILE__, __LINE__);
+		}
+
+		// 每一千行，flush一次buffer
+		if ( i % 1000 == 0 && i != 0 )
+		{
+			if ( hdfsFlush(hd_fs, hd_file) < 0 )
+			{
+				throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Flush file failed: %s (index:%llu) [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), i, __FILE__, __LINE__);
+			}
+		}
+	}
+
+	// 最后再flush一次
+	if ( hdfsFlush(hd_fs, hd_file) < 0 )
+	{
+		throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Finally flush file failed: %s [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[Acquire] [HDFS] Write file line(s): %llu", VEC2_SIZE);
+
+	if ( hdfsCloseFile(hd_fs, hd_file) < 0 )
+	{
+		throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Close file failed: %s [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[Acquire] [HDFS] Close file [%s].", FULL_FILE_PATH.c_str());
+
+	return FULL_FILE_PATH;
+}
+
+void Acquire::LoadHdfsFile2Hive(const std::string& target_tab, const std::string& hdfs_file) throw(base::Exception)
+{
+	if ( hdfs_file.empty() )
+	{
+		throw base::Exception(ACQERR_LOAD_HIVE_FAILED, "[Acquire] HDFS文件名无效！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[Acquire] Load HDFS file [%s] to HIVE ...", hdfs_file.c_str());
+
+	std::string load_sql = "load data inpath 'hdfs://";
+	load_sql += m_sHdfsHost + ":" + boost::lexical_cast<std::string>(m_nHdfsPort);
+
+	if ( hdfs_file[0] != '/' )
+	{
+		load_sql += "/";
+	}
+
+	load_sql += hdfs_file + "' into table " + target_tab;
+
+	std::vector<std::string> vec_sql;
+	vec_sql.push_back(load_sql);
+	m_pCHive->ExecuteAcqSQL(vec_sql);
+
+	m_pLog->Output("[Acquire] Load HDFS file to HIVE ---- done!");
+}
+
+void Acquire::DeleteHdfsFile(hdfsFS& hd_fs, const std::string& hdfs_file) throw(base::Exception)
+{
+	m_pLog->Output("[Acquire] [HDFS] 删除HDFS临时文件: %s", hdfs_file.c_str());
+
+	if ( hdfsDelete(hd_fs, hdfs_file.c_str(), false) < 0 )
+	{
+		throw base::Exception(ACQERR_DEL_HDFS_FILE_FAILED, "[Acquire] [HDFS] 删除HDFS临时文件失败！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[Acquire] [HDFS] 删除HDFS临时文件成功.", hdfs_file.c_str());
+}
+
+int Acquire::RebuildHiveTable(AcqTaskInfo& info) throw(base::Exception)
 {
 	m_pLog->Output("[Acquire] 重建 HIVE 采集目标表 ...");
 
 	std::vector<std::string> vec_field;
 	TaskInfo2TargetFields(info, vec_field);
 
-	m_pCHive->RebuildHiveTable(info.EtlRuleTarget, vec_field);
+	m_pCHive->RebuildTable(info.EtlRuleTarget, vec_field);
 
 	m_pLog->Output("[Acquire] HIVE 采集目标表 [%s] 重建完成!", info.EtlRuleTarget.c_str());
+	return vec_field.size();
 }
 
 void Acquire::TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>& vec_field) throw(base::Exception)
@@ -337,16 +491,16 @@ void Acquire::TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>&
 	v_field.swap(vec_field);
 }
 
-void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql) throw(base::Exception)
+void Acquire::TaskInfo2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive) throw(base::Exception)
 {
 	switch ( info.EtlCondType )
 	{
 	case AcqTaskInfo::ETLCTYPE_NONE:		// 不带条件
 	case AcqTaskInfo::ETLCTYPE_STRAIGHT:	// 直接条件
-		NoneOrStraight2HiveSql(info, vec_sql);
+		NoneOrStraight2Sql(info, vec_sql, hive);
 		break;
 	case AcqTaskInfo::ETLCTYPE_OUTER_JOIN:	// 外连条件
-		OuterJoin2HiveSql(info, vec_sql);
+		OuterJoin2Sql(info, vec_sql, hive);
 		break;
 	case AcqTaskInfo::ETLCTYPE_UNKNOWN:		// 未知类型
 	default:
@@ -354,7 +508,7 @@ void Acquire::TaskInfo2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_
 	}
 }
 
-void Acquire::OuterJoin2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql) throw(base::Exception)
+void Acquire::OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive) throw(base::Exception)
 {
 	// 分析采集条件
 	// 格式：[外连表名]:[关联的维度字段(逗号分隔)]
@@ -385,6 +539,7 @@ void Acquire::OuterJoin2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec
 		throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "采集规则解析失败：无法识别的采集条件 [%s] (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", etl_cond.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
+	std::string sql;
 	std::vector<std::string> v_sql;
 
 	const int OUTER_ON_SIZE = vec_str.size();
@@ -399,19 +554,28 @@ void Acquire::OuterJoin2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec
 
 		const std::string SRC_TABLE = TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[0]);
 
-		std::string hive_sql = "insert into table " + info.EtlRuleTarget + " ";
-		hive_sql += TaskInfoUtil::GetOuterJoinEtlSQL(info.vecEtlRuleDim[0], info.vecEtlRuleVal[0], SRC_TABLE, outer_table, vec_str);
+		if ( hive )
+		{
+			sql += "insert into table " + info.EtlRuleTarget + " ";
+		}
 
-		v_sql.push_back(hive_sql);
+		sql += TaskInfoUtil::GetOuterJoinEtlSQL(info.vecEtlRuleDim[0], info.vecEtlRuleVal[0], SRC_TABLE, outer_table, vec_str);
+
+		v_sql.push_back(sql);
 	}
 	else	// 多个源数据
 	{
 		std::string target_dim_sql = TaskInfoUtil::GetTargetDimSql(info.vecEtlRuleDim[0]);
 
 		// Hive SQL head
-		std::string hive_sql = "insert into table " + info.EtlRuleTarget + " select ";
-		hive_sql += target_dim_sql + TaskInfoUtil::GetTargetValSql(info.vecEtlRuleVal[0]);
-		hive_sql += " from (";
+		if ( hive )
+		{
+			sql += "insert into table " + info.EtlRuleTarget + " ";
+		}
+
+		sql += "select ";
+		sql += target_dim_sql + TaskInfoUtil::GetTargetValSql(info.vecEtlRuleVal[0]);
+		sql += " from (";
 
 		int num_join_on = 0;
 		std::string src_table;
@@ -421,7 +585,7 @@ void Acquire::OuterJoin2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec
 		{
 			if ( i != 0 )
 			{
-				hive_sql += " union all ";
+				sql += " union all ";
 			}
 
 			AcqEtlDim& ref_etl_dim = info.vecEtlRuleDim[i];
@@ -436,19 +600,19 @@ void Acquire::OuterJoin2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec
 
 			AcqEtlVal& ref_etl_val = info.vecEtlRuleVal[i];
 
-			hive_sql += TaskInfoUtil::GetOuterJoinEtlSQL(ref_etl_dim, ref_etl_val, src_table, outer_table, vec_str);
+			sql += TaskInfoUtil::GetOuterJoinEtlSQL(ref_etl_dim, ref_etl_val, src_table, outer_table, vec_str);
 		}
 
 		// Hive SQL tail
-		hive_sql += ") TMP group by " + target_dim_sql;
+		sql += ") TMP group by " + target_dim_sql;
 
-		v_sql.push_back(hive_sql);
+		v_sql.push_back(sql);
 	}
 
 	v_sql.swap(vec_sql);
 }
 
-void Acquire::NoneOrStraight2HiveSql(AcqTaskInfo& info, std::vector<std::string>& vec_sql)
+void Acquire::NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive)
 {
 	std::string condition;
 	// 是否为直接条件
@@ -472,39 +636,50 @@ void Acquire::NoneOrStraight2HiveSql(AcqTaskInfo& info, std::vector<std::string>
 		}
 	}
 
+	std::string sql;
 	std::vector<std::string> v_sql;
 
 	const int SRC_SIZE = info.vecEtlRuleDataSrc.size();
 	if ( 1 == SRC_SIZE )	// 单个源数据
 	{
-		std::string hive_sql = "insert into table " + info.EtlRuleTarget + " select ";
-		hive_sql += TaskInfoUtil::GetEtlDimSql(info.vecEtlRuleDim[0], true) + TaskInfoUtil::GetEtlValSql(info.vecEtlRuleVal[0]);
-		hive_sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[0]) + condition;
-		hive_sql += " group by " + TaskInfoUtil::GetEtlDimSql(info.vecEtlRuleDim[0], false);
+		if ( hive )
+		{
+			sql += "insert into table " + info.EtlRuleTarget + " ";
+		}
 
-		v_sql.push_back(hive_sql);
+		sql += "select ";
+		sql += TaskInfoUtil::GetEtlDimSql(info.vecEtlRuleDim[0], true) + TaskInfoUtil::GetEtlValSql(info.vecEtlRuleVal[0]);
+		sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[0]) + condition;
+		sql += " group by " + TaskInfoUtil::GetEtlDimSql(info.vecEtlRuleDim[0], false);
+
+		v_sql.push_back(sql);
 	}
 	else	// 多个源数据
 	{
-		std::string target_dim_sql = TaskInfoUtil::GetTargetDimSql(info.vecEtlRuleDim[0]);
+		const std::string TARGET_DIM_SQL = TaskInfoUtil::GetTargetDimSql(info.vecEtlRuleDim[0]);
 
-		// Hive SQL head
-		std::string hive_sql = "insert into table " + info.EtlRuleTarget + " select ";
-		hive_sql += target_dim_sql + TaskInfoUtil::GetTargetValSql(info.vecEtlRuleVal[0]);
-		hive_sql += " from (";
+		// SQL head
+		if ( hive )
+		{
+			sql += "insert into table " + info.EtlRuleTarget + " ";
+		}
 
-		// Hive SQL body
+		sql += "select ";
+		sql += TARGET_DIM_SQL + TaskInfoUtil::GetTargetValSql(info.vecEtlRuleVal[0]);
+		sql += " from (";
+
+		// SQL body
 		std::string tab_alias;
 		std::string tab_pre;
 		for ( int i = 0; i < SRC_SIZE; ++i )
 		{
 			if ( i != 0 )
 			{
-				hive_sql += " union all select ";
+				sql += " union all select ";
 			}
 			else
 			{
-				hive_sql += "select ";
+				sql += "select ";
 			}
 
 			tab_alias = base::PubStr::TabIndex2TabAlias(i);
@@ -512,15 +687,15 @@ void Acquire::NoneOrStraight2HiveSql(AcqTaskInfo& info, std::vector<std::string>
 			AcqEtlDim& dim = info.vecEtlRuleDim[i];
 			AcqEtlVal& val = info.vecEtlRuleVal[i];
 
-			hive_sql += TaskInfoUtil::GetEtlDimSql(dim, true, tab_pre) + TaskInfoUtil::GetEtlValSql(val, tab_pre);
-			hive_sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]) + " " + tab_alias;
-			hive_sql += " group by " + TaskInfoUtil::GetEtlDimSql(dim, false, tab_pre);
+			sql += TaskInfoUtil::GetEtlDimSql(dim, true, tab_pre) + TaskInfoUtil::GetEtlValSql(val, tab_pre);
+			sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]) + " " + tab_alias;
+			sql += " group by " + TaskInfoUtil::GetEtlDimSql(dim, false, tab_pre);
 		}
 
-		// Hive SQL tail
-		hive_sql += ") TMP " + condition + " group by " + target_dim_sql;
+		// SQL tail
+		sql += ") TMP " + condition + " group by " + TARGET_DIM_SQL;
 
-		v_sql.push_back(hive_sql);
+		v_sql.push_back(sql);
 	}
 
 	v_sql.swap(vec_sql);

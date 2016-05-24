@@ -8,6 +8,7 @@
 #include "log.h"
 #include "basedb2.h"
 #include "basehivethrift.h"
+#include "TaskState.h"
 
 namespace base
 {
@@ -112,6 +113,9 @@ int main(int argc, char* argv[])
 	AutoLogger aLog;
 	Log* pLog = aLog.Get();
 
+	TaskState ts(argv[4]);
+	ts.start();
+
 	try
 	{
 		pLog->SetPath(g_pApp->GetLogPathConfig());
@@ -128,17 +132,23 @@ int main(int argc, char* argv[])
 	{
 		std::cerr << "[ERROR] " << ex.What() << ", ERROR_CODE: " << ex.ErrorCode() << std::endl;
 		pLog->Output("[ERROR] %s, ERROR_CODE: %d", ex.What().c_str(), ex.ErrorCode());
+
+		ts.abort();
 		return -1;
 	}
 	catch ( ... )
 	{
 		std::cerr << "[ERROR] Unknown error! [FILE:" << __FILE__ << ", LINE:" << __LINE__ << "]" << std::endl;
 		pLog->Output("[ERROR] Unknown error! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+
+		ts.abort();
 		return -1;
 	}
 
 	std::cout << argv[0] << " quit!" << std::endl;
 	pLog->Output("%s quit!", argv[0]);
+
+	ts.done();
 	return 0;
 }
 

@@ -1,5 +1,6 @@
 #include "taskinfoutil.h"
 #include <boost/algorithm/string.hpp>
+#include "pubstr.h"
 
 std::string TaskInfoUtil::GetTargetDimSql(AcqEtlDim& target_dim)
 {
@@ -160,7 +161,7 @@ std::string TaskInfoUtil::GetEtlValSql(AcqEtlVal& etl_val, const std::string& ta
 	{
 		OneEtlVal& val = etl_val.vecEtlVal[i];
 
-		val_sql += ", " + TransEtlValSrcName(val.EtlValSrcName, tab_prefix) + " as " + val.EtlValName;
+		val_sql += ", " + TransEtlValSrcName(val, tab_prefix) + " as " + val.EtlValName;
 	}
 
 	return val_sql;
@@ -295,7 +296,7 @@ std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_
 			tab_pre = "a.";
 		}
 
-		etl_sql += ", " + TransEtlValSrcName(val.EtlValSrcName, tab_pre) + " as " + val.EtlValName;
+		etl_sql += ", " + TransEtlValSrcName(val, tab_pre) + " as " + val.EtlValName;
 	}
 
 	etl_sql += " from " + src_tab + " a left outer join " + outer_tab;
