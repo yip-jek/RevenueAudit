@@ -269,8 +269,6 @@ void Acquire::DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 		hdfsFile = DB2DataOutputHdfsFile(vec2_data, hd_fs, hdfsFile);
 
 		LoadHdfsFile2Hive(info.EtlRuleTarget, hdfsFile);
-
-		DeleteHdfsFile(hd_fs, hdfsFile);
 	}
 }
 
@@ -399,18 +397,6 @@ void Acquire::LoadHdfsFile2Hive(const std::string& target_tab, const std::string
 	m_pCHive->ExecuteAcqSQL(vec_sql);
 
 	m_pLog->Output("[Acquire] Load HDFS file to HIVE ---- done!");
-}
-
-void Acquire::DeleteHdfsFile(hdfsFS& hd_fs, const std::string& hdfs_file) throw(base::Exception)
-{
-	m_pLog->Output("[Acquire] [HDFS] 删除HDFS临时文件: %s", hdfs_file.c_str());
-
-	if ( hdfsDelete(hd_fs, hdfs_file.c_str(), false) < 0 )
-	{
-		throw base::Exception(ACQERR_DEL_HDFS_FILE_FAILED, "[Acquire] [HDFS] 删除HDFS临时文件失败！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
-	}
-
-	m_pLog->Output("[Acquire] [HDFS] 删除HDFS临时文件成功.", hdfs_file.c_str());
 }
 
 int Acquire::RebuildHiveTable(AcqTaskInfo& info) throw(base::Exception)

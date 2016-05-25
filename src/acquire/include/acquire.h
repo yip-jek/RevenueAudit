@@ -29,7 +29,6 @@ public:
 		ACQERR_HDFS_PORT_INVALID       = -2000010,			// HDFS端口无效
 		ACQERR_OUTPUT_HDFS_FILE_FAILED = -2000011,			// 输出到HDFS文件失败
 		ACQERR_LOAD_HIVE_FAILED        = -2000012,			// 载入数据到HIVE失败
-		ACQERR_DEL_HDFS_FILE_FAILED    = -2000013,			// 删除HDFS文件失败
 	};
 
 public:
@@ -79,9 +78,6 @@ private:
 
 	// 从HDFS文件load数据到Hive
 	void LoadHdfsFile2Hive(const std::string& target_tab, const std::string& hdfs_file) throw(base::Exception);
-
-	// 将HDFS临时文件删除
-	void DeleteHdfsFile(hdfsFS& hd_fs, const std::string& hdfs_file) throw(base::Exception);
 
 	// 重建Hive目标表
 	// 返回：目标表的字段数
