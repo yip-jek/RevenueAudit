@@ -1,9 +1,11 @@
 #include "log.h"
 #include <stdio.h>
 #include <stdarg.h>
-#include <dirent.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "simpletime.h"
+#include "pubstr.h"
 
 namespace base
 {
@@ -64,6 +66,20 @@ bool Log::ResetFileSize(unsigned long fsize)
 	return false;
 }
 
+bool Log::TryMakeDir(const std::string& path)
+{
+	// 目录是否存在
+	if ( access(path.c_str(), F_OK) != 0 )
+	{
+		if ( mkdir(path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0 )
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void Log::Init() throw(Exception)
 {
 	if ( m_sLogPath.empty() )
@@ -83,22 +99,51 @@ void Log::SetPath(const std::string& path) throw(Exception)
 		throw Exception(LG_FILE_PATH_EMPTY, "[LOG] The log path is empty! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	DIR* p_dir = opendir(path.c_str());
-	if ( NULL == p_dir )
-	{
-		throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
-	}
-	closedir(p_dir);
+	// 自动建日志路径
+	std::vector<std::string> vec_path;
+	PubStr::Str2StrVector(path, "/", vec_path);
 
-	const char LAST_CH = path[path.size()-1];
-	if ( LAST_CH == '/' || LAST_CH == '\\' )
+	// 去除末尾空白
+	if ( vec_path[vec_path.size()-1].empty() )
 	{
-		m_sLogPath = path;
+		vec_path.erase(vec_path.end()-1);
 	}
-	else
+
+	std::string str_path;
+	const int VEC_SIZE = vec_path.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
-		m_sLogPath = path + "/";
+		std::string& ref_path = vec_path[i];
+
+		if ( i != 0 )
+		{
+			if ( ref_path.empty() )
+			{
+				throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
+			}
+
+			str_path += "/" + ref_path;
+
+			if ( !TryMakeDir(str_path) )
+			{
+				throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
+			}
+		}
+		else
+		{
+			if ( !ref_path.empty() )		// 非绝对路径
+			{
+				str_path += ref_path;
+
+				if ( !TryMakeDir(str_path) )
+				{
+					throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
+				}
+			}
+		}
 	}
+
+	m_sLogPath = str_path + "/";
 }
 
 bool Log::Output(const char* format, ...)

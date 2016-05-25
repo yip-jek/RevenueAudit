@@ -20,6 +20,8 @@ public:
 	static bool SetCCMID(long long ccm_id);
 	static bool ResetFileSize(unsigned long fsize);
 
+	static bool TryMakeDir(const std::string& path);
+
 public:
 	void Init() throw(Exception);
 	void SetPath(const std::string& path) throw(Exception);
