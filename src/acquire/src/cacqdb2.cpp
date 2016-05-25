@@ -96,12 +96,12 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 
 			if ( !info.SetDataSourceType(dat_src_type) )
 			{
-				throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) 无法识别的数据源类型: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), dat_src_type.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) 无法识别的数据源类型: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), dat_src_type.c_str(), __FILE__, __LINE__);
 			}
 
 			if ( !info.SetConditionType(cond_type) )
 			{
-				throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) 无法识别的采集条件类型: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), cond_type.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) 无法识别的采集条件类型: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), cond_type.c_str(), __FILE__, __LINE__);
 			}
 
 			rs.MoveNext();
@@ -109,14 +109,14 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( 0 == counter )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] Select %s failed! No record! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! No record! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB] Select %s successfully! (KPI_ID:%s, ETLRULE_ID:%s) [Record:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), counter);
+	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s, ETLRULE_ID:%s) [Record:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), counter);
 
 	boost::split(info.vecEtlRuleDataSrc, data_source, boost::is_any_of(","));
 	size_t v_size = info.vecEtlRuleDataSrc.size();
@@ -128,7 +128,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 
 		if ( ref_data_src.empty() )
 		{
-			throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB] 采集数据源(ETLRULE_DATASOURCE:%s)配置不正确: 第%lu个数据源为空值! (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", data_source.c_str(), (i+1), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] 采集数据源(ETLRULE_DATASOURCE:%s)配置不正确: 第%lu个数据源为空值! (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", data_source.c_str(), (i+1), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 		}
 	}
 
@@ -198,14 +198,14 @@ void CAcqDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB] Select %s failed! (ETLDIM_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB2] Select %s failed! (ETLDIM_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( v_dim.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB] Select %s failed! No record! (ETLDIM_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB2] Select %s failed! No record! (ETLDIM_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB] Select %s successfully! (ETLDIM_ID:%s) [Record:%lu]", m_tabEtlDim.c_str(), dim_id.c_str(), v_dim.size());
+	m_pLog->Output("[DB2] Select %s successfully! (ETLDIM_ID:%s) [Record:%lu]", m_tabEtlDim.c_str(), dim_id.c_str(), v_dim.size());
 
 	v_dim.swap(vec_dim);
 }
@@ -247,14 +247,14 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB] Select %s failed! (ETLVAL_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB2] Select %s failed! (ETLVAL_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( v_val.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB] Select %s failed! No record! (ETLVAL_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB2] Select %s failed! No record! (ETLVAL_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB] Select %s successfully! (ETLVAL_ID:%s) [Record:%lu]", m_tabEtlVal.c_str(), val_id.c_str(), v_val.size());
+	m_pLog->Output("[DB2] Select %s successfully! (ETLVAL_ID:%s) [Record:%lu]", m_tabEtlVal.c_str(), val_id.c_str(), v_val.size());
 
 	v_val.swap(vec_val);
 }
@@ -269,7 +269,7 @@ void CAcqDB2::FetchEtlData(const std::string& sql, int data_size, std::vector<st
 
 	try
 	{
-		m_pLog->Output("[DB] Execute acquire sql: %s", sql.c_str());
+		m_pLog->Output("[DB2] Execute acquire sql: %s", sql.c_str());
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 		rs.Execute();
@@ -286,21 +286,21 @@ void CAcqDB2::FetchEtlData(const std::string& sql, int data_size, std::vector<st
 			rs.MoveNext();
 		}
 
-		m_pLog->Output("[DB] Execute acquire sql OK.");
+		m_pLog->Output("[DB2] Execute acquire sql OK.");
 
 		const size_t V2_DAT_SIZE = v2_data.size();
 		if ( 0 == V2_DAT_SIZE )
 		{
-			m_pLog->Output("[DB] <WARNING> Fetch no data ! (size: 0)");
+			m_pLog->Output("[DB2] <WARNING> Fetch no data ! (size: 0)");
 		}
 		else
 		{
-			m_pLog->Output("[DB] Fetch acquire data size: %llu", v2_data.size());
+			m_pLog->Output("[DB2] Fetch acquire data size: %llu", v2_data.size());
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_FETCH_ETL_DATA, "[DB] Execute acquire sql failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_FETCH_ETL_DATA, "[DB2] Execute acquire sql failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 
 	v2_data.swap(vec2_data);
