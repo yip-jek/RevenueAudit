@@ -5,6 +5,8 @@
 #include "dimvaldiffer.h"
 
 struct AnaDBInfo;
+struct ChannelUniformCode;
+struct CityUniformCode;
 
 class CAnaDB2 : public base::BaseDB2
 {
@@ -16,19 +18,21 @@ public:
 
 	enum ADB_ERROR
 	{
-		ADBERR_SEL_KPI_RULE    = -3002001,				// 查询指标规则出错
-		ADBERR_SEL_KPI_COL     = -3002002,				// 查询指标字段出错
-		ADBERR_SEL_DIM_VALUE   = -3002003,				// 查询维度取值出错
-		ADBERR_INS_DIM_VALUE   = -3002004,				// 插入维度取值出错
-		ADBERR_SEL_ETL_RULE    = -3002005,				// 查询采集规则出错
-		ADBERR_SEL_ANA_RULE    = -3002006,				// 查询分析规则出错
-		ADBERR_SEL_ALARM_RULE  = -3002007,				// 查询告警规则出错
-		ADBERR_INS_RESULT_DATA = -3002008,				// 插入结果数据出错
-		ADBERR_SEL_ETL_DIM     = -3002009,				// 查询采集维度规则出错
-		ADBERR_SEL_ETL_VAL     = -3002010,				// 查询采集值规则出错
-		ADBERR_SEL_REPORT_DATA = -3002011,				// 统计报表统计数据出错
-		ADBERR_DEL_REPORT_DATA = -3002012,				// 删除报表统计数据出错
-		ADBERR_INS_REPORT_DATA = -3002013,				// 插入报表统计数据出错
+		ADBERR_SEL_KPI_RULE      = -3002001,				// 查询指标规则出错
+		ADBERR_SEL_KPI_COL       = -3002002,				// 查询指标字段出错
+		ADBERR_SEL_DIM_VALUE     = -3002003,				// 查询维度取值出错
+		ADBERR_INS_DIM_VALUE     = -3002004,				// 插入维度取值出错
+		ADBERR_SEL_ETL_RULE      = -3002005,				// 查询采集规则出错
+		ADBERR_SEL_ANA_RULE      = -3002006,				// 查询分析规则出错
+		ADBERR_SEL_ALARM_RULE    = -3002007,				// 查询告警规则出错
+		ADBERR_INS_RESULT_DATA   = -3002008,				// 插入结果数据出错
+		ADBERR_SEL_ETL_DIM       = -3002009,				// 查询采集维度规则出错
+		ADBERR_SEL_ETL_VAL       = -3002010,				// 查询采集值规则出错
+		ADBERR_SEL_REPORT_DATA   = -3002011,				// 统计报表统计数据出错
+		ADBERR_DEL_REPORT_DATA   = -3002012,				// 删除报表统计数据出错
+		ADBERR_INS_REPORT_DATA   = -3002013,				// 插入报表统计数据出错
+		ADBERR_SEL_CHANN_UNICODE = -3002014,				// 获取渠道统一编码数据出错
+		ADBERR_SEL_CITY_UNICODE  = -3002015,				// 获取地市统一编码数据出错
 	};
 
 public:
@@ -59,8 +63,20 @@ public:
 	// 设置告警事件表
 	void SetTabAlarmEvent(const std::string& t_alarmevent);
 
+	// 设置告警事件表
+	void SetTabDictChannel(const std::string& t_dictchann);
+
+	// 设置告警事件表
+	void SetTabDictCity(const std::string& t_dictcity);
+
 	// 查询分析规则任务信息
 	void SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
+
+	// 获取渠道统一编码数据
+	void SelectChannelUniformCode(std::vector<ChannelUniformCode>& vec_channunicode) throw(base::Exception);
+
+	// 获取地市统一编码数据
+	void SelectCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode) throw(base::Exception);
 
 	// 查询维度取值表
 	void SelectDimValue(const std::string& kpi_id, DimValDiffer& differ) throw(base::Exception);
@@ -113,5 +129,7 @@ private:
 	std::string m_tabAnaRule;			// 分析规则表
 	std::string m_tabAlarmRule;			// 告警规则表
 	std::string m_tabAlarmEvent;		// 告警事件表
+	std::string m_tabDictChannel;		// 渠道统一编码表
+	std::string m_tabDictCity;			// 地市统一编码表
 };
 

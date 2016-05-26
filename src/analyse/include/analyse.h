@@ -2,6 +2,7 @@
 
 #include "baseframeapp.h"
 #include "dimvaldiffer.h"
+#include "uniformcodetransfer.h"
 
 class CAnaDB2;
 class CHiveThrift;
@@ -60,6 +61,9 @@ private:
 
 	// 检查任务信息
 	void CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
+
+	// 获取渠道、地市统一编码信息
+	void FetchUniformCode() throw(base::Exception);
 
 	// 进行数据分析
 	void DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception);
@@ -141,9 +145,12 @@ private:
 	std::string m_tabAnaRule;			// 分析规则表
 	std::string m_tabAlarmRule;			// 告警规则表
 	std::string m_tabAlarmEvent;		// 告警事件表
+	std::string m_tabDictChannel;		// 渠道统一编码表
+	std::string m_tabDictCity;			// 地市统一编码表
 
 private:
-	DimValDiffer	m_DVDiffer;			// 用于维度取值范围的比较
+	DimValDiffer		m_DVDiffer;				// 用于维度取值范围的比较
+	UniformCodeTransfer	m_UniCodeTransfer;		// 统一编码转换
 
 private:
 	// 获取到的Hive源数据集

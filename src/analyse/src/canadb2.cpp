@@ -3,6 +3,7 @@
 #include "pubstr.h"
 #include "simpletime.h"
 #include "anadbinfo.h"
+#include "uniformcodetransfer.h"
 
 
 CAnaDB2::CAnaDB2(const std::string& db_name, const std::string& usr, const std::string& pw)
@@ -59,6 +60,16 @@ void CAnaDB2::SetTabAlarmEvent(const std::string& t_alarmevent)
 	m_tabAlarmEvent = t_alarmevent;
 }
 
+void CAnaDB2::SetTabDictChannel(const std::string& t_dictchann)
+{
+	m_tabDictChannel = t_dictchann;
+}
+
+void CAnaDB2::SetTabDictCity(const std::string& t_dictcity)
+{
+	m_tabDictCity = t_dictcity;
+}
+
 void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 {
 	// 获取指标规则数据
@@ -93,6 +104,84 @@ void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 
 		SelectAlarmRule(alarm);
 	}
+}
+
+void CAnaDB2::SelectChannelUniformCode(std::vector<ChannelUniformCode>& vec_channunicode) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	ChannelUniformCode chann_unicode;
+	std::vector<ChannelUniformCode> v_chann_uc;
+
+	try
+	{
+		std::string sql = "select channelid, channelalias, channelname, remarks from " + m_tabDictChannel;
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			int index = 1;
+
+			chann_unicode.ChannelID    = (const char*)rs[index++];
+			chann_unicode.ChannelAlias = (const char*)rs[index++];
+			chann_unicode.ChannelName  = (const char*)rs[index++];
+			chann_unicode.Remarks      = (const char*)rs[index++];
+
+			v_chann_uc.push_back(chann_unicode);
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_CHANN_UNICODE, "[DB2] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDictChannel.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB2] Select %s successfully! [Record: %llu]", m_tabDictChannel.c_str(), v_chann_uc.size());
+
+	v_chann_uc.swap(vec_channunicode);
+}
+
+void CAnaDB2::SelectCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	CityUniformCode city_unicode;
+	std::vector<CityUniformCode> v_city_uc;
+
+	try
+	{
+		std::string sql = "select citylid, cityalias, cityname, remarks from " + m_tabDictCity;
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			int index = 1;
+
+			city_unicode.CityID    = (const char*)rs[index++];
+			city_unicode.CityAlias = (const char*)rs[index++];
+			city_unicode.CityName  = (const char*)rs[index++];
+			city_unicode.Remarks   = (const char*)rs[index++];
+
+			v_city_uc.push_back(city_unicode);
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_CITY_UNICODE, "[DB2] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDictCity.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB2] Select %s successfully! [Record: %llu]", m_tabDictCity.c_str(), v_city_uc.size());
+
+	v_city_uc.swap(vec_cityunicode);
 }
 
 void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)

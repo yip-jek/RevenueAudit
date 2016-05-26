@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.06.0056 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.08.0060 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -53,6 +53,8 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_ANA_RULE");
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_RULE");
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_EVENT");
+	m_cfg.RegisterItem("TABLE", "TAB_DICT_CHANNEL");
+	m_cfg.RegisterItem("TABLE", "TAB_DICT_CITY");
 
 	m_cfg.ReadConfig();
 
@@ -70,15 +72,17 @@ void Analyse::LoadConfig() throw(base::Exception)
 	}
 
 	// Tables
-	m_tabKpiRule   = m_cfg.GetCfgValue("TABLE", "TAB_KPI_RULE");
-	m_tabKpiColumn = m_cfg.GetCfgValue("TABLE", "TAB_KPI_COLUMN");
-	m_tabDimValue  = m_cfg.GetCfgValue("TABLE", "TAB_DIM_VALUE");
-	m_tabEtlRule   = m_cfg.GetCfgValue("TABLE", "TAB_ETL_RULE");
-	m_tabEtlDim    = m_cfg.GetCfgValue("TABLE", "TAB_ETL_DIM");
-	m_tabEtlVal    = m_cfg.GetCfgValue("TABLE", "TAB_ETL_VAL");
-	m_tabAnaRule   = m_cfg.GetCfgValue("TABLE", "TAB_ANA_RULE");
-	m_tabAlarmRule = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_RULE");
-	m_tabAlarmEvent = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_EVENT");
+	m_tabKpiRule     = m_cfg.GetCfgValue("TABLE", "TAB_KPI_RULE");
+	m_tabKpiColumn   = m_cfg.GetCfgValue("TABLE", "TAB_KPI_COLUMN");
+	m_tabDimValue    = m_cfg.GetCfgValue("TABLE", "TAB_DIM_VALUE");
+	m_tabEtlRule     = m_cfg.GetCfgValue("TABLE", "TAB_ETL_RULE");
+	m_tabEtlDim      = m_cfg.GetCfgValue("TABLE", "TAB_ETL_DIM");
+	m_tabEtlVal      = m_cfg.GetCfgValue("TABLE", "TAB_ETL_VAL");
+	m_tabAnaRule     = m_cfg.GetCfgValue("TABLE", "TAB_ANA_RULE");
+	m_tabAlarmRule   = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_RULE");
+	m_tabAlarmEvent  = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_EVENT");
+	m_tabDictChannel = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CHANNEL");
+	m_tabDictCity    = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
 
 	m_pLog->Output("Load configuration OK.");
 }
@@ -103,6 +107,8 @@ void Analyse::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabAnaRule(m_tabAnaRule);
 	m_pAnaDB2->SetTabAlarmRule(m_tabAlarmRule);
 	m_pAnaDB2->SetTabAlarmEvent(m_tabAlarmEvent);
+	m_pAnaDB2->SetTabDictChannel(m_tabDictChannel);
+	m_pAnaDB2->SetTabDictCity(m_tabDictCity);
 
 	m_pHiveThrift = new CHiveThrift(m_sHiveIP, m_nHivePort);
 	if ( NULL == m_pHiveThrift )
@@ -275,8 +281,18 @@ void Analyse::UpdateDimValue(AnaTaskInfo& info)
 	std::vector<DimVal> vec_diff_dv;
 	m_DVDiffer.GetDimValDiff(vec_diff_dv);
 
-	m_pAnaDB2->InsertNewDimValue(vec_diff_dv);
-	m_pLog->Output("[Analyse] 更新维度取值范围成功! Update size: %lu", vec_diff_dv.size());
+	const size_t VEC_DV = vec_diff_dv.size();
+	m_pLog->Output("[Analyse] 需要更新的维度取值数：%llu", VEC_DV);
+
+	if ( VEC_DV > 0 )
+	{
+		m_pAnaDB2->InsertNewDimValue(vec_diff_dv);
+		m_pLog->Output("[Analyse] 更新维度取值范围成功！");
+	}
+	else
+	{
+		m_pLog->Output("[Analyse] 无需更新维度取值范围.");
+	}
 }
 
 void Analyse::SetTaskInfo(AnaTaskInfo& info)
@@ -292,6 +308,9 @@ void Analyse::FetchTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 
 	m_pLog->Output("[Analyse] 检查分析任务规则信息 ...");
 	CheckAnaTaskInfo(info);
+
+	m_pLog->Output("[Analyse] 获取渠道、地市统一编码信息 ...");
+	FetchUniformCode();
 }
 
 void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
@@ -326,6 +345,23 @@ void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 	{
 		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标值信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
+}
+
+void Analyse::FetchUniformCode() throw(base::Exception)
+{
+	m_pLog->Output("[Analyse] Fetch channel uniform code ...");
+	std::vector<ChannelUniformCode> vec_channel_uni_code;
+	m_pAnaDB2->SelectChannelUniformCode(vec_channel_uni_code);
+
+	m_pLog->Output("[Analyse] Fetch channel uniform code, size: %llu", vec_channel_uni_code.size());
+	m_UniCodeTransfer.InputChannelUniformCode(vec_channel_uni_code);
+
+	m_pLog->Output("[Analyse] Fetch city uniform code ...");
+	std::vector<CityUniformCode> vec_city_uni_code;
+	m_pAnaDB2->SelectCityUniformCode(vec_city_uni_code);
+
+	m_pLog->Output("[Analyse] Fetch city uniform code, size: %llu", vec_city_uni_code.size());
+	m_UniCodeTransfer.InputCityUniformCode(vec_city_uni_code);
 }
 
 void Analyse::DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception)
@@ -790,17 +826,6 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(b
 
 		// 将源数据中的空值字符串("NULL")转换为("0")
 		base::PubStr::ReplaceInStrVector2(m_v2ReportStatData, "NULL", "0", false, true);
-
-		const std::string NOW_DAY = base::SimpleTime::Now().DayTime8();
-		const size_t NUM_OF_REPORT_DATA = m_pAnaDB2->SelectReportStatData(db_info, NOW_DAY);
-		m_pLog->Output("[Analyse] 统计已存在的旧报表统计数据: size=%llu (DAY:%s)", NUM_OF_REPORT_DATA, NOW_DAY.c_str());
-
-		// 是否存在旧的报表统计数据
-		if ( NUM_OF_REPORT_DATA > 0 )
-		{
-			m_pLog->Output("[Analyse] 删除已存在的旧报表统计数据 ...");
-			m_pAnaDB2->DeleteReportStatData(db_info, NOW_DAY);
-		}
 	}
 	else
 	{
@@ -842,7 +867,9 @@ void Analyse::TransSrcDataToReportStatData()
 			{
 				std::string& ref_str = ref_vec1[k];
 
-				boost::trim(ref_str);
+				// 统一编码转换
+				ref_str = m_UniCodeTransfer.Transfer(ref_str);
+
 				m_key += ref_str;
 			}
 
@@ -947,6 +974,17 @@ void Analyse::StoreResult(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::E
 	// 是否为报表统计类型
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )	// 报表统计类型
 	{
+		const std::string NOW_DAY = base::SimpleTime::Now().DayTime8();
+		const size_t NUM_OF_REPORT_DATA = m_pAnaDB2->SelectReportStatData(db_info, NOW_DAY);
+		m_pLog->Output("[Analyse] 统计已存在的旧报表统计数据: size=%llu (DAY:%s)", NUM_OF_REPORT_DATA, NOW_DAY.c_str());
+
+		// 是否存在旧的报表统计数据
+		if ( NUM_OF_REPORT_DATA > 0 )
+		{
+			m_pLog->Output("[Analyse] 删除已存在的旧报表统计数据 ...");
+			m_pAnaDB2->DeleteReportStatData(db_info, NOW_DAY);
+		}
+
 		m_pLog->Output("[Analyse] 准备入库报表统计结果数据 ...");
 		m_pAnaDB2->InsertReportStatData(db_info, m_v2ReportStatData);
 	}
