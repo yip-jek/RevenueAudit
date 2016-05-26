@@ -791,9 +791,16 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(b
 		// 将源数据中的空值字符串("NULL")转换为("0")
 		base::PubStr::ReplaceInStrVector2(m_v2ReportStatData, "NULL", "0", false, true);
 
-		std::string now_day = base::SimpleTime::Now().DayTime8();
-		m_pLog->Output("[Analyse] 删除已存在的旧报表统计数据, 时间为: %s", now_day.c_str());
-		m_pAnaDB2->DeleteReportStatData(db_info, now_day);
+		const std::string NOW_DAY = base::SimpleTime::Now().DayTime8();
+		const size_t NUM_OF_REPORT_DATA = m_pAnaDB2->SelectReportStatData(db_info, NOW_DAY);
+		m_pLog->Output("[Analyse] 统计已存在的旧报表统计数据: size=%llu (DAY:%s)", NUM_OF_REPORT_DATA, NOW_DAY.c_str());
+
+		// 是否存在旧的报表统计数据
+		if ( NUM_OF_REPORT_DATA > 0 )
+		{
+			m_pLog->Output("[Analyse] 删除已存在的旧报表统计数据 ...");
+			m_pAnaDB2->DeleteReportStatData(db_info, NOW_DAY);
+		}
 	}
 	else
 	{

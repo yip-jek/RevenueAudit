@@ -150,7 +150,7 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 
 	// 采集规则集
 	std::vector<std::string> vec_id;
-	base::PubStr::Str2StrVector(str_etlruleid, ",", vec_id);
+	base::PubStr::Str2StrVector(str_etlruleid, "|", vec_id);
 
 	std::vector<OneEtlRule>	vec_etl;
 	OneEtlRule one;
@@ -165,7 +165,7 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 	vec_etl.swap(info.vecEtlRule);
 
 	// 告警规则集
-	base::PubStr::Str2StrVector(str_alarmid, ",", vec_id);
+	base::PubStr::Str2StrVector(str_alarmid, "|", vec_id);
 
 	std::vector<AlarmRule>	vec_alarm;
 	AlarmRule alarm;
@@ -420,23 +420,56 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 	m_pLog->Output("[DB2] Insert result data to [%s]: %llu", db_info.target_table.c_str(), FIELDS_SIZE);
 }
 
-void CAnaDB2::DeleteReportStatData(AnaDBInfo& db_info, const std::string& day_time) throw(base::Exception)
+size_t CAnaDB2::SelectReportStatData(AnaDBInfo& db_info, const std::string& day_time) throw(base::Exception)
 {
-	if ( day_time.empty() )
-	{
-		throw base::Exception(ADBERR_DEL_REPORT_DATA, "[DB2] Delete report statistics data from [%s] failed: the day time is a blank! [FILE:%s, LINE:%d]", db_info.target_table.c_str(), __FILE__, __LINE__);
-	}
-
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	m_pLog->Output("[DB2] Delete report statistics data from [%s]", db_info.target_table.c_str());
+	m_pLog->Output("[DB2] Select [%s] report statistics data ...", db_info.target_table.c_str());
+
+	size_t num_of_data = 0;
+
+	try
+	{
+		std::string sql = "select count(0) from " + db_info.target_table;
+		// 时间字段在末尾
+		sql += " where " + db_info.vec_fields[db_info.vec_fields.size()-1] + " = ?";
+
+		m_pLog->Output("[DB2] Execute sql: %s", sql.c_str());
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = day_time.c_str();
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			num_of_data = (int64_t)rs[1];
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_REPORT_DATA, "[DB2] Select report statistics data failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+	}
+
+	return num_of_data;
+}
+
+void CAnaDB2::DeleteReportStatData(AnaDBInfo& db_info, const std::string& day_time) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	m_pLog->Output("[DB2] Delete report statistics data from [%s], date_time:%s", db_info.target_table.c_str(), day_time.c_str());
 
 	try
 	{
 		std::string sql = "delete from " + db_info.target_table;
 		// 时间字段在末尾
 		sql += " where " + db_info.vec_fields[db_info.vec_fields.size()-1] + " = ?";
+
+		m_pLog->Output("[DB2] Execute sql: %s", sql.c_str());
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 

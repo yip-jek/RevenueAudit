@@ -26,8 +26,9 @@ public:
 		ADBERR_INS_RESULT_DATA = -3002008,				// 插入结果数据出错
 		ADBERR_SEL_ETL_DIM     = -3002009,				// 查询采集维度规则出错
 		ADBERR_SEL_ETL_VAL     = -3002010,				// 查询采集值规则出错
-		ADBERR_DEL_REPORT_DATA = -3002011,				// 删除报表统计数据出错
-		ADBERR_INS_REPORT_DATA = -3002012,				// 插入报表统计数据出错
+		ADBERR_SEL_REPORT_DATA = -3002011,				// 统计报表统计数据出错
+		ADBERR_DEL_REPORT_DATA = -3002012,				// 删除报表统计数据出错
+		ADBERR_INS_REPORT_DATA = -3002013,				// 插入报表统计数据出错
 	};
 
 public:
@@ -70,7 +71,10 @@ public:
 	// 插入结果数据
 	void InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception);
 
-	// 删除旧的已经存在的报表统计数据
+	// 统计已经存在的报表统计数据
+	size_t SelectReportStatData(AnaDBInfo& db_info, const std::string& day_time) throw(base::Exception);
+
+	// 删除已经存在的报表统计数据
 	void DeleteReportStatData(AnaDBInfo& db_info, const std::string& day_time) throw(base::Exception);
 
 	// 插入报表统计数据
