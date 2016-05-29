@@ -295,6 +295,17 @@ void Analyse::UpdateDimValue(AnaTaskInfo& info)
 	}
 }
 
+void Analyse::AddAnalysisCondition(AnalyseRule& ana_rule, std::vector<std::string>& vec_sql)
+{
+	const int VEC_SIZE = vec_sql.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		std::string& ref_sql = vec_sql[i];
+
+		ref_sql += TaskInfoUtil::GetStraightAnaCondition(ana_rule.AnaCondType, ana_rule.AnaCondition, false);
+	}
+}
+
 void Analyse::SetTaskInfo(AnaTaskInfo& info)
 {
 	info.KpiID         = m_sKpiID;
@@ -344,6 +355,11 @@ void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 	if ( info.vecKpiValCol.empty() )
 	{
 		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标值信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
+
+	if ( AnalyseRule::ACTYPE_UNKNOWN == info.AnaRule.AnaCondType )
+	{
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析条件类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 }
 
@@ -520,6 +536,7 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 	hive_sql += ", '对平' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += " and " + TaskInfoUtil::GetCompareEqualValsByCol(first_one, second_one, vec_col) + ")";
+	hive_sql += TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, false);
 
 	v_hive_sql.push_back(hive_sql);
 
@@ -528,6 +545,7 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 	hive_sql += ", '有差异' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetCompareUnequalValsByCol(first_one, second_one, vec_col);
+	hive_sql += TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, true);
 
 	v_hive_sql.push_back(hive_sql);
 
@@ -570,6 +588,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 	hive_sql += ", '对平' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += " and " + TaskInfoUtil::GetCompareEqualVals(first_one, second_one) + ")";
+	hive_sql += TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, false);
 
 	v_hive_sql.push_back(hive_sql);
 
@@ -578,6 +597,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 	hive_sql += ", '有差异' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetCompareUnequalVals(first_one, second_one);
+	hive_sql += TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, true);
 
 	v_hive_sql.push_back(hive_sql);
 
@@ -586,6 +606,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 	hive_sql += ", '左有右无' from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(second_one, "b.");
+	hive_sql += TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, true);
 
 	v_hive_sql.push_back(hive_sql);
 
@@ -594,6 +615,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 	hive_sql += ", '左无右有' from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
 	hive_sql += " a on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(first_one, "a.");
+	hive_sql += TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, true);
 
 	v_hive_sql.push_back(hive_sql);
 
@@ -629,6 +651,8 @@ void Analyse::GetStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>
 	{
 		GetStatisticsHiveSQLBySet(t_info, vec_hivesql, is_union_all);
 	}
+
+	AddAnalysisCondition(t_info.AnaRule, vec_hivesql);
 }
 
 void Analyse::GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
@@ -664,6 +688,8 @@ void Analyse::GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::s
 	{
 		GetStatisticsHiveSQLBySet(t_info, vec_hivesql, false);
 	}
+
+	AddAnalysisCondition(t_info.AnaRule, vec_hivesql);
 }
 
 void Analyse::GetStatisticsHiveSQLBySet(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, bool union_all) throw(base::Exception)

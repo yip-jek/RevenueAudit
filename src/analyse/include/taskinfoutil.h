@@ -49,5 +49,8 @@ public:
 
 	// 获取指定组的采集规则的统计SQL集 (外部保证正确性)
 	static void GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules, std::set<int>& set_int, std::vector<std::string>& vec_hivesql, bool union_all);
+
+	// 获取直接分析表达式
+	static std::string GetStraightAnaCondition(AnalyseRule::AnalyseConditionType cond_type, const std::string& condition, bool add);
 };
 

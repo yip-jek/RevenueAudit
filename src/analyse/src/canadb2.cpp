@@ -815,10 +815,12 @@ void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
 	rs.EnableWarning(true);
 
 	std::string ana_type;
+	std::string cond_type;
 	int counter = 0;
+
 	try
 	{
-		std::string sql = "select ANALYSIS_NAME, ANALYSIS_TYPE, ANALYSIS_EXPRESSION from ";
+		std::string sql = "select ANALYSIS_NAME, ANALYSIS_TYPE, ANALYSIS_EXPRESSION, ANALYSIS_CONDITION_TYPE, ANALYSIS_CONDITION from ";
 		sql += m_tabAnaRule + " where ANALYSIS_ID = ?";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -831,13 +833,20 @@ void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
 
 			int index = 1;
 
-			ana.AnaName    = (const char*)rs[index++];
-			ana_type       = (const char*)rs[index++];
-			ana.AnaExpress = (const char*)rs[index++];
+			ana.AnaName      = (const char*)rs[index++];
+			ana_type         = (const char*)rs[index++];
+			ana.AnaExpress   = (const char*)rs[index++];
+			cond_type        = (const char*)rs[index++];
+			ana.AnaCondition = (const char*)rs[index++];
 
 			if ( !ana.SetAnalyseType(ana_type) )
 			{
 				throw base::Exception(ADBERR_SEL_ANA_RULE, "[DB2] Select %s failed! (ANALYSIS_ID:%s) 无法识别的分析规则类型: %s [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), ana.AnaID.c_str(), ana_type.c_str(), __FILE__, __LINE__);
+			}
+
+			if ( !ana.SetAnalyseConditionType(cond_type) )
+			{
+				throw base::Exception(ADBERR_SEL_ANA_RULE, "[DB2] Select %s failed! (ANALYSIS_ID:%s) 无法识别的分析条件类型: %s [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), ana.AnaID.c_str(), cond_type.c_str(), __FILE__, __LINE__);
 			}
 
 			rs.MoveNext();

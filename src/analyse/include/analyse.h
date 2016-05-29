@@ -119,6 +119,9 @@ private:
 	// 更新维度取值范围
 	void UpdateDimValue(AnaTaskInfo& info);
 
+	// 添加分析条件
+	void AddAnalysisCondition(AnalyseRule& ana_rule, std::vector<std::string>& vec_sql);
+
 private:
 	std::string	m_sKpiID;				// 指标ID
 	std::string	m_sAnaID;				// 分析规则ID

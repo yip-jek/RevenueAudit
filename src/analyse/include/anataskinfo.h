@@ -273,8 +273,16 @@ public:
 		ANATYPE_HIVE_SQL	= 99
 	};
 
+	// 分析条件类型
+	enum AnalyseConditionType
+	{
+		ACTYPE_UNKNOWN		= 0,		// 未知类型
+		ACTYPE_NONE			= 1,		// 无条件
+		ACTYPE_STRAIGHT		= 2,		// 直接条件
+	};
+
 public:
-	AnalyseRule(): AnaType(ANATYPE_UNKNOWN)
+	AnalyseRule(): AnaType(ANATYPE_UNKNOWN), AnaCondType(ACTYPE_UNKNOWN)
 	{}
 
 	AnalyseRule(const AnalyseRule& ana)
@@ -282,16 +290,20 @@ public:
 	,AnaName(ana.AnaName)
 	,AnaType(ana.AnaType)
 	,AnaExpress(ana.AnaExpress)
+	,AnaCondType(ana.AnaCondType)
+	,AnaCondition(ana.AnaCondition)
 	{}
 
 	const AnalyseRule& operator = (const AnalyseRule& ana)
 	{
 		if ( this != &ana )
 		{
-			this->AnaID      = ana.AnaID     ;
-			this->AnaName    = ana.AnaName   ;
-			this->AnaType    = ana.AnaType   ;
-			this->AnaExpress = ana.AnaExpress;
+			this->AnaID        = ana.AnaID     ;
+			this->AnaName      = ana.AnaName   ;
+			this->AnaType      = ana.AnaType   ;
+			this->AnaExpress   = ana.AnaExpress;
+			this->AnaCondType  = ana.AnaCondType;
+			this->AnaCondition = ana.AnaCondition;
 		}
 
 		return *this;
@@ -333,11 +345,36 @@ public:
 		return true;
 	}
 
+	// 设置分析条件类型
+	bool SetAnalyseConditionType(std::string cond_type)
+	{
+		boost::trim(cond_type);
+		boost::to_upper(cond_type);
+
+		if ( "NONE" == cond_type )				// 无条件
+		{
+			AnaCondType = ACTYPE_NONE;
+		}
+		else if ( "STRAIGHT" == cond_type )		// 直接条件
+		{
+			AnaCondType = ACTYPE_STRAIGHT;
+		}
+		else	// 未知类型
+		{
+			AnaCondType = ACTYPE_UNKNOWN;
+			return false;
+		}
+
+		return true;
+	}
+
 public:
-	std::string	AnaID;				// 分析规则ID
-	std::string AnaName;			// 分析规则名称
-	AnalyseType AnaType;			// 分析规则类型
-	std::string AnaExpress;			// 分析规则表达式
+	std::string				AnaID;				// 分析规则ID
+	std::string 			AnaName;			// 分析规则名称
+	AnalyseType 			AnaType;			// 分析规则类型
+	std::string 			AnaExpress;			// 分析规则表达式
+	AnalyseConditionType	AnaCondType;		// 分析条件类型
+	std::string				AnaCondition;		// 分析条件表达式
 };
 
 // 告警规则

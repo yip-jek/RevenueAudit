@@ -1,5 +1,6 @@
 #include "taskinfoutil.h"
 #include "pubstr.h"
+#include <boost/algorithm/string.hpp>
 
 int TaskInfoUtil::CheckDualEtlRule(std::vector<OneEtlRule>& vec_etlrule)
 {
@@ -473,5 +474,47 @@ void TaskInfoUtil::GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules,
 	}
 
 	v_hive_sql.swap(vec_hivesql);
+}
+
+std::string TaskInfoUtil::GetStraightAnaCondition(AnalyseRule::AnalyseConditionType cond_type, const std::string& condition, bool add)
+{
+	if ( AnalyseRule::ACTYPE_STRAIGHT == cond_type )	// 直接条件
+	{
+		std::string ana_condition = condition;
+		boost::trim(ana_condition);
+
+		std::string head_cond = ana_condition.substr(0, 5);
+		boost::to_upper(head_cond);
+
+		if ( add )		// 作为后续的条件
+		{
+			// 去除句首的 "where"
+			if ( "WHERE" == head_cond )
+			{
+				ana_condition.erase(0, 5);
+				boost::trim(ana_condition);
+			}
+
+			ana_condition = " and (" + ana_condition + ")";
+		}
+		else	// 作为新的条件
+		{
+			// 加上 "where"
+			if ( head_cond != "WHERE" )		// 不带 where
+			{
+				ana_condition = " where " + ana_condition;
+			}
+			else	// 带 where
+			{
+				ana_condition = " " + ana_condition;
+			}
+		}
+
+		return ana_condition;
+	}
+	else		// 其他条件
+	{
+		return std::string();
+	}
 }
 
