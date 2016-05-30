@@ -8,6 +8,7 @@
 #include "simpletime.h"
 #include "autodisconnect.h"
 #include "pubstr.h"
+#include "pubtime.h"
 #include "canadb2.h"
 #include "chivethrift.h"
 #include "anadbinfo.h"
@@ -229,7 +230,7 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::
 	}
 
 	// 按表的类型生成最终目标表名
-	db_info.target_table = GenerateTableNameByType(t_info);
+	GenerateTableNameByType(t_info, db_info);
 
 	// 组织数据库入库SQL语句
 	db_info.db2_sql = "insert into " + db_info.target_table + "(";
@@ -348,6 +349,11 @@ void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 	//{
 	//	throw base::Exception(ANAERR_TASKINFO_INVALID, "分析规则表达式为空! 无效! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	//}
+
+	if ( info.vecEtlRule.empty() )
+	{
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有采集规则信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
 
 	if ( info.vecKpiDimCol.empty() )
 	{
@@ -819,9 +825,18 @@ void Analyse::DetermineDataGroup(const std::string& exp, int& first, int& second
 	second = second_index;
 }
 
-std::string Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception)
+void Analyse::GenerateTableNameByType(AnaTaskInfo& info, AnaDBInfo& db_info) throw(base::Exception)
 {
 	AnaTaskInfo::ResultTableType& type = info.ResultType;
+
+	// 取第一个采集规则的采集时间
+	std::string& ref_etltime = info.vecEtlRule[0].EtlTime;
+
+	base::PubTime::DATE_TYPE d_type;
+	if ( !base::PubTime::DateApartFromNow(ref_etltime, d_type, db_info.date_time) )
+	{
+		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_etltime.c_str(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
 
 	std::string tab_name = info.TableName;
 	boost::trim(tab_name);
@@ -832,10 +847,24 @@ std::string Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exce
 		// Do nothing
 		break;
 	case AnaTaskInfo::TABTYPE_DAY:			// 天表
-		tab_name = tab_name + "_" + base::SimpleTime::Now().DayTime8();
+		if ( d_type != base::PubTime::DT_DAY )
+		{
+			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间与结果表类型不一致！结果表类型为：DAY_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		}
+		else
+		{
+			tab_name = tab_name + "_" + db_info.date_time;
+		}
 		break;
 	case AnaTaskInfo::TABTYPE_MONTH:		// 月表
-		tab_name = tab_name + "_" + base::SimpleTime::Now().MonTime6();
+		if ( d_type != base::PubTime::DT_MONTH )
+		{
+			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间与结果表类型不一致！结果表类型为：MONTH_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		}
+		else
+		{
+			tab_name = tab_name + "_" + db_info.date_time;
+		}
 		break;
 	case AnaTaskInfo::TABTYPE_YEAR:			// 年表
 		tab_name = tab_name + "_" + base::SimpleTime::Now().YearTime();
@@ -845,8 +874,9 @@ std::string Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exce
 		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "无法识别的目标表类型: TABTYPE_UNKNOWN (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
+	db_info.target_table = tab_name;
+
 	m_pLog->Output("[Analyse] 最终目标表名：%s", tab_name.c_str());
-	return tab_name;
 }
 
 void Analyse::AnalyseSourceData(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception)

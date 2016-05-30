@@ -14,7 +14,7 @@ public:
 		DT_UNKNOWN	= 0,		// 未知类型
 		DT_DAY		= 1,		// 日-类型
 		DT_MONTH	= 2,		// 月-类型
-		DT_YEAR		= 3,		// 年-类型
+		//DT_YEAR	= 3,		// 年-类型
 	}
 
 public:

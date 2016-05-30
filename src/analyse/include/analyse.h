@@ -93,7 +93,7 @@ private:
 	void DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception);
 
 	// 按类型生成目标表名称
-	std::string GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception);
+	void GenerateTableNameByType(AnaTaskInfo& info, AnaDBInfo& db_info) throw(base::Exception);
 
 	// 生成数据库信息
 	void GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception);

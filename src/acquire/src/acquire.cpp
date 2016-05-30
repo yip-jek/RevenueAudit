@@ -30,7 +30,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.07.0061 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.07.0063 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -689,85 +689,28 @@ void Acquire::NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& ve
 
 std::string Acquire::TransDataSrcDate(const std::string& time, const std::string& data_src) throw(base::Exception)
 {
-	std::string rule_time = time;
-
-	boost::trim(rule_time);
-	boost::to_upper(rule_time);
-
-	// 分析是“加”还是“减”
-	bool is_plus = true;
-	std::vector<std::string> vec_time;
-	if ( rule_time.find("+") != std::string::npos )
+	std::string date;
+	base::PubTime::DATE_TYPE d_type;
+	if ( !base::PubTime::DateApartFromNow(time, d_type, date) )
 	{
-		is_plus = true;
-
-		boost::split(vec_time, rule_time, boost::is_any_of("+"));
-	}
-	else if ( rule_time.find("-") != std::string::npos )
-	{
-		is_plus = false;
-
-		boost::split(vec_time, rule_time, boost::is_any_of("-"));
-	}
-	else
-	{
-		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "无法识别的采集时间字段(ETLRULE_TIME:%s) [FILE:%s, LINE:%d]", time.c_str(), __FILE__, __LINE__);
-	}
-
-	if ( vec_time.size() != 2 )
-	{
-		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "采集时间字段(ETLRULE_TIME:%s) 格式错误! [FILE:%s, LINE:%d]", time.c_str(), __FILE__, __LINE__);
-	}
-
-	// 时间偏移量数值转换
-	unsigned int time_off = 0;
-	try
-	{
-		boost::trim(vec_time[1]);
-		time_off = boost::lexical_cast<unsigned int>(vec_time[1]);
-	}
-	catch ( boost::bad_lexical_cast& ex )
-	{
-		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "(ETLRULE_TIME:%s) 采集时间偏移量转换失败: %s [FILE:%s, LINE:%d]", time.c_str(), vec_time[1].c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s [FILE:%s, LINE:%d]", time.c_str(), __FILE__, __LINE__);
 	}
 
 	std::string be_replace;
-	std::string confirm_time;
-	std::string& time_flag = vec_time[0];
-	boost::trim(time_flag);
-	if ( "DAY" == time_flag )
+	if ( base::PubTime::DT_DAY == d_type )		// 日类型
 	{
-		if ( is_plus )
-		{
-			confirm_time = base::PubTime::DateNowPlusDays(time_off);
-		}
-		else
-		{
-			confirm_time = base::PubTime::DateNowMinusDays(time_off);
-		}
-
 		be_replace = "YYYYMMDD";
 	}
-	else if ( "MON" == time_flag )
+	else if ( base::PubTime::DT_MONTH == d_type )	// 月类型
 	{
-		if ( is_plus )
-		{
-			confirm_time = base::PubTime::DateNowPlusMonths(time_off);
-		}
-		else
-		{
-			confirm_time = base::PubTime::DateNowMinusMonths(time_off);
-		}
-
 		be_replace = "YYYYMM";
 	}
 	else
 	{
-		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "(ETLRULE_TIME:%s) 无法识别的采集时间标识: %s [FILE:%s, LINE:%d]", time.c_str(), time_flag.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "未知的采集时间类型！无法识别的采集时间表达式：%s [FILE:%s, LINE:%d]", time.c_str(), __FILE__, __LINE__);
 	}
 
 	std::string new_datasrc = data_src;
-
 	boost::trim(new_datasrc);
 	boost::to_upper(new_datasrc);
 
@@ -775,12 +718,8 @@ std::string Acquire::TransDataSrcDate(const std::string& time, const std::string
 	size_t t_pos = new_datasrc.find(be_replace);
 	if ( t_pos != std::string::npos )
 	{
-		new_datasrc.replace(t_pos, be_replace.size(), confirm_time);
+		new_datasrc.replace(t_pos, be_replace.size(), date);
 	}
-	//if ( std::string::npos == t_pos )
-	//{
-	//	throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "在源数据表名 (%s) 中找不到时间标记: %s [FILE:%s, LINE:%d]", data_src.c_str(), be_replace.c_str(), __FILE__, __LINE__);
-	//}
 
 	return new_datasrc;
 }

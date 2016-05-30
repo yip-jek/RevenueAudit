@@ -450,9 +450,9 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 
 		if ( db_info.time_stamp )		// 带时间戳
 		{
-			// 时间格式：YYYYMMDDHHMISS (24小时制)
-			// 例如：20160501121212 表示2016年05月01日12时12分12秒
-			std::string date_time = base::SimpleTime::Now().Time14();
+			//// 时间格式：YYYYMMDDHHMISS (24小时制)
+			//// 例如：20160501121212 表示2016年05月01日12时12分12秒
+			//std::string date_time = base::SimpleTime::Now().Time14();
 
 			for ( size_t i = 0; i < FIELDS_SIZE; ++i )
 			{
@@ -465,7 +465,8 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 				}
 
 				// 绑定时间戳
-				rs.Parameter(DATA_SIZE+1) = date_time.c_str();
+				//rs.Parameter(DATA_SIZE+1) = date_time.c_str();
+				rs.Parameter(DATA_SIZE+1) = db_info.date_time.c_str();
 
 				rs.Execute();
 
@@ -593,9 +594,9 @@ void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<s
 
 		Begin();
 
-		// 时间格式：YYYYMMDD (24小时制)
-		// 例如：20160501 表示2016年05月01日
-		std::string now_day = base::SimpleTime::Now().DayTime8();
+		//// 时间格式：YYYYMMDD (24小时制)
+		//// 例如：20160501 表示2016年05月01日
+		//std::string now_day = base::SimpleTime::Now().DayTime8();
 
 		for ( size_t i = 0; i < REPORT_DATA_SIZE; ++i )
 		{
@@ -608,7 +609,8 @@ void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<s
 			}
 
 			// 绑定时间戳
-			rs.Parameter(DATA_SIZE+1) = now_day.c_str();
+			//rs.Parameter(DATA_SIZE+1) = now_day.c_str();
+			rs.Parameter(DATA_SIZE+1) = db_info.date_time.c_str();
 
 			rs.Execute();
 
@@ -638,7 +640,7 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 	int counter = 0;
 	try
 	{
-		std::string sql = "select ETLRULE_TARGET, ETLDIM_ID, ETLVAL_ID from " + m_tabEtlRule;
+		std::string sql = "select ETLRULE_TIME, ETLRULE_TARGET, ETLDIM_ID, ETLVAL_ID from " + m_tabEtlRule;
 		sql += " where KPI_ID = ? and ETLRULE_ID = ?";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -652,6 +654,7 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 
 			int index = 1;
 
+			one.EtlTime     = (const char*)rs[index++];
 			one.TargetPatch = (const char*)rs[index++];
 			one.DimID       = (const char*)rs[index++];
 			one.ValID       = (const char*)rs[index++];
