@@ -518,3 +518,23 @@ std::string TaskInfoUtil::GetStraightAnaCondition(AnalyseRule::AnalyseConditionT
 	}
 }
 
+void TaskInfoUtil::AddConditionSql(std::string& src_sql, const std::string& cond_sql)
+{
+	if ( !cond_sql.empty() )
+	{
+		std::string sql = src_sql;
+		boost::to_upper(sql);
+
+		// 是否有关键词 "group"
+		const size_t POS = sql.find(" GROUP ");
+		if ( POS != std::string::npos )		// 带关键词
+		{
+			src_sql.insert(POS, cond_sql);
+		}
+		else		// 不带关键词
+		{
+			src_sql += cond_sql;
+		}
+	}
+}
+

@@ -52,5 +52,8 @@ public:
 
 	// 获取直接分析表达式
 	static std::string GetStraightAnaCondition(AnalyseRule::AnalyseConditionType cond_type, const std::string& condition, bool add);
+
+	// 将SQL条件子串插入到SQL语句中
+	static void AddConditionSql(std::string& src_sql, const std::string& cond_sql);
 };
 
