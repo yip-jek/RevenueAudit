@@ -1,5 +1,6 @@
 #include "pubtime.h"
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace base
 {
@@ -40,6 +41,11 @@ std::string PubTime::DateNowMinusMonths(unsigned int months)
 
 	std::string str_mon = boost::gregorian::to_iso_string(now.date());
 	return str_mon.substr(0, 6);
+}
+
+bool PubTime::DateApartFromNow(const std::string& fmt, PubTime::DATE_TYPE& d_type, std::string& date)
+{
+	std::string format = fmt;
 }
 
 }	// namespace base
