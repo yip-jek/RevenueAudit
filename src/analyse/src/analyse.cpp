@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.08.0064 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.08.0066 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -295,18 +295,18 @@ void Analyse::UpdateDimValue(AnaTaskInfo& info)
 	}
 }
 
-void Analyse::AddAnalysisCondition(AnalyseRule& ana_rule, std::vector<std::string>& vec_sql)
-{
-	const std::string CONDITION = TaskInfoUtil::GetStraightAnaCondition(ana_rule.AnaCondType, ana_rule.AnaCondition, false);
-
-	const int VEC_SIZE = vec_sql.size();
-	for ( int i = 0; i < VEC_SIZE; ++i )
-	{
-		std::string& ref_sql = vec_sql[i];
-
-		TaskInfoUtil::AddConditionSql(ref_sql, CONDITION);
-	}
-}
+//void Analyse::AddAnalysisCondition(AnalyseRule& ana_rule, std::vector<std::string>& vec_sql)
+//{
+//	const std::string CONDITION = TaskInfoUtil::GetStraightAnaCondition(ana_rule.AnaCondType, ana_rule.AnaCondition, false);
+//
+//	const int VEC_SIZE = vec_sql.size();
+//	for ( int i = 0; i < VEC_SIZE; ++i )
+//	{
+//		std::string& ref_sql = vec_sql[i];
+//
+//		TaskInfoUtil::AddConditionSql(ref_sql, CONDITION);
+//	}
+//}
 
 void Analyse::SetTaskInfo(AnaTaskInfo& info)
 {
@@ -359,10 +359,10 @@ void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标值信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
-	if ( AnalyseRule::ACTYPE_UNKNOWN == info.AnaRule.AnaCondType )
-	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析条件类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-	}
+	//if ( AnalyseRule::ACTYPE_UNKNOWN == info.AnaRule.AnaCondType )
+	//{
+	//	throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析条件类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	//}
 }
 
 void Analyse::FetchUniformCode() throw(base::Exception)
@@ -533,16 +533,16 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 	OneEtlRule& first_one  = t_info.vecEtlRule[first_index];
 	OneEtlRule& second_one = t_info.vecEtlRule[second_index];
 
-	// 指定分析条件
-	const std::string CONDITION     = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, false);
-	const std::string ADD_CONDITION = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, true);
+	//// 指定分析条件
+	//const std::string CONDITION     = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, false);
+	//const std::string ADD_CONDITION = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, true);
 
 	// 1) 汇总：对平的Hive SQL语句
 	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
 	hive_sql += ", '对平' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += " and " + TaskInfoUtil::GetCompareEqualValsByCol(first_one, second_one, vec_col) + ")";
-	TaskInfoUtil::AddConditionSql(hive_sql, CONDITION);
+	//TaskInfoUtil::AddConditionSql(hive_sql, CONDITION);
 
 	v_hive_sql.push_back(hive_sql);
 
@@ -551,7 +551,7 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 	hive_sql += ", '有差异' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetCompareUnequalValsByCol(first_one, second_one, vec_col);
-	TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
+	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
 
 	v_hive_sql.push_back(hive_sql);
 
@@ -589,16 +589,16 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 	OneEtlRule& first_one  = t_info.vecEtlRule[first_index];
 	OneEtlRule& second_one = t_info.vecEtlRule[second_index];
 
-	// 指定分析条件
-	const std::string CONDITION     = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, false);
-	const std::string ADD_CONDITION = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, true);
+	//// 指定分析条件
+	//const std::string CONDITION     = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, false);
+	//const std::string ADD_CONDITION = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, true);
 
 	// 1) 明细：对平的Hive SQL语句
 	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFields(first_one, second_one);
 	hive_sql += ", '对平' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += " and " + TaskInfoUtil::GetCompareEqualVals(first_one, second_one) + ")";
-	TaskInfoUtil::AddConditionSql(hive_sql, CONDITION);
+	//TaskInfoUtil::AddConditionSql(hive_sql, CONDITION);
 
 	v_hive_sql.push_back(hive_sql);
 
@@ -607,7 +607,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 	hive_sql += ", '有差异' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetCompareUnequalVals(first_one, second_one);
-	TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
+	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
 
 	v_hive_sql.push_back(hive_sql);
 
@@ -616,7 +616,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 	hive_sql += ", '左有右无' from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(second_one, "b.");
-	TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
+	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
 
 	v_hive_sql.push_back(hive_sql);
 
@@ -625,7 +625,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 	hive_sql += ", '左无右有' from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
 	hive_sql += " a on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(first_one, "a.");
-	TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
+	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
 
 	v_hive_sql.push_back(hive_sql);
 
@@ -662,7 +662,7 @@ void Analyse::GetStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>
 		GetStatisticsHiveSQLBySet(t_info, vec_hivesql, is_union_all);
 	}
 
-	AddAnalysisCondition(t_info.AnaRule, vec_hivesql);
+	//AddAnalysisCondition(t_info.AnaRule, vec_hivesql);
 }
 
 void Analyse::GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
@@ -699,7 +699,7 @@ void Analyse::GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::s
 		GetStatisticsHiveSQLBySet(t_info, vec_hivesql, false);
 	}
 
-	AddAnalysisCondition(t_info.AnaRule, vec_hivesql);
+	//AddAnalysisCondition(t_info.AnaRule, vec_hivesql);
 }
 
 void Analyse::GetStatisticsHiveSQLBySet(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, bool union_all) throw(base::Exception)
@@ -885,6 +885,9 @@ void Analyse::TransSrcDataToReportStatData()
 
 	std::string str_tmp;
 	std::string m_key;
+	bool transfer_ok = true;
+	size_t ignore_count = 0;
+
 	const int VEC3_SIZE = m_v3HiveSrcData.size();
 	for ( int i = 0; i < VEC3_SIZE; ++i )
 	{
@@ -895,6 +898,9 @@ void Analyse::TransSrcDataToReportStatData()
 		{
 			std::vector<std::string>& ref_vec1 = ref_vec2[j];
 
+			// 默认：统一编码转换成功
+			transfer_ok = true;
+
 			// 组织key值
 			m_key.clear();
 			const int VEC1_SIZE = ref_vec1.size();
@@ -904,9 +910,20 @@ void Analyse::TransSrcDataToReportStatData()
 				std::string& ref_str = ref_vec1[k];
 
 				// 统一编码转换
-				ref_str = m_UniCodeTransfer.Transfer(ref_str);
+				if ( !m_UniCodeTransfer.Transfer(ref_str, ref_str) )
+				{
+					transfer_ok = false;
+					break;
+				}
 
 				m_key += ref_str;
+			}
+
+			// 统一编码转换失败，则忽略该数据
+			if ( !transfer_ok )
+			{
+				++ignore_count;		// 统计忽略的数据条数
+				continue;
 			}
 
 			// 值所在的列序号
@@ -937,6 +954,8 @@ void Analyse::TransSrcDataToReportStatData()
 			}
 		}
 	}
+
+	m_pLog->Output("[Analyse] 因统一编码转换失败，而被忽略的数据条数：%llu", ignore_count);
 
 	std::vector<std::vector<std::string> > vec2_reportdata;
 	for ( it = mReportStatData.begin(); it != mReportStatData.end(); ++it )

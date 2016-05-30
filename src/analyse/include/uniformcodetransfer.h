@@ -46,8 +46,7 @@ public:
 	void InputCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode) throw(base::Exception);
 
 	// 编码转换
-	// 转换成功，返回统一编码；转换失败，返回原编码
-	std::string Transfer(const std::string& code);
+	bool Transfer(const std::string& src_code, std::string& uni_code);
 
 private:
 	std::map<std::string, std::string>	m_mapChannelUniCode;	// 渠道统一编码列表
