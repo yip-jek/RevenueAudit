@@ -113,6 +113,9 @@ private:
 	// 结果数据入库 [DB2]
 	void StoreResult(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception);
 
+	// 删除旧数据
+	void RemoveOldResult(AnaDBInfo& db_info) throw(base::Exception);
+
 	// 告警判断: 如果达到告警阀值，则生成告警
 	void AlarmJudgement(AnaTaskInfo& info);
 

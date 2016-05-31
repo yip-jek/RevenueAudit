@@ -32,7 +32,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.08.0066 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.08.0068 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -1054,27 +1054,18 @@ void Analyse::CollectDimVal(AnaTaskInfo& info)
 
 void Analyse::StoreResult(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception)
 {
-	const int VEC3_SIZE = m_v3HiveSrcData.size();
+	// 删除旧的数据
+	RemoveOldResult(db_info);
 
 	// 是否为报表统计类型
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )	// 报表统计类型
 	{
-		const std::string NOW_DAY = base::SimpleTime::Now().DayTime8();
-		const size_t NUM_OF_REPORT_DATA = m_pAnaDB2->SelectReportStatData(db_info, NOW_DAY);
-		m_pLog->Output("[Analyse] 统计已存在的旧报表统计数据: size=%llu (DAY:%s)", NUM_OF_REPORT_DATA, NOW_DAY.c_str());
-
-		// 是否存在旧的报表统计数据
-		if ( NUM_OF_REPORT_DATA > 0 )
-		{
-			m_pLog->Output("[Analyse] 删除已存在的旧报表统计数据 ...");
-			m_pAnaDB2->DeleteReportStatData(db_info, NOW_DAY);
-		}
-
 		m_pLog->Output("[Analyse] 准备入库报表统计结果数据 ...");
 		m_pAnaDB2->InsertReportStatData(db_info, m_v2ReportStatData);
 	}
 	else		// 其他类型
 	{
+		const int VEC3_SIZE = m_v3HiveSrcData.size();
 		for ( int i = 0; i < VEC3_SIZE; ++i )
 		{
 			m_pLog->Output("[Analyse] 准备入库第 %d 组结果数据 ...", i+1);
@@ -1083,6 +1074,29 @@ void Analyse::StoreResult(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::E
 	}
 
 	m_pLog->Output("[Analyse] 结果数据存储完毕!");
+}
+
+void Analyse::RemoveOldResult(AnaDBInfo& db_info) throw(base::Exception)
+{
+	// 是否带时间戳
+	// 只有带时间戳才可以按采集时间删除结果数据
+	if ( db_info.time_stamp )
+	{
+		m_pLog->Output("[Analyse] 统计已存在的旧的结果数据 ...");
+		const size_t NUM_OF_REPORT_DATA = m_pAnaDB2->SelectResultData(db_info);
+		m_pLog->Output("[Analyse] 统计到的旧结果数据大小: %llu ( DATE_TIME: %s )", NUM_OF_REPORT_DATA, db_info.date_time.c_str());
+
+		// 是否存在旧的结果数据
+		if ( NUM_OF_REPORT_DATA > 0 )
+		{
+			m_pLog->Output("[Analyse] 删除已存在的旧的结果数据 ...");
+			m_pAnaDB2->DeleteResultData(db_info);
+		}
+	}
+	else
+	{
+		m_pLog->Output("[Analyse] 没有需要删除的旧结果数据.");
+	}
 }
 
 void Analyse::AlarmJudgement(AnaTaskInfo& info)

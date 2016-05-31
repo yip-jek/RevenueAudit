@@ -510,12 +510,12 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 	m_pLog->Output("[DB2] Insert result data to [%s]: %llu", db_info.target_table.c_str(), FIELDS_SIZE);
 }
 
-size_t CAnaDB2::SelectReportStatData(AnaDBInfo& db_info, const std::string& day_time) throw(base::Exception)
+size_t CAnaDB2::SelectResultData(AnaDBInfo& db_info) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	m_pLog->Output("[DB2] Select [%s] report statistics data ...", db_info.target_table.c_str());
+	m_pLog->Output("[DB2] Select [%s] result data ...", db_info.target_table.c_str());
 
 	size_t num_of_data = 0;
 
@@ -528,7 +528,7 @@ size_t CAnaDB2::SelectReportStatData(AnaDBInfo& db_info, const std::string& day_
 		m_pLog->Output("[DB2] Execute sql: %s", sql.c_str());
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(1) = day_time.c_str();
+		rs.Parameter(1) = db_info.date_time.c_str();
 		rs.Execute();
 
 		while ( !rs.IsEOF() )
@@ -546,12 +546,12 @@ size_t CAnaDB2::SelectReportStatData(AnaDBInfo& db_info, const std::string& day_
 	return num_of_data;
 }
 
-void CAnaDB2::DeleteReportStatData(AnaDBInfo& db_info, const std::string& day_time) throw(base::Exception)
+void CAnaDB2::DeleteResultData(AnaDBInfo& db_info) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	m_pLog->Output("[DB2] Delete report statistics data from [%s], date_time:%s", db_info.target_table.c_str(), day_time.c_str());
+	m_pLog->Output("[DB2] Delete result data from [%s] ... ( DATE_TIME: %s )", db_info.target_table.c_str(), db_info.date_time.c_str());
 
 	try
 	{
@@ -565,7 +565,7 @@ void CAnaDB2::DeleteReportStatData(AnaDBInfo& db_info, const std::string& day_ti
 
 		Begin();
 
-		rs.Parameter(1) = day_time.c_str();
+		rs.Parameter(1) = db_info.date_time.c_str();
 		rs.Execute();
 
 		Commit();

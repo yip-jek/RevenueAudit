@@ -88,10 +88,10 @@ public:
 	void InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception);
 
 	// 统计已经存在的报表统计数据
-	size_t SelectReportStatData(AnaDBInfo& db_info, const std::string& day_time) throw(base::Exception);
+	size_t SelectResultData(AnaDBInfo& db_info) throw(base::Exception);
 
 	// 删除已经存在的报表统计数据
-	void DeleteReportStatData(AnaDBInfo& db_info, const std::string& day_time) throw(base::Exception);
+	void DeleteResultData(AnaDBInfo& db_info) throw(base::Exception);
 
 	// 插入报表统计数据
 	void InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_reportdata) throw(base::Exception);
