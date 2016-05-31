@@ -48,7 +48,7 @@ std::string PubTime::DateNowMinusMonths(unsigned int months)
 bool PubTime::DateApartFromNow(const std::string& fmt, PubTime::DATE_TYPE& d_type, std::string& date)
 {
 	// 默认：未知类型
-	d_type = DATE_TYPE::DT_UNKNOWN;
+	d_type = DT_UNKNOWN;
 
 	bool is_plus = true;
 	std::vector<std::string> vec_fmt;
@@ -100,7 +100,7 @@ bool PubTime::DateApartFromNow(const std::string& fmt, PubTime::DATE_TYPE& d_typ
 
 	if ( "DAY" == ref_flag )			// 日
 	{
-		d_type = DATE_TYPE::DT_DAY;
+		d_type = DT_DAY;
 
 		if ( is_plus )
 		{
@@ -113,7 +113,7 @@ bool PubTime::DateApartFromNow(const std::string& fmt, PubTime::DATE_TYPE& d_typ
 	}
 	else if ( "MON" == ref_flag )		// 月
 	{
-		d_type = DATE_TYPE::DT_MONTH;
+		d_type = DT_MONTH;
 
 		if ( is_plus )
 		{

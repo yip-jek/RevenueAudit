@@ -15,7 +15,7 @@ public:
 		DT_DAY		= 1,		// 日-类型
 		DT_MONTH	= 2,		// 月-类型
 		//DT_YEAR	= 3,		// 年-类型
-	}
+	};
 
 public:
 	// 今天之后的第n天, 返回格式：YYYYMMDD
