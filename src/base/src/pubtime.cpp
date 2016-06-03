@@ -7,6 +7,20 @@
 namespace base
 {
 
+std::string PubTime::DateType2String(PubTime::DATE_TYPE dt)
+{
+	switch ( dt )
+	{
+	case PubTime::DT_DAY:
+		return "DAY";
+	case PubTime::DT_MONTH:
+		return "MONTH";
+	case PubTime::DT_UNKNOWN:
+	default:
+		return "UNKNOWN";
+	}
+}
+
 std::string PubTime::DateNowPlusDays(unsigned int days)
 {
 	boost::posix_time::ptime now(boost::posix_time::second_clock::local_time());

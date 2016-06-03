@@ -17,6 +17,9 @@ public:
 		//DT_YEAR	= 3,		// 年-类型
 	};
 
+	// 时间类型转换为字符串
+	static std::string DateType2String(DATE_TYPE dt);
+
 public:
 	// 今天之后的第n天, 返回格式：YYYYMMDD
 	static std::string DateNowPlusDays(unsigned int days);

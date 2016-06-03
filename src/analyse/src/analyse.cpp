@@ -5,7 +5,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include "log.h"
-#include "simpletime.h"
 #include "autodisconnect.h"
 #include "pubstr.h"
 #include "pubtime.h"
@@ -847,9 +846,9 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info, AnaDBInfo& db_info) thr
 		// Do nothing
 		break;
 	case AnaTaskInfo::TABTYPE_DAY:			// 天表
-		if ( d_type != base::PubTime::DT_DAY )
+		if ( d_type > base::PubTime::DT_DAY )
 		{
-			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间与结果表类型不一致！结果表类型为：DAY_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：DAY_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", base::PubTime::DateType2String(d_type).c_str(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
 		else
 		{
@@ -857,17 +856,17 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info, AnaDBInfo& db_info) thr
 		}
 		break;
 	case AnaTaskInfo::TABTYPE_MONTH:		// 月表
-		if ( d_type != base::PubTime::DT_MONTH )
+		if ( d_type > base::PubTime::DT_MONTH )
 		{
-			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间与结果表类型不一致！结果表类型为：MONTH_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：MONTH_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", base::PubTime::DateType2String(d_type).c_str(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
 		else
 		{
-			tab_name = tab_name + "_" + db_info.date_time;
+			tab_name = tab_name + "_" + db_info.date_time.substr(0, 6);
 		}
 		break;
 	case AnaTaskInfo::TABTYPE_YEAR:			// 年表
-		tab_name = tab_name + "_" + base::SimpleTime::Now().YearTime();
+		tab_name = tab_name + "_" + db_info.date_time.substr(0, 4);
 		break;
 	case AnaTaskInfo::TABTYPE_UNKNOWN:		// 未知类型
 	default:
