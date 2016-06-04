@@ -7,7 +7,7 @@
 #include "def.h"
 #include "log.h"
 #include "basedb2.h"
-#include "basehivethrift.h"
+#include "basejhive.h"
 #include "TaskState.h"
 
 namespace base
@@ -17,7 +17,7 @@ BaseFrameApp::BaseFrameApp()
 :m_pLog(Log::Instance())
 ,m_ppArgv(NULL)
 ,m_pDB2(NULL)
-,m_pHiveThrift(NULL)
+,m_pHive(NULL)
 {
 }
 
@@ -29,10 +29,10 @@ BaseFrameApp::~BaseFrameApp()
 		m_pDB2 = NULL;
 	}
 
-	if ( m_pHiveThrift != NULL )
+	if ( m_pHive != NULL )
 	{
-		delete m_pHiveThrift;
-		m_pHiveThrift = NULL;
+		delete m_pHive;
+		m_pHive = NULL;
 	}
 }
 

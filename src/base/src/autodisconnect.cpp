@@ -1,12 +1,12 @@
 #include "autodisconnect.h"
 #include "basedb2.h"
-#include "basehivethrift.h"
+#include "basejhive.h"
 #include "def.h"
 
 namespace base
 {
 
-HiveDB2Connector::HiveDB2Connector(BaseDB2* pDB2, BaseHiveThrift* pHive)
+HiveDB2Connector::HiveDB2Connector(BaseDB2* pDB2, BaseJHive* pHive)
 :m_pDB2(pDB2)
 ,m_pHive(pHive)
 {

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "basehivethrift.h"
+#include "basejhive.h"
 
-class CHiveThrift : public base::BaseHiveThrift
+class CAcqHive : public base::BaseJHive
 {
 
 public:
-	CHiveThrift(const std::string& ip, int port);
-	virtual ~CHiveThrift();
+	CAcqHive(const std::string& ip, int port);
+	virtual ~CAcqHive();
 
 public:
 	// 错误码（枚举）
@@ -18,9 +18,6 @@ public:
 	};
 
 public:
-	//// 测试
-	//void Test(const std::string& table) throw(base::Exception);
-
 	// 重建表数据
 	void RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field) throw(base::Exception);
 

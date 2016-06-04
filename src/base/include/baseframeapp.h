@@ -9,7 +9,7 @@ namespace base
 
 class Log;
 class BaseDB2;
-class BaseHiveThrift;
+class BaseJHive;
 
 class BaseFrameApp
 {
@@ -40,13 +40,13 @@ public:
 	virtual void Run() throw(Exception) = 0;
 
 protected:
-	Config			m_cfg;
-	Log*			m_pLog;
-	char**			m_ppArgv;
+	Config		m_cfg;
+	Log*		m_pLog;
+	char**		m_ppArgv;
 
 protected:
-	BaseDB2*		m_pDB2;
-	BaseHiveThrift*	m_pHiveThrift;
+	BaseDB2*	m_pDB2;
+	BaseJHive*	m_pHive;
 };
 
 }	// namespace base

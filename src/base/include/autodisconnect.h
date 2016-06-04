@@ -6,7 +6,7 @@ namespace base
 {
 
 class BaseDB2;
-class BaseHiveThrift;
+class BaseJHive;
 
 // 连接器接口
 class BaseConnector
@@ -24,7 +24,7 @@ public:
 class HiveDB2Connector : public BaseConnector
 {
 public:
-	HiveDB2Connector(BaseDB2* pDB2, BaseHiveThrift* pHive);
+	HiveDB2Connector(BaseDB2* pDB2, BaseJHive* pHive);
 	virtual ~HiveDB2Connector() {}
 
 public:
@@ -32,8 +32,8 @@ public:
 	virtual void ToDisconnect();
 
 private:
-	BaseDB2*		m_pDB2;				// DB2数据库接口
-	BaseHiveThrift*	m_pHive;			// Hive接口
+	BaseDB2*	m_pDB2;				// DB2数据库接口
+	BaseJHive*	m_pHive;			// Hive接口
 };
 
 // 自动关闭连接
@@ -45,7 +45,7 @@ private:	// noncopyable
 
 public:
 	// 连接器资源自动释放
-	AutoDisconnect(BaseConnector* pConnector);
+	explicit AutoDisconnect(BaseConnector* pConnector);
 	~AutoDisconnect();
 
 public:

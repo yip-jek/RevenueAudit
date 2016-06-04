@@ -23,8 +23,13 @@ namespace base
 #define BDB_COMMIT_FAILED                    (-1002004)
 #define BDB_ROLLBACK_FAILED                  (-1002005)
 
-// BaseHiveThrift error code
-#define BHT_CONNECT_FAILED                   (-1003001)
+// BaseJHive error code
+#define BJH_INIT_FAILED                      (-1003001)
+#define BJH_CREATE_JVM_FAILED                (-1003002)
+#define BJH_GET_CLASSPATH_FAILED             (-1003003)
+#define BJH_CONNECT_FAILED                   (-1003004)
+#define BJH_EXECUTE_SQL_FAILED               (-1003005)
+#define BJH_FETCH_DATA_FAILED                (-1003006)
 
 // PubStr error code
 #define PS_TRANS_FAILED                      (-1004001)

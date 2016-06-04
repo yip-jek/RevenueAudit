@@ -2,53 +2,16 @@
 #include <vector>
 #include "log.h"
 
-CHiveThrift::CHiveThrift(const std::string& ip, int port)
-:BaseHiveThrift(ip, port)
+CAcqHive::CAcqHive(const std::string& ip, int port)
+:BaseJHive(ip, port)
 {
 }
 
-CHiveThrift::~CHiveThrift()
+CAcqHive::~CAcqHive()
 {
 }
 
-//void CHiveThrift::Test(const std::string& table) throw(base::Exception)
-//{
-//	try
-//	{
-//		std::string test_sql = "select * from " + table;
-//		m_pLog->Output("[HIVE] Query sql: %s", test_sql.c_str());
-//
-//		m_pLog->Output("[HIVE] Execute query sql ...");
-//		m_spHiveClient->execute(test_sql);
-//		m_pLog->Output("[HIVE] Execute query sql OK.");
-//
-//		std::vector<std::string> vec_str;
-//		long total = 0;
-//		do
-//		{
-//			vec_str.clear();
-//
-//			m_spHiveClient->fetchN(vec_str, HIVE_MAX_FETCHN);
-//
-//			const int V_SIZE = vec_str.size();
-//			for ( int i = 0; i < V_SIZE; ++i )
-//			{
-//				m_pLog->Output("[GET] %d> %s", ++total, vec_str[i].c_str());
-//			}
-//		} while ( vec_str.size() > 0 );
-//		m_pLog->Output("[HIVE] Get %ld row(s)", total);
-//	}
-//	catch ( const apache::thrift::TApplicationException& ex )
-//	{
-//		throw base::Exception(HTERR_APP_EXCEPTION, "[HIVE] [TApplicationException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
-//	}
-//	catch ( const apache::thrift::TException& ex )
-//	{
-//		throw base::Exception(HTERR_T_EXCEPTION, "[HIVE] [TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
-//	}
-//}
-
-void CHiveThrift::RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field) throw(base::Exception)
+void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field) throw(base::Exception)
 {
 	if ( tab_name.empty() )
 	{
@@ -87,11 +50,11 @@ void CHiveThrift::RebuildTable(const std::string& tab_name, std::vector<std::str
 	try
 	{
 		m_pLog->Output("[HIVE] Try to drop table: %s", tab_name.c_str());
-		m_spHiveClient->execute(sql_drop);
+		ExecuteSQL(sql_drop);
 		m_pLog->Output("[HIVE] Drop table OK.");
 
-		m_pLog->Output("[HIVE] Create table [%s]: %s", tab_name.c_str(), sql_create.c_str());
-		m_spHiveClient->execute(sql_create);
+		m_pLog->Output("[HIVE] Create table: %s", tab_name.c_str());
+		ExecuteSQL(sql_create);
 		m_pLog->Output("[HIVE] Create table ---- done!");
 	}
 	catch ( const apache::thrift::TApplicationException& ex )
@@ -104,7 +67,7 @@ void CHiveThrift::RebuildTable(const std::string& tab_name, std::vector<std::str
 	}
 }
 
-void CHiveThrift::ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exception)
+void CAcqHive::ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exception)
 {
 	if ( vec_sql.empty() )
 	{

@@ -35,7 +35,7 @@ private:
 class Config
 {
 public:
-	Config(const std::string& cfg_file = std::string());
+	explicit Config(const std::string& cfg_file = std::string());
 	virtual ~Config() {}
 
 public:
