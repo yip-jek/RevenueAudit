@@ -8,7 +8,7 @@
 #include "autodisconnect.h"
 #include "simpletime.h"
 #include "cacqdb2.h"
-#include "chivethrift.h"
+#include "cacqhive.h"
 #include "taskinfoutil.h"
 
 
@@ -19,7 +19,7 @@ Acquire::Acquire()
 :m_nHivePort(0)
 ,m_nHdfsPort(0)
 ,m_pAcqDB2(NULL)
-,m_pCHive(NULL)
+,m_pAcqHive(NULL)
 {
 	g_pApp = &g_Acquire;
 }
@@ -42,6 +42,7 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("DATABASE", "PASSWORD");
 	m_cfg.RegisterItem("HIVE_SERVER", "IP_ADDRESS");
 	m_cfg.RegisterItem("HIVE_SERVER", "PORT");
+	m_cfg.RegisterItem("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	m_cfg.RegisterItem("TABLE", "TAB_KPI_RULE");
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_RULE");
@@ -62,6 +63,7 @@ void Acquire::LoadConfig() throw(base::Exception)
 	{
 		throw base::Exception(ACQERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
 	}
+	m_sLoadJarPath = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	// Tables
 	m_tabKpiRule = m_cfg.GetCfgValue("TABLE", "TAB_KPI_RULE");
@@ -88,21 +90,21 @@ void Acquire::Init() throw(base::Exception)
 	m_pAcqDB2->SetTabEtlDim(m_tabEtlDim);
 	m_pAcqDB2->SetTabEtlVal(m_tabEtlVal);
 
-	m_pHiveThrift = new CHiveThrift(m_sHiveIP, m_nHivePort);
-	if ( NULL == m_pHiveThrift )
+	m_pHive = new CAcqHive(m_sHiveIP, m_nHivePort);
+	if ( NULL == m_pHive )
 	{
-		throw base::Exception(ACQERR_INIT_FAILED, "new CHiveThrift failed: 无法申请到内存空间!");
+		throw base::Exception(ACQERR_INIT_FAILED, "new CAcqHive failed: 无法申请到内存空间!");
 	}
-	m_pCHive = dynamic_cast<CHiveThrift*>(m_pHiveThrift);
+	m_pAcqHive = dynamic_cast<CAcqHive*>(m_pHive);
 
-	m_pCHive->Init();
+	m_pAcqHive->Init(m_sLoadJarPath);
 
 	m_pLog->Output("Init OK.");
 }
 
 void Acquire::Run() throw(base::Exception)
 {
-	base::AutoDisconnect a_disconn(new base::HiveDB2Connector(m_pAcqDB2, m_pCHive));
+	base::AutoDisconnect a_disconn(new base::HiveDB2Connector(m_pAcqDB2, m_pAcqHive));
 	a_disconn.Connect();
 
 	AcqTaskInfo task_info;
@@ -239,7 +241,7 @@ void Acquire::HiveDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 	TaskInfo2Sql(info, vec_hivesql, true);
 
 	m_pLog->Output("[Acquire] [HIVE] 执行数据采集 ...");
-	m_pCHive->ExecuteAcqSQL(vec_hivesql);
+	m_pAcqHive->ExecuteAcqSQL(vec_hivesql);
 }
 
 void Acquire::DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception)
@@ -394,7 +396,7 @@ void Acquire::LoadHdfsFile2Hive(const std::string& target_tab, const std::string
 
 	std::vector<std::string> vec_sql;
 	vec_sql.push_back(load_sql);
-	m_pCHive->ExecuteAcqSQL(vec_sql);
+	m_pAcqHive->ExecuteAcqSQL(vec_sql);
 
 	m_pLog->Output("[Acquire] Load HDFS file to HIVE ---- done!");
 }
@@ -406,7 +408,7 @@ int Acquire::RebuildHiveTable(AcqTaskInfo& info) throw(base::Exception)
 	std::vector<std::string> vec_field;
 	TaskInfo2TargetFields(info, vec_field);
 
-	m_pCHive->RebuildTable(info.EtlRuleTarget, vec_field);
+	m_pAcqHive->RebuildTable(info.EtlRuleTarget, vec_field);
 
 	m_pLog->Output("[Acquire] HIVE 采集目标表 [%s] 重建完成!", info.EtlRuleTarget.c_str());
 	return vec_field.size();

@@ -5,7 +5,7 @@
 #include "uniformcodetransfer.h"
 
 class CAnaDB2;
-class CHiveThrift;
+class CAnaHive;
 struct AnaDBInfo;
 
 // 分析模块
@@ -135,10 +135,11 @@ private:
 
 	std::string m_sHiveIP;				// Hive服务器IP地址
 	int			m_nHivePort;			// Hive服务器端口
+	std::string m_sLoadJarPath;			// 依赖的 jar 包的路径
 
 private:
-	CAnaDB2*        m_pAnaDB2;			// DB2数据库接口
-	CHiveThrift*    m_pCHive;			// Hive接口
+	CAnaDB2*	m_pAnaDB2;				// DB2数据库接口
+	CAnaHive*	m_pAnaHive;				// Hive接口
 
 private:
 	// 数据库表名

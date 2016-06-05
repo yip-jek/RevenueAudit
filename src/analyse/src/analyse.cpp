@@ -9,7 +9,7 @@
 #include "pubstr.h"
 #include "pubtime.h"
 #include "canadb2.h"
-#include "chivethrift.h"
+#include "canahive.h"
 #include "anadbinfo.h"
 #include "taskinfoutil.h"
 
@@ -20,7 +20,7 @@ Analyse g_Analyse;
 Analyse::Analyse()
 :m_nHivePort(0)
 ,m_pAnaDB2(NULL)
-,m_pCHive(NULL)
+,m_pAnaHive(NULL)
 {
 	g_pApp = &g_Analyse;
 }
@@ -43,6 +43,7 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("DATABASE", "PASSWORD");
 	m_cfg.RegisterItem("HIVE_SERVER", "IP_ADDRESS");
 	m_cfg.RegisterItem("HIVE_SERVER", "PORT");
+	m_cfg.RegisterItem("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	m_cfg.RegisterItem("TABLE", "TAB_KPI_RULE");
 	m_cfg.RegisterItem("TABLE", "TAB_KPI_COLUMN");
@@ -70,6 +71,7 @@ void Analyse::LoadConfig() throw(base::Exception)
 	{
 		throw base::Exception(ANAERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
 	}
+	m_sLoadJarPath = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	// Tables
 	m_tabKpiRule     = m_cfg.GetCfgValue("TABLE", "TAB_KPI_RULE");
@@ -110,21 +112,21 @@ void Analyse::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabDictChannel(m_tabDictChannel);
 	m_pAnaDB2->SetTabDictCity(m_tabDictCity);
 
-	m_pHiveThrift = new CHiveThrift(m_sHiveIP, m_nHivePort);
-	if ( NULL == m_pHiveThrift )
+	m_pHive = new CAnaHive(m_sHiveIP, m_nHivePort);
+	if ( NULL == m_pHive )
 	{
-		throw base::Exception(ANAERR_INIT_FAILED, "new CHiveThrift failed: 无法申请到内存空间!");
+		throw base::Exception(ANAERR_INIT_FAILED, "new CAnaHive failed: 无法申请到内存空间!");
 	}
-	m_pCHive = dynamic_cast<CHiveThrift*>(m_pHiveThrift);
+	m_pAnaHive = dynamic_cast<CAnaHive*>(m_pHive);
 
-	m_pCHive->Init();
+	m_pAnaHive->Init(m_sLoadJarPath);
 
 	m_pLog->Output("Init OK.");
 }
 
 void Analyse::Run() throw(base::Exception)
 {
-	base::AutoDisconnect a_disconn(new base::HiveDB2Connector(m_pAnaDB2, m_pCHive));
+	base::AutoDisconnect a_disconn(new base::HiveDB2Connector(m_pAnaDB2, m_pAnaHive));
 	a_disconn.Connect();
 
 	AnaTaskInfo task_info;
@@ -264,7 +266,7 @@ void Analyse::FetchHiveSource(std::vector<std::string>& vec_hivesql) throw(base:
 	const int SQL_SIZE = vec_hivesql.size();
 	for ( int i = 0; i < SQL_SIZE; ++i )
 	{
-		m_pCHive->FetchSourceData(vec_hivesql[i], vec2_fields);
+		m_pAnaHive->FetchSourceData(vec_hivesql[i], vec2_fields);
 
 		m_pLog->Output("[Analyse] 获取第 %d 组源数据记录数：%llu", (i+1), vec2_fields.size());
 		base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec2_fields);

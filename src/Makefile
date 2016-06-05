@@ -1,4 +1,4 @@
-DIRS = thrift_hive base acquire analyse
+DIRS = base acquire analyse
 
 .PHONY: all clean
 

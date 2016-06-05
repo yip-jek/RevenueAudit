@@ -164,11 +164,19 @@ void BaseJHive::FetchSQL(const std::string& sql, std::vector<std::vector<std::st
 
 	std::vector<std::string> v_data;
 	std::vector<std::vector<std::string> > vv_data;
+
+	std::string row_str;
 	for ( jint i = 0; i < ARRAY_SIZE; ++i )
 	{
 		jstring jstr_row = static_cast<jstring>(m_pJNI->p_jni_env->CallObjectMethod(jobj_arraylist, m_pJNI->jmid_array_get, i));
 
-		PubStr::Str2StrVector(m_pJNI->JString2String(jstr_row), "\t", v_data);
+		row_str = m_pJNI->JString2String(jstr_row);
+		if ( row_str.empty() )
+		{
+			throw Exception(BJH_FETCH_DATA_FAILED, "[HIVE] Fetch data failed: Source data is a blank! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		}
+
+		PubStr::Str2StrVector(row_str, "\t", v_data);
 		PubStr::VVectorSwapPushBack(vv_data, v_data);
 	}
 
@@ -224,7 +232,8 @@ void BaseJHive::CreateJVM(const std::string& load_jar_path) throw(Exception)
 	m_pJNI->jvm_args.nOptions = 1;
 	m_pJNI->jvm_args.ignoreUnrecognized = JNI_TRUE;
 
-	std::string str_option = "-Djava.class.path=";
+	// 包含当前路径
+	std::string str_option = "-Djava.class.path=.:";
 	str_option += GetJarClasspath(load_jar_path);
 
 	char* pstr_op = new char[str_option.size()+1];
@@ -242,7 +251,7 @@ void BaseJHive::CreateJVM(const std::string& load_jar_path) throw(Exception)
 	m_pLog->Output("[HIVE] JavaVMInitArgs.options            = %s", pstr_op);
 	m_pLog->Output("[HIVE] JavaVMInitArgs.ignoreUnrecognized = JNI_TRUE");
 
-	jint res = JNI_CreateJavaVM(&(m_pJNI->p_jvm), (void**)&(m_pJNI->p_jni_env), &m_pJNI->jvm_args);
+	jint res = JNI_CreateJavaVM(&(m_pJNI->p_jvm), (void**)&(m_pJNI->p_jni_env), &(m_pJNI->jvm_args));
 
 	// 释放资源
 	delete[] pstr_op;

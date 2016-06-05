@@ -1,18 +1,15 @@
 #pragma once
 
-#include "basehivethrift.h"
+#include "basejhive.h"
 
-class CHiveThrift : public base::BaseHiveThrift
+class CAnaHive : public base::BaseJHive
 {
 
 public:
-	CHiveThrift(const std::string& ip, int port);
-	virtual ~CHiveThrift();
+	CAnaHive(const std::string& ip, int port);
+	virtual ~CAnaHive();
 
 public:
-	// 一次获取的最大HIVE记录数
-	static const int HIVE_MAX_FETCHN = 40960;
-
 	// 错误码（枚举）
 	enum HT_ERROR
 	{
@@ -20,9 +17,6 @@ public:
 	};
 
 public:
-	//// 测试
-	//void Test(const std::string& table) throw(base::Exception);
-
 	// 获取源数据
 	void FetchSourceData(const std::string& hive_sql, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception);
 };

@@ -1,4 +1,4 @@
-#include "chivethrift.h"
+#include "cacqhive.h"
 #include <vector>
 #include "log.h"
 
@@ -57,13 +57,9 @@ void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string
 		ExecuteSQL(sql_create);
 		m_pLog->Output("[HIVE] Create table ---- done!");
 	}
-	catch ( const apache::thrift::TApplicationException& ex )
+	catch ( const base::Exception& ex )
 	{
-		throw base::Exception(HTERR_REBUILD_TABLE_FAILED, "[HIVE] Rebuild table \"%s\" failed! [TApplicationException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
-	}
-	catch ( const apache::thrift::TException& ex )
-	{
-		throw base::Exception(HTERR_REBUILD_TABLE_FAILED, "[HIVE] Rebuild table \"%s\" failed! [TException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(HTERR_REBUILD_TABLE_FAILED, "[HIVE] Rebuild table \"%s\" failed! %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.What().c_str(), __FILE__, __LINE__);
 	}
 }
 
@@ -81,18 +77,12 @@ void CAcqHive::ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exce
 		{
 			std::string& hive_sql = vec_sql[i];
 
-			m_pLog->Output("[HIVE] Execute sql [%lu]: %s", (i+1), hive_sql.c_str());
-			m_spHiveClient->execute(hive_sql);
-			m_pLog->Output("[HIVE] Execute sql OK.");
+			ExecuteSQL(hive_sql);
 		}
 	}
-	catch ( const apache::thrift::TApplicationException& ex )
+	catch ( const base::Exception& ex )
 	{
-		throw base::Exception(HTERR_EXECUTE_ACQSQL_FAILED, "[HIVE] Execute sql failed! [TApplicationException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
-	}
-	catch ( const apache::thrift::TException& ex )
-	{
-		throw base::Exception(HTERR_EXECUTE_ACQSQL_FAILED, "[HIVE] Execute sql failed! [TException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(HTERR_EXECUTE_ACQSQL_FAILED, "[HIVE] Execute sql failed! %s [FILE:%s, LINE:%d]", ex.What().c_str(), __FILE__, __LINE__);
 	}
 }
 

@@ -5,7 +5,7 @@
 #include "hdfsconnector.h"
 
 class CAcqDB2;
-class CHiveThrift;
+class CAcqHive;
 
 // 采集模块
 class Acquire : public base::BaseFrameApp
@@ -108,14 +108,15 @@ private:
 
 	std::string m_sHiveIP;				// Hive服务器IP地址
 	int			m_nHivePort;			// Hive服务器端口
+	std::string m_sLoadJarPath;			// 依赖的 jar 包路径
 
 	std::string m_sHdfsHost;			// HDFS的主机信息
 	std::string m_sHdfsTmpPath;			// HDFS的临时目录
 	int			m_nHdfsPort;			// HDFS的端口
 
 private:
-	CAcqDB2*		m_pAcqDB2;			// DB2数据库接口
-	CHiveThrift*	m_pCHive;			// Hive接口
+	CAcqDB2*	m_pAcqDB2;				// DB2数据库接口
+	CAcqHive*	m_pAcqHive;				// Hive接口
 
 private:
 	// 数据库表名

@@ -7,7 +7,6 @@ APP_INCL    = -I../include
 BASE_INCL   = -I../../base/include
 XDBO_INCL   = -I$(RA_ROOT)/include
 JNI_INCL    = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
-THRIFT_INCL = -I../../thrift_hive/include -I$(LOCAL_DIR)/include/thrift
 HDFS_INCL   = -I$(HADOOP_HOME)/include
 TASK_INCL   = -I$(RACTL_HOME)/inc
 AB2_INCL    = $(shell ab2-config --cflags)
@@ -16,7 +15,6 @@ AB2_INCL    = $(shell ab2-config --cflags)
 BASE_LIB    = -L$(LIB_DIR) -lbase
 XDBO_LIB    = -L$(RA_ROOT)/lib -lxdbo2 -lzookeeper_mt
 JNI_LIB     = -L$(JAVA_HOME)/jre/lib/amd64/server -ljvm
-THRIFT_LIB  = -L$(LOCAL_DIR)/lib -lthrift -L$(LIB_DIR) -lthrift_hive
 HDFS_LIB    = -L$(HADOOP_HOME)/lib/native -lhdfs
 TASK_LIB    = -L$(RACTL_HOME)/lib -lrastate
 AB2_LIBS    = $(shell ab2-config --libs64)
@@ -35,6 +33,6 @@ MV = mv
 RM = rm -f
 
 ################################################################
-INCLS = $(APP_INCL) $(BASE_INCL) $(XDBO_INCL) $(JNI_INCL) $(THRIFT_INCL) $(HDFS_INCL) $(TASK_INCL) $(AB2_INCL)
-LIBS  = $(BASE_LIB) $(XDBO_LIB) $(JNI_LIB) $(THRIFT_LIB) $(HDFS_LIB) $(TASK_LIB) $(AB2_LIBS)
+INCLS = $(APP_INCL) $(BASE_INCL) $(XDBO_INCL) $(JNI_INCL) $(HDFS_INCL) $(TASK_INCL) $(AB2_INCL)
+LIBS  = $(BASE_LIB) $(XDBO_LIB) $(JNI_LIB) $(HDFS_LIB) $(TASK_LIB) $(AB2_LIBS)
 
