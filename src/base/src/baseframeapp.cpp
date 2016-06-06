@@ -34,6 +34,8 @@ BaseFrameApp::~BaseFrameApp()
 		delete m_pHive;
 		m_pHive = NULL;
 	}
+
+	Log::Release();
 }
 
 const char* BaseFrameApp::Version()

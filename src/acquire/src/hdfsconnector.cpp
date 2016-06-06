@@ -2,7 +2,8 @@
 #include "log.h"
 
 HdfsConnector::HdfsConnector(const std::string& host, int port)
-:m_sHost(host)
+:m_pLogger(base::Log::Instance())
+,m_sHost(host)
 ,m_nPort(port)
 ,m_hdfsFS(NULL)
 {
@@ -10,6 +11,7 @@ HdfsConnector::HdfsConnector(const std::string& host, int port)
 
 HdfsConnector::~HdfsConnector()
 {
+	base::Log::Release();
 }
 
 void HdfsConnector::ToConnect() throw(base::Exception)
@@ -25,7 +27,7 @@ void HdfsConnector::ToConnect() throw(base::Exception)
 		throw base::Exception(HCERR_CONNECT_FAILED, "[HDFS] Connect failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	base::Log::Instance()->Output("[HDFS] Connect <%s:%d> OK.", m_sHost.c_str(), m_nPort);
+	m_pLogger->Output("[HDFS] Connect <%s:%d> OK.", m_sHost.c_str(), m_nPort);
 }
 
 void HdfsConnector::ToDisconnect()
@@ -35,7 +37,7 @@ void HdfsConnector::ToDisconnect()
 		hdfsDisconnect(m_hdfsFS);
 		m_hdfsFS = NULL;
 
-		base::Log::Instance()->Output("[HDFS] Disconnected.");
+		m_pLogger->Output("[HDFS] Disconnected.");
 	}
 }
 

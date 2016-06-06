@@ -29,6 +29,8 @@ BaseJHive::~BaseJHive()
 		delete m_pJNI;
 		m_pJNI = NULL;
 	}
+
+	Log::Release();
 }
 
 void BaseJHive::Init(const std::string& load_jar_path) throw(Exception)

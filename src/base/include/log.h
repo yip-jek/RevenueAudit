@@ -15,11 +15,18 @@ private:
 	~Log();
 
 public:
+	// 日志缓冲区大小
+	static const unsigned int MAX_BUFFER_SIZE = 4096;
+
+public:
+	// 获取多少次，就要释放多少次
+	// 获取日志实例
 	static Log* Instance();
+	// 释放日志实例
 	static void Release();
+
 	static bool SetCCMID(long long ccm_id);
 	static bool ResetFileSize(unsigned long fsize);
-
 	static bool TryMakeDir(const std::string& path);
 
 public:
@@ -32,7 +39,8 @@ private:
 	void OpenNewLogger() throw(Exception);
 
 private:
-	static Log*          _spLogger;
+	static int           _sInstances;				// 实例计数器
+	static Log*          _spLogger;					// 实例指针
 	static long long     _sLogCcmID;
 	static unsigned long _sMaxLogFileSize;
 

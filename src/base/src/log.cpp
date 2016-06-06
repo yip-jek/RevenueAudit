@@ -10,6 +10,7 @@
 namespace base
 {
 
+int Log::_sInstances = 0;
 Log* Log::_spLogger = NULL;		// single log pointer
 
 long long Log::_sLogCcmID = 0;
@@ -29,9 +30,13 @@ Log* Log::Instance()
 {
 	if ( NULL == _spLogger )
 	{
+		printf("[LOG] Creating Log() instance ...\n");
+
 		_spLogger = new Log();
 	}
 
+	// 计数加 1
+	++_sInstances;
 	return _spLogger;
 }
 
@@ -39,8 +44,17 @@ void Log::Release()
 {
 	if ( _spLogger != NULL )
 	{
-		delete _spLogger;
-		_spLogger = NULL;
+		// 计数减 1
+		--_sInstances;
+
+		// 计数器归 0，则释放资源
+		if ( _sInstances <= 0 )
+		{
+			printf("[LOG] Releasing Log() instance ...\n");
+
+			delete _spLogger;
+			_spLogger = NULL;
+		}
 	}
 }
 
@@ -153,7 +167,7 @@ bool Log::Output(const char* format, ...)
 		return false;
 	}
 
-	char buf[2048] = "";
+	char buf[MAX_BUFFER_SIZE] = "";
 	va_list arg_ptr;
 	va_start(arg_ptr, format);
 	vsnprintf(buf, sizeof(buf), format, arg_ptr);

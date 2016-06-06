@@ -3,6 +3,13 @@
 #include "autodisconnect.h"
 #include "hdfs.h"
 
+namespace base
+{
+
+class Log;
+
+}
+
 class HdfsConnector : public base::BaseConnector
 {
 public:
@@ -23,9 +30,13 @@ public:
 	hdfsFS GetHdfsFS() const;
 
 private:
+	base::Log*		m_pLogger;
+
+private:
 	std::string		m_sHost;		// 主机信息
 	int				m_nPort;		// 端口号
 
+private:
 	hdfsFS			m_hdfsFS;
 };
 
