@@ -108,6 +108,8 @@ private:
 
 	std::string m_sHiveIP;				// Hive服务器IP地址
 	int			m_nHivePort;			// Hive服务器端口
+	std::string m_sHiveUsr;				// Hive服务器用户名
+	std::string m_sHivePwd;				// Hive服务器密码
 	std::string m_sLoadJarPath;			// 依赖的 jar 包路径
 
 	std::string m_sHdfsHost;			// HDFS的主机信息

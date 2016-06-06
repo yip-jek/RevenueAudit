@@ -30,7 +30,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.07.0063 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.09.0075 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -42,6 +42,8 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("DATABASE", "PASSWORD");
 	m_cfg.RegisterItem("HIVE_SERVER", "IP_ADDRESS");
 	m_cfg.RegisterItem("HIVE_SERVER", "PORT");
+	m_cfg.RegisterItem("HIVE_SERVER", "USERNAME");
+	m_cfg.RegisterItem("HIVE_SERVER", "PASSWORD");
 	m_cfg.RegisterItem("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	m_cfg.RegisterItem("TABLE", "TAB_KPI_RULE");
@@ -63,6 +65,8 @@ void Acquire::LoadConfig() throw(base::Exception)
 	{
 		throw base::Exception(ACQERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
 	}
+	m_sHiveUsr = m_cfg.GetCfgValue("HIVE_SERVER", "USERNAME");
+	m_sHivePwd = m_cfg.GetCfgValue("HIVE_SERVER", "PASSWORD");
 	m_sLoadJarPath = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	// Tables
@@ -90,7 +94,7 @@ void Acquire::Init() throw(base::Exception)
 	m_pAcqDB2->SetTabEtlDim(m_tabEtlDim);
 	m_pAcqDB2->SetTabEtlVal(m_tabEtlVal);
 
-	m_pHive = new CAcqHive(m_sHiveIP, m_nHivePort);
+	m_pHive = new CAcqHive(m_sHiveIP, m_nHivePort, m_sHiveUsr, m_sHivePwd);
 	if ( NULL == m_pHive )
 	{
 		throw base::Exception(ACQERR_INIT_FAILED, "new CAcqHive failed: 无法申请到内存空间!");

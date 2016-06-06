@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.08.0068 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.10.0076 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -43,6 +43,8 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("DATABASE", "PASSWORD");
 	m_cfg.RegisterItem("HIVE_SERVER", "IP_ADDRESS");
 	m_cfg.RegisterItem("HIVE_SERVER", "PORT");
+	m_cfg.RegisterItem("HIVE_SERVER", "USERNAME");
+	m_cfg.RegisterItem("HIVE_SERVER", "PASSWORD");
 	m_cfg.RegisterItem("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	m_cfg.RegisterItem("TABLE", "TAB_KPI_RULE");
@@ -71,6 +73,8 @@ void Analyse::LoadConfig() throw(base::Exception)
 	{
 		throw base::Exception(ANAERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
 	}
+	m_sHiveUsr = m_cfg.GetCfgValue("HIVE_SERVER", "USERNAME");
+	m_sHivePwd = m_cfg.GetCfgValue("HIVE_SERVER", "PASSWORD");
 	m_sLoadJarPath = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	// Tables
@@ -112,7 +116,7 @@ void Analyse::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabDictChannel(m_tabDictChannel);
 	m_pAnaDB2->SetTabDictCity(m_tabDictCity);
 
-	m_pHive = new CAnaHive(m_sHiveIP, m_nHivePort);
+	m_pHive = new CAnaHive(m_sHiveIP, m_nHivePort, m_sHiveUsr, m_sHivePwd);
 	if ( NULL == m_pHive )
 	{
 		throw base::Exception(ANAERR_INIT_FAILED, "new CAnaHive failed: 无法申请到内存空间!");

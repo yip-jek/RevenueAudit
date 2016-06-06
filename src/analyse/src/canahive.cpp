@@ -3,8 +3,8 @@
 #include "log.h"
 #include "pubstr.h"
 
-CAnaHive::CAnaHive(const std::string& ip, int port)
-:BaseJHive(ip, port)
+CAnaHive::CAnaHive(const std::string& ip, int port, const std::string& usr, const std::string& pwd)
+:BaseJHive(ip, port, usr, pwd)
 {
 }
 

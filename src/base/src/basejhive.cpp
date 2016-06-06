@@ -10,11 +10,13 @@
 namespace base
 {
 
-BaseJHive::BaseJHive(const std::string& host, int port)
+BaseJHive::BaseJHive(const std::string& host, int port, const std::string& usr, const std::string& pwd)
 :m_pLog(Log::Instance())
 ,m_pJNI(NULL)
 ,m_strHost(host)
 ,m_nPort(port)
+,m_strUsr(usr)
+,m_strPwd(pwd)
 {
 }
 
@@ -61,7 +63,10 @@ void BaseJHive::Connect() throw(Exception)
 	m_pLog->Output("[HIVE] Connect to <%s:%d> ...", m_strHost.c_str(), m_nPort);
 
 	jstring jstr_host = m_pJNI->p_jni_env->NewStringUTF(m_strHost.c_str());
-	jint res_conn = m_pJNI->p_jni_env->CallIntMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_connect, jstr_host, m_nPort);
+	jstring jstr_usr  = m_pJNI->p_jni_env->NewStringUTF(m_strUsr.c_str());
+	jstring jstr_pwd  = m_pJNI->p_jni_env->NewStringUTF(m_strPwd.c_str());
+
+	jint res_conn = m_pJNI->p_jni_env->CallIntMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_connect, jstr_host, m_nPort, jstr_usr, jstr_pwd);
 	switch ( res_conn )
 	{
 	case 0:
@@ -301,7 +306,7 @@ void BaseJHive::InitHiveAgent() throw(Exception)
 	}
 
 	// 获取 Java HIVE 代理类的 Connect 方法
-	m_pJNI->jmid_connect = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "Connect", "(Ljava/lang/String;I)I");
+	m_pJNI->jmid_connect = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "Connect", "(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)I");
 	if ( NULL == m_pJNI->jmid_connect )
 	{
 		throw Exception(BJH_INIT_FAILED, "[HIVE] NO connect method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);

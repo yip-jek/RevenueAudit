@@ -6,7 +6,7 @@ class CAcqHive : public base::BaseJHive
 {
 
 public:
-	CAcqHive(const std::string& ip, int port);
+	CAcqHive(const std::string& ip, int port, const std::string& usr, const std::string& pwd);
 	virtual ~CAcqHive();
 
 public:
