@@ -1,5 +1,6 @@
 #include "basejhive.h"
 #include <string.h>
+#include <stdlib.h>
 #include <boost/algorithm/string.hpp>
 #include "def.h"
 #include "log.h"
@@ -251,6 +252,18 @@ void BaseJHive::CreateJVM(const std::string& load_jar_path) throw(Exception)
 	// 包含当前路径
 	std::string str_option = "-Djava.class.path=.:";
 	str_option += GetJarClasspath(load_jar_path);
+
+	// 获取 $CLASSPATH 环境变量
+	char* pEnvClasspath = getenv("CLASSPATH");
+	if ( NULL == pEnvClasspath )
+	{
+		m_pLog->Output("<WARNING> [BASE HIVE] Get environment variable $CLASSPATH failed !");
+	}
+	else
+	{
+		str_option.append(":");
+		str_option.append(pEnvClasspath);
+	}
 
 	char* pstr_op = new char[str_option.size()+1];
 	if ( NULL == pstr_op )
