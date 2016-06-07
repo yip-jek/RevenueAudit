@@ -1,7 +1,6 @@
 #include "basejhive.h"
 #include <string.h>
 #include <stdlib.h>
-#include <boost/algorithm/string.hpp>
 #include "def.h"
 #include "log.h"
 #include "structjni.h"
@@ -169,11 +168,9 @@ void BaseJHive::FetchSQL(const std::string& sql, std::vector<std::vector<std::st
 	if ( ARRAY_SIZE <= 0 )
 	{
 		const std::string ERROR_MSG = GetErrorMsg();
-		std::string strMsg = ERROR_MSG;
-		boost::to_upper(strMsg);
 
 		// 是否有异常信息？
-		if ( strMsg.find("EXCEPTION") != std::string::npos )
+		if ( PubStr::UpperB(ERROR_MSG).find("EXCEPTION") != std::string::npos )
 		{
 			throw Exception(BJH_FETCH_DATA_FAILED, "[BASE HIVE] Fetch data failed: %s [FILE:%s, LINE:%d]", ERROR_MSG.c_str(), __FILE__, __LINE__);
 		}

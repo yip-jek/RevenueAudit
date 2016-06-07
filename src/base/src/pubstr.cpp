@@ -1,10 +1,61 @@
 #include "pubstr.h"
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include "def.h"
 
 namespace base
 {
+
+void PubStr::Trim(std::string& str)
+{
+	boost::trim(str);
+}
+
+std::string PubStr::TrimB(const std::string& str)
+{
+	std::string str_trim = str;
+	boost::trim(str_trim);
+	return str_trim;
+}
+
+void PubStr::Upper(std::string& str)
+{
+	boost::to_upper(str);
+}
+
+std::string PubStr::UpperB(const std::string& str)
+{
+	std::string str_upper = str;
+	boost::to_upper(str_upper);
+	return str_upper;
+}
+
+void PubStr::TrimUpper(std::string& str)
+{
+	boost::trim(str);
+	boost::to_upper(str);
+}
+
+std::string PubStr::TrimUpperB(const std::string& str)
+{
+	std::string str_tp = str;
+
+	boost::trim(str_tp);
+	boost::to_upper(str_tp);
+
+	return str_tp;
+}
+
+void PubStr::SetFormatString(std::string& str, const char* fmt, ...)
+{
+	char buf[MAX_STR_BUF_SIZE] = "";
+
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+
+	str = buf;
+}
 
 void PubStr::Str2IntVector(const std::string& src_str, const std::string& dim, std::vector<int>& i_vec, bool is_multi_dim) throw(Exception)
 {
@@ -14,16 +65,17 @@ void PubStr::Str2IntVector(const std::string& src_str, const std::string& dim, s
 	std::vector<int> vec_int;
 	const size_t V_SIZE = vec_str.size();
 
-	try
+	int int_val = 0;
+	for ( size_t i = 0; i < V_SIZE; ++i )
 	{
-		for ( size_t i = 0; i < V_SIZE; ++i )
+		if ( T1TransT2(vec_str[i], int_val) )
 		{
-			vec_int.push_back(boost::lexical_cast<int>(vec_str[i]));
+			vec_int.push_back(int_val);
 		}
-	}
-	catch ( boost::bad_lexical_cast& ex )
-	{
-		throw Exception(PS_TRANS_FAILED, "字符串(src:%s)转数值数组失败! [BOOST] %s [FILE:%s, LINE:%d]", src_str.c_str(), ex.what(), __FILE__, __LINE__);
+		else
+		{
+			throw Exception(PS_TRANS_FAILED, "字符串 (src:%s) 转数值数组失败：\"%s\" 无法转换！[FILE:%s, LINE:%d]", src_str.c_str(), vec_str[i].c_str(), __FILE__, __LINE__);
+		}
 	}
 
 	vec_int.swap(i_vec);
@@ -50,7 +102,7 @@ void PubStr::Str2StrVector(const std::string& src_str, const std::string& dim, s
 	const size_t V_SIZE = vec_str.size();
 	for( size_t i = 0; i < V_SIZE; ++i )
 	{
-		boost::trim(vec_str[i]);
+		Trim(vec_str[i]);
 	}
 
 	vec_str.swap(s_vec);
@@ -83,58 +135,63 @@ int PubStr::Express2IntSet(const std::string& src_str, std::set<int>& set_int)
 	std::set<int> s_int;
 	std::vector<std::string> vec_section;
 
-	try
+	const int VEC_SIZE = vec_str.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
-		const int VEC_SIZE = vec_str.size();
-		for ( int i = 0; i < VEC_SIZE; ++i )
+		Str2StrVector(vec_str[i], "-", vec_section);
+
+		const int V_SIZE = vec_section.size();
+		if ( 1 == V_SIZE )		// 单个数字
 		{
-			Str2StrVector(vec_str[i], "-", vec_section);
-
-			const int V_SIZE = vec_section.size();
-			if ( 1 == V_SIZE )		// 单个数字
+			int int_val = 0;
+			if ( !T1TransT2(vec_section[0], int_val) )	// 转换失败
 			{
-				const int VAL = boost::lexical_cast<int>(vec_section[0]);
-
-				// 是否重复
-				if ( s_int.find(VAL) != s_int.end() )
-				{
-					return 1;
-				}
-
-				s_int.insert(VAL);
+				return -1;
 			}
-			else if ( 2 == V_SIZE )		// 数字区间
-			{
-				const int LEFT  = boost::lexical_cast<int>(vec_section[0]);	// 左值
-				const int RIGHT = boost::lexical_cast<int>(vec_section[1]);	// 右值
 
-				if ( LEFT < RIGHT )		// 区间有效
+			// 是否重复
+			if ( s_int.find(int_val) != s_int.end() )
+			{
+				return 1;
+			}
+
+			s_int.insert(int_val);
+		}
+		else if ( 2 == V_SIZE )		// 数字区间
+		{
+			int left  = 0;		// 左值
+			int right = 0;		// 右值
+			if ( !T1TransT2(vec_section[0], left) )		// 转换失败
+			{
+				return -1;
+			}
+			if ( !T1TransT2(vec_section[1], right) )	// 转换失败
+			{
+				return -1;
+			}
+
+			if ( left < right )		// 区间有效
+			{
+				for ( int val = left; val <= right; ++val )
 				{
-					for ( int val = LEFT; val <= RIGHT; ++val )
+					// 是否重复
+					if ( s_int.find(val) != s_int.end() )
 					{
-						// 是否重复
-						if ( s_int.find(val) != s_int.end() )
-						{
-							return 1;
-						}
-
-						s_int.insert(val);
+						return 1;
 					}
-				}
-				else	// 区间无效!
-				{
-					return -1;
+
+					s_int.insert(val);
 				}
 			}
-			else	// ERROR!
+			else	// 区间无效!
 			{
 				return -1;
 			}
 		}
-	}
-	catch ( boost::bad_lexical_cast& ex )	// 转换为数值失败!
-	{
-		return -1;
+		else	// ERROR!
+		{
+			return -1;
+		}
 	}
 
 	s_int.swap(set_int);
@@ -181,11 +238,11 @@ void PubStr::ReplaceInStrVector2(std::vector<std::vector<std::string> >& vec2_st
 
 			if ( trim )		// 去除前后空白符
 			{
-				boost::trim(ref_str);
+				Trim(ref_str);
 			}
 			if ( upper )	// 转换为大写
 			{
-				boost::to_upper(ref_str);
+				Upper(ref_str);
 			}
 
 			if ( src_str == ref_str )

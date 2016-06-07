@@ -1,7 +1,5 @@
 #include "acquire.h"
 #include <vector>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include "log.h"
 #include "pubtime.h"
 #include "pubstr.h"
@@ -30,7 +28,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.09.0079 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.09.0081 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -123,7 +121,7 @@ void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 {
 	// 格式：启动批号:指标ID:采集规则ID:...
 	std::vector<std::string> vec_str;
-	boost::split(vec_str, para, boost::is_any_of(":"));
+	base::PubStr::Str2StrVector(para, ":", vec_str);
 
 	if ( vec_str.size() < 3 )
 	{
@@ -131,14 +129,14 @@ void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 	}
 
 	m_sKpiID = vec_str[1];
-	boost::trim(m_sKpiID);
+	base::PubStr::Trim(m_sKpiID);
 	if ( m_sKpiID.empty() )
 	{
 		throw base::Exception(ACQERR_KPIID_INVALID, "指标ID无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
 	m_sEtlID = vec_str[2];
-	boost::trim(m_sEtlID);
+	base::PubStr::Trim(m_sEtlID);
 	if ( m_sEtlID.empty() )
 	{
 		throw base::Exception(ACQERR_ETLID_INVALID, "采集规则ID无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
@@ -388,8 +386,8 @@ void Acquire::LoadHdfsFile2Hive(const std::string& target_tab, const std::string
 
 	m_pLog->Output("[Acquire] Load HDFS file [%s] to HIVE ...", hdfs_file.c_str());
 
-	std::string load_sql = "load data inpath 'hdfs://";
-	load_sql += m_sHdfsHost + ":" + boost::lexical_cast<std::string>(m_nHdfsPort);
+	std::string load_sql;
+	base::PubStr::SetFormatString(load_sql, "load data inpath 'hdfs://%s:%d", m_sHdfsHost.c_str(), m_nHdfsPort);
 
 	if ( hdfs_file[0] != '/' )
 	{
@@ -505,7 +503,7 @@ void Acquire::OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql
 	// 分析采集条件
 	// 格式：[外连表名]:[关联的维度字段(逗号分隔)]
 	std::string& etl_cond = info.EtlCondition;
-	boost::trim(etl_cond);
+	base::PubStr::Trim(etl_cond);
 
 	std::vector<std::string> vec_str;
 	base::PubStr::Str2StrVector(etl_cond, ":", vec_str);
@@ -611,11 +609,10 @@ void Acquire::NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& ve
 	if ( AcqTaskInfo::ETLCTYPE_STRAIGHT == info.EtlCondType )
 	{
 		condition = info.EtlCondition;
-
-		boost::trim(condition);
+		base::PubStr::Trim(condition);
 
 		std::string head_where = condition.substr(0, 5);
-		boost::to_upper(head_where);
+		base::PubStr::Upper(head_where);
 
 		// 加上"where"
 		if ( head_where != "WHERE" )
@@ -716,11 +713,8 @@ std::string Acquire::TransDataSrcDate(const std::string& time, const std::string
 		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "未知的采集时间类型！无法识别的采集时间表达式：%s [FILE:%s, LINE:%d]", time.c_str(), __FILE__, __LINE__);
 	}
 
-	std::string new_datasrc = data_src;
-	boost::trim(new_datasrc);
-	boost::to_upper(new_datasrc);
-
 	// 找到时间标记才进行替换
+	std::string new_datasrc = base::PubStr::TrimUpperB(data_src);
 	size_t t_pos = new_datasrc.find(be_replace);
 	if ( t_pos != std::string::npos )
 	{

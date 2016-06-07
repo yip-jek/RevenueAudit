@@ -1,5 +1,5 @@
 #include "dimvaldiffer.h"
-#include <boost/algorithm/string.hpp>
+#include "pubstr.h"
 
 
 DimValDiffer::DimValDiffer()
@@ -67,14 +67,9 @@ size_t DimValDiffer::GetSrcDimValSize()
 
 void DimValDiffer::FetchDimVal(MAP_DIM_VAL& mm_dv, const DimVal& dv)
 {
-	std::string name  = dv.DBName;
-	std::string value = dv.Value;
-
-	boost::trim(name);
-	boost::trim(value);
-
 	// 字段名称统一转成大写
-	boost::to_upper(name);
+	std::string name  = base::PubStr::TrimUpperB(dv.DBName);
+	std::string value = base::PubStr::TrimB(dv.Value);
 
 	// 只添加新的维度取值
 	MAP_DIM_VAL::iterator mdv_it = mm_dv.find(name);

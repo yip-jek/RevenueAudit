@@ -3,6 +3,7 @@
 #include <string>
 #include <set>
 #include <vector>
+#include <boost/lexical_cast.hpp>
 #include "exception.h"
 
 namespace base
@@ -10,6 +11,25 @@ namespace base
 
 class PubStr
 {
+public:
+	static const int MAX_STR_BUF_SIZE = 4096;
+
+public:
+	// 截去前后空白符
+	static void Trim(std::string& str);
+	static std::string TrimB(const std::string& str);
+
+	// 统一转换为大写
+	static void Upper(std::string& str);
+	static std::string UpperB(const std::string& str);
+
+	// 截去前后空白符，并且转换为大写
+	static void TrimUpper(std::string& str);
+	static std::string TrimUpperB(const std::string& str);
+
+	// 设置格式化的字符串
+	static void SetFormatString(std::string& str, const char* fmt, ...);
+
 public:
 	// 由字符串拆分为数值数组
 	// is_multi_dim为true时，表示多个连接的分隔符当作单个分隔符来处理
@@ -51,6 +71,21 @@ public:
 		std::vector<std::vector<T> > vec2_empty;
 		vec3_T.push_back(vec2_empty);
 		vec2_T.swap(vec3_T[vec3_T.size()-1]);
+	}
+
+	// 类型转换
+	template <typename T1, typename T2>
+	static bool T1TransT2(const T1& src, T2& des)
+	{
+		try
+		{
+			des = boost::lexical_cast<T2>(src);
+			return true;
+		}
+		catch ( boost::bad_lexical_cast& ex )
+		{
+			return false;
+		}
 	}
 };
 

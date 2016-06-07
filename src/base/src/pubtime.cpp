@@ -1,7 +1,5 @@
 #include "pubtime.h"
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include "pubstr.h"
 
 namespace base
@@ -95,22 +93,13 @@ bool PubTime::DateApartFromNow(const std::string& fmt, PubTime::DATE_TYPE& d_typ
 
 	// 获取时间偏移量
 	unsigned int date_off = 0;
-	try
-	{
-		std::string& ref_off = vec_fmt[1];
-		boost::trim(ref_off);
-
-		date_off = boost::lexical_cast<unsigned int>(ref_off);
-	}
-	catch ( boost::bad_lexical_cast& ex )	// 转换失败
+	if ( !PubStr::T1TransT2(PubStr::TrimB(vec_fmt[1]), date_off) )	// 转换失败
 	{
 		return false;
 	}
 
 	std::string& ref_flag = vec_fmt[0];
-
-	boost::trim(ref_flag);
-	boost::to_upper(ref_flag);
+	PubStr::TrimUpper(ref_flag);
 
 	if ( "DAY" == ref_flag )			// 日
 	{

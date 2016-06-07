@@ -10,17 +10,20 @@ namespace base
 class Exception
 {
 public:
+	static const int MAX_EXP_BUF_SIZE = 4096;
+
+public:
 	Exception():m_errorcode(-1)
 	{}
 	Exception(int error, const std::string& descript):m_errorcode(error), m_descript(descript)
 	{}
 	Exception(int error, const char* format, ...): m_errorcode(error)
 	{
-		char buf[2048] = "";
+		char buf[MAX_EXP_BUF_SIZE] = "";
 
 		va_list ap;
 		va_start(ap, format);
-		vsnprintf(buf, sizeof(buf)-1, format, ap);
+		vsnprintf(buf, sizeof(buf), format, ap);
 		va_end(ap);
 
 		m_descript = buf;
@@ -40,11 +43,11 @@ public:
 
 	void Descript(const char* format, ...)
 	{
-		char buf[2048] = "";
+		char buf[MAX_EXP_BUF_SIZE] = "";
 
 		va_list ap;
 		va_start(ap, format);
-		vsnprintf(buf, sizeof(buf)-1, format, ap);
+		vsnprintf(buf, sizeof(buf), format, ap);
 		va_end(ap);
 
 		m_descript = buf;

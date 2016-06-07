@@ -1,10 +1,8 @@
 #include "config.h"
 #include <fstream>
-#include <iostream>
 #include <sys/stat.h>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include "def.h"
+#include "pubstr.h"
 
 namespace base
 {
@@ -50,33 +48,27 @@ void Config::SetCfgFile(const std::string& cfg_file) throw(Exception)
 	m_cfgFile = cfg_file;
 }
 
-bool Config::RegisterItem(std::string segment, std::string name)
+bool Config::RegisterItem(const std::string& segment, const std::string& name)
 {
-	boost::trim(segment);
-	boost::to_upper(segment);
+	std::string str_seg  = PubStr::TrimUpperB(segment);
+	std::string str_name = PubStr::TrimUpperB(name);
 
-	boost::trim(name);
-	boost::to_upper(name);
-
-	if ( FindItem(segment, name) )
+	if ( FindItem(str_seg, str_name) )
 	{
 		return false;
 	}
 	
-	m_listItems.push_back(CfgItem(segment, name));
+	m_listItems.push_back(CfgItem(str_seg, str_name));
 	return true;
 }
 
-bool Config::UnregisterItem(std::string segment, std::string name)
+bool Config::UnregisterItem(const std::string& segment, const std::string& name)
 {
-	boost::trim(segment);
-	boost::to_upper(segment);
-
-	boost::trim(name);
-	boost::to_upper(name);
+	std::string str_seg  = PubStr::TrimUpperB(segment);
+	std::string str_name = PubStr::TrimUpperB(name);
 
 	std::list<CfgItem>::iterator it;
-	if ( FindItem(segment, name, &it) )
+	if ( FindItem(str_seg, str_name, &it) )
 	{
 		m_listItems.erase(it);
 		return true;
@@ -124,7 +116,7 @@ void Config::ReadConfig() throw(Exception)
 		std::getline(m_fsCfg, strLine);
 
 		CleanComment(strLine);
-		boost::trim(strLine);
+		PubStr::Trim(strLine);
 		if ( strLine.empty() )
 		{
 			continue;
@@ -149,64 +141,50 @@ void Config::ReadConfig() throw(Exception)
 	m_fsCfg.close();
 }
 
-std::string Config::GetCfgValue(std::string segment, std::string name) throw(Exception)
+std::string Config::GetCfgValue(const std::string& segment, const std::string& name) throw(Exception)
 {
-	boost::trim(segment);
-	boost::to_upper(segment);
-
-	boost::trim(name);
-	boost::to_upper(name);
+	std::string str_seg  = PubStr::TrimUpperB(segment);
+	std::string str_name = PubStr::TrimUpperB(name);
 
 	std::list<CfgItem>::iterator it;
-	if ( FindItem(segment, name, &it) )
+	if ( FindItem(str_seg, str_name, &it) )
 	{
 		if ( !(it->m_bFind) )
 		{
-			throw Exception(CFG_ITEM_NOT_FOUND, "Configure item [%s->%s] not found! [FILE:%s, LINE:%d]", segment.c_str(), name.c_str(), __FILE__, __LINE__);
+			throw Exception(CFG_ITEM_NOT_FOUND, "Configure item [%s->%s] not found! [FILE:%s, LINE:%d]", str_seg.c_str(), str_name.c_str(), __FILE__, __LINE__);
 		}
 		else if ( it->m_value.empty() )
 		{
-			throw Exception(CFG_VALUE_INVALID, "Configure item [%s->%s] value is invalid! [FILE:%s, LINE:%d]", segment.c_str(), name.c_str(), __FILE__, __LINE__);
+			throw Exception(CFG_VALUE_INVALID, "Configure item [%s->%s] value is invalid! [FILE:%s, LINE:%d]", str_seg.c_str(), str_name.c_str(), __FILE__, __LINE__);
 		}
 
 		return it->m_value;
 	}
-
-	throw Exception(CFG_UNREGISTER_ITEM, "Configure item [%s->%s] unregistered! [FILE:%s, LINE:%d]", segment.c_str(), name.c_str(), __FILE__, __LINE__);
-	return std::string();
+	else
+	{
+		throw Exception(CFG_UNREGISTER_ITEM, "Configure item [%s->%s] unregistered! [FILE:%s, LINE:%d]", str_seg.c_str(), str_name.c_str(), __FILE__, __LINE__);
+		return std::string();
+	}
 }
 
 float Config::GetCfgFloatVal(const std::string& segment, const std::string& name)
 {
-	try
-	{
-		return boost::lexical_cast<float>(GetCfgValue(segment, name));
-	}
-	catch ( boost::bad_lexical_cast& e )
-	{
-		std::cerr << e.what() << std::endl;
-		return 0.0f;
-	}
+	float f_val = 0.0f;
+	PubStr::T1TransT2(GetCfgValue(segment, name), f_val);
+	return f_val;
 }
 
 long long Config::GetCfgLongVal(const std::string& segment, const std::string& name)
 {
-	try
-	{
-		return boost::lexical_cast<long long>(GetCfgValue(segment, name));
-	}
-	catch ( boost::bad_lexical_cast& e )
-	{
-		std::cerr << e.what() << std::endl;
-		return 0L;
-	}
+	long long ll_val = 0L;
+	PubStr::T1TransT2(GetCfgValue(segment, name), ll_val);
+	return ll_val;
 }
 
 bool Config::GetCfgBoolVal(const std::string& segment, const std::string& name)
 {
-	std::string strBool = GetCfgValue(segment, name);
-	boost::to_upper(strBool);
-	return (std::string("TRUE") == strBool) || (std::string("YES") == strBool);
+	std::string str_bool = PubStr::UpperB(GetCfgValue(segment, name));
+	return (std::string("TRUE") == str_bool) || (std::string("YES") == str_bool);
 }
 
 bool Config::FindItem(const std::string& segment, const std::string& name, std::list<CfgItem>::iterator* pItr /*= NULL*/)
@@ -238,8 +216,7 @@ bool Config::TryGetSegment(const std::string& str, std::string& segment) const
 	if ( str[0] == '[' && str[SIZE-1] == ']' )
 	{
 		segment = str.substr(1,SIZE-2);
-		boost::trim(segment);
-		boost::to_upper(segment);
+		PubStr::TrimUpper(segment);
 		return true;
 	}
 	return false;
@@ -257,11 +234,10 @@ bool Config::TryGetNameValue(const std::string& str, std::string& name, std::str
 	if ( equal_pos != std::string::npos && equal_pos > 0 )
 	{
 		name = str.substr(0,equal_pos);
-		boost::trim(name);
-		boost::to_upper(name);
+		PubStr::TrimUpper(name);
 
 		value = str.substr(equal_pos+1);
-		boost::trim(value);
+		PubStr::Trim(value);
 		return true;
 	}
 	return false;

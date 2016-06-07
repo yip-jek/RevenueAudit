@@ -1,5 +1,5 @@
 #include "uniformcodetransfer.h"
-#include <boost/algorithm/string.hpp>
+#include "pubstr.h"
 
 
 UniformCodeTransfer::UniformCodeTransfer()
@@ -74,8 +74,7 @@ void UniformCodeTransfer::InputCityUniformCode(std::vector<CityUniformCode>& vec
 
 bool UniformCodeTransfer::Transfer(const std::string& src_code, std::string& uni_code)
 {
-	std::string code = src_code;
-	boost::trim(code);
+	std::string code = base::PubStr::TrimB(src_code);
 
 	// 先尝试从渠道统一编码列表中找到统一编码
 	std::map<std::string, std::string>::iterator it = m_mapChannelUniCode.find(code);

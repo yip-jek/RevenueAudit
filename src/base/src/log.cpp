@@ -205,16 +205,13 @@ void Log::TryCloseFileLogger()
 void Log::OpenNewLogger() throw(Exception)
 {
 	int log_id = 0;
-	char log_name[64] = "";
 	std::string fullLogPath;
 
 	const std::string DAY_TIME = SimpleTime::Now().DayTime8();
 
 	do
 	{
-		sprintf(log_name, "LOG_%lld_%s_%04d.log", _sLogCcmID, DAY_TIME.c_str(), log_id++);
-
-		fullLogPath = m_sLogPath + log_name;
+		PubStr::SetFormatString(fullLogPath, "%sLOG_%lld_%s_%04d.log", m_sLogPath.c_str(), _sLogCcmID, DAY_TIME.c_str(), log_id++);
 
 	} while ( access(fullLogPath.c_str(), 0) == 0 );
 

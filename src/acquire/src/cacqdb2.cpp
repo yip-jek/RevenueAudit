@@ -1,5 +1,4 @@
 #include "cacqdb2.h"
-#include <boost/algorithm/string.hpp>
 #include "log.h"
 #include "pubstr.h"
 
@@ -118,14 +117,11 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	}
 	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s, ETLRULE_ID:%s) [Record:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), counter);
 
-	boost::split(info.vecEtlRuleDataSrc, data_source, boost::is_any_of(","));
+	base::PubStr::Str2StrVector(data_source, ",", info.vecEtlRuleDataSrc);
 	size_t v_size = info.vecEtlRuleDataSrc.size();
 	for ( size_t i = 0; i < v_size; ++i )
 	{
 		std::string& ref_data_src = info.vecEtlRuleDataSrc[i];
-
-		boost::trim(ref_data_src);
-
 		if ( ref_data_src.empty() )
 		{
 			throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] 采集数据源(ETLRULE_DATASOURCE:%s)配置不正确: 第%lu个数据源为空值! (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", data_source.c_str(), (i+1), info.EtlRuleID.c_str(), __FILE__, __LINE__);

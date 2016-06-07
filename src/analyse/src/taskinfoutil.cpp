@@ -1,6 +1,5 @@
 #include "taskinfoutil.h"
 #include "pubstr.h"
-//#include <boost/algorithm/string.hpp>
 
 int TaskInfoUtil::CheckDualEtlRule(std::vector<OneEtlRule>& vec_etlrule)
 {
@@ -480,11 +479,9 @@ void TaskInfoUtil::GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules,
 //{
 //	if ( AnalyseRule::ACTYPE_STRAIGHT == cond_type )	// 直接条件
 //	{
-//		std::string ana_condition = condition;
-//		boost::trim(ana_condition);
+//		std::string ana_condition = base::PubStr::TrimB(condition);
 //
-//		std::string head_cond = ana_condition.substr(0, 5);
-//		boost::to_upper(head_cond);
+//		std::string head_cond = base::PubStr::UpperB(ana_condition.substr(0, 5));
 //
 //		if ( add )		// 作为后续的条件
 //		{
@@ -492,7 +489,7 @@ void TaskInfoUtil::GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules,
 //			if ( "WHERE" == head_cond )
 //			{
 //				ana_condition.erase(0, 5);
-//				boost::trim(ana_condition);
+//				base::PubStr::Trim(ana_condition);
 //			}
 //
 //			ana_condition = " and (" + ana_condition + ")";
@@ -522,8 +519,7 @@ void TaskInfoUtil::GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules,
 //{
 //	if ( !cond_sql.empty() )
 //	{
-//		std::string sql = src_sql;
-//		boost::to_upper(sql);
+//		std::string sql = base::PubStr::UpperB(src_sql);
 //
 //		// 是否有关键词 "group"
 //		const size_t POS = sql.find(" GROUP ");

@@ -2,8 +2,6 @@
 #include <vector>
 #include <set>
 #include <map>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include "log.h"
 #include "autodisconnect.h"
 #include "pubstr.h"
@@ -31,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.10.0080 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.10.0082 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -145,7 +143,7 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 {
 	// 格式：启动批号:指标ID:分析规则ID:...
 	std::vector<std::string> vec_str;
-	boost::split(vec_str, para, boost::is_any_of(":"));
+	base::PubStr::Str2StrVector(para, ":", vec_str);
 
 	if ( vec_str.size() < 3 )
 	{
@@ -153,14 +151,14 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 	}
 
 	m_sKpiID = vec_str[1];
-	boost::trim(m_sKpiID);
+	base::PubStr::Trim(m_sKpiID);
 	if ( m_sKpiID.empty() )
 	{
 		throw base::Exception(ANAERR_KPIID_INVALID, "指标ID无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
 	m_sAnaID = vec_str[2];
-	boost::trim(m_sAnaID);
+	base::PubStr::Trim(m_sAnaID);
 	if ( m_sAnaID.empty() )
 	{
 		throw base::Exception(ANAERR_ANAID_INVALID, "分析规则ID无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
@@ -420,7 +418,7 @@ void Analyse::DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception)
 void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, AnaDBInfo& db_info) throw(base::Exception)
 {
 	std::string& ref_exp = t_info.AnaRule.AnaExpress;
-	boost::trim(ref_exp);
+	base::PubStr::Trim(ref_exp);
 
 	// 分析规则类型
 	switch ( t_info.AnaRule.AnaType )
@@ -506,21 +504,17 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 	{
 		std::string& ref_str = vec_str[i];
 
-		boost::to_upper(ref_str);
+		base::PubStr::Upper(ref_str);
 		size_t pos = ref_str.find("DIFF");
 		if ( std::string::npos == pos )
 		{
 			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
 
-		int diff_no   = -1;
-		try
+		int diff_no = -1;
+		if ( !base::PubStr::T1TransT2(ref_str.substr(pos+4), diff_no) )
 		{
-			diff_no = boost::lexical_cast<int>(ref_str.substr(pos+4));
-		}
-		catch ( boost::bad_lexical_cast& ex )
-		{
-			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：[%s] 转换失败! [BOOST] %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_str.c_str(), ex.what(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：[%s] 转换失败! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_str.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
 
 		if ( diff_no < 1 || diff_no > VAL_SIZE_1 )
@@ -747,9 +741,9 @@ void Analyse::GetStatisticsHiveSQLBySet(AnaTaskInfo& t_info, std::vector<std::st
 	}
 }
 
-void Analyse::SplitHiveSqlExpress(std::string exp, std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse::SplitHiveSqlExpress(const std::string& exp_sqls, std::vector<std::string>& vec_hivesql) throw(base::Exception)
 {
-	boost::trim(exp);
+	std::string exp = base::PubStr::TrimB(exp_sqls);
 	if ( exp.empty() )
 	{
 		throw base::Exception(ANAERR_SPLIT_HIVESQL_FAILED, "可执行Hive SQL语句为空! 无法拆分! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
@@ -784,8 +778,9 @@ void Analyse::DetermineDataGroup(const std::string& exp, int& first, int& second
 
 	std::string& first_group  = vec_str[0];
 	std::string& second_group = vec_str[1];
-	boost::to_upper(first_group);
-	boost::to_upper(second_group);
+
+	base::PubStr::Upper(first_group);
+	base::PubStr::Upper(second_group);
 
 	int first_index  = -1;
 	int second_index = -1;
@@ -843,8 +838,7 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info, AnaDBInfo& db_info) thr
 		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_etltime.c_str(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
-	std::string tab_name = info.TableName;
-	boost::trim(tab_name);
+	std::string tab_name = base::PubStr::TrimB(info.TableName);
 
 	switch ( type )
 	{

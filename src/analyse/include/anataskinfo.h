@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <boost/algorithm/string.hpp>
+#include "pubstr.h"
 
 // 单个采集维度信息
 struct OneEtlDim
@@ -166,10 +166,9 @@ public:
 
 public:
 	// 设置字段类型
-	bool SetColumnType(std::string type)
+	bool SetColumnType(const std::string& c_type)
 	{
-		boost::trim(type);
-		boost::to_upper(type);
+		std::string type = base::PubStr::TrimUpperB(c_type);
 
 		if ( "DIM" == type )
 		{
@@ -189,10 +188,9 @@ public:
 	}
 
 	// 设置前台显示方式
-	bool SetDisplayType(std::string type)
+	bool SetDisplayType(const std::string& d_type)
 	{
-		boost::trim(type);
-		boost::to_upper(type);
+		std::string type = base::PubStr::TrimUpperB(d_type);
 
 		if ( "NULL" == type )
 		{
@@ -315,10 +313,9 @@ public:
 
 public:
 	// 设置分析规则类型
-	bool SetAnalyseType(std::string type)
+	bool SetAnalyseType(const std::string& a_type)
 	{
-		boost::trim(type);
-		boost::to_upper(type);
+		std::string type = base::PubStr::TrimUpperB(a_type);
 
 		if ( "SUMMARY" == type )		// 汇总对比
 		{
@@ -350,10 +347,9 @@ public:
 	}
 
 	//// 设置分析条件类型
-	//bool SetAnalyseConditionType(std::string cond_type)
+	//bool SetAnalyseConditionType(const std::string& type)
 	//{
-	//	boost::trim(cond_type);
-	//	boost::to_upper(cond_type);
+	//	std::string cond_type = base::PubStr::TrimUpperB(type);
 
 	//	if ( "NONE" == cond_type )				// 无条件
 	//	{
@@ -486,10 +482,9 @@ public:
 
 public:
 	// 设置结果表类型
-	bool SetTableType(std::string type)
+	bool SetTableType(const std::string& t_type)
 	{
-		boost::trim(type);
-		boost::to_upper(type);
+		std::string type = base::PubStr::TrimUpperB(t_type);
 
 		if ( "COMMON_TABLE" == type )
 		{

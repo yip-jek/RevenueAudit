@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <boost/algorithm/string.hpp>
+#include "pubstr.h"
 
 // 单个维度信息
 struct OneEtlDim
@@ -273,10 +273,9 @@ public:
 	}
 
 	// 设置采集条件类型
-	bool SetConditionType(std::string c_type)
+	bool SetConditionType(const std::string& type)
 	{
-		boost::trim(c_type);
-		boost::to_upper(c_type);
+		std::string c_type = base::PubStr::TrimUpperB(type);
 
 		if ( "NONE" == c_type )		// 不带条件
 		{
@@ -300,10 +299,9 @@ public:
 	}
 
 	// 设置数据源类型
-	bool SetDataSourceType(std::string ds_type)
+	bool SetDataSourceType(const std::string& type)
 	{
-		boost::trim(ds_type);
-		boost::to_upper(ds_type);
+		std::string ds_type = base::PubStr::TrimUpperB(type);
 
 		if ( "HIVE" == ds_type )		// HIVE类型
 		{

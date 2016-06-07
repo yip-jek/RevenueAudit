@@ -87,7 +87,7 @@ private:
 	void GetStatisticsHiveSQLBySet(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, bool union_all) throw(base::Exception);
 
 	// 拆分可执行Hive SQL语句
-	void SplitHiveSqlExpress(std::string exp, std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void SplitHiveSqlExpress(const std::string& exp_sqls, std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 确定所属数据组
 	void DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception);

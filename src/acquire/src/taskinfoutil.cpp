@@ -1,5 +1,4 @@
 #include "taskinfoutil.h"
-#include <boost/algorithm/string.hpp>
 #include "pubstr.h"
 
 std::string TaskInfoUtil::GetTargetDimSql(AcqEtlDim& target_dim)
@@ -97,10 +96,7 @@ std::string TaskInfoUtil::GetEtlDimSql(AcqEtlDim& etl_dim, bool set_as, const st
 
 std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix /*= std::string()*/) throw(base::Exception)
 {
-	std::string val_src = val.EtlValSrcName;
-
-	boost::trim(val_src);
-	boost::to_upper(val_src);
+	std::string val_src = base::PubStr::TrimUpperB(val.EtlValSrcName);
 
 	if ( "<RECORD>" == val_src )	// 记录数
 	{
@@ -170,20 +166,14 @@ std::string TaskInfoUtil::GetEtlValSql(AcqEtlVal& etl_val, const std::string& ta
 std::string TaskInfoUtil::TrimUpperDimMemo(OneEtlDim& dim)
 {
 	std::string& memo = dim.EtlDimMemo;
-
-	boost::trim(memo);
-	boost::to_upper(memo);
-
+	base::PubStr::TrimUpper(memo);
 	return memo;
 }
 
 std::string TaskInfoUtil::TrimUpperValMemo(OneEtlVal& val)
 {
 	std::string& memo = val.EtlValMemo;
-
-	boost::trim(memo);
-	boost::to_upper(memo);
-
+	base::PubStr::TrimUpper(memo);
 	return memo;
 }
 

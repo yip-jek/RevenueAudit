@@ -3,9 +3,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <assert.h>
-#include <boost/lexical_cast.hpp>
 #include "def.h"
 #include "log.h"
+#include "pubstr.h"
 #include "basedb2.h"
 #include "basejhive.h"
 #include "TaskState.h"
@@ -98,17 +98,15 @@ int main(int argc, char* argv[])
 
 	g_pApp->SetArgv(argv);
 
-	try
+	long long ll_ccmid = 0L;
+	if ( !PubStr::T1TransT2(argv[2], ll_ccmid) )
 	{
-		if ( !Log::SetCCMID(boost::lexical_cast<long long>(argv[2])) )
-		{
-			std::cerr << "[LOG] Set CCM_ID failed!" << std::endl;
-			return -1;
-		}
+		std::cerr << "[ERROR] [MAIN] Trans \"" << argv[2] << "\" to number failed !" << std::endl;
+		return -1;
 	}
-	catch ( boost::bad_lexical_cast& e )
+	if ( !Log::SetCCMID(ll_ccmid) )
 	{
-		std::cerr << e.what() << std::endl;
+		std::cerr << "[LOG] Set CCM_ID failed !" << std::endl;
 		return -1;
 	}
 
@@ -135,7 +133,10 @@ int main(int argc, char* argv[])
 		std::cerr << "[ERROR] " << ex.What() << ", ERROR_CODE: " << ex.ErrorCode() << std::endl;
 		pLog->Output("[ERROR] %s, ERROR_CODE: %d", ex.What().c_str(), ex.ErrorCode());
 
-		ts.abort();
+		// 上报错误码
+		std::string str_err;
+		PubStr::SetFormatString(str_err, "%s_ERROR_CODE:%d", argv[2], ex.ErrorCode());
+		ts.abort(str_err);
 		return -1;
 	}
 	catch ( ... )
@@ -143,7 +144,10 @@ int main(int argc, char* argv[])
 		std::cerr << "[ERROR] Unknown error! [FILE:" << __FILE__ << ", LINE:" << __LINE__ << "]" << std::endl;
 		pLog->Output("[ERROR] Unknown error! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 
-		ts.abort();
+		// 上报错误
+		std::string str_err;
+		PubStr::SetFormatString(str_err, "%s_ERROR:Unknown_error", argv[2]);
+		ts.abort(str_err);
 		return -1;
 	}
 
