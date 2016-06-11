@@ -1,12 +1,12 @@
 #pragma once
 
 #include "baseframeapp.h"
+#include "anadbinfo.h"
 #include "dimvaldiffer.h"
 #include "uniformcodetransfer.h"
 
 class CAnaDB2;
 class CAnaHive;
-struct AnaDBInfo;
 
 // 分析模块
 class Analyse : public base::BaseFrameApp
@@ -34,6 +34,9 @@ public:
 		ANAERR_GET_STATISTICS_FAILED  = -3000014,			// 生成一般统计HIVE SQL失败
 		ANAERR_GET_REPORT_STAT_FAILED = -3000015,			// 生成报表统计HIVE SQL失败
 		ANAERR_GET_STAT_BY_SET_FAILED = -3000016,			// 生成指定组的统计HIVE SQL失败
+		ANAERR_ALARM_JUDGEMENT_FAILED = -3000017,			// 告警判断失败
+		ANAERR_FLUCTUATE_ALARM_FAILED = -3000018,			// 波动告警失败
+		ANAERR_RATIO_ALARM_FAILED     = -3000019,			// 对比告警失败
 	};
 
 public:
@@ -69,7 +72,7 @@ private:
 	void DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception);
 
 	// 解析分析规则，生成Hive取数逻辑
-	void AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, AnaDBInfo& db_info) throw(base::Exception);
+	void AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 生成汇总对比类型的Hive SQL语句
 	void GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
@@ -93,16 +96,16 @@ private:
 	void DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception);
 
 	// 按类型生成目标表名称
-	void GenerateTableNameByType(AnaTaskInfo& info, AnaDBInfo& db_info) throw(base::Exception);
+	void GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception);
 
 	// 生成数据库信息
-	void GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception);
+	void GetAnaDBInfo(AnaTaskInfo& t_info) throw(base::Exception);
 
 	// 获取Hive源数据
 	void FetchHiveSource(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 分析源数据，生成结果数据
-	void AnalyseSourceData(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception);
+	void AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception);
 
 	// 将Hive源数据转换为报表统计类型数据
 	void TransSrcDataToReportStatData();
@@ -111,13 +114,19 @@ private:
 	void CollectDimVal(AnaTaskInfo& info);
 
 	// 结果数据入库 [DB2]
-	void StoreResult(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception);
+	void StoreResult(AnaTaskInfo& t_info) throw(base::Exception);
 
 	// 删除旧数据
-	void RemoveOldResult(AnaDBInfo& db_info) throw(base::Exception);
+	void RemoveOldResult() throw(base::Exception);
 
 	// 告警判断: 如果达到告警阀值，则生成告警
-	void AlarmJudgement(AnaTaskInfo& info);
+	void AlarmJudgement(AnaTaskInfo& info) throw(base::Exception);
+
+	// 波动告警
+	void FluctuateAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::Exception);
+
+	// 对比告警
+	void RatioAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::Exception);
 
 	// 更新维度取值范围
 	void UpdateDimValue(AnaTaskInfo& info);
@@ -162,6 +171,8 @@ private:
 	UniformCodeTransfer	m_UniCodeTransfer;		// 统一编码转换
 
 private:
+	AnaDBInfo			m_dbinfo;				// 库表信息
+
 	// 获取到的Hive源数据集
 	std::vector<std::vector<std::vector<std::string> > >	m_v3HiveSrcData;
 

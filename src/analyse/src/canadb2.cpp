@@ -875,7 +875,9 @@ void CAnaDB2::SelectAlarmRule(AlarmRule& alarm) throw(base::Exception)
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
+	std::string alarm_type;
 	int counter = 0;
+
 	try
 	{
 		std::string sql = "select ALARM_NAME, ALARM_TYPE, ALARM_EXPRESSION, ALARM_EVENT, SEND_AMS, SEND_SMS from ";
@@ -892,11 +894,16 @@ void CAnaDB2::SelectAlarmRule(AlarmRule& alarm) throw(base::Exception)
 			int index = 1;
 
 			alarm.AlarmName	   = (const char*)rs[index++];
-			alarm.AlarmType	   = (const char*)rs[index++];
+			alarm_type		   = (const char*)rs[index++];
 			alarm.AlarmExpress = (const char*)rs[index++];
 			alarm.AlarmEvent   = (const char*)rs[index++];
 			alarm.SendAms      = (const char*)rs[index++];
 			alarm.SendSms      = (const char*)rs[index++];
+
+			if ( !alarm.SetAlarmType(alarm_type) )
+			{
+				throw base::Exception(ADBERR_SEL_ALARM_RULE, "[DB2] Select %s failed! (ALARM_ID:%s) 无法识别的告警类型：%s [FILE:%s, LINE:%d]", m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), alarm_type.c_str(), __FILE__, __LINE__);
+			}
 
 			rs.MoveNext();
 		}
@@ -912,6 +919,6 @@ void CAnaDB2::SelectAlarmRule(AlarmRule& alarm) throw(base::Exception)
 	}
 
 	m_pLog->Output("[DB2] Select %s: [ALARM_ID:%s] [ALARM_NAME:%s] [ALARM_TYPE:%s] [Record:%d]", 
-		m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), alarm.AlarmName.c_str(), alarm.AlarmType.c_str(), counter);
+		m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), alarm.AlarmName.c_str(), alarm_type.c_str(), counter);
 }
 

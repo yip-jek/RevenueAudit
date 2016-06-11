@@ -253,5 +253,34 @@ void PubStr::ReplaceInStrVector2(std::vector<std::vector<std::string> >& vec2_st
 	}
 }
 
+bool PubStr::StrTrans2Double(const std::string& str, double& d)
+{
+	std::string str_tmp = TrimB(str);
+	if ( str_tmp.empty() )
+	{
+		return false;
+	}
+
+	// 是否为百分数
+	if ( '%' == str_tmp[str_tmp.size()-1] )
+	{
+		str_tmp.erase(str_tmp.size()-1);
+
+		if ( T1TransT2(str_tmp, d) )
+		{
+			d /= 100;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return T1TransT2(str_tmp, d);
+	}
+}
+
 }	// namespace base
 

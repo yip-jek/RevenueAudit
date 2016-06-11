@@ -8,7 +8,6 @@
 #include "pubtime.h"
 #include "canadb2.h"
 #include "canahive.h"
-#include "anadbinfo.h"
 #include "taskinfoutil.h"
 
 
@@ -29,7 +28,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.10.0082 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.12.0084 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -167,9 +166,9 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 	m_pLog->Output("[Analyse] 任务参数信息：指标ID [KPI_ID:%s], 分析规则ID [ANA_ID:%s]", m_sKpiID.c_str(), m_sAnaID.c_str());
 }
 
-void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception)
+void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info) throw(base::Exception)
 {
-	db_info.time_stamp = false;
+	m_dbinfo.time_stamp = false;
 	std::string str_tmp;
 
 	std::vector<std::string> v_fields;
@@ -187,9 +186,9 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::
 		{
 			if ( -1 == col.ColSeq )		// ColType为CTYPE_DIM时, col.ColSeq = -1 表示时间戳
 			{
-				if ( !db_info.time_stamp )
+				if ( !m_dbinfo.time_stamp )
 				{
-					db_info.time_stamp = true;
+					m_dbinfo.time_stamp = true;
 					str_tmp = col.DBName;
 				}
 				else
@@ -227,16 +226,16 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::
 	}
 
 	// 加时间戳
-	if ( db_info.time_stamp )
+	if ( m_dbinfo.time_stamp )
 	{
 		v_fields.push_back(str_tmp);
 	}
 
 	// 按表的类型生成最终目标表名
-	GenerateTableNameByType(t_info, db_info);
+	GenerateTableNameByType(t_info);
 
 	// 组织数据库入库SQL语句
-	db_info.db2_sql = "insert into " + db_info.target_table + "(";
+	m_dbinfo.db2_sql = "insert into " + m_dbinfo.target_table + "(";
 
 	str_tmp.clear();
 	v_size = v_fields.size();
@@ -244,21 +243,21 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::
 	{
 		if ( i != 0 )
 		{
-			db_info.db2_sql += ", " + v_fields[i];
+			m_dbinfo.db2_sql += ", " + v_fields[i];
 
 			str_tmp += ", ?";
 		}
 		else
 		{
-			db_info.db2_sql += v_fields[i];
+			m_dbinfo.db2_sql += v_fields[i];
 
 			str_tmp += "?";
 		}
 	}
 
-	db_info.db2_sql += ") values(" + str_tmp + ")";
+	m_dbinfo.db2_sql += ") values(" + str_tmp + ")";
 
-	v_fields.swap(db_info.vec_fields);
+	v_fields.swap(m_dbinfo.vec_fields);
 }
 
 void Analyse::FetchHiveSource(std::vector<std::string>& vec_hivesql) throw(base::Exception)
@@ -396,17 +395,16 @@ void Analyse::DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception)
 	m_pLog->Output("[Analyse] 解析分析规则 ...");
 
 	std::vector<std::string> vec_hivesql;
-	AnaDBInfo db_info;
-	AnalyseRules(t_info, vec_hivesql, db_info);
+	AnalyseRules(t_info, vec_hivesql);
 
 	m_pLog->Output("[Analyse] 获取Hive源数据 ...");
 	FetchHiveSource(vec_hivesql);
 
 	m_pLog->Output("[Analyse] 分析源数据 ...");
-	AnalyseSourceData(t_info, db_info);
+	AnalyseSourceData(t_info);
 
 	m_pLog->Output("[Analyse] 生成结果数据 ...");
-	StoreResult(t_info, db_info);
+	StoreResult(t_info);
 
 	m_pLog->Output("[Analyse] 告警判断 ...");
 	AlarmJudgement(t_info);
@@ -415,7 +413,7 @@ void Analyse::DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception)
 	UpdateDimValue(t_info);
 }
 
-void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, AnaDBInfo& db_info) throw(base::Exception)
+void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception)
 {
 	std::string& ref_exp = t_info.AnaRule.AnaExpress;
 	base::PubStr::Trim(ref_exp);
@@ -454,7 +452,7 @@ void Analyse::AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hi
 	}
 
 	// 生成数据库[DB2]信息
-	GetAnaDBInfo(t_info, db_info);
+	GetAnaDBInfo(t_info);
 }
 
 // 暂时只支持两组数据的汇总对比
@@ -825,7 +823,7 @@ void Analyse::DetermineDataGroup(const std::string& exp, int& first, int& second
 	second = second_index;
 }
 
-void Analyse::GenerateTableNameByType(AnaTaskInfo& info, AnaDBInfo& db_info) throw(base::Exception)
+void Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception)
 {
 	AnaTaskInfo::ResultTableType& type = info.ResultType;
 
@@ -833,7 +831,7 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info, AnaDBInfo& db_info) thr
 	std::string& ref_etltime = info.vecEtlRule[0].EtlTime;
 
 	base::PubTime::DATE_TYPE d_type;
-	if ( !base::PubTime::DateApartFromNow(ref_etltime, d_type, db_info.date_time) )
+	if ( !base::PubTime::DateApartFromNow(ref_etltime, d_type, m_dbinfo.date_time) )
 	{
 		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_etltime.c_str(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
@@ -852,7 +850,7 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info, AnaDBInfo& db_info) thr
 		}
 		else
 		{
-			tab_name = tab_name + "_" + db_info.date_time;
+			tab_name = tab_name + "_" + m_dbinfo.date_time;
 		}
 		break;
 	case AnaTaskInfo::TABTYPE_MONTH:		// 月表
@@ -862,23 +860,23 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info, AnaDBInfo& db_info) thr
 		}
 		else
 		{
-			tab_name = tab_name + "_" + db_info.date_time.substr(0, 6);
+			tab_name = tab_name + "_" + m_dbinfo.date_time.substr(0, 6);
 		}
 		break;
 	case AnaTaskInfo::TABTYPE_YEAR:			// 年表
-		tab_name = tab_name + "_" + db_info.date_time.substr(0, 4);
+		tab_name = tab_name + "_" + m_dbinfo.date_time.substr(0, 4);
 		break;
 	case AnaTaskInfo::TABTYPE_UNKNOWN:		// 未知类型
 	default:
 		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "无法识别的目标表类型: TABTYPE_UNKNOWN (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
-	db_info.target_table = tab_name;
+	m_dbinfo.target_table = tab_name;
 
 	m_pLog->Output("[Analyse] 最终目标表名：%s", tab_name.c_str());
 }
 
-void Analyse::AnalyseSourceData(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception)
+void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 {
 	// 报表统计
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )
@@ -1051,16 +1049,16 @@ void Analyse::CollectDimVal(AnaTaskInfo& info)
 	m_pLog->Output("[Analyse] 收集到源数据的维度取值数: %llu", m_DVDiffer.GetSrcDimValSize());
 }
 
-void Analyse::StoreResult(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::Exception)
+void Analyse::StoreResult(AnaTaskInfo& t_info) throw(base::Exception)
 {
 	// 删除旧的数据
-	RemoveOldResult(db_info);
+	RemoveOldResult();
 
 	// 是否为报表统计类型
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )	// 报表统计类型
 	{
 		m_pLog->Output("[Analyse] 准备入库报表统计结果数据 ...");
-		m_pAnaDB2->InsertReportStatData(db_info, m_v2ReportStatData);
+		m_pAnaDB2->InsertReportStatData(m_dbinfo, m_v2ReportStatData);
 	}
 	else		// 其他类型
 	{
@@ -1068,28 +1066,28 @@ void Analyse::StoreResult(AnaTaskInfo& t_info, AnaDBInfo& db_info) throw(base::E
 		for ( int i = 0; i < VEC3_SIZE; ++i )
 		{
 			m_pLog->Output("[Analyse] 准备入库第 %d 组结果数据 ...", i+1);
-			m_pAnaDB2->InsertResultData(db_info, m_v3HiveSrcData[i]);
+			m_pAnaDB2->InsertResultData(m_dbinfo, m_v3HiveSrcData[i]);
 		}
 	}
 
 	m_pLog->Output("[Analyse] 结果数据存储完毕!");
 }
 
-void Analyse::RemoveOldResult(AnaDBInfo& db_info) throw(base::Exception)
+void Analyse::RemoveOldResult() throw(base::Exception)
 {
 	// 是否带时间戳
 	// 只有带时间戳才可以按采集时间删除结果数据
-	if ( db_info.time_stamp )
+	if ( m_dbinfo.time_stamp )
 	{
 		m_pLog->Output("[Analyse] 统计已存在的旧的结果数据 ...");
-		const size_t NUM_OF_REPORT_DATA = m_pAnaDB2->SelectResultData(db_info);
-		m_pLog->Output("[Analyse] 统计到的旧结果数据大小: %llu ( DATE_TIME: %s )", NUM_OF_REPORT_DATA, db_info.date_time.c_str());
+		const size_t NUM_OF_REPORT_DATA = m_pAnaDB2->SelectResultData(m_dbinfo);
+		m_pLog->Output("[Analyse] 统计到的旧结果数据大小: %llu ( DATE_TIME: %s )", NUM_OF_REPORT_DATA, m_dbinfo.date_time.c_str());
 
 		// 是否存在旧的结果数据
 		if ( NUM_OF_REPORT_DATA > 0 )
 		{
 			m_pLog->Output("[Analyse] 删除已存在的旧的结果数据 ...");
-			m_pAnaDB2->DeleteResultData(db_info);
+			m_pAnaDB2->DeleteResultData(m_dbinfo);
 		}
 	}
 	else
@@ -1098,8 +1096,122 @@ void Analyse::RemoveOldResult(AnaDBInfo& db_info) throw(base::Exception)
 	}
 }
 
-void Analyse::AlarmJudgement(AnaTaskInfo& info)
+void Analyse::AlarmJudgement(AnaTaskInfo& info) throw(base::Exception)
 {
-	m_pLog->Output("[Analyse] 无告警产生!");
+	// 是否有配置告警？
+	if ( info.vecAlarm.empty() )
+	{
+		m_pLog->Output("[Analyse] 无告警配置：不产生告警!");
+		return;
+	}
+	m_pLog->Output("[Analyse] 告警判断 ...");
+
+	const int VEC_SIZE = info.vecAlarm.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		AlarmRule& ref_rule = info.vecAlarm[i];
+		if ( ref_rule.AlarmExpress.empty() )
+		{
+			throw base::Exception(ANAERR_ALARM_JUDGEMENT_FAILED, "告警规则表达式缺失！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), ref_rule.AlarmID.c_str(), __FILE__, __LINE__);
+		}
+
+		switch ( ref_rule.AlarmType )
+		{
+		case AlarmRule::AT_FLUCTUATE:
+			m_pLog->Output("[Analyse] 告警类型：波动告警");
+			FluctuateAlarm(info, ref_rule);
+			break;
+		case AlarmRule::AT_RATIO:
+			m_pLog->Output("[Analyse] 告警类型：对比告警");
+			RatioAlarm(info, ref_rule);
+			break;
+		case AlarmRule::AT_UNKNOWN:
+		default:
+			throw base::Exception(ANAERR_ALARM_JUDGEMENT_FAILED, "无法识别的告警规则类型：AT_UNKNOWN！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), ref_rule.AlarmID.c_str(), __FILE__, __LINE__);
+			break;
+		}
+	}
+}
+
+void Analyse::FluctuateAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::Exception)
+{
+	if ( !m_dbinfo.time_stamp )
+	{
+		throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "目标表的时间字段缺失，无法进行波动告警！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
+	}
+
+	// 告警表达式格式：[A,B,...]|[mon/day][+/-][月数/日数][大于(>)/大于等于(>=)][比率(百分数/小数)]
+	// 例如：A|day-1>=30%
+	const std::string ALARM_EXP = base::PubStr::TrimB(alarm_rule.AlarmExpress);
+	m_pLog->Output("[Analyse] 告警表达式：%s", ALARM_EXP.c_str());
+
+	std::vector<std::string> vec_str;
+	base::PubStr::Str2StrVector(ALARM_EXP, "|", vec_str);
+
+	if ( vec_str.size() != 2 )
+	{
+		throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
+	}
+
+	const int KPI_DIM_SIZE = info.vecKpiDimCol.size() - 1;		// 去除时间列
+	const int KPI_VAL_SIZE = info.vecKpiValCol.size();
+
+	const std::string EXP_FIRST_PART  = vec_str[0];
+	const std::string EXP_SECOND_PART = vec_str[1];
+
+	base::PubStr::Str2StrVector(EXP_FIRST_PART, ",", vec_str);
+	const int VEC_SIZE = vec_str.size();
+	if ( VEC_SIZE <= 0 )
+	{
+		throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "告警表达式没有指定列！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
+	}
+
+	std::set<int> set_index;
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		std::string& ref_str = vec_str[i];
+		if ( ref_str.size() != 1 )		// 无效
+		{
+			throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
+		}
+
+		base::PubStr::Trim(ref_str);
+		int index = ref_str[0] - 'A';
+		if ( index < 0 || index >= KPI_VAL_SIZE )	// 不在有效范围
+		{
+			throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "告警表达式中存在不在有效范围的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_str.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
+		}
+
+		// 计算“值”所处的列
+		index += KPI_DIM_SIZE;
+		if ( set_index.find(index) != set_index.end() )
+		{
+			throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "告警表达式中存在重复的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_str.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
+		}
+
+		set_index.insert(index);
+	}
+
+	base::PubStr::Str2StrVector(EXP_SECOND_PART, ">", vec_str);
+	if ( vec_str.size() != 2 )
+	{
+		throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
+	}
+
+	base::PubTime::DATE_TYPE d_type;
+	std::string str_date;
+	if ( !base::PubTime::DateApartFromNow(vec_str[0], d_type, str_date) )
+	{
+		throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
+	}
+
+}
+
+void Analyse::RatioAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::Exception)
+{
+	// 告警表达式格式：[A/B/C/...]-[A/B/C/...][大于(>)/大于等于(>=)][比率(百分数/小数)][A/B/C/...]
+	// 例如：A-B>0.3B
+	const std::string ALARM_EXP = base::PubStr::TrimB(alarm_rule.AlarmExpress);
+	m_pLog->Output("[Analyse] 告警表达式：%s", ALARM_EXP.c_str());
 }
 

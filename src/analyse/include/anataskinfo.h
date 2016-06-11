@@ -168,13 +168,13 @@ public:
 	// 设置字段类型
 	bool SetColumnType(const std::string& c_type)
 	{
-		std::string type = base::PubStr::TrimUpperB(c_type);
+		const std::string TYPE = base::PubStr::TrimUpperB(c_type);
 
-		if ( "DIM" == type )
+		if ( "DIM" == TYPE )
 		{
 			ColType = CTYPE_DIM;
 		}
-		else if ( "VAL" == type )
+		else if ( "VAL" == TYPE )
 		{
 			ColType = CTYPE_VAL;
 		}
@@ -190,17 +190,17 @@ public:
 	// 设置前台显示方式
 	bool SetDisplayType(const std::string& d_type)
 	{
-		std::string type = base::PubStr::TrimUpperB(d_type);
+		const std::string TYPE = base::PubStr::TrimUpperB(d_type);
 
-		if ( "NULL" == type )
+		if ( "NULL" == TYPE )
 		{
 			DisType = DTYPE_NULL;
 		}
-		else if ( "LIST" == type )
+		else if ( "LIST" == TYPE )
 		{
 			DisType = DTYPE_LIST;
 		}
-		else if ( "TEXT" == type )
+		else if ( "TEXT" == TYPE )
 		{
 			DisType = DTYPE_TEXT;
 		}
@@ -315,25 +315,25 @@ public:
 	// 设置分析规则类型
 	bool SetAnalyseType(const std::string& a_type)
 	{
-		std::string type = base::PubStr::TrimUpperB(a_type);
+		const std::string TYPE = base::PubStr::TrimUpperB(a_type);
 
-		if ( "SUMMARY" == type )		// 汇总对比
+		if ( "SUMMARY" == TYPE )		// 汇总对比
 		{
 			AnaType = ANATYPE_SUMMARY_COMPARE;
 		}
-		else if ( "DETAIL" == type )		// 明细对比
+		else if ( "DETAIL" == TYPE )		// 明细对比
 		{
 			AnaType = ANATYPE_DETAIL_COMPARE;
 		}
-		else if ( "STATISTICS" == type )	// 一般统计
+		else if ( "STATISTICS" == TYPE )	// 一般统计
 		{
 			AnaType = ANATYPE_STATISTICS;
 		}
-		else if ( "REPORT_STATISTICS" == type )		// 报表统计
+		else if ( "REPORT_STATISTICS" == TYPE )		// 报表统计
 		{
 			AnaType = ANATYPE_REPORT_STATISTICS;
 		}
-		else if ( "HIVE_SQL" == type )		// 可执行的HIVE SQL语句
+		else if ( "HIVE_SQL" == TYPE )		// 可执行的HIVE SQL语句
 		{
 			AnaType = ANATYPE_HIVE_SQL;
 		}
@@ -349,13 +349,13 @@ public:
 	//// 设置分析条件类型
 	//bool SetAnalyseConditionType(const std::string& type)
 	//{
-	//	std::string cond_type = base::PubStr::TrimUpperB(type);
+	//	const std::string COND_TYPE = base::PubStr::TrimUpperB(type);
 
-	//	if ( "NONE" == cond_type )				// 无条件
+	//	if ( "NONE" == COND_TYPE )				// 无条件
 	//	{
 	//		AnaCondType = ACTYPE_NONE;
 	//	}
-	//	else if ( "STRAIGHT" == cond_type )		// 直接条件
+	//	else if ( "STRAIGHT" == COND_TYPE )		// 直接条件
 	//	{
 	//		AnaCondType = ACTYPE_STRAIGHT;
 	//	}
@@ -381,7 +381,16 @@ public:
 struct AlarmRule
 {
 public:
-	AlarmRule()
+	// 告警类型
+	enum ALARM_TYPE
+	{
+		AT_UNKNOWN		= 0,		// 未知类型
+		AT_FLUCTUATE	= 1,		// 波动告警
+		AT_RATIO		= 2,		// 对比告警
+	};
+
+public:
+	AlarmRule(): AlarmType(AT_UNKNOWN)
 	{}
 
 	AlarmRule(const AlarmRule& alarm)
@@ -410,10 +419,32 @@ public:
 		return *this;
 	}
 
+	// 设置告警类型
+	bool SetAlarmType(const std::string& a_type)
+	{
+		const std::string TYPE = base::PubStr::TrimUpperB(a_type);
+
+		if ( "FLUCTUATE" == TYPE )		// 波动告警
+		{
+			AlarmType = AT_FLUCTUATE;
+		}
+		else if ( "RATIO" == TYPE )		// 对比告警
+		{
+			AlarmType = AT_RATIO;
+		}
+		else	// 未知告警
+		{
+			AlarmType = AT_UNKNOWN;
+			return false;
+		}
+
+		return true;
+	};
+
 public:
 	std::string	AlarmID;				// 告警规则ID
 	std::string	AlarmName;				// 告警规则名称
-	std::string	AlarmType;				// 告警规则类型
+	ALARM_TYPE	AlarmType;				// 告警规则类型
 	std::string	AlarmExpress;			// 告警规则表达式
 	std::string	AlarmEvent;				// 告警事件
 	std::string	SendAms;				// 发送工单
@@ -484,21 +515,21 @@ public:
 	// 设置结果表类型
 	bool SetTableType(const std::string& t_type)
 	{
-		std::string type = base::PubStr::TrimUpperB(t_type);
+		const std::string TYPE = base::PubStr::TrimUpperB(t_type);
 
-		if ( "COMMON_TABLE" == type )
+		if ( "COMMON_TABLE" == TYPE )
 		{
 			ResultType = TABTYPE_COMMON;
 		}
-		else if ( "DAY_TABLE" == type )
+		else if ( "DAY_TABLE" == TYPE )
 		{
 			ResultType = TABTYPE_DAY;
 		}
-		else if ( "MONTH_TABLE" == type )
+		else if ( "MONTH_TABLE" == TYPE )
 		{
 			ResultType = TABTYPE_MONTH;
 		}
-		else if ( "YEAR_TABLE" == type )
+		else if ( "YEAR_TABLE" == TYPE )
 		{
 			ResultType = TABTYPE_YEAR;
 		}
