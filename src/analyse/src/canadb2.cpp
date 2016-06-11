@@ -632,6 +632,71 @@ void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<s
 	m_pLog->Output("[DB2] Insert report statistics data to [%s]: %llu", db_info.target_table.c_str(), REPORT_DATA_SIZE);
 }
 
+void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	// 组织查询 SQL 语句
+	std::string sql = "select ";
+	const int FIELD_SIZE = db_info.vec_fields.size();
+	for ( int i = 0; i < FIELD_SIZE; ++i )
+	{
+		if ( i != 0 )
+		{
+			sql += ", " + db_info.vec_fields[i];
+		}
+		else
+		{
+			sql += db_info.vec_fields[i];
+		}
+	}
+	sql += " from " + db_info.target_table;
+
+	// 是否带时间戳
+	if ( db_info.time_stamp )
+	{
+		sql += " where " + db_info.vec_fields[FIELD_SIZE-1] + " = ?";
+	}
+	m_pLog->Output("[DB2] Select targat table [%s], SQL: %s", db_info.target_table.c_str(), sql.c_str());
+
+	std::vector<std::string> v1_dat;
+	std::vector<std::vector<std::string> > v2_data;
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		// 是否带时间条件
+		if ( db_info.time_stamp )
+		{
+			rs.Parameter(1) = date.c_str();
+		}
+
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			for ( int i = 0; i < FIELD_SIZE; ++i )
+			{
+				v1_dat.push_back((const char*)rs[i+1]);
+			}
+
+			base::PubStr::VVectorSwapPushBack(v2_data, v1_dat);
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select targat table %s failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB2] Select targat table [%s], data size: %llu", db_info.target_table.c_str(), v2_data.size());
+
+	v2_data.swap(vec2_data);
+}
+
 void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);

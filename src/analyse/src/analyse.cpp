@@ -872,7 +872,6 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception)
 	}
 
 	m_dbinfo.target_table = tab_name;
-
 	m_pLog->Output("[Analyse] 最终目标表名：%s", tab_name.c_str());
 }
 
@@ -1135,16 +1134,12 @@ void Analyse::AlarmJudgement(AnaTaskInfo& info) throw(base::Exception)
 
 void Analyse::FluctuateAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::Exception)
 {
-	if ( !m_dbinfo.time_stamp )
-	{
-		throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "目标表的时间字段缺失，无法进行波动告警！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
-	}
-
 	// 告警表达式格式：[A,B,...]|[mon/day][+/-][月数/日数][大于(>)/大于等于(>=)][比率(百分数/小数)]
 	// 例如：A|day-1>=30%
 	const std::string ALARM_EXP = base::PubStr::TrimB(alarm_rule.AlarmExpress);
 	m_pLog->Output("[Analyse] 告警表达式：%s", ALARM_EXP.c_str());
 
+	m_pLog->Output("[Analyse] 进行波动告警分析 ...");
 	std::vector<std::string> vec_str;
 	base::PubStr::Str2StrVector(ALARM_EXP, "|", vec_str);
 
@@ -1153,21 +1148,21 @@ void Analyse::FluctuateAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(bas
 		throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
-	const int KPI_DIM_SIZE = info.vecKpiDimCol.size() - 1;		// 去除时间列
+	const int KPI_DIM_SIZE = info.vecKpiDimCol.size() - (m_dbinfo.time_stamp?1:0);		// 去除时间列
 	const int KPI_VAL_SIZE = info.vecKpiValCol.size();
 
 	const std::string EXP_FIRST_PART  = vec_str[0];
 	const std::string EXP_SECOND_PART = vec_str[1];
 
 	base::PubStr::Str2StrVector(EXP_FIRST_PART, ",", vec_str);
-	const int VEC_SIZE = vec_str.size();
-	if ( VEC_SIZE <= 0 )
+	int v_size = vec_str.size();
+	if ( v_size <= 0 )
 	{
 		throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "告警表达式没有指定列！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	std::set<int> set_index;
-	for ( int i = 0; i < VEC_SIZE; ++i )
+	for ( int i = 0; i < v_size; ++i )
 	{
 		std::string& ref_str = vec_str[i];
 		if ( ref_str.size() != 1 )		// 无效
@@ -1205,10 +1200,59 @@ void Analyse::FluctuateAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(bas
 		throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
+	std::string& ref_r = vec_str[1];
+	if ( ref_r.empty() )
+	{
+		throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
+	}
+
+	// 是否只是“大于”
+	bool only_greater = true;
+	if ( '=' == ref_r[0] )		// 大于等于
+	{
+		only_greater = false;
+
+		// 删除开头的“等于”
+		ref_r.erase(0, 1);
+	}
+
+	double d_rat = 0.0;
+	if ( !base::PubStr::StrTrans2Double(ref_r, d_rat) )
+	{
+		throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
+	}
+
+	if ( info.ResultType != AnaTaskInfo::TABTYPE_COMMON )	// 重置目标表名
+	{
+		m_dbinfo.target_table = base::PubStr::TrimB(info.TableName) + "_" + str_date;
+	}
+	else if ( !m_dbinfo.time_stamp )
+	{
+		throw base::Exception(ANAERR_FLUCTUATE_ALARM_FAILED, "目标表的时间字段缺失，无法进行波动告警！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), info.KpiID.c_str(), alarm_rule.AlarmID.c_str(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[Analyse] 准备目标表(%s)的比对数据 (时间:%s) ...", m_dbinfo.target_table.c_str(), str_date.c_str());
+	std::vector<std::vector<std::string> > vec2_old_data;
+	m_pAnaDB2->SelectTargetData(m_dbinfo, str_date, vec2_old_data);
+	m_pLog->Output("[Analyse] 获得比对数据，大小为：%llu", vec2_old_data.size());
+
+//	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == info.AnaRule.AnaType )
+//	{
+//	}
+//	else
+//	{
+//		v_size = m_v3HiveSrcData.size();
+//		for ( int i = 0; i < v_size; ++i )
+//		{
+//		}
+//	}
 }
 
 void Analyse::RatioAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::Exception)
 {
+	m_pLog->Output("[Analyse] 对比告警暂不支持！");
+	return;
+
 	// 告警表达式格式：[A/B/C/...]-[A/B/C/...][大于(>)/大于等于(>=)][比率(百分数/小数)][A/B/C/...]
 	// 例如：A-B>0.3B
 	const std::string ALARM_EXP = base::PubStr::TrimB(alarm_rule.AlarmExpress);
