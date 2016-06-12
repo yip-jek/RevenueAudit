@@ -7,6 +7,7 @@
 
 class CAnaDB2;
 class CAnaHive;
+class AlarmEvent;
 
 // 分析模块
 class Analyse : public base::BaseFrameApp
@@ -35,8 +36,6 @@ public:
 		ANAERR_GET_REPORT_STAT_FAILED = -3000015,			// 生成报表统计HIVE SQL失败
 		ANAERR_GET_STAT_BY_SET_FAILED = -3000016,			// 生成指定组的统计HIVE SQL失败
 		ANAERR_ALARM_JUDGEMENT_FAILED = -3000017,			// 告警判断失败
-		ANAERR_FLUCTUATE_ALARM_FAILED = -3000018,			// 波动告警失败
-		ANAERR_RATIO_ALARM_FAILED     = -3000019,			// 对比告警失败
 	};
 
 public:
@@ -127,6 +126,9 @@ private:
 
 	// 对比告警
 	void RatioAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::Exception);
+
+	// 处理告警事件
+	void HandleAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::Exception);
 
 	// 更新维度取值范围
 	void UpdateDimValue(AnaTaskInfo& info);

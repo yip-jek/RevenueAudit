@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.12.0084 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.12.0086 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -1106,12 +1106,13 @@ void Analyse::AlarmJudgement(AnaTaskInfo& info) throw(base::Exception)
 		m_pLog->Output("[Analyse] 无告警配置：不产生告警!");
 		return;
 	}
-	m_pLog->Output("[Analyse] 告警判断 ...");
 
 	const int VEC_SIZE = info.vecAlarm.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
 		AlarmRule& ref_rule = info.vecAlarm[i];
+		m_pLog->Output("[Analyse] 告警判断：告警 %d <ID:%s, NAME:%d>", (i+1), ref_rule.AlarmID.c_str(), ref_rule.AlarmName.c_str());
+
 		if ( ref_rule.AlarmExpress.empty() )
 		{
 			throw base::Exception(ANAERR_ALARM_JUDGEMENT_FAILED, "告警规则表达式缺失！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), ref_rule.AlarmID.c_str(), __FILE__, __LINE__);
@@ -1137,41 +1138,45 @@ void Analyse::AlarmJudgement(AnaTaskInfo& info) throw(base::Exception)
 
 void Analyse::FluctuateAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::Exception)
 {
-	// 告警表达式格式：[A,B,...]|[mon/day][+/-][月数/日数][大于(>)/大于等于(>=)][比率(百分数/小数)]
-	// 例如：A|day-1>=30%
-	const std::string ALARM_EXP = base::PubStr::TrimB(alarm_rule.AlarmExpress);
-	m_pLog->Output("[Analyse] 告警表达式：%s", ALARM_EXP.c_str());
-
-	m_pLog->Output("[Analyse] 进行波动告警分析 ...");
 	AlarmFluctuate alarm_flu;
-	alarm_flu.SetTaskInfo(info);
-	alarm_flu.SetDBInfo(m_dbinfo);
-	alarm_flu.AnalysisExpression(ALARM_EXP);
+	alarm_flu.SetTaskDBInfo(info, m_dbinfo);
+	alarm_flu.SetAlarmRule(alarm_rule);
+	alarm_flu.AnalyseExpression();
 
+	const std::string ALARM_DATE = alarm_flu.GetFluctuateDate();
+	m_pLog->Output("[Analyse] 准备目标表(%s)的比对数据 (时间:%s) ...", m_dbinfo.target_table.c_str(), ALARM_DATE.c_str());
+	std::vector<std::vector<std::string> > vec2_old_data;
+	m_pAnaDB2->SelectTargetData(m_dbinfo, ALARM_DATE, vec2_old_data);
+	m_pLog->Output("[Analyse] 获得比对数据，大小为：%llu", vec2_old_data.size());
+
+	alarm_flu.SetCompareData(vec2_old_data);
+
+	// 是否为报表数据
+	if ( info.AnaRule.AnaType != AnalyseRule::ANATYPE_REPORT_STATISTICS )	// 非报表数据
+	{
+		const int VEC3_SIZE = m_v3HiveSrcData.size();
+		for ( int i = 0; i < VEC3_SIZE; ++i )
+		{
+			std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
+
+			alarm_flu.AnalyseTargetData(ref_vec2);
+		}
+	}
+	else	// 报表数据
+	{
+		alarm_flu.AnalyseTargetData(m_v2ReportStatData);
+	}
+
+	// 生成告警事件
 	std::vector<AlarmEvent> vec_event;
 	if ( alarm_flu.GenerateAlarmEvent(vec_event) )		// 产生告警事件
 	{
+		HandleAlarmEvent(vec_event);
 	}
 	else		// 无告警事件
 	{
-		m_pLog->Output("[Analyse] 无告警生成！");
+		m_pLog->Output("[Analyse] 无告警生成！(ALARM_ID:%s, ALARM_NAME:%s)", alarm_rule.AlarmID.c_str(), alarm_rule.AlarmName.c_str());
 	}
-
-	m_pLog->Output("[Analyse] 准备目标表(%s)的比对数据 (时间:%s) ...", m_dbinfo.target_table.c_str(), str_date.c_str());
-	std::vector<std::vector<std::string> > vec2_old_data;
-	m_pAnaDB2->SelectTargetData(m_dbinfo, str_date, vec2_old_data);
-	m_pLog->Output("[Analyse] 获得比对数据，大小为：%llu", vec2_old_data.size());
-
-//	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == info.AnaRule.AnaType )
-//	{
-//	}
-//	else
-//	{
-//		v_size = m_v3HiveSrcData.size();
-//		for ( int i = 0; i < v_size; ++i )
-//		{
-//		}
-//	}
 }
 
 void Analyse::RatioAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::Exception)
@@ -1179,9 +1184,40 @@ void Analyse::RatioAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::E
 	m_pLog->Output("[Analyse] 对比告警暂不支持！");
 	return;
 
-	// 告警表达式格式：[A/B/C/...]-[A/B/C/...][大于(>)/大于等于(>=)][比率(百分数/小数)][A/B/C/...]
-	// 例如：A-B>0.3B
-	const std::string ALARM_EXP = base::PubStr::TrimB(alarm_rule.AlarmExpress);
-	m_pLog->Output("[Analyse] 告警表达式：%s", ALARM_EXP.c_str());
+	AlarmRatio alarm_rat;
+	alarm_rat.SetTaskDBInfo(info, m_dbinfo);
+	alarm_rat.SetAlarmRule(alarm_rule);
+	alarm_rat.AnalyseExpression();
+
+	// 是否为报表数据
+	if ( info.AnaRule.AnaType != AnalyseRule::ANATYPE_REPORT_STATISTICS )	// 非报表数据
+	{
+		const int VEC3_SIZE = m_v3HiveSrcData.size();
+		for ( int i = 0; i < VEC3_SIZE; ++i )
+		{
+			std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
+
+			alarm_rat.AnalyseTargetData(ref_vec2);
+		}
+	}
+	else	// 报表数据
+	{
+		alarm_rat.AnalyseTargetData(m_v2ReportStatData);
+	}
+
+	// 生成告警事件
+	std::vector<AlarmEvent> vec_event;
+	if ( alarm_rat.GenerateAlarmEvent(vec_event) )
+	{
+		HandleAlarmEvent(vec_event);
+	}
+	else
+	{
+		m_pLog->Output("[Analyse] 无告警生成！(ALARM_ID:%s, ALARM_NAME:%s)", alarm_rule.AlarmID.c_str(), alarm_rule.AlarmName.c_str());
+	}
+}
+
+void Analyse::HandleAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::Exception)
+{
 }
 
