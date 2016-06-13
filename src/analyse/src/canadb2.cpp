@@ -689,7 +689,7 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select targat table %s failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select targat table %s failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Select targat table [%s], data size: %llu", db_info.target_table.c_str(), v2_data.size());

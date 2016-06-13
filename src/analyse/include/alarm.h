@@ -15,6 +15,7 @@ class Log;
 
 struct AnaTaskInfo;
 struct AnaDBInfo;
+struct AlarmRule;
 class AlarmEvent;
 
 // （基础）告警类
@@ -26,7 +27,7 @@ public:
 	{
 		AE_ANALYSIS_EXP_FAILED   = -3004001,		// 告警表达式解析失败
 		AE_COLLECT_VALCOL_FAILED = -3004002,		// 收集值列失败
-	}
+	};
 
 public:
 	Alarm();
@@ -52,7 +53,7 @@ protected:
 	virtual void CollectValueColumn(const std::string& val_col) throw(base::Exception);
 
 	// 是否包含等于
-	virtual bool IsContainEqual(const std::string& exp, int* pos = NULL);
+	virtual bool IsContainEqual(const std::string& exp, size_t* pos = NULL);
 
 	// 计算阈值
 	virtual bool CalculateThreshold(const std::string& left, const std::string& right, double& threshold);
@@ -73,7 +74,7 @@ protected:
 protected:
 	std::map<std::string, std::vector<std::string> >	m_mResultData;			// 告警结果数据
 
-private:
+protected:
 	int m_kpiDimSize;			// 指标维度字段数
 	int m_kpiValSize;			// 指标值字段数
 };

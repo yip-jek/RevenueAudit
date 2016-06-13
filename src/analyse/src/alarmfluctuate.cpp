@@ -1,5 +1,6 @@
 #include "alarmfluctuate.h"
 #include "anataskinfo.h"
+#include "anadbinfo.h"
 #include "pubstr.h"
 #include "pubtime.h"
 #include "log.h"
@@ -154,7 +155,7 @@ void AlarmFluctuate::AnalyseFluctExp(const std::string& exp_fluct) throw(base::E
 	}
 
 	// 开头是否包含等于
-	int pos = -1;
+	size_t pos = 0;
 	if ( IsContainEqual(ref_str, &pos) && 0 == pos )
 	{
 		// 删除开头的“等于”

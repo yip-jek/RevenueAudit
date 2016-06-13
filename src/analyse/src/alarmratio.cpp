@@ -1,4 +1,5 @@
 #include "alarmratio.h"
+#include "anataskinfo.h"
 #include "pubstr.h"
 #include "pubtime.h"
 #include "log.h"
@@ -17,7 +18,7 @@ void AlarmRatio::AnalyseExpression() throw(base::Exception)
 {
 	// 告警表达式格式：[A/B/C/...]-[A/B/C/...][大于(>)/大于等于(>=)][比率(百分数/小数)][A/B/C/...]
 	// 例如：A-B>0.3B
-	const std::string ALARM_EXP = base::PubStr::TrimB(alarm_rule.AlarmExpress);
+	const std::string ALARM_EXP = base::PubStr::TrimB(m_pAlarmRule->AlarmExpress);
 	m_pLog->Output("[Alarm] 告警表达式：%s", ALARM_EXP.c_str());
 }
 

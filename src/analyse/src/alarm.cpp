@@ -64,7 +64,7 @@ void Alarm::CollectValueColumn(const std::string& val_col) throw(base::Exception
 	index += m_kpiDimSize;
 
 	// 列重复
-	if ( m_setValCol.find(index) != set_index.end() )
+	if ( m_setValCol.find(index) != m_setValCol.end() )
 	{
 		throw base::Exception(AE_COLLECT_VALCOL_FAILED, "存在重复的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
@@ -72,11 +72,11 @@ void Alarm::CollectValueColumn(const std::string& val_col) throw(base::Exception
 	m_setValCol.insert(index);
 }
 
-bool Alarm::IsContainEqual(const std::string& exp, int* pos /*= NULL*/)
+bool Alarm::IsContainEqual(const std::string& exp, size_t* pos /*= NULL*/)
 {
 	const std::string str_exp = base::PubStr::TrimB(exp);
 
-	int p = 0;
+	size_t p = 0;
 	if ( !str_exp.empty() && (p = str_exp.find("=")) != std::string::npos )
 	{
 		m_containEqual = true;
@@ -96,5 +96,6 @@ bool Alarm::IsContainEqual(const std::string& exp, int* pos /*= NULL*/)
 
 bool Alarm::CalculateThreshold(const std::string& left, const std::string& right, double& threshold)
 {
+	return false;
 }
 

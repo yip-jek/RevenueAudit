@@ -14,6 +14,7 @@ void UniformCodeTransfer::InputChannelUniformCode(std::vector<ChannelUniformCode
 {
 	m_mapChannelUniCode.clear();
 
+	std::string channel_alias;
 	const size_t VEC_SIZE = vec_channunicode.size();
 	for ( size_t i = 0; i < VEC_SIZE; ++i )
 	{
@@ -32,12 +33,13 @@ void UniformCodeTransfer::InputChannelUniformCode(std::vector<ChannelUniformCode
 		}
 
 		// 渠道别名已存在
-		if ( m_mapChannelUniCode.find(ref_chann.ChannelAlias) != m_mapChannelUniCode.end() )
+		channel_alias = base::PubStr::TrimB(ref_chann.ChannelAlias);
+		if ( m_mapChannelUniCode.find(channel_alias) != m_mapChannelUniCode.end() )
 		{
 			throw base::Exception(UCTERR_INPUT_CHANN_UNICODE_FAILED, "渠道别名已经存在，重复！[CHANNEL_ID:%s, CHANNEL_ALIAS:%s, CHANNEL_NAME:%s, REMARKS:%s] [FILE:%s, LINE:%d]", ref_chann.ChannelID.c_str(), ref_chann.ChannelAlias.c_str(), ref_chann.ChannelName.c_str(), ref_chann.Remarks.c_str(), __FILE__, __LINE__);
 		}
 
-		m_mapChannelUniCode[ref_chann.ChannelAlias] = ref_chann.ChannelID;
+		m_mapChannelUniCode[channel_alias] = ref_chann.ChannelID;
 	}
 }
 
@@ -45,6 +47,7 @@ void UniformCodeTransfer::InputCityUniformCode(std::vector<CityUniformCode>& vec
 {
 	m_mapCityUniCode.clear();
 
+	std::string city_alias;
 	const size_t VEC_SIZE = vec_cityunicode.size();
 	for ( size_t i = 0; i < VEC_SIZE; ++i )
 	{
@@ -63,12 +66,14 @@ void UniformCodeTransfer::InputCityUniformCode(std::vector<CityUniformCode>& vec
 		}
 
 		// 地市别名已存在
-		if ( m_mapCityUniCode.find(ref_city.CityAlias) != m_mapCityUniCode.end() )
+		// 地市别名以大写形式保存！
+		city_alias = base::PubStr::TrimUpperB(ref_city.CityAlias);
+		if ( m_mapCityUniCode.find(city_alias) != m_mapCityUniCode.end() )
 		{
 			throw base::Exception(UCTERR_INPUT_CITY_UNICODE_FAILED, "地市别名已经存在，重复！[CITY_ID:%s, CITY_ALIAS:%s, CITY_NAME:%s, REMARKS:%s] [FILE:%s, LINE:%d]", ref_city.CityID.c_str(), ref_city.CityAlias.c_str(), ref_city.CityName.c_str(), ref_city.Remarks.c_str(), __FILE__, __LINE__);
 		}
 
-		m_mapCityUniCode[ref_city.CityAlias] = ref_city.CityID;
+		m_mapCityUniCode[city_alias] = ref_city.CityID;
 	}
 }
 
@@ -85,6 +90,8 @@ bool UniformCodeTransfer::Transfer(const std::string& src_code, std::string& uni
 	}
 
 	// 再尝试从地市统一编码列表中找到统一编码
+	// 地市别名需大写
+	base::PubStr::Upper(code);
 	it = m_mapCityUniCode.find(code);
 	if ( it != m_mapCityUniCode.end() )
 	{
