@@ -18,8 +18,8 @@ Analyse g_Analyse;
 
 
 Analyse::Analyse()
-:m_nHivePort(0)
-,m_pAnaDB2(NULL)
+//:m_nHivePort(0)
+:m_pAnaDB2(NULL)
 ,m_pAnaHive(NULL)
 {
 	g_pApp = &g_Analyse;
@@ -41,10 +41,15 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("DATABASE", "DB_NAME");
 	m_cfg.RegisterItem("DATABASE", "USER_NAME");
 	m_cfg.RegisterItem("DATABASE", "PASSWORD");
-	m_cfg.RegisterItem("HIVE_SERVER", "IP_ADDRESS");
-	m_cfg.RegisterItem("HIVE_SERVER", "PORT");
-	m_cfg.RegisterItem("HIVE_SERVER", "USERNAME");
-	m_cfg.RegisterItem("HIVE_SERVER", "PASSWORD");
+	//m_cfg.RegisterItem("HIVE_SERVER", "IP_ADDRESS");
+	//m_cfg.RegisterItem("HIVE_SERVER", "PORT");
+	//m_cfg.RegisterItem("HIVE_SERVER", "USERNAME");
+	//m_cfg.RegisterItem("HIVE_SERVER", "PASSWORD");
+	m_cfg.RegisterItem("HIVE_SERVER", "ZK_QUORUM");
+	m_cfg.RegisterItem("HIVE_SERVER", "KRB5_CONF");
+	m_cfg.RegisterItem("HIVE_SERVER", "USR_KEYTAB");
+	m_cfg.RegisterItem("HIVE_SERVER", "PRINCIPAL");
+	m_cfg.RegisterItem("HIVE_SERVER", "JAAS_CONF");
 	m_cfg.RegisterItem("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	m_cfg.RegisterItem("TABLE", "TAB_KPI_RULE");
@@ -67,14 +72,19 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_sPasswd  = m_cfg.GetCfgValue("DATABASE", "PASSWORD");
 
 	// Hive服务器配置
-	m_sHiveIP   = m_cfg.GetCfgValue("HIVE_SERVER", "IP_ADDRESS");
-	m_nHivePort = (int)m_cfg.GetCfgLongVal("HIVE_SERVER", "PORT");
-	if ( m_nHivePort <= 0 )
-	{
-		throw base::Exception(ANAERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
-	}
-	m_sHiveUsr = m_cfg.GetCfgValue("HIVE_SERVER", "USERNAME");
-	m_sHivePwd = m_cfg.GetCfgValue("HIVE_SERVER", "PASSWORD");
+	m_zk_quorum  = m_cfg.GetCfgValue("HIVE_SERVER", "ZK_QUORUM");
+	m_krb5_conf  = m_cfg.GetCfgValue("HIVE_SERVER", "KRB5_CONF");
+	m_usr_keytab = m_cfg.GetCfgValue("HIVE_SERVER", "USR_KEYTAB");
+	m_principal  = m_cfg.GetCfgValue("HIVE_SERVER", "PRINCIPAL");
+	m_jaas_conf  = m_cfg.GetCfgValue("HIVE_SERVER", "JAAS_CONF");
+	//m_sHiveIP   = m_cfg.GetCfgValue("HIVE_SERVER", "IP_ADDRESS");
+	//m_nHivePort = (int)m_cfg.GetCfgLongVal("HIVE_SERVER", "PORT");
+	//if ( m_nHivePort <= 0 )
+	//{
+	//	throw base::Exception(ANAERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
+	//}
+	//m_sHiveUsr = m_cfg.GetCfgValue("HIVE_SERVER", "USERNAME");
+	//m_sHivePwd = m_cfg.GetCfgValue("HIVE_SERVER", "PASSWORD");
 	m_sLoadJarPath = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	// Tables
@@ -116,7 +126,8 @@ void Analyse::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabDictChannel(m_tabDictChannel);
 	m_pAnaDB2->SetTabDictCity(m_tabDictCity);
 
-	m_pHive = new CAnaHive(m_sHiveIP, m_nHivePort, m_sHiveUsr, m_sHivePwd);
+	//m_pHive = new CAnaHive(m_sHiveIP, m_nHivePort, m_sHiveUsr, m_sHivePwd);
+	m_pHive = new CAnaHive();
 	if ( NULL == m_pHive )
 	{
 		throw base::Exception(ANAERR_INIT_FAILED, "new CAnaHive failed: 无法申请到内存空间!");
@@ -124,6 +135,11 @@ void Analyse::Init() throw(base::Exception)
 	m_pAnaHive = dynamic_cast<CAnaHive*>(m_pHive);
 
 	m_pAnaHive->Init(m_sLoadJarPath);
+	m_pAnaHive->SetZooKeeperQuorum(m_zk_quorum);
+	m_pAnaHive->SetKrb5Conf(m_krb5_conf);
+	m_pAnaHive->SetUserKeytab(m_usr_keytab);
+	m_pAnaHive->SetPrincipal(m_principal);
+	m_pAnaHive->SetJaasConf(m_jaas_conf);
 
 	m_pLog->Output("Init OK.");
 }

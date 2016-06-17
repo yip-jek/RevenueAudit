@@ -62,11 +62,6 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_sPasswd  = m_cfg.GetCfgValue("DATABASE", "PASSWORD");
 
 	// Hive服务器配置
-	//std::string m_zk_quorum;
-	//std::string m_krb5_conf;
-	//std::string m_usr_keytab;
-	//std::string m_principal;
-	//std::string m_jaas_conf;
 	m_zk_quorum  = m_cfg.GetCfgValue("HIVE_SERVER", "ZK_QUORUM");
 	m_krb5_conf  = m_cfg.GetCfgValue("HIVE_SERVER", "KRB5_CONF");
 	m_usr_keytab = m_cfg.GetCfgValue("HIVE_SERVER", "USR_KEYTAB");

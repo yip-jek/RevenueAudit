@@ -32,6 +32,9 @@ public:
 	virtual void ToDisconnect();
 
 private:
+	bool		m_db2Connected;
+	bool		m_hiveConnected;
+
 	BaseDB2*	m_pDB2;				// DB2数据库接口
 	BaseJHive*	m_pHive;			// Hive接口
 };
@@ -49,12 +52,14 @@ public:
 	~AutoDisconnect();
 
 public:
-	bool IsConnected() const;
 	void Connect() throw(Exception);
+
+private:
+	// 只允许内部自动关闭连接
 	void Disconnect();
 
 private:
-	bool			m_bConnected;		// 连接的标记
+	bool			m_need2Disconnect;
 	BaseConnector*	m_pConnector;		// 连接器
 };
 
