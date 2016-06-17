@@ -15,10 +15,18 @@ struct StructJNI;
 class BaseJHive
 {
 public:
-	BaseJHive(const std::string& host, int port, const std::string& usr, const std::string& pwd);
+	//BaseJHive(const std::string& host, int port, const std::string& usr, const std::string& pwd);
+	BaseJHive();
 	virtual ~BaseJHive();
 
 public:
+	// 设置
+	virtual bool SetZooKeeperQuorum(const std::string& zk_quorum);
+	virtual bool SetKrb5Conf(const std::string& krb5_conf);
+	virtual bool SetUserKeytab(const std::string& usr_keytab);
+	virtual bool SetPrincipal(const std::string& principal);
+	virtual bool SetJaasConf(const std::string& jaas_conf);
+
 	// 初始化
 	// 输入：
 	// 	load_jar_path：依赖的 jar 包的路径（建议使用绝对路径）
@@ -66,10 +74,11 @@ protected:
 	StructJNI*	m_pJNI;				// JNI 接口
 
 protected:
-	std::string	m_strHost;			// HIVE 主机信息
-	int			m_nPort;			// HIVE 主机 hiveserver2 的端口号
-	std::string	m_strUsr;			// HIVE 主机用户名
-	std::string	m_strPwd;			// HIVE 主机密码
+	//std::string	m_strHost;			// HIVE 主机信息
+	//int			m_nPort;			// HIVE 主机 hiveserver2 的端口号
+	//std::string	m_strUsr;			// HIVE 主机用户名
+	//std::string	m_strPwd;			// HIVE 主机密码
+	std::string m_zk_quorum;
 };
 
 }	// namespace base

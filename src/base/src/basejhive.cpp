@@ -11,13 +11,14 @@
 namespace base
 {
 
-BaseJHive::BaseJHive(const std::string& host, int port, const std::string& usr, const std::string& pwd)
+//BaseJHive::BaseJHive(const std::string& host, int port, const std::string& usr, const std::string& pwd)
+BaseJHive::BaseJHive()
 :m_pLog(Log::Instance())
 ,m_pJNI(NULL)
-,m_strHost(host)
-,m_nPort(port)
-,m_strUsr(usr)
-,m_strPwd(pwd)
+//,m_strHost(host)
+//,m_nPort(port)
+//,m_strUsr(usr)
+//,m_strPwd(pwd)
 {
 }
 
@@ -32,6 +33,77 @@ BaseJHive::~BaseJHive()
 	}
 
 	Log::Release();
+}
+
+bool BaseJHive::SetZooKeeperQuorum(const std::string& zk_quorum)
+{
+	if ( NULL == m_pJNI )
+	{
+		return false;
+	}
+
+	jstring jstr_zk_quorum = m_pJNI->p_jni_env->NewStringUTF(zk_quorum.c_str());
+	m_pJNI->p_jni_env->CallVoidMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_set_zkquorum, jstr_zk_quorum);
+
+	m_zk_quorum = zk_quorum;
+	m_pLog->Output("[BASE HIVE] Set ZooKeeperQuorum: %s", m_zk_quorum.c_str());
+	return true;
+}
+
+bool BaseJHive::SetKrb5Conf(const std::string& krb5_conf)
+{
+	if ( NULL == m_pJNI )
+	{
+		return false;
+	}
+
+	jstring jstr_krb5_conf = m_pJNI->p_jni_env->NewStringUTF(krb5_conf.c_str());
+	m_pJNI->p_jni_env->CallVoidMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_set_krb5conf, jstr_krb5_conf);
+
+	m_pLog->Output("[BASE HIVE] Set krb5.conf: %s", krb5_conf.c_str());
+	return true;
+}
+
+bool BaseJHive::SetUserKeytab(const std::string& usr_keytab)
+{
+	if ( NULL == m_pJNI )
+	{
+		return false;
+	}
+
+	jstring jstr_usr_keytab = m_pJNI->p_jni_env->NewStringUTF(usr_keytab.c_str());
+	m_pJNI->p_jni_env->CallVoidMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_set_usrkeytab, jstr_usr_keytab);
+
+	m_pLog->Output("[BASE HIVE] Set user.keytab: %s", usr_keytab.c_str());
+	return true;
+}
+
+bool BaseJHive::SetPrincipal(const std::string& principal)
+{
+	if ( NULL == m_pJNI )
+	{
+		return false;
+	}
+
+	jstring jstr_principal = m_pJNI->p_jni_env->NewStringUTF(principal.c_str());
+	m_pJNI->p_jni_env->CallVoidMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_set_principal, jstr_principal);
+
+	m_pLog->Output("[BASE HIVE] Set principal: %s", principal.c_str());
+	return true;
+}
+
+bool BaseJHive::SetJaasConf(const std::string& jaas_conf)
+{
+	if ( NULL == m_pJNI )
+	{
+		return false;
+	}
+
+	jstring jstr_jaas_conf = m_pJNI->p_jni_env->NewStringUTF(jaas_conf.c_str());
+	m_pJNI->p_jni_env->CallVoidMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_set_jaasconf, jstr_jaas_conf);
+
+	m_pLog->Output("[BASE HIVE] Set jaas.conf: %s", jaas_conf.c_str());
+	return true;
 }
 
 void BaseJHive::Init(const std::string& load_jar_path) throw(Exception)
@@ -63,21 +135,31 @@ void BaseJHive::Connect() throw(Exception)
 		throw Exception(BJH_CONNECT_FAILED, "[BASE HIVE] NOT initialized ! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	m_pLog->Output("[BASE HIVE] Connect to <%s:%d> ...", m_strHost.c_str(), m_nPort);
+	if ( static_cast<bool>(m_pJNI->p_jni_env->CallBooleanMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_init)) )
+	{
+		m_pLog->Output("[BASE HIVE] Login authentication OK.");
+	}
+	else
+	{
+		throw Exception(BJH_CONNECT_FAILED, "[BASE HIVE] Login authentication failed: %s [FILE:%s, LINE:%d]", GetErrorMsg().c_str(), __FILE__, __LINE__);
+	}
 
-	jstring jstr_host = m_pJNI->p_jni_env->NewStringUTF(m_strHost.c_str());
-	jstring jstr_usr  = m_pJNI->p_jni_env->NewStringUTF(m_strUsr.c_str());
-	jstring jstr_pwd  = m_pJNI->p_jni_env->NewStringUTF(m_strPwd.c_str());
+	m_pLog->Output("[BASE HIVE] Connect to <%s> ...", m_zk_quorum.c_str());
+	//jstring jstr_host = m_pJNI->p_jni_env->NewStringUTF(m_strHost.c_str());
+	//jstring jstr_usr  = m_pJNI->p_jni_env->NewStringUTF(m_strUsr.c_str());
+	//jstring jstr_pwd  = m_pJNI->p_jni_env->NewStringUTF(m_strPwd.c_str());
 
-	jint res_conn = m_pJNI->p_jni_env->CallIntMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_connect, jstr_host, m_nPort, jstr_usr, jstr_pwd);
+	//jint res_conn = m_pJNI->p_jni_env->CallIntMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_connect, jstr_host, m_nPort, jstr_usr, jstr_pwd);
+	jint res_conn = m_pJNI->p_jni_env->CallIntMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_connect);
 	switch ( res_conn )
 	{
 	case 0:
-		m_pLog->Output("[BASE HIVE] Connect <%s:%d> OK.", m_strHost.c_str(), m_nPort);
+		m_pLog->Output("[BASE HIVE] Connect <%s> OK.", m_zk_quorum.c_str());
 		break;
 	case 1:
 	case -1:
 	case -2:
+	case -3:
 		throw Exception(BJH_CONNECT_FAILED, "[BASE HIVE] Connect failed: %s [FILE:%s, LINE:%d]", GetErrorMsg().c_str(), __FILE__, __LINE__);
 		break;
 	default:
@@ -326,8 +408,50 @@ void BaseJHive::InitHiveAgent() throw(Exception)
 		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] Construct %s failed ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
 	}
 
+	// 获取 Java HIVE 代理类的 SetZooKeeperQuorum 方法
+	m_pJNI->jmid_set_zkquorum = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "SetZooKeeperQuorum", "(Ljava/lang/String;)V");
+	if ( NULL == m_pJNI->jmid_set_zkquorum )
+	{
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetZooKeeperQuorum method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+	}
+
+	// 获取 Java HIVE 代理类的 SetKrb5Conf 方法
+	m_pJNI->jmid_set_krb5conf = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "SetKrb5Conf", "(Ljava/lang/String;)V");
+	if ( NULL == m_pJNI->jmid_set_krb5conf )
+	{
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetKrb5Conf method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+	}
+
+	// 获取 Java HIVE 代理类的 SetUserKeytab 方法
+	m_pJNI->jmid_set_usrkeytab = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "SetUserKeytab", "(Ljava/lang/String;)V");
+	if ( NULL == m_pJNI->jmid_set_usrkeytab )
+	{
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetUserKeytab method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+	}
+
+	// 获取 Java HIVE 代理类的 SetPrincipal 方法
+	m_pJNI->jmid_set_principal = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "SetPrincipal", "(Ljava/lang/String;)V");
+	if ( NULL == m_pJNI->jmid_set_principal )
+	{
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetPrincipal method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+	}
+
+	// 获取 Java HIVE 代理类的 SetJaasConf 方法
+	m_pJNI->jmid_set_jaasconf = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "SetJaasConf", "(Ljava/lang/String;)V");
+	if ( NULL == m_pJNI->jmid_set_jaasconf )
+	{
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetJaasConf method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+	}
+
+	// 获取 Java HIVE 代理类的 Init 方法
+	m_pJNI->jmid_init = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "Init", "()Z");
+	if ( NULL == m_pJNI->jmid_init )
+	{
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO Init method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+	}
+
 	// 获取 Java HIVE 代理类的 Connect 方法
-	m_pJNI->jmid_connect = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "Connect", "(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)I");
+	m_pJNI->jmid_connect = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "Connect", "()I");
 	if ( NULL == m_pJNI->jmid_connect )
 	{
 		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO connect method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);

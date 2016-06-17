@@ -14,8 +14,8 @@ Acquire g_Acquire;
 
 
 Acquire::Acquire()
-:m_nHivePort(0)
-,m_nHdfsPort(0)
+//:m_nHivePort(0)
+:m_nHdfsPort(0)
 ,m_pAcqDB2(NULL)
 ,m_pAcqHive(NULL)
 {
@@ -28,7 +28,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.09.0081 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.11.0087 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -38,10 +38,15 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("DATABASE", "DB_NAME");
 	m_cfg.RegisterItem("DATABASE", "USER_NAME");
 	m_cfg.RegisterItem("DATABASE", "PASSWORD");
-	m_cfg.RegisterItem("HIVE_SERVER", "IP_ADDRESS");
-	m_cfg.RegisterItem("HIVE_SERVER", "PORT");
-	m_cfg.RegisterItem("HIVE_SERVER", "USERNAME");
-	m_cfg.RegisterItem("HIVE_SERVER", "PASSWORD");
+	//m_cfg.RegisterItem("HIVE_SERVER", "IP_ADDRESS");
+	//m_cfg.RegisterItem("HIVE_SERVER", "PORT");
+	//m_cfg.RegisterItem("HIVE_SERVER", "USERNAME");
+	//m_cfg.RegisterItem("HIVE_SERVER", "PASSWORD");
+	m_cfg.RegisterItem("HIVE_SERVER", "ZK_QUORUM");
+	m_cfg.RegisterItem("HIVE_SERVER", "KRB5_CONF");
+	m_cfg.RegisterItem("HIVE_SERVER", "USR_KEYTAB");
+	m_cfg.RegisterItem("HIVE_SERVER", "PRINCIPAL");
+	m_cfg.RegisterItem("HIVE_SERVER", "JAAS_CONF");
 	m_cfg.RegisterItem("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	m_cfg.RegisterItem("TABLE", "TAB_KPI_RULE");
@@ -57,14 +62,24 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_sPasswd  = m_cfg.GetCfgValue("DATABASE", "PASSWORD");
 
 	// Hive服务器配置
-	m_sHiveIP   = m_cfg.GetCfgValue("HIVE_SERVER", "IP_ADDRESS");
-	m_nHivePort = (int)m_cfg.GetCfgLongVal("HIVE_SERVER", "PORT");
-	if ( m_nHivePort <= 0 )
-	{
-		throw base::Exception(ACQERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
-	}
-	m_sHiveUsr = m_cfg.GetCfgValue("HIVE_SERVER", "USERNAME");
-	m_sHivePwd = m_cfg.GetCfgValue("HIVE_SERVER", "PASSWORD");
+	//std::string m_zk_quorum;
+	//std::string m_krb5_conf;
+	//std::string m_usr_keytab;
+	//std::string m_principal;
+	//std::string m_jaas_conf;
+	m_zk_quorum  = m_cfg.GetCfgValue("HIVE_SERVER", "ZK_QUORUM");
+	m_krb5_conf  = m_cfg.GetCfgValue("HIVE_SERVER", "KRB5_CONF");
+	m_usr_keytab = m_cfg.GetCfgValue("HIVE_SERVER", "USR_KEYTAB");
+	m_principal  = m_cfg.GetCfgValue("HIVE_SERVER", "PRINCIPAL");
+	m_jaas_conf  = m_cfg.GetCfgValue("HIVE_SERVER", "JAAS_CONF");
+	//m_sHiveIP   = m_cfg.GetCfgValue("HIVE_SERVER", "IP_ADDRESS");
+	//m_nHivePort = (int)m_cfg.GetCfgLongVal("HIVE_SERVER", "PORT");
+	//if ( m_nHivePort <= 0 )
+	//{
+	//	throw base::Exception(ACQERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
+	//}
+	//m_sHiveUsr = m_cfg.GetCfgValue("HIVE_SERVER", "USERNAME");
+	//m_sHivePwd = m_cfg.GetCfgValue("HIVE_SERVER", "PASSWORD");
 	m_sLoadJarPath = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	// Tables
@@ -92,7 +107,8 @@ void Acquire::Init() throw(base::Exception)
 	m_pAcqDB2->SetTabEtlDim(m_tabEtlDim);
 	m_pAcqDB2->SetTabEtlVal(m_tabEtlVal);
 
-	m_pHive = new CAcqHive(m_sHiveIP, m_nHivePort, m_sHiveUsr, m_sHivePwd);
+	//m_pHive = new CAcqHive(m_sHiveIP, m_nHivePort, m_sHiveUsr, m_sHivePwd);
+	m_pHive = new CAcqHive();
 	if ( NULL == m_pHive )
 	{
 		throw base::Exception(ACQERR_INIT_FAILED, "new CAcqHive failed: 无法申请到内存空间!");
@@ -100,6 +116,11 @@ void Acquire::Init() throw(base::Exception)
 	m_pAcqHive = dynamic_cast<CAcqHive*>(m_pHive);
 
 	m_pAcqHive->Init(m_sLoadJarPath);
+	m_pAcqHive->SetZooKeeperQuorum(m_zk_quorum);
+	m_pAcqHive->SetKrb5Conf(m_krb5_conf);
+	m_pAcqHive->SetUserKeytab(m_usr_keytab);
+	m_pAcqHive->SetPrincipal(m_principal);
+	m_pAcqHive->SetJaasConf(m_jaas_conf);
 
 	m_pLog->Output("Init OK.");
 }

@@ -31,6 +31,12 @@ public:
 	jobject			jobj_hiveagent;
 
 public:
+	jmethodID		jmid_set_zkquorum;
+	jmethodID		jmid_set_krb5conf;
+	jmethodID		jmid_set_usrkeytab;
+	jmethodID		jmid_set_principal;
+	jmethodID		jmid_set_jaasconf;
+	jmethodID		jmid_init;
 	jmethodID		jmid_connect;
 	jmethodID		jmid_disconnect;
 	jmethodID		jmid_is_connected;

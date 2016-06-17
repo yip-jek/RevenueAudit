@@ -69,15 +69,15 @@ void AlarmFluctuate::AnalyseTargetData(std::vector<std::vector<std::string> >& v
 				// 计算阈值
 				for ( s_it = m_setValCol.begin(); s_it != m_setValCol.end(); ++s_it )
 				{
-					int    index     = *s_it;
-					double threshold = 0.0;
-					if ( CalculateThreshold((m_it->second)[index], ref_vec1[index], threshold) )
-					{
-					}
-					else
-					{
-						throw Exception(
-					}
+					//int    index     = *s_it;
+					//double threshold = 0.0;
+					//if ( CalculateThreshold((m_it->second)[index], ref_vec1[index], threshold) )
+					//{
+					//}
+					//else
+					//{
+					//	throw Exception(
+					//}
 				}
 			}
 		}

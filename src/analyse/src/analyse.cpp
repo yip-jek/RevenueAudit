@@ -1100,6 +1100,9 @@ void Analyse::RemoveOldResult() throw(base::Exception)
 
 void Analyse::AlarmJudgement(AnaTaskInfo& info) throw(base::Exception)
 {
+	m_pLog->Output("[Analyse] 無告警!");
+	return;
+
 	// 是否有配置告警？
 	if ( info.vecAlarm.empty() )
 	{

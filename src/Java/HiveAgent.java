@@ -1,29 +1,102 @@
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-
 import java.util.ArrayList;
+
+import static org.apache.hadoop.fs.CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION;
+import static org.apache.hadoop.fs.CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.UserGroupInformation;
 
 
 // Hive 代理
 public class HiveAgent {
 	private static final String JDBC_DRIVER_CLASS_NAME = "org.apache.hive.jdbc.HiveDriver";
+	
+	private static final String SECURITY_KRB5_CONF = "java.security.krb5.conf";
+	private static final String SECURITY_AUTH_LOGIN = "java.security.auth.login.config";
+	private static final String KEYTAB_FILE_KEY = "username.client.keytab.file";
+	private static final String USER_NAME_KEY = "username.client.kerberos.principal";
 
 	private static final String HIVE2_CONN_HEAD = "jdbc:hive2://";
-	private static final String HIVE2_CONN_TAIL = "/default";
+	private static final String HIVE2_CONN_TAIL = "/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2;sasl.qop=auth-conf;auth=KERBEROS;principal=hive/hadoop.domain2.com@DOMAIN2.COM;";
+
+	private static String STR_ZK_QUORUM = null;
+	private static String STR_KRB5_CONF = null;
+	private static String STR_USER_KEYTAB = null;
+	private static String STR_PRINCIPAL = null;
+	private static String STR_JAAS_CONF = null;
+	private static Configuration HADOOP_CONF = null;
 
 	private StringBuffer m_errorMsg;			// 错误信息
+	private boolean m_isConnected = false;		// 是否已连接
+	private Connection m_conn = null;
 
-	private boolean m_isConnected;		// 是否已连接
-	private Connection m_conn;
-
-	public HiveAgent()
+	public void SetZooKeeperQuorum(String zk_quorum)
 	{
-		// TODO Auto-generated constructor stub
-		m_isConnected = false;
+		STR_ZK_QUORUM = zk_quorum;
+		System.out.println("[HIVE_AGENT] Set ZooKeeperQuorum: "+STR_ZK_QUORUM);
+	}
+
+	public void SetKrb5Conf(String krb5_conf)
+	{
+		STR_KRB5_CONF = krb5_conf;
+		System.out.println("[HIVE_AGENT] Set krb5.conf: "+STR_KRB5_CONF);
+	}
+
+	public void SetUserKeytab(String usr_keytab)
+	{
+		STR_USER_KEYTAB = usr_keytab;
+		System.out.println("[HIVE_AGENT] Set user.keytab: "+STR_USER_KEYTAB);
+	}
+
+	public void SetPrincipal(String principal)
+	{
+		STR_PRINCIPAL = principal;
+		System.out.println("[HIVE_AGENT] Set principal: "+STR_PRINCIPAL);
+	}
+
+	public void SetJaasConf(String jaas_conf)
+	{
+		STR_JAAS_CONF = jaas_conf;
+		System.out.println("[HIVE_AGENT] Set jaas.conf: "+STR_JAAS_CONF);
+	}
+
+	// 初始化
+	public boolean Init()
+	{
+		System.setProperty(SECURITY_KRB5_CONF, STR_KRB5_CONF);
+		System.setProperty(SECURITY_AUTH_LOGIN, STR_JAAS_CONF);
+
+		HADOOP_CONF = new Configuration();
+		HADOOP_CONF.set(HADOOP_SECURITY_AUTHENTICATION, "kerberos");
+		HADOOP_CONF.set(HADOOP_SECURITY_AUTHORIZATION, "true");
+		HADOOP_CONF.set(KEYTAB_FILE_KEY, STR_USER_KEYTAB);
+		HADOOP_CONF.set(USER_NAME_KEY, STR_PRINCIPAL);
+
+		// 进行登录认证
+		UserGroupInformation.setConfiguration(HADOOP_CONF);
+		try
+		{
+			SecurityUtil.login(HADOOP_CONF, KEYTAB_FILE_KEY, USER_NAME_KEY);
+			System.out.println("[HIVE_AGENT] [INIT] Login OK.");
+			return true;
+		}
+		catch (IOException io_ex)
+		{
+			io_ex.printStackTrace();
+
+			m_errorMsg = new StringBuffer("[HIVE_AGENT] [INIT] Login failed: [IOException] ");
+			m_errorMsg.append(io_ex);
+			System.out.println(m_errorMsg);
+			return false;
+		}
 	}
 
 	// 是否已经连接
@@ -39,22 +112,20 @@ public class HiveAgent {
 	}
 
 	// 连接 Hive
-	// 输入：host为主机信息，port为端口号
-	// 返回：0-成功，1-已经连接，-1-连接失败(ClassNotFoundException)，-2-连接失败(SQLException)
-	public int Connect(String host, int port, String usr, String pwd)
+	// 返回：0-成功，1-已经连接，-1-连接失败(ClassNotFoundException)，-2-连接失败(SQLException), -3-连接失败(NullPointerException)
+	public int Connect()
 	{
 		// 已连接
 		if ( m_isConnected )
 		{
-			System.out.println("[HIVE_AGENT] Already connected!");
+			m_errorMsg = new StringBuffer("[HIVE_AGENT] Already connected!");
+			System.out.println(m_errorMsg);
 			return 1;
 		}
 
 		// 组织连接字串
 		StringBuffer conn_buf = new StringBuffer(HIVE2_CONN_HEAD);
-		conn_buf.append(host);
-		conn_buf.append(":");
-		conn_buf.append(port);
+		conn_buf.append(STR_ZK_QUORUM);
 		conn_buf.append(HIVE2_CONN_TAIL);
 
 		final String CONN_STR = conn_buf.toString();
@@ -65,7 +136,12 @@ public class HiveAgent {
 			Class.forName(JDBC_DRIVER_CLASS_NAME);
 
 			// 进行连接
-			m_conn = DriverManager.getConnection(CONN_STR, usr, pwd);
+			m_conn = DriverManager.getConnection(CONN_STR, "", "");
+
+			// 连接成功！
+			m_isConnected = true;
+			System.out.println("[HIVE_AGENT] Connect OK.");
+			return 0;
 		}
 		catch ( ClassNotFoundException not_found_ex )
 		{
@@ -85,11 +161,15 @@ public class HiveAgent {
 			System.out.println(m_errorMsg);
 			return -2;
 		}
-		
-		// 连接成功！
-		m_isConnected = true;
-		System.out.println("[HIVE_AGENT] Connect OK.");
-		return 0;
+		catch ( NullPointerException np_ex )
+		{
+			np_ex.printStackTrace();
+
+			m_errorMsg = new StringBuffer("[HIVE_AGENT] Connect failed: [NullPointerException] ");
+			m_errorMsg.append(np_ex);
+			System.out.println(m_errorMsg);
+			return -3;
+		}
 	}
 
 	// 断开连接
@@ -99,13 +179,18 @@ public class HiveAgent {
 		// 未连接
 		if ( !m_isConnected )
 		{
-			System.out.println("[HIVE_AGENT] Not connected!");
+			m_errorMsg = new StringBuffer("[HIVE_AGENT] Not connected!");
+			System.out.println(m_errorMsg);
 			return false;
 		}
 
 		try
 		{
 			m_conn.close();
+
+			m_isConnected = false;
+			System.out.println("[HIVE_AGENT] Disconnect OK.");
+			return true;
 		}
 		catch ( SQLException sql_ex )
 		{
@@ -116,10 +201,15 @@ public class HiveAgent {
 			System.out.println(m_errorMsg);
 			return false;
 		}
+		catch ( NullPointerException np_ex )
+		{
+			np_ex.printStackTrace();
 
-		m_isConnected = false;
-		System.out.println("[HIVE_AGENT] Disconnect OK.");
-		return true;
+			m_errorMsg = new StringBuffer("[HIVE_AGENT] Disconnect failed: [NullPointerException] ");
+			m_errorMsg.append(np_ex);
+			System.out.println(m_errorMsg);
+			return false;
+		}
 	}
 	
 	// 执行 HIVE SQL 语句
@@ -154,7 +244,7 @@ public class HiveAgent {
 
 	// 获取 HIVE 数据
 	// 返回：结果数组
-	public ArrayList<String> FetchData(String sql) //throws SQLException
+	public ArrayList<String> FetchData(String sql)
 	{
 		try
 		{
