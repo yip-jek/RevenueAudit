@@ -10,8 +10,8 @@ Alarm::Alarm()
 ,m_pTaskInfo(NULL)
 ,m_pDBInfo(NULL)
 ,m_pAlarmRule(NULL)
-,m_containEqual(false)
 ,m_alarmThreshold(0.0)
+,m_pThresholdCompare(NULL)
 ,m_kpiDimSize(0)
 ,m_kpiValSize(0)
 {
@@ -19,6 +19,12 @@ Alarm::Alarm()
 
 Alarm::~Alarm()
 {
+	if ( m_pThresholdCompare != NULL )
+	{
+		delete m_pThresholdCompare;
+		m_pThresholdCompare = NULL;
+	}
+
 	base::Log::Release();
 }
 
@@ -42,6 +48,10 @@ void Alarm::SetAlarmRule(AlarmRule& alarm_rule)
 	m_pAlarmRule = &alarm_rule;
 }
 
+std::string Alarm::GenerateDimKey(std::vector<std::string>& vec_str) throw(base::Exception)
+{
+}
+
 void Alarm::CollectValueColumn(const std::string& val_col) throw(base::Exception)
 {
 	const std::string str_vc = base::PubStr::TrimUpperB(val_col);
@@ -49,7 +59,7 @@ void Alarm::CollectValueColumn(const std::string& val_col) throw(base::Exception
 	// 只支持单个字母表示
 	if ( str_vc.size() != 1 )
 	{
-		throw base::Exception(AE_COLLECT_VALCOL_FAILED, "无法识别的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(AE_COLLECT_VALCOL_FAILED, "[ALARM] 无法识别的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	int index = str_vc[0] - 'A';
@@ -57,7 +67,7 @@ void Alarm::CollectValueColumn(const std::string& val_col) throw(base::Exception
 	// 不在有效范围
 	if ( index < 0 || index >= m_kpiValSize )
 	{
-		throw base::Exception(AE_COLLECT_VALCOL_FAILED, "不在有效范围的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(AE_COLLECT_VALCOL_FAILED, "[ALARM] 不在有效范围的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 计算“值”所处的列
@@ -66,36 +76,28 @@ void Alarm::CollectValueColumn(const std::string& val_col) throw(base::Exception
 	// 列重复
 	if ( m_setValCol.find(index) != m_setValCol.end() )
 	{
-		throw base::Exception(AE_COLLECT_VALCOL_FAILED, "存在重复的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(AE_COLLECT_VALCOL_FAILED, "[ALARM] 存在重复的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	m_setValCol.insert(index);
 }
 
-bool Alarm::IsContainEqual(const std::string& exp, size_t* pos /*= NULL*/)
+void Alarm::DetermineThresholdCompare(bool contain_equal)
 {
-	const std::string str_exp = base::PubStr::TrimB(exp);
-
-	size_t p = 0;
-	if ( !str_exp.empty() && (p = str_exp.find("=")) != std::string::npos )
+	// 是否有资源需要释放？
+	if ( m_pThresholdCompare != NULL )
 	{
-		m_containEqual = true;
-
-		if ( pos != NULL )
-		{
-			*pos = p;
-		}
-	}
-	else
-	{
-		m_containEqual = false;
+		delete m_pThresholdCompare;
+		m_pThresholdCompare = NULL;
 	}
 
-	return m_containEqual;
-}
-
-bool Alarm::CalculateThreshold(const std::string& left, const std::string& right, double& threshold)
-{
-	return false;
+	if ( contain_equal )		// 大于或等于
+	{
+		m_pThresholdCompare = new GE_ThresholdCompare(m_alarmThreshold);
+	}
+	else		// 大于
+	{
+		m_pThresholdCompare = new G_ThresholdCompare(m_alarmThreshold);
+	}
 }
 
