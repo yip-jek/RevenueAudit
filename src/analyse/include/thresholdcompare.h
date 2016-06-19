@@ -11,7 +11,8 @@ public:
 	virtual ~ThresholdCompare() {}
 
 public:
-	virtual bool IsReachThreshold(const double& tg, const double& src) = 0;
+	// 判断是否达到阈值，并返回阈值的计算结果
+	virtual bool ReachThreshold(const double& tg, const double& src, double* p_th) = 0;
 
 protected:
 	virtual double CompareRatio(const double& tg, const double& src)
@@ -30,8 +31,16 @@ public:
 	virtual ~G_ThresholdCompare() {}
 
 public:
-	virtual bool IsReachThreshold(const double& tg, const double& src)
-	{ return (CompareRatio(tg, src) > m_threshold); }
+	// 判断是否达到阈值，并返回阈值的计算结果
+	virtual bool ReachThreshold(const double& tg, const double& src, double* p_th)
+	{
+		double dou_th = CompareRatio(tg, src);
+		if ( p_th != NULL )
+		{
+			*p_th = dou_th;
+		}
+		return (dou_th > m_threshold);
+	}
 };
 
 // 比较类：大于或等于
@@ -43,7 +52,15 @@ public:
 	virtual ~GE_ThresholdCompare() {}
 
 public:
-	virtual bool IsReachThreshold(const double& tg, const double& src)
-	{ return (CompareRatio(tg, src) >= m_threshold); }
+	// 判断是否达到阈值，并返回阈值的计算结果
+	virtual bool ReachThreshold(const double& tg, const double& src, double* p_th)
+	{
+		double dou_th = CompareRatio(tg, src);
+		if ( p_th != NULL )
+		{
+			*p_th = dou_th;
+		}
+		return (dou_th >= m_threshold);
+	}
 };
 

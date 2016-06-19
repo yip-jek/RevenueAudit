@@ -3,6 +3,7 @@
 #include "anadbinfo.h"
 #include "log.h"
 #include "pubstr.h"
+#include "thresholdcompare.h"
 
 
 Alarm::Alarm()
@@ -50,6 +51,26 @@ void Alarm::SetAlarmRule(AlarmRule& alarm_rule)
 
 std::string Alarm::GenerateDimKey(std::vector<std::string>& vec_str) throw(base::Exception)
 {
+	if ( vec_str.size() < m_kpiDimSize )
+	{
+		throw base::Exception(AE_GENERATE_DIM_KEY_FAILED, "[ALARM] 无法生成维度 KEY 值：数据列数(size:%lu) < 维度列数(size:%d) (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", vec_str.size(), m_kpiDimSize, m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+	}
+
+	std::string dim_key;
+	for ( int i = 0; i < m_kpiDimSize; ++i )
+	{
+		// 维度 KEY 值：中间用竖线（'|'）分隔
+		if ( i != 0 )
+		{
+			dim_key += ("|" + base::PubStr::TrimB(vec_str[i]));
+		}
+		else
+		{
+			dim_key += base::PubStr::TrimB(vec_str[i]);
+		}
+	}
+
+	return dim_key;
 }
 
 void Alarm::CollectValueColumn(const std::string& val_col) throw(base::Exception)

@@ -25,9 +25,10 @@ public:
 	// 错误码
 	enum AlarmError
 	{
-		AE_ANALYSIS_EXP_FAILED   = -3004001,		// 告警表达式解析失败
-		AE_COLLECT_VALCOL_FAILED = -3004002,		// 收集值列失败
-		AE_ALARM_CALC_FAILED     = -3004003,		// 告警计算失败
+		AE_ANALYSIS_EXP_FAILED     = -3004001,		// 告警表达式解析失败
+		AE_COLLECT_VALCOL_FAILED   = -3004002,		// 收集值列失败
+		AE_ALARM_CALC_FAILED       = -3004003,		// 告警计算失败
+		AE_GENERATE_DIM_KEY_FAILED = -3004004,		// 生成维度 KEY 值失败
 	};
 
 public:

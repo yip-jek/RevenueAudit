@@ -5,6 +5,7 @@
 #include "pubtime.h"
 #include "log.h"
 #include "alarmevent.h"
+#include "thresholdcompare.h"
 
 
 AlarmFluctuate::AlarmFluctuate()
@@ -49,12 +50,8 @@ void AlarmFluctuate::AnalyseTargetData(std::vector<std::vector<std::string> >& v
 		{
 			std::vector<std::string>& ref_vec1 = vec2_data[i];
 
-			// 以维度集为 key 值
-			key.clear();
-			for ( int j = 0; j < m_kpiDimSize; ++j )
-			{
-				key += base::PubStr::TrimB(ref_vec1[j]);
-			}
+			// 生成维度 key 值
+			key = GenerateDimKey(ref_vec1);
 
 			// 已存在于结果数据中，则跳过
 			if ( m_mResultData.find(key) != m_mResultData.end() )
@@ -89,12 +86,8 @@ void AlarmFluctuate::SetCompareData(std::vector<std::vector<std::string> >& vec2
 	{
 		std::vector<std::string>& ref_vec1 = vec2_data[i];
 
-		// 以维度集为 key 值
-		key.clear();
-		for ( int j = 0; j < m_kpiDimSize; ++j )
-		{
-			key += base::PubStr::TrimB(ref_vec1[j]);
-		}
+		// 生成维度 key 值
+		key = GenerateDimKey(ref_vec1);
 
 		m_mCompareData[key] = ref_vec1;
 	}
@@ -199,8 +192,10 @@ void AlarmFluctuate::AlarmCalculation(const std::string& key, std::vector<std::s
 		}
 
 		// 是否达到告警阈值？
-		if ( m_pThresholdCompare->IsReachThreshold(dou_target, dou_src) )
+		double dou_threshold = 0.0;
+		if ( m_pThresholdCompare->ReachThreshold(dou_target, dou_src, &dou_threshold) )
 		{
+			dddddddddd;
 		}
 	}
 }

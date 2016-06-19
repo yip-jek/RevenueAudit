@@ -42,11 +42,13 @@ void HiveDB2Connector::ToDisconnect()
 	if ( m_db2Connected && m_pDB2 != NULL )
 	{
 		m_pDB2->Disconnect();
+		m_db2Connected = false;
 	}
 
 	if ( m_hiveConnected && m_pHive != NULL )
 	{
 		m_pHive->Disconnect();
+		m_hiveConnected = false;
 	}
 }
 
@@ -85,6 +87,9 @@ void AutoDisconnect::Disconnect()
 {
 	if ( m_need2Disconnect && m_pConnector != NULL )
 	{
+		// 先标记
+		m_need2Disconnect = false;
+
 		m_pConnector->ToDisconnect();
 	}
 }
