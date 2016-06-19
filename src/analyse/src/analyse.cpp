@@ -1238,5 +1238,21 @@ void Analyse::RatioAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::E
 
 void Analyse::HandleAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::Exception)
 {
+	if ( vec_event.empty() )
+	{
+		m_pLog->Output("[Analyse] 无告警需要处理！");
+	}
+	else
+	{
+		std::string event_id;
+		if ( m_pAnaDB2->SelectMaxAlarmEventID(event_id) )
+		{
+		}
+
+		const int VEC_EVENT_SIZE = vec_event.size();
+		for ( int i = 0; i < VEC_EVENT_SIZE; ++i )
+		{
+		}
+	}
 }
 

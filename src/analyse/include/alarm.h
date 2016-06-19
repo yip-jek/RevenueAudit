@@ -18,6 +18,22 @@ struct AnaDBInfo;
 struct AlarmRule;
 class AlarmEvent;
 
+// 告警数据
+struct AlarmData
+{
+public:
+	AlarmData(): reach_threshold(0.0)
+	{}
+
+public:
+	std::string	alarm_date;				// 告警产生时间
+	std::string	alarm_targetname;		// 告警目标名称
+	std::string alarm_targetval;		// 告警目标值
+	std::string	alarm_srcname;			// 告警比对源名称
+	std::string	alarm_srcval;			// 告警比对源值
+	double		reach_threshold;		// 当前（达到）的阈值
+};
+
 // （基础）告警类
 class Alarm
 {
@@ -74,7 +90,7 @@ protected:
 	ThresholdCompare*	m_pThresholdCompare;
 
 protected:
-	std::map<std::string, std::vector<std::string> >	m_mResultData;			// 告警结果数据
+	std::map<std::string, std::vector<AlarmData> >	m_mResultData;			// 告警结果数据
 
 protected:
 	int m_kpiDimSize;			// 指标维度字段数

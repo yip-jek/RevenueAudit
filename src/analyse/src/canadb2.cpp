@@ -697,6 +697,10 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 	v2_data.swap(vec2_data);
 }
 
+bool CAnaDB2::SelectMaxAlarmEventID(std::string& event_id) throw(base::Exception)
+{
+}
+
 void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);

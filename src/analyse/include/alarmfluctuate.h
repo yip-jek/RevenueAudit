@@ -2,6 +2,8 @@
 
 #include "alarm.h"
 
+struct AlarmData;
+
 // 波动告警
 class AlarmFluctuate : public Alarm
 {
@@ -40,8 +42,15 @@ private:
 	// 返回：true-包含等号，false-不包含等号
 	bool DealWithEqual(std::string& exp) throw(base::Exception);
 
+	// 告警事件内容
+	std::string GetAlarmEventCont();
+
+	// 告警事件描述
+	std::string GetAlarmEventDesc(const std::string& key, const AlarmData& a_data);
+
 private:
 	std::string											m_strAlarmDate;			// 告警波动时间
+	std::string											m_expAlarmThreshold;	// 告警阈值（取自告警表达式）
 	std::map<std::string, std::vector<std::string> >	m_mCompareData;			// 告警对比数据
 };
 

@@ -3,6 +3,7 @@
 #include "anadbinfo.h"
 #include "pubstr.h"
 #include "pubtime.h"
+#include "simpletime.h"
 #include "log.h"
 #include "alarmevent.h"
 #include "thresholdcompare.h"
@@ -66,11 +67,56 @@ void AlarmFluctuate::AnalyseTargetData(std::vector<std::vector<std::string> >& v
 			}
 		}
 	}
+	else
+	{
+		m_pLog->Output("<WARNING> [Alarm] 无波动对比数据！");
+	}
 }
 
 bool AlarmFluctuate::GenerateAlarmEvent(std::vector<AlarmEvent>& vec_event)
 {
-	return false;
+	std::vector<AlarmEvent> v_e;
+	if ( m_mResultData.empty() )
+	{
+		m_pLog->Output("[Alarm] 生成波动告警事件 ...");
+
+		AlarmEvent a_event;
+		a_event.eventCont = GetAlarmEventCont();
+		a_event.alarmLevel = AlarmEvent::ALARM_LV_01;
+		a_event.alarmID    = m_pAlarmRule->AlarmID;
+		a_event.alarmState = AlarmEvent::ASTAT_01;
+
+		std::map<std::string, std::vector<AlarmData> >::iterator m_it = m_mResultData.begin();
+		for ( ; m_it != m_mResultData.end(); ++m_it )
+		{
+			std::string& ref_key            = m_it->first;
+			std::vector<AlarmData>& ref_vec = m_it->second;
+
+			const int VEC_AD_SIZE = ref_vec.size();
+			for ( int i = 0; i < VEC_AD_SIZE; ++i )
+			{
+				AlarmData& ref_ad = ref_vec[i];
+
+				//a_event.eventID = "";		// 不设定告警事件 ID
+				a_event.eventDesc = GetAlarmEventDesc(ref_key, ref_ad);
+				a_event.alarmTime = ref_ad.alarm_date;
+
+				v_e.push_back(a_event);
+			}
+		}
+
+		m_pLog->Output("[Alarm] 生成的波动告警事件数：%llu", v_e.size());
+
+		v_e.swap(vec_event);
+		return true;
+	}
+	else
+	{
+		v_e.swap(vec_event);
+
+		m_pLog->Output("[Alarm] 无波动告警事件.");
+		return false;
+	}
 }
 
 std::string AlarmFluctuate::GetFluctuateDate() const
@@ -137,7 +183,8 @@ void AlarmFluctuate::AnalyseFluctExp(const std::string& exp_fluct) throw(base::E
 	// 处理等于号
 	bool contain_equal = DealWithEqual(ref_str);
 
-	if ( !base::PubStr::StrTrans2Double(ref_str, m_alarmThreshold) )
+	m_expAlarmThreshold = base::PubStr::TrimB(ref_str);
+	if ( !base::PubStr::StrTrans2Double(m_expAlarmThreshold, m_alarmThreshold) )
 	{
 		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_fluct.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
@@ -165,10 +212,12 @@ void AlarmFluctuate::AlarmCalculation(const std::string& key, std::vector<std::s
 	const int TARGET_SIZE = vec_target.size();
 	const int SRC_SIZE    = vec_src.size();
 
+	std::map<std::string, std::vector<AlarmData> >::iterator m_it;
 	std::set<int>::iterator s_it;
 	double dou_target    = 0.0;
 	double dou_src       = 0.0;
 	double dou_threshold = 0.0;
+	AlarmData a_data;
 
 	for ( s_it = m_setValCol.begin(); s_it != m_setValCol.end(); ++s_it )
 	{
@@ -182,20 +231,42 @@ void AlarmFluctuate::AlarmCalculation(const std::string& key, std::vector<std::s
 			throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 源数据不存在的列：%d (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", (index+1), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 		}
 
-		if ( !base::PubStr::T1TransT2(vec_target[index], dou_target) )
+		std::string& ref_target = vec_target[index];
+		if ( !base::PubStr::T1TransT2(ref_target, dou_target) )
 		{
-			throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 目标数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", vec_target[index].c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 目标数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_target.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 		}
-		if ( !base::PubStr::T1TransT2(vec_src[index], dou_src) )
+
+		std::string& ref_src = vec_src[index];
+		if ( !base::PubStr::T1TransT2(ref_src, dou_src) )
 		{
-			throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 源数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", vec_src[index].c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 源数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_src.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 		}
 
 		// 是否达到告警阈值？
 		double dou_threshold = 0.0;
 		if ( m_pThresholdCompare->ReachThreshold(dou_target, dou_src, &dou_threshold) )
 		{
-			dddddddddd;
+			// 告警时间为当前时间（精确到秒）
+			a_data.alarm_date       = base::PubTime::SimpleTime::Now().Time14();
+			// 告警目标名称为对应的字段名
+			a_data.alarm_targetname = m_pDBInfo->vec_fields[index];
+			a_data.alarm_targetval  = ref_target;
+			// 告警对比源名称为波动时间
+			a_data.alarm_srcname    = m_strAlarmDate;
+			a_data.alarm_srcval     = ref_src;
+			// 当前阈值
+			a_data.reach_threshold = dou_threshold;
+
+			m_it = m_mResultData.find(key);
+			if ( m_it != m_mResultData.end() )		// 已经存在
+			{
+				m_it->second.push_back(a_data);
+			}
+			else	// 不存在
+			{
+				m_mResultData[key].push_back(a_data);
+			}
 		}
 	}
 }
@@ -217,5 +288,22 @@ bool AlarmFluctuate::DealWithEqual(std::string& exp) throw(base::Exception)
 	}
 
 	return false;
+}
+
+std::string AlarmFluctuate::GetAlarmEventCont()
+{
+	return ("波动告警_对比" + m_strAlarmDate + "的数据_超过告警阈值_" + m_expAlarmThreshold);
+}
+
+std::string AlarmFluctuate::GetAlarmEventDesc(const std::string& key, const AlarmData& a_data)
+{
+	std::string event_desc = "波动告警：<维度>" + key + "的<值>" + a_data.alarm_targetname + "的数据";
+	event_desc += (a_data.alarm_targetval + ", 对比" + a_data.alarm_srcname + "的数据");
+	event_desc += (a_data.alarm_srcval + ", 阈值达到");
+
+	std::string str_tmp;
+	base::PubStr::T1TransT2(a_data.reach_threshold, str_tmp);
+	event_desc += (str_tmp + ", 超过了告警阈值" + m_expAlarmThreshold);
+	return event_desc;
 }
 

@@ -99,6 +99,10 @@ public:
 	// 获取目标数据
 	void SelectTargetData(AnaDBInfo& db_info, const std::string& date, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
 
+	// 获取最大告警事件 ID
+	// 返回：true-成功获取，false-获取失败（无告警事件数据）
+	bool SelectMaxAlarmEventID(std::string& event_id) throw(base::Exception);
+
 private:
 	// 查询指标规则信息
 	void SelectKpiRule(AnaTaskInfo& info) throw(base::Exception);
