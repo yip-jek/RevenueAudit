@@ -33,6 +33,7 @@ public:
 		ADBERR_INS_REPORT_DATA   = -3002013,				// 插入报表统计数据出错
 		ADBERR_SEL_CHANN_UNICODE = -3002014,				// 获取渠道统一编码数据出错
 		ADBERR_SEL_CITY_UNICODE  = -3002015,				// 获取地市统一编码数据出错
+		ADBERR_SEL_MAX_EVENTID   = -3002016,				// 获取最大告警事件 ID 出错
 	};
 
 public:
@@ -101,7 +102,7 @@ public:
 
 	// 获取最大告警事件 ID
 	// 返回：true-成功获取，false-获取失败（无告警事件数据）
-	bool SelectMaxAlarmEventID(std::string& event_id) throw(base::Exception);
+	bool SelectMaxAlarmEventID(int& max_event_id) throw(base::Exception);
 
 private:
 	// 查询指标规则信息

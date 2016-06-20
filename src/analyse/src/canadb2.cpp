@@ -697,8 +697,55 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 	v2_data.swap(vec2_data);
 }
 
-bool CAnaDB2::SelectMaxAlarmEventID(std::string& event_id) throw(base::Exception)
+bool CAnaDB2::SelectMaxAlarmEventID(int& max_event_id) throw(base::Exception)
 {
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	try
+	{
+		std::string sql = "select count(0) from " + m_tabAlarmEvent;
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		int rec_count = -1;
+		while ( !rs.IsEOF() )
+		{
+			rec_count = (int)rs[1];
+
+			rs.MoveNext();
+		}
+
+		if ( rec_count > 0 )			// 有记录
+		{
+			sql = "select max(ALARMEVENT_ID) from " + m_tabAlarmEvent;
+
+			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+			rs.Execute();
+
+			while ( !rs.IsEOF() )
+			{
+				max_event_id = (int)rs[1];
+
+				rs.MoveNext();
+			}
+
+			return true;
+		}
+		else if ( 0 == rec_count )		// 无记录
+		{
+			return false;
+		}
+		else	// 无返回值
+		{
+			throw base::Exception(ADBERR_SEL_MAX_EVENTID, "[DB2] %s failed: NO result ! [FILE:%s, LINE:%d]", sql.c_str(), __FILE__, __LINE__);
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_MAX_EVENTID, "[DB2] Select %s max event ID failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmEvent.c_str(), ex.what(), __FILE__, __LINE__);
+	}
 }
 
 void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
