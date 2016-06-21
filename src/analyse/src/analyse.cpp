@@ -1246,22 +1246,27 @@ void Analyse::HandleAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::E
 	{
 		m_pLog->Output("[Analyse] 处理告警 ...");
 
-		int max_eventid = 0;
-		if ( m_pAnaDB2->SelectMaxAlarmEventID(max_eventid) )
+		int event_id = 0;
+		if ( m_pAnaDB2->SelectMaxAlarmEventID(event_id) )
 		{
-			m_pLog->Output("[Analyse] 当前告警事件表中最大告警事件ID: %d", max_eventid);
+			m_pLog->Output("[Analyse] 告警事件表 (%s) 中最大告警事件ID: %d", m_tabAlarmEvent.c_str(), event_id);
+
+			++event_id;		// 最大告警事件 ID + 1
 		}
 		else
 		{
-			m_pLog->Output("[Analyse] 当前告警事件表中无告警事件记录！");
+			m_pLog->Output("[Analyse] 告警事件表 (%s) 中无告警事件记录！", m_tabAlarmEvent.c_str());
 
-			max_eventid = 1;
+			event_id = 1;
 			m_pLog->Output("[Analyse] 默认告警事件 ID 从 1 开始.");
 		}
 
 		const int VEC_EVENT_SIZE = vec_event.size();
 		for ( int i = 0; i < VEC_EVENT_SIZE; ++i )
 		{
+			AlarmEvent& ref_event = vec_event[i];
+			ref_event.eventID = event_id++;
+
 		}
 	}
 }

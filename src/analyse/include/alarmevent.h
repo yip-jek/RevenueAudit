@@ -39,7 +39,7 @@ public:
 	static std::string AlarmStateToString(ALARM_STATE a_stat);
 
 public:
-	std::string	eventID;			// 告警事件 ID
+	int			eventID;			// 告警事件 ID
 	std::string	eventCont;			// 告警事件内容
 	std::string	eventDesc;			// 告警事件描述
 	ALARM_LEVEL	alarmLevel;			// 告警等级

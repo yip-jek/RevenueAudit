@@ -97,7 +97,7 @@ bool AlarmFluctuate::GenerateAlarmEvent(std::vector<AlarmEvent>& vec_event)
 			{
 				AlarmData& ref_ad = ref_vec[i];
 
-				//a_event.eventID = "";		// 不设定告警事件 ID
+				//a_event.eventID = 0;		// 不设定告警事件 ID
 				a_event.eventDesc = GetAlarmEventDesc(ref_key, ref_ad);
 				a_event.alarmTime = ref_ad.alarm_date;
 

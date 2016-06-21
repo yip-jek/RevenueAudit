@@ -2,7 +2,8 @@
 
 
 AlarmEvent::AlarmEvent()
-:alarmLevel(ALARM_LV_00)
+:eventID(0)
+,alarmLevel(ALARM_LV_00)
 ,alarmState(ASTAT_00)
 {
 }
@@ -57,14 +58,18 @@ std::string AlarmEvent::AlarmLevelToString(AlarmEvent::ALARM_LEVEL a_lv)
 
 std::string AlarmEvent::AlarmStateToString(AlarmEvent::ALARM_STATE a_stat)
 {
-	/*
-	   00 – 未知状态
-	   01 – 告警生成
-	   02 – 告警派单
-	   03 – 告警消除
-	 */
 	switch ( a_stat )
 	{
+	case ASTAT_00:			// 未知状态
+		return "00";
+	case ASTAT_01:			// 告警生成
+		return "01";
+	case ASTAT_02:			// 告警派单
+		return "02";
+	case ASTAT_03:			// 告警消除
+		return "03";
+	default:
+		return std::string();
 	}
 }
 
