@@ -135,5 +135,31 @@ bool PubTime::DateApartFromNow(const std::string& fmt, PubTime::DATE_TYPE& d_typ
 	return true;
 }
 
+bool PubTime::TheDateOf(const std::string& date_of_what, std::string& date)
+{
+	std::string d_of_what = PubStr::TrimUpperB(date_of_what);
+
+	if ( "THE_DAY_OF_LAST_WEEK" == d_of_what )			// 上个星期的今天
+	{
+		date = DateNowMinusDays(7);
+	}
+	else if ( "THE_DAY_OF_LAST_MONTH" == d_of_what )	// 上个月的今天
+	{
+	}
+	else if ( "THE_DAY_OF_LAST_YEAR" == d_of_what )		// 去年的今天
+	{
+	}
+	else if ( "THE_MONTH_OF_LAST_YEAR" == d_of_what )	// 去年的这个月
+	{
+		date = DateNowMinusMonths(1);
+	}
+	else	// 不支持的输入类型
+	{
+		return false;
+	}
+
+	return true;
+}
+
 }	// namespace base
 

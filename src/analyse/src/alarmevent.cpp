@@ -65,7 +65,7 @@ int AlarmEvent::TransAlarmState(AlarmEvent::ALARM_STATE a_stat)
 	case ASTAT_01:			// 告警生成
 		return 1;
 	case ASTAT_02:			// 告警派单
-		return 2
+		return 2;
 	case ASTAT_03:			// 告警消除
 		return 3;
 	default:

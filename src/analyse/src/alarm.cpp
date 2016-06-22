@@ -51,7 +51,7 @@ void Alarm::SetAlarmRule(AlarmRule& alarm_rule)
 
 std::string Alarm::GenerateDimKey(std::vector<std::string>& vec_str) throw(base::Exception)
 {
-	if ( vec_str.size() < m_kpiDimSize )
+	if ( vec_str.size() < (size_t)m_kpiDimSize )
 	{
 		throw base::Exception(AE_GENERATE_DIM_KEY_FAILED, "[ALARM] 无法生成维度 KEY 值：数据列数(size:%lu) < 维度列数(size:%d) (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", vec_str.size(), m_kpiDimSize, m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}

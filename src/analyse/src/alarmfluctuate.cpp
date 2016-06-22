@@ -89,7 +89,7 @@ bool AlarmFluctuate::GenerateAlarmEvent(std::vector<AlarmEvent>& vec_event)
 		std::map<std::string, std::vector<AlarmData> >::iterator m_it = m_mResultData.begin();
 		for ( ; m_it != m_mResultData.end(); ++m_it )
 		{
-			std::string& ref_key            = m_it->first;
+			const std::string& REF_KEY      = m_it->first;
 			std::vector<AlarmData>& ref_vec = m_it->second;
 
 			const int VEC_AD_SIZE = ref_vec.size();
@@ -98,7 +98,7 @@ bool AlarmFluctuate::GenerateAlarmEvent(std::vector<AlarmEvent>& vec_event)
 				AlarmData& ref_ad = ref_vec[i];
 
 				//a_event.eventID = 0;		// 不设定告警事件 ID
-				a_event.eventDesc = GetAlarmEventDesc(ref_key, ref_ad);
+				a_event.eventDesc = GetAlarmEventDesc(REF_KEY, ref_ad);
 				a_event.alarmTime = ref_ad.alarm_date;
 
 				v_e.push_back(a_event);
@@ -168,10 +168,15 @@ void AlarmFluctuate::AnalyseFluctExp(const std::string& exp_fluct) throw(base::E
 		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_fluct.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
-	base::PubTime::DATE_TYPE d_type;
-	if ( !base::PubTime::DateApartFromNow(vec_str[0], d_type, m_strAlarmDate) )
+	// 先尝试特殊时间格式转换
+	if ( !base::PubTime::TheDateOf(vec_str[0], m_strAlarmDate) )
 	{
-		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_fluct.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		// （失败后）再尝试以时间表达式转换
+		base::PubTime::DATE_TYPE d_type;
+		if ( !base::PubTime::DateApartFromNow(vec_str[0], d_type, m_strAlarmDate) )
+		{
+			throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_fluct.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		}
 	}
 
 	std::string& ref_str = vec_str[1];
@@ -221,7 +226,7 @@ void AlarmFluctuate::AlarmCalculation(const std::string& key, std::vector<std::s
 
 	for ( s_it = m_setValCol.begin(); s_it != m_setValCol.end(); ++s_it )
 	{
-		int& index = *s_it;
+		const int& index = *s_it;
 		if ( index >= TARGET_SIZE )
 		{
 			throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 目标数据不存在的列：%d (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", (index+1), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
@@ -244,11 +249,10 @@ void AlarmFluctuate::AlarmCalculation(const std::string& key, std::vector<std::s
 		}
 
 		// 是否达到告警阈值？
-		double dou_threshold = 0.0;
 		if ( m_pThresholdCompare->ReachThreshold(dou_target, dou_src, &dou_threshold) )
 		{
 			// 告警时间为当前时间（精确到秒）
-			a_data.alarm_date       = base::PubTime::SimpleTime::Now().Time14();
+			a_data.alarm_date       = base::SimpleTime::Now().Time14();
 			// 告警目标名称为对应的字段名
 			a_data.alarm_targetname = m_pDBInfo->vec_fields[index];
 			a_data.alarm_targetval  = ref_target;

@@ -324,7 +324,7 @@ void Acquire::CheckSourceTable(AcqTaskInfo& info, bool hive) throw(base::Excepti
 	// 是否所有源表都不存在？
 	if ( info.vecEtlRuleDataSrc.empty() )
 	{
-		throw base::Exception(ACQERR_CHECK_SRC_TAB_FAILED, "All source tables are not existed! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_CHECK_SRC_TAB_FAILED, "%s All source tables are not existed! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", TYPE_IDENT.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[Acquire] Check source table OK.");

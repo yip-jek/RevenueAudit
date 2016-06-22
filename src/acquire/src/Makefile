@@ -4,12 +4,13 @@ srcs = $(wildcard *.cpp)
 objs = $(srcs:.cpp=.o)
 
 bin  = $(BIN_DIR)/HAcquire
+baselib = $(LIB_DIR)/libbase.a
 
 .PHONY: all clean
 all: $(bin)
 	@echo "All made!"
 
-$(bin): $(objs)
+$(bin): $(objs) $(baselib)
 	$(CPP) $(CPP_FLAG) -o $@ $^ $(LIBS)
 
 .cpp.o:

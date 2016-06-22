@@ -4,6 +4,7 @@
 #include "simpletime.h"
 #include "anadbinfo.h"
 #include "uniformcodetransfer.h"
+#include "alarmevent.h"
 
 
 CAnaDB2::CAnaDB2(const std::string& db_name, const std::string& usr, const std::string& pw)
@@ -424,10 +425,10 @@ void CAnaDB2::InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Excepti
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_INS_DIM_VALUE, "[DB2] Insert %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_INS_DIM_VALUE, "[DB2] Insert new dim_value to %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
-	m_pLog->Output("[DB2] Insert [%s]: %lu", m_tabDimValue.c_str(), vec_dv.size());
+	m_pLog->Output("[DB2] Insert new dim_value to [%s]: %lu", m_tabDimValue.c_str(), vec_dv.size());
 }
 
 void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception)
@@ -746,6 +747,53 @@ bool CAnaDB2::SelectMaxAlarmEventID(int& max_event_id) throw(base::Exception)
 	{
 		throw base::Exception(ADBERR_SEL_MAX_EVENTID, "[DB2] Select %s max event ID failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmEvent.c_str(), ex.what(), __FILE__, __LINE__);
 	}
+}
+
+void CAnaDB2::InsertAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	try
+	{
+		std::string sql = "insert into " + m_tabAlarmEvent;
+		sql += "(ALARMEVENT_ID, ALARMEVENT_CONT, ALARMEVENT_DESC, ALARM_LEVEL, ALARM_ID, ALARM_TIME, ALARM_STATE) ";
+		sql += "values(?, ?, ?, ?, ?, ?, ?)";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		Begin();
+
+		const int VEC_SIZE = vec_event.size();
+		for ( int i = 0; i < VEC_SIZE; ++i )
+		{
+			AlarmEvent& ref_event = vec_event[i];
+
+			rs.Parameter(1) = ref_event.eventID;
+			rs.Parameter(2) = ref_event.eventCont.c_str();
+			rs.Parameter(3) = ref_event.eventDesc.c_str();
+			rs.Parameter(4) = AlarmEvent::TransAlarmLevel(ref_event.alarmLevel).c_str();
+			rs.Parameter(5) = ref_event.alarmID.c_str();
+			rs.Parameter(6) = ref_event.alarmTime.c_str();
+			rs.Parameter(7) = AlarmEvent::TransAlarmState(ref_event.alarmState);
+
+			rs.Execute();
+
+			// 每达到最大值提交一次
+			if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
+			{
+				Commit();
+			}
+		}
+
+		Commit();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_INS_ALARMEVENT, "[DB2] Insert alarm event to %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmEvent.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB2] Insert alarm event to [%s]: %lu", m_tabAlarmEvent.c_str(), vec_event.size());
 }
 
 void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)

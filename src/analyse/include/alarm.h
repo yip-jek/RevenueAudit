@@ -17,6 +17,7 @@ struct AnaTaskInfo;
 struct AnaDBInfo;
 struct AlarmRule;
 class AlarmEvent;
+class ThresholdCompare;
 
 // 告警数据
 struct AlarmData

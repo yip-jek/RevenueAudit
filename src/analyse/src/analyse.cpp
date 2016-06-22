@@ -1116,9 +1116,6 @@ void Analyse::RemoveOldResult() throw(base::Exception)
 
 void Analyse::AlarmJudgement(AnaTaskInfo& info) throw(base::Exception)
 {
-	m_pLog->Output("[Analyse] 無告警!");
-	return;
-
 	// 是否有配置告警？
 	if ( info.vecAlarm.empty() )
 	{
@@ -1240,11 +1237,11 @@ void Analyse::HandleAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::E
 {
 	if ( vec_event.empty() )
 	{
-		m_pLog->Output("[Analyse] 无告警需要处理！");
+		m_pLog->Output("[Analyse] 无告警事件需要处理！");
 	}
 	else
 	{
-		m_pLog->Output("[Analyse] 处理告警 ...");
+		m_pLog->Output("[Analyse] 处理告警事件 ...");
 
 		int event_id = 0;
 		if ( m_pAnaDB2->SelectMaxAlarmEventID(event_id) )
@@ -1261,13 +1258,20 @@ void Analyse::HandleAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::E
 			m_pLog->Output("[Analyse] 默认告警事件 ID 从 1 开始.");
 		}
 
+		// 设置告警事件 ID
+		m_pLog->Output("[Analyse] 设置告警事件 ID ...");
 		const int VEC_EVENT_SIZE = vec_event.size();
 		for ( int i = 0; i < VEC_EVENT_SIZE; ++i )
 		{
 			AlarmEvent& ref_event = vec_event[i];
 			ref_event.eventID = event_id++;
-
 		}
+
+		// 告警事件入库
+		m_pLog->Output("[Analyse] 登记告警事件 ...");
+		m_pAnaDB2->InsertAlarmEvent(vec_event);
+
+		m_pLog->Output("[Analyse] 成功登记告警事件：%lu", VEC_EVENT_SIZE);
 	}
 }
 

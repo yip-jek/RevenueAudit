@@ -35,6 +35,16 @@ public:
 	// fmt为时间格式：（月）[mon][+/-][月数]; （日）[day][+/-][日数]
 	// 成功返回true，失败返回false
 	static bool DateApartFromNow(const std::string& fmt, DATE_TYPE& d_type, std::string& date);
+
+	// 特殊时间转换
+	// 描述：...的时间(月时间或者日时间）
+	// 返回：true-成功，false-失败
+	// 支持的输入类型（date_of_what）：
+	//   THE_DAY_OF_LAST_WEEK   - 上个星期的今天
+	//   THE_DAY_OF_LAST_MONTH  - 上个月的今天
+	//   THE_DAY_OF_LAST_YEAR   - 去年的今天
+	//   THE_MONTH_OF_LAST_YEAR - 去年的这个月
+	static bool TheDateOf(const std::string& date_of_what, std::string& date);
 };
 
 }	// namespace base
