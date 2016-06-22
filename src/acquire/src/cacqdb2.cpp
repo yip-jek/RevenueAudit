@@ -302,3 +302,39 @@ void CAcqDB2::FetchEtlData(const std::string& sql, int data_size, std::vector<st
 	v2_data.swap(vec2_data);
 }
 
+bool CAcqDB2::CheckTableExisted(const std::string& tab_name) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	try
+	{
+		std::string sql = "select count(0) from syscat.tables where tabname='" + tab_name + "'";
+		m_pLog->Output("[DB2] Check table: %s", tab_name.c_str());
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		int count = -1;
+		while ( !rs.IsEOF() )
+		{
+			count = (int)rs[1];
+
+			rs.MoveNext();
+		}
+
+		if ( count < 0 )	// 没有返回结果
+		{
+			throw base::Exception(ADBERR_CHECK_SRC_TAB, "[DB2] Check table '%s' existed failed: NO result! [FILE:%s, LINE:%d]", tab_name.c_str(), __FILE__, __LINE__);
+		}
+		else
+		{
+			return (count > 0);
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_CHECK_SRC_TAB, "[DB2] Check table '%s' existed failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+

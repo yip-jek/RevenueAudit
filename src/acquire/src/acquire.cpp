@@ -28,7 +28,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.13.0089 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.15.0093 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -253,6 +253,8 @@ void Acquire::DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 
 void Acquire::HiveDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 {
+	CheckSourceTable(info, true);
+
 	RebuildHiveTable(info);
 
 	std::vector<std::string> vec_hivesql;
@@ -264,6 +266,8 @@ void Acquire::HiveDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 
 void Acquire::DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 {
+	CheckSourceTable(info, false);
+
 	LoadHdfsConfig();
 
 	HdfsConnector* pHdfsConnector = new HdfsConnector(m_sHdfsHost, m_nHdfsPort);
@@ -290,6 +294,40 @@ void Acquire::DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 
 		LoadHdfsFile2Hive(info.EtlRuleTarget, hdfsFile);
 	}
+}
+
+void Acquire::CheckSourceTable(AcqTaskInfo& info, bool hive) throw(base::Exception)
+{
+	m_pLog->Output("[Acquire] Check source table whether exists or not ...");
+
+	std::string trans_src_tab;
+	int datasrc_size = info.vecEtlRuleDataSrc.size();
+
+	const std::string TYPE_IDENT = (hive ? "[HIVE]" : "[DB2]");
+	for ( int i = 0; i < datasrc_size; ++i )
+	{
+		trans_src_tab = TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]);
+
+		if ( (hive && !m_pAcqHive->CheckTableExisted(trans_src_tab)) 		// HIVE
+			|| (!hive && !m_pAcqDB2->CheckTableExisted(trans_src_tab)) )	// DB2
+		{
+			m_pLog->Output("<WARNING> [Acquire] %s Source table not existed: %s [IGNORED]", TYPE_IDENT.c_str(), trans_src_tab.c_str());
+
+			// 删除不存在的源表
+			info.vecEtlRuleDataSrc.erase(info.vecEtlRuleDataSrc.begin()+i);
+			// 重置 size
+			datasrc_size = info.vecEtlRuleDataSrc.size();
+			--i;
+		}
+	}
+
+	// 是否所有源表都不存在？
+	if ( info.vecEtlRuleDataSrc.empty() )
+	{
+		throw base::Exception(ACQERR_CHECK_SRC_TAB_FAILED, "All source tables are not existed! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[Acquire] Check source table OK.");
 }
 
 void Acquire::LoadHdfsConfig() throw(base::Exception)

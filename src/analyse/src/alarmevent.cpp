@@ -39,7 +39,7 @@ const AlarmEvent& AlarmEvent::operator = (const AlarmEvent& ae)
 	return *this;
 }
 
-std::string AlarmEvent::AlarmLevelToString(AlarmEvent::ALARM_LEVEL a_lv)
+std::string AlarmEvent::TransAlarmLevel(AlarmEvent::ALARM_LEVEL a_lv)
 {
 	switch ( a_lv )
 	{
@@ -56,20 +56,20 @@ std::string AlarmEvent::AlarmLevelToString(AlarmEvent::ALARM_LEVEL a_lv)
 	}
 }
 
-std::string AlarmEvent::AlarmStateToString(AlarmEvent::ALARM_STATE a_stat)
+int AlarmEvent::TransAlarmState(AlarmEvent::ALARM_STATE a_stat)
 {
 	switch ( a_stat )
 	{
 	case ASTAT_00:			// 未知状态
-		return "00";
+		return 0;
 	case ASTAT_01:			// 告警生成
-		return "01";
+		return 1;
 	case ASTAT_02:			// 告警派单
-		return "02";
+		return 2
 	case ASTAT_03:			// 告警消除
-		return "03";
+		return 3;
 	default:
-		return std::string();
+		return -1;
 	}
 }
 

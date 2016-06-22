@@ -15,6 +15,7 @@ public:
 		ADBERR_SEL_ETL_DIM      = -2002002,			// 查询采集维度规则出错
 		ADBERR_SEL_ETL_VAL      = -2002003,			// 查询采集值规则出错
 		ADBERR_FETCH_ETL_DATA   = -2002004,			// 执行数据采集出错
+		ADBERR_CHECK_SRC_TAB    = -2002005,			// 检查表是否存在出错
 	};
 
 public:
@@ -35,6 +36,10 @@ public:
 
 	// 执行数据采集
 	void FetchEtlData(const std::string& sql, int data_size, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
+
+	// 表是否存在
+	// 返回：true-表存在，false-表不存在
+	bool CheckTableExisted(const std::string& tab_name) throw(base::Exception);
 
 private:
 	// 查询采集规则信息

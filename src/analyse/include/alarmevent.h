@@ -32,11 +32,11 @@ public:
 	};
 
 public:
-	// 告警等级字符表示
-	static std::string AlarmLevelToString(ALARM_LEVEL a_lv);
+	// 告警等级转换
+	static std::string TransAlarmLevel(ALARM_LEVEL a_lv);
 
-	// 告警状态字符表示
-	static std::string AlarmStateToString(ALARM_STATE a_stat);
+	// 告警状态转换
+	static int TransAlarmState(ALARM_STATE a_stat);
 
 public:
 	int			eventID;			// 告警事件 ID

@@ -29,6 +29,7 @@ public:
 		ACQERR_HDFS_PORT_INVALID       = -2000010,			// HDFS端口无效
 		ACQERR_OUTPUT_HDFS_FILE_FAILED = -2000011,			// 输出到HDFS文件失败
 		ACQERR_LOAD_HIVE_FAILED        = -2000012,			// 载入数据到HIVE失败
+		ACQERR_CHECK_SRC_TAB_FAILED    = -2000013,			// 检查源表失败
 	};
 
 public:
@@ -65,6 +66,9 @@ private:
 
 	// DB2数据采集
 	void DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception);
+
+	// 检查源表是否存在
+	void CheckSourceTable(AcqTaskInfo& info, bool hive) throw(base::Exception);
 
 	// 载入HDFS配置
 	void LoadHdfsConfig() throw(base::Exception);

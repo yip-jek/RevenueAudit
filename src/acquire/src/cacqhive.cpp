@@ -87,3 +87,21 @@ void CAcqHive::ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exce
 	}
 }
 
+bool CAcqHive::CheckTableExisted(const std::string& tab_name) throw(base::Exception)
+{
+	try
+	{
+		std::string sql = "show tables like '" + tab_name + "'";
+		m_pLog->Output("[HIVE] Check table: %s", tab_name.c_str());
+
+		std::vector<std::vector<std::string> > vec2_str;
+		FetchSQL(sql, vec2_str);
+
+		return (!vec2_str.empty());
+	}
+	catch ( const base::Exception& ex )
+	{
+		throw base::Exception(HTERR_CHECK_TAB_EXISTED_FAILED, "[HIVE] Execute sql failed! %s [FILE:%s, LINE:%d]", ex.What().c_str(), __FILE__, __LINE__);
+	}
+}
+
