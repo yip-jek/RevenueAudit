@@ -1,83 +1,69 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdarg.h>
 #include <string>
-#include <time.h>
 
 namespace base
 {
 
+// 简单时间类
 class SimpleTime
 {
 public:
-	SimpleTime(): year(0), mon(0), day(0), hour(0), min(0), sec(0)
-	{}
-	SimpleTime(int y, int m, int d, int h, int mi, int s)
-	:year(y), mon(m), day(d), hour(h), min(mi), sec(s)
-	{}
+	SimpleTime();
+	SimpleTime(int y, int m, int d, int h, int mi, int s);
+	SimpleTime(const SimpleTime& st);
+	virtual ~SimpleTime();
+
+	const SimpleTime& operator = (const SimpleTime& st);
 
 public:
-	static SimpleTime Now()
-	{
-		time_t t = time(NULL);
-		tm* pt = localtime(&t);
+	// 当前时间
+	static SimpleTime Now();
 
-		return SimpleTime(pt->tm_year+1900, pt->tm_mon+1, pt->tm_mday, pt->tm_hour, pt->tm_min, pt->tm_sec);
-	}
+	// 是否为闰年
+	static bool IsLeapYear(int year);
 
-	std::string TimeStamp()
-	{
-		return TimeFormat("%04d-%02d-%02d %02d:%02d:%02d", year, mon, day, hour, min, sec);
-	}
+	// 本月最后一天
+	// 返回：大月-31, 小月-30，闰年2月-29，平年2月-28, 其他（错误）-1
+	static int LastDayOfTheMon(int year, int mon);
 
-	std::string Time14()
-	{
-		return TimeFormat("%04d%02d%02d%02d%02d%02d", year, mon, day, hour, min, sec);
-	}
+public:
+	int GetYear() const;
+	int GetMon() const;
+	int GetDay() const;
+	int GetHour() const;
+	int GetMin() const;
+	int GetSec() const;
 
-	std::string DayTime8()
-	{
-		return TimeFormat("%04d%02d%02d", year, mon, day);
-	}
+	// 时间戳
+	std::string TimeStamp();
 
-	std::string DayTime10()
-	{
-		return TimeFormat("%04d-%02d-%02d", year, mon, day);
-	}
+	// 时间格式：YYYYMMDDHHMISS
+	std::string Time14();
 
-	std::string MonTime6()
-	{
-		return TimeFormat("%04d%02d", year, mon);
-	}
+	// 日时间，格式：YYYYMMDD
+	std::string DayTime8();
 
-	std::string MonTime7()
-	{
-		return TimeFormat("%04d-%02d", year, mon);
-	}
+	// 日时间，格式：YYYY-MM-DD
+	std::string DayTime10();
 
-	std::string YearTime()
-	{
-		return TimeFormat("%04d", year);
-	}
+	// 月时间，格式：YYYYMM
+	std::string MonTime6();
+
+	// 月时间，格式：YYYY-MM
+	std::string MonTime7();
+
+	// 年时间，格式：YYYY
+	std::string YearTime();
 
 private:
-	std::string TimeFormat(const char* format, ...)
-	{
-		if ( NULL == format )
-		{
-			return std::string();
-		}
+	// 初始化时间
+	bool Init(int y, int m, int d, int h, int mi, int s);
 
-		char buf[32] = "";
-		va_list arg_ptr;
-		va_start(arg_ptr, format);
-		vsprintf(buf, format, arg_ptr);
-		va_end(arg_ptr);
-		return buf;
-	}
+	// 格式化时间字符串
+	std::string TimeFormat(const char* format, ...);
 
-public:
+private:
 	int year;
 	int mon;
 	int day;

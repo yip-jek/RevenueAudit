@@ -1,4 +1,5 @@
 #include "basedb2.h"
+#include <iostream>
 #include "log.h"
 
 namespace base
@@ -39,6 +40,7 @@ void BaseDB2::Connect() throw(Exception)
 
 		m_bConnected = true;
 
+		std::cout << "[DB2] Connect <DB:" << m_sDBName  << "> OK." << std::endl;
 		m_pLog->Output("[DB2] Connect <DB:%s> OK.", m_sDBName.c_str());
 	}
 }
@@ -61,6 +63,7 @@ void BaseDB2::Disconnect() throw(Exception)
 
 		m_bConnected = false;
 
+		std::cout << "[DB2] Disconnect <DB:" << m_sDBName << "> OK." << std::endl;
 		m_pLog->Output("[DB2] Disconnect <DB:%s> OK.", m_sDBName.c_str());
 	}
 }
@@ -81,6 +84,7 @@ void BaseDB2::Begin() throw(Exception)
 			throw Exception(BDB_BEGIN_FAILED, "[DB2] Begin transaction failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 		}
 
+		std::cout << "[DB2] Begin transaction OK." << std::endl;
 		m_pLog->Output("[DB2] Begin transaction OK.");
 	}
 }
@@ -101,6 +105,7 @@ void BaseDB2::Commit() throw(Exception)
 			throw Exception(BDB_COMMIT_FAILED, "[DB2] Commit failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 		}
 
+		std::cout << "[DB2] Commit OK." << std::endl;
 		m_pLog->Output("[DB2] Commit OK.");
 	}
 }
@@ -121,6 +126,7 @@ void BaseDB2::Rollback() throw(Exception)
 			throw Exception(BDB_ROLLBACK_FAILED, "[DB2] Rollback failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 		}
 
+		std::cout << "[DB2] Rollback OK." << std::endl;
 		m_pLog->Output("[DB2] Rollback OK.");
 	}
 }

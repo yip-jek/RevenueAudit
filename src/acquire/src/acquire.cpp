@@ -83,7 +83,7 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_tabEtlDim  = m_cfg.GetCfgValue("TABLE", "TAB_ETL_DIM");
 	m_tabEtlVal  = m_cfg.GetCfgValue("TABLE", "TAB_ETL_VAL");
 
-	m_pLog->Output("Load configuration OK.");
+	m_pLog->Output("[Acquire] Load configuration OK.");
 }
 
 void Acquire::Init() throw(base::Exception)
@@ -117,7 +117,7 @@ void Acquire::Init() throw(base::Exception)
 	m_pAcqHive->SetPrincipal(m_principal);
 	m_pAcqHive->SetJaasConf(m_jaas_conf);
 
-	m_pLog->Output("Init OK.");
+	m_pLog->Output("[Acquire] Init OK.");
 }
 
 void Acquire::Run() throw(base::Exception)

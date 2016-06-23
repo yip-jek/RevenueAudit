@@ -1,6 +1,7 @@
 #include "pubtime.h"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "pubstr.h"
+#include "simpletime.h"
 
 namespace base
 {
@@ -139,19 +140,59 @@ bool PubTime::TheDateOf(const std::string& date_of_what, std::string& date)
 {
 	std::string d_of_what = PubStr::TrimUpperB(date_of_what);
 
-	if ( "THE_DAY_OF_LAST_WEEK" == d_of_what )			// 上个星期的今天
+	if ( "TODAY_OF_LAST_WEEK" == d_of_what )			// 上个星期的今天
 	{
 		date = DateNowMinusDays(7);
 	}
-	else if ( "THE_DAY_OF_LAST_MONTH" == d_of_what )	// 上个月的今天
+	else if ( "TODAY_OF_LAST_MONTH" == d_of_what )		// 上个月的今天
 	{
+		SimpleTime st_now = SimpleTime::Now();
+		int year = st_now.GetYear();
+		int mon  = st_now.GetMon();
+		int day  = st_now.GetDay();
+
+		if ( 1 == mon )		// 本月是一月份
+		{
+			--year;
+			mon = 12;
+		}
+		else	// 本月不是一月份
+		{
+			--mon;
+		}
+
+		// 是否大于上个月的日份
+		int last_day = SimpleTime::LastDayOfTheMon(year, mon);
+		if ( day > last_day )
+		{
+			day = last_day;
+		}
+
+		date = SimpleTime(year, mon, day, 0, 0, 0).DayTime8();
 	}
-	else if ( "THE_DAY_OF_LAST_YEAR" == d_of_what )		// 去年的今天
+	else if ( "TODAY_OF_LAST_YEAR" == d_of_what )		// 去年的今天
 	{
+		SimpleTime st_now = SimpleTime::Now();
+		int year = st_now.GetYear() - 1;
+		int mon  = st_now.GetMon();
+		int day  = st_now.GetDay();
+
+		// 是否大于去年的日份
+		int last_day = SimpleTime::LastDayOfTheMon(year, mon);
+		if ( day > last_day )
+		{
+			day = last_day;
+		}
+
+		date = SimpleTime(year, mon, day, 0, 0, 0).DayTime8();
 	}
-	else if ( "THE_MONTH_OF_LAST_YEAR" == d_of_what )	// 去年的这个月
+	else if ( "THIS_MONTH_OF_LAST_YEAR" == d_of_what )	// 去年的这个月
 	{
-		date = DateNowMinusMonths(1);
+		SimpleTime st_now = SimpleTime::Now();
+		int year = st_now.GetYear() - 1;
+		int mon  = st_now.GetMon();
+
+		date = SimpleTime(year, mon, 0, 0, 0, 0).MonTime6();
 	}
 	else	// 不支持的输入类型
 	{

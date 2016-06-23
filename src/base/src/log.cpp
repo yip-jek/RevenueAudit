@@ -1,4 +1,5 @@
 #include "log.h"
+#include <iostream>
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
@@ -30,8 +31,7 @@ Log* Log::Instance()
 {
 	if ( NULL == _spLogger )
 	{
-		printf("[LOG] Creating Log() instance ...\n");
-
+		std::cout << "[LOG] Creating logger instance ..." << std::endl;
 		_spLogger = new Log();
 	}
 
@@ -50,7 +50,7 @@ void Log::Release()
 		// 计数器归 0，则释放资源
 		if ( _sInstances <= 0 )
 		{
-			printf("[LOG] Releasing Log() instance ...\n");
+			std::cout << "[LOG] Releasing logger instance ..." << std::endl;
 
 			delete _spLogger;
 			_spLogger = NULL;

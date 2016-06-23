@@ -100,7 +100,7 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_tabDictChannel = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CHANNEL");
 	m_tabDictCity    = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
 
-	m_pLog->Output("Load configuration OK.");
+	m_pLog->Output("[Analyse] Load configuration OK.");
 }
 
 void Analyse::Init() throw(base::Exception)
@@ -141,7 +141,7 @@ void Analyse::Init() throw(base::Exception)
 	m_pAnaHive->SetPrincipal(m_principal);
 	m_pAnaHive->SetJaasConf(m_jaas_conf);
 
-	m_pLog->Output("Init OK.");
+	m_pLog->Output("[Analyse] Init OK.");
 }
 
 void Analyse::Run() throw(base::Exception)
