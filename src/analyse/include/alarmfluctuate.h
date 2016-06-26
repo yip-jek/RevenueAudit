@@ -18,15 +18,18 @@ public:
 	// 分析目标数据
 	virtual void AnalyseTargetData(std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
 
-	// 生成告警事件
-	virtual bool GenerateAlarmEvent(std::vector<AlarmEvent>& vec_event);
-
 public:
 	// 获取告警波动时间
 	std::string GetFluctuateDate() const;
 
 	// 设置告警对比数据
 	void SetCompareData(std::vector<std::vector<std::string> >& vec2_data);
+
+	// 告警事件内容
+	virtual std::string GetAlarmEventCont();
+
+	// 告警事件描述
+	virtual std::string GetAlarmEventDesc(const std::string& key, const AlarmData& a_data);
 
 private:
 	// 解析列组
@@ -41,12 +44,6 @@ private:
 	// 处理表达式中的等号
 	// 返回：true-包含等号，false-不包含等号
 	bool DealWithEqual(std::string& exp) throw(base::Exception);
-
-	// 告警事件内容
-	std::string GetAlarmEventCont();
-
-	// 告警事件描述
-	std::string GetAlarmEventDesc(const std::string& key, const AlarmData& a_data);
 
 private:
 	std::string											m_strAlarmDate;			// 告警波动时间

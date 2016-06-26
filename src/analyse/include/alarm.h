@@ -57,15 +57,21 @@ public:
 	virtual void AnalyseExpression() throw(base::Exception) = 0;
 
 	// 分析目标数据
-	virtual void AnalyseTargetData(std::vector<std::vector<std::string> >& vec2_data) = 0;
+	virtual void AnalyseTargetData(std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception) = 0;
 
-	// 生成告警事件
-	virtual bool GenerateAlarmEvent(std::vector<AlarmEvent>& vec_event) = 0;
+	// 告警事件内容
+	virtual std::string GetAlarmEventCont() = 0;
+
+	// 告警事件描述
+	virtual std::string GetAlarmEventDesc(const std::string& key, const AlarmData& a_data) = 0;
 
 public:
 	// 设置
 	virtual void SetTaskDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info);
 	virtual void SetAlarmRule(AlarmRule& alarm_rule);
+
+	// 生成告警事件
+	virtual bool GenerateAlarmEvent(std::vector<AlarmEvent>& vec_event);
 
 protected:
 	// 生成维度 key 值

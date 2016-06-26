@@ -4,6 +4,7 @@
 #include "log.h"
 #include "pubstr.h"
 #include "thresholdcompare.h"
+#include "alarmevent.h"
 
 
 Alarm::Alarm()
@@ -27,6 +28,52 @@ Alarm::~Alarm()
 	}
 
 	base::Log::Release();
+}
+
+bool Alarm::GenerateAlarmEvent(std::vector<AlarmEvent>& vec_event)
+{
+	std::vector<AlarmEvent> v_e;
+	if ( m_mResultData.empty() )
+	{
+		m_pLog->Output("[Alarm] 生成告警事件 ...");
+
+		AlarmEvent a_event;
+		a_event.eventCont = GetAlarmEventCont();
+		a_event.alarmLevel = AlarmEvent::ALARM_LV_01;
+		a_event.alarmID    = m_pAlarmRule->AlarmID;
+		a_event.alarmState = AlarmEvent::ASTAT_01;
+
+		std::map<std::string, std::vector<AlarmData> >::iterator m_it = m_mResultData.begin();
+		for ( ; m_it != m_mResultData.end(); ++m_it )
+		{
+			const std::string& REF_KEY      = m_it->first;
+			std::vector<AlarmData>& ref_vec = m_it->second;
+
+			const int VEC_AD_SIZE = ref_vec.size();
+			for ( int i = 0; i < VEC_AD_SIZE; ++i )
+			{
+				AlarmData& ref_ad = ref_vec[i];
+
+				//a_event.eventID = 0;		// 不设定告警事件 ID
+				a_event.eventDesc = GetAlarmEventDesc(REF_KEY, ref_ad);
+				a_event.alarmTime = ref_ad.alarm_date;
+
+				v_e.push_back(a_event);
+			}
+		}
+
+		m_pLog->Output("[Alarm] 生成的告警事件数：%llu", v_e.size());
+
+		v_e.swap(vec_event);
+		return true;
+	}
+	else
+	{
+		v_e.swap(vec_event);
+
+		m_pLog->Output("[Alarm] 无告警事件.");
+		return false;
+	}
 }
 
 void Alarm::SetTaskDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info)
