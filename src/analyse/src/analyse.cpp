@@ -1197,9 +1197,6 @@ void Analyse::FluctuateAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(bas
 
 void Analyse::RatioAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::Exception)
 {
-	m_pLog->Output("[Analyse] 对比告警暂不支持！");
-	return;
-
 	AlarmRatio alarm_rat;
 	alarm_rat.SetTaskDBInfo(info, m_dbinfo);
 	alarm_rat.SetAlarmRule(alarm_rule);
