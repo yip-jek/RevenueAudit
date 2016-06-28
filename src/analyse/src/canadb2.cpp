@@ -442,6 +442,7 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 	}
 	m_pLog->Output("[DB2] Insert result data to [%s], SQL: %s", db_info.target_table.c_str(), db_info.db2_sql.c_str());
 
+	double dou_tmp = 0.0;
 	const size_t FIELDS_SIZE = vec2_fields.size();
 	try
 	{
@@ -462,7 +463,18 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 				const int DATA_SIZE = v_data.size();
 				for ( int j = 0; j < DATA_SIZE; ++j )
 				{
-					rs.Parameter(j+1) = v_data[j].c_str();
+					std::string& ref_str = v_data[j];
+
+					// 是否为指数形式表示的值？例如：1.234567E10
+					if ( j >= db_info.val_beg_pos && ref_str.find('E') != std::string::npos
+						&& base::PubStr::T1TransT2(ref_str, dou_tmp) )
+					{
+						rs.Parameter(j+1) = dou_tmp;
+					}
+					else
+					{
+						rs.Parameter(j+1) = ref_str.c_str();
+					}
 				}
 
 				// 绑定时间戳
@@ -487,7 +499,18 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 				const int DATA_SIZE = v_data.size();
 				for ( int j = 0; j < DATA_SIZE; ++j )
 				{
-					rs.Parameter(j+1) = v_data[j].c_str();
+					std::string& ref_str = v_data[j];
+
+					// 是否为指数形式表示的值？例如：1.234567E10
+					if ( j >= db_info.val_beg_pos && ref_str.find('E') != std::string::npos
+						&& base::PubStr::T1TransT2(ref_str, dou_tmp) )
+					{
+						rs.Parameter(j+1) = dou_tmp;
+					}
+					else
+					{
+						rs.Parameter(j+1) = ref_str.c_str();
+					}
 				}
 
 				rs.Execute();

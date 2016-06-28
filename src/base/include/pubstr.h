@@ -57,6 +57,9 @@ public:
 	// 字符串转换为小数（支持百分数）
 	static bool StrTrans2Double(const std::string& str, double& d);
 
+	// 去除数组中每个的字符串结尾的"."和其后的"0"
+	static void TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, int start_pos);
+
 public:
 	// 将Vector进行交换push back
 	template <typename T>

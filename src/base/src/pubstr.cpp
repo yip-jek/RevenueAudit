@@ -282,5 +282,41 @@ bool PubStr::StrTrans2Double(const std::string& str, double& d)
 	}
 }
 
+void PubStr::TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, int start_pos)
+{
+	const size_t VEC2_SIZE = vec2_str.size();
+	for ( size_t i = 0; i < VEC2_SIZE; ++i )
+	{
+		std::vector<std::string>& ref_vec = vec2_str[i];
+
+		const int VEC1_SIZE = ref_vec.size();
+		for ( int j = start_pos; j < VEC1_SIZE; ++j )
+		{
+			std::string& ref_str = ref_vec[j];
+
+			// 去除尾部的"."和其后的"0"
+			const size_t STR_SIZE = ref_str.size();
+			const size_t POS = ref_str.find('.');
+			if ( POS != std::string::npos )
+			{
+				bool all_zero = true;
+				for ( size_t k = POS+1; k < STR_SIZE; ++k )
+				{
+					if ( ref_str[k] != '0' )
+					{
+						all_zero = false;
+						break;
+					}
+				}
+
+				if ( all_zero )
+				{
+					ref_str.erase(POS);
+				}
+			}
+		}
+	}
+}
+
 }	// namespace base
 

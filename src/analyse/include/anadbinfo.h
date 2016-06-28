@@ -7,7 +7,7 @@
 struct AnaDBInfo
 {
 public:
-	AnaDBInfo(): time_stamp(false)
+	AnaDBInfo(): time_stamp(false), val_beg_pos(0)
 	{}
 
 	AnaDBInfo(const AnaDBInfo& info)
@@ -16,6 +16,7 @@ public:
 	,time_stamp(info.time_stamp)
 	,date_time(info.date_time)
 	,vec_fields(info.vec_fields)
+	,val_beg_pos(info.val_beg_pos)
 	{}
 
 	const AnaDBInfo& operator = (const AnaDBInfo& info)
@@ -27,6 +28,7 @@ public:
 			this->time_stamp   = info.time_stamp;
 			this->date_time    = info.date_time;
 			this->vec_fields   = info.vec_fields;
+			this->val_beg_pos  = info.val_beg_pos;
 		}
 
 		return *this;
@@ -38,5 +40,6 @@ public:
 	bool						time_stamp;			// 入库是否带时间戳
 	std::string					date_time;			// 时间戳
 	std::vector<std::string>	vec_fields;			// 目标表字段信息
+	int							val_beg_pos;		// 值的开始序号
 };
 

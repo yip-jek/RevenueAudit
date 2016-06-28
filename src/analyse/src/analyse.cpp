@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.16.0096 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.16.0100 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -244,10 +244,16 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info) throw(base::Exception)
 		v_fields.push_back(col.DBName);
 	}
 
+	// 值的开始序号与维度的size相同
+	m_dbinfo.val_beg_pos = t_info.vecKpiDimCol.size();
+
 	// 加时间戳
 	if ( m_dbinfo.time_stamp )
 	{
 		v_fields.push_back(str_tmp);
+
+		// 时间戳维度在最后，值开始序号前移
+		--(m_dbinfo.val_beg_pos);
 	}
 
 	// 按表的类型生成最终目标表名
@@ -907,16 +913,22 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 
 		// 将源数据中的空值字符串("NULL")转换为("0")
 		base::PubStr::ReplaceInStrVector2(m_v2ReportStatData, "NULL", "0", false, true);
+
+		// 去除尾部的"."和其后的"0"
+		base::PubStr::TrimTail0StrVec2(m_v2ReportStatData, m_dbinfo.val_beg_pos);
 	}
 	else
 	{
-		// 将源数据中的空值字符串("NULL")转换为("0")
 		const int VEC3_SIZE = m_v3HiveSrcData.size();
 		for ( int i = 0; i < VEC3_SIZE; ++i )
 		{
 			std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
 
+			// 将源数据中的空值字符串("NULL")转换为("0")
 			base::PubStr::ReplaceInStrVector2(ref_vec2, "NULL", "0", false, true);
+
+			// 去除尾部的"."和其后的"0"
+			base::PubStr::TrimTail0StrVec2(ref_vec2, m_dbinfo.val_beg_pos);
 		}
 	}
 
