@@ -253,9 +253,10 @@ void Acquire::DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 
 void Acquire::HiveDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 {
-	CheckSourceTable(info, true);
-
 	RebuildHiveTable(info);
+
+	// 重建目标表后，再检查源表是否存在
+	CheckSourceTable(info, true);
 
 	std::vector<std::string> vec_hivesql;
 	TaskInfo2Sql(info, vec_hivesql, true);
@@ -266,8 +267,6 @@ void Acquire::HiveDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 
 void Acquire::DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 {
-	CheckSourceTable(info, false);
-
 	LoadHdfsConfig();
 
 	HdfsConnector* pHdfsConnector = new HdfsConnector(m_sHdfsHost, m_nHdfsPort);
@@ -276,6 +275,9 @@ void Acquire::DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 	a_disconn.Connect();
 
 	int field_size = RebuildHiveTable(info);
+
+	// 重建目标表后，再检查源表是否存在
+	CheckSourceTable(info, false);
 
 	std::vector<std::string> vec_sql;
 	TaskInfo2Sql(info, vec_sql, false);
