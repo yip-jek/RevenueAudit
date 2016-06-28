@@ -28,7 +28,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.15.0093 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.15.0097 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -315,6 +315,10 @@ void Acquire::CheckSourceTable(AcqTaskInfo& info, bool hive) throw(base::Excepti
 
 			// 删除不存在的源表
 			info.vecEtlRuleDataSrc.erase(info.vecEtlRuleDataSrc.begin()+i);
+			// 删除对应的维度
+			info.vecEtlRuleDim.erase(info.vecEtlRuleDim.begin()+i);
+			// 删除对应的值
+			info.vecEtlRuleVal.erase(info.vecEtlRuleVal.begin()+i);
 			// 重置 size
 			datasrc_size = info.vecEtlRuleDataSrc.size();
 			--i;
