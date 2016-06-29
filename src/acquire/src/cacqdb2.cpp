@@ -325,7 +325,7 @@ bool CAcqDB2::CheckTableExisted(const std::string& tab_name) throw(base::Excepti
 
 		if ( count < 0 )	// 没有返回结果
 		{
-			throw base::Exception(ADBERR_CHECK_SRC_TAB, "[DB2] Check table '%s' existed failed: NO result! [FILE:%s, LINE:%d]", tab_name.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ADBERR_CHECK_SRC_TAB, "[DB2] Check table '%s' whether exist or not failed: NO result! [FILE:%s, LINE:%d]", tab_name.c_str(), __FILE__, __LINE__);
 		}
 		else
 		{
@@ -334,7 +334,7 @@ bool CAcqDB2::CheckTableExisted(const std::string& tab_name) throw(base::Excepti
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_CHECK_SRC_TAB, "[DB2] Check table '%s' existed failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_CHECK_SRC_TAB, "[DB2] Check table '%s' whether exist or not failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 

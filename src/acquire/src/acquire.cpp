@@ -28,7 +28,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.15.0097 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.15.0101 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -300,7 +300,7 @@ void Acquire::DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 
 void Acquire::CheckSourceTable(AcqTaskInfo& info, bool hive) throw(base::Exception)
 {
-	m_pLog->Output("[Acquire] Check source table whether exists or not ...");
+	m_pLog->Output("[Acquire] Check source table whether exist or not ...");
 
 	std::string trans_src_tab;
 	int datasrc_size = info.vecEtlRuleDataSrc.size();
@@ -313,7 +313,7 @@ void Acquire::CheckSourceTable(AcqTaskInfo& info, bool hive) throw(base::Excepti
 		if ( (hive && !m_pAcqHive->CheckTableExisted(trans_src_tab)) 		// HIVE
 			|| (!hive && !m_pAcqDB2->CheckTableExisted(trans_src_tab)) )	// DB2
 		{
-			m_pLog->Output("<WARNING> [Acquire] %s Source table not existed: %s [IGNORED]", TYPE_IDENT.c_str(), trans_src_tab.c_str());
+			m_pLog->Output("<WARNING> [Acquire] %s Source table did not exist: %s [IGNORED]", TYPE_IDENT.c_str(), trans_src_tab.c_str());
 
 			// 删除不存在的源表
 			info.vecEtlRuleDataSrc.erase(info.vecEtlRuleDataSrc.begin()+i);
@@ -330,7 +330,7 @@ void Acquire::CheckSourceTable(AcqTaskInfo& info, bool hive) throw(base::Excepti
 	// 是否所有源表都不存在？
 	if ( info.vecEtlRuleDataSrc.empty() )
 	{
-		throw base::Exception(ACQERR_CHECK_SRC_TAB_FAILED, "%s All source tables are not existed! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", TYPE_IDENT.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_CHECK_SRC_TAB_FAILED, "%s All source tables did not exist ! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", TYPE_IDENT.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[Acquire] Check source table OK.");
@@ -580,6 +580,17 @@ void Acquire::OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql
 
 	// 外连表名也可通过采集周期来指定
 	outer_table = TransDataSrcDate(info.EtlRuleTime, outer_table);
+
+	// 检查外连表是否存在？
+	m_pLog->Output("[Acquire] Check outer table whether exist or not ...");
+	if ( (hive && !m_pAcqHive->CheckTableExisted(outer_table)) 			// HIVE
+		|| (!hive && !m_pAcqDB2->CheckTableExisted(outer_table)) )		// DB2
+	{
+		const std::string STR_IDENT = (hive ? "[HIVE]" : "[DB2]");
+		m_pLog->Output("<WARNING> [Acquire] %s Outer table did not exist: %s !", STR_IDENT.c_str(), outer_table.c_str());
+
+		throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "%s Outer table '%s' did not exist ! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", STR_IDENT.c_str(), outer_table.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
 
 	// 拆分关联字段
 	const std::string OUTER_ON = vec_str[1];
