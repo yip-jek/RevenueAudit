@@ -163,10 +163,10 @@ void AlarmRatio::AlarmCalculation(const std::string& key, std::vector<std::strin
 		// 告警时间为当前时间（精确到秒）
 		a_data.alarm_date       = base::SimpleTime::Now().Time14();
 		// 告警目标名称为对应的字段名
-		a_data.alarm_targetname = m_pDBInfo->vec_fields[TARGET_INDEX];
+		a_data.alarm_targetname = m_pDBInfo->vec_fields[TARGET_INDEX].CN_name;
 		a_data.alarm_targetval  = ref_target;
 		// 告警源名称为对应的字段名
-		a_data.alarm_srcname    = m_pDBInfo->vec_fields[SRC_INDEX];
+		a_data.alarm_srcname    = m_pDBInfo->vec_fields[SRC_INDEX].CN_name;
 		a_data.alarm_srcval     = ref_src;
 		// 当前阈值
 		a_data.reach_threshold = dou_threshold;

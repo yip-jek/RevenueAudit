@@ -547,7 +547,7 @@ size_t CAnaDB2::SelectResultData(AnaDBInfo& db_info) throw(base::Exception)
 	{
 		std::string sql = "select count(0) from " + db_info.target_table;
 		// 时间字段在末尾
-		sql += " where " + db_info.vec_fields[db_info.vec_fields.size()-1] + " = ?";
+		sql += " where " + db_info.vec_fields[db_info.vec_fields.size()-1].field_name + " = ?";
 
 		m_pLog->Output("[DB2] Execute sql: %s", sql.c_str());
 
@@ -581,7 +581,7 @@ void CAnaDB2::DeleteResultData(AnaDBInfo& db_info) throw(base::Exception)
 	{
 		std::string sql = "delete from " + db_info.target_table;
 		// 时间字段在末尾
-		sql += " where " + db_info.vec_fields[db_info.vec_fields.size()-1] + " = ?";
+		sql += " where " + db_info.vec_fields[db_info.vec_fields.size()-1].field_name + " = ?";
 
 		m_pLog->Output("[DB2] Execute sql: %s", sql.c_str());
 
@@ -668,11 +668,11 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 	{
 		if ( i != 0 )
 		{
-			sql += ", " + db_info.vec_fields[i];
+			sql += ", " + db_info.vec_fields[i].field_name;
 		}
 		else
 		{
-			sql += db_info.vec_fields[i];
+			sql += db_info.vec_fields[i].field_name;
 		}
 	}
 	sql += " from " + db_info.target_table;
@@ -680,7 +680,7 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 	// 是否带时间戳
 	if ( db_info.time_stamp )
 	{
-		sql += " where " + db_info.vec_fields[FIELD_SIZE-1] + " = ?";
+		sql += " where " + db_info.vec_fields[FIELD_SIZE-1].field_name + " = ?";
 	}
 	m_pLog->Output("[DB2] Select targat table [%s], SQL: %s", db_info.target_table.c_str(), sql.c_str());
 

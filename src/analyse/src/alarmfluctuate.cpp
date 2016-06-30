@@ -207,7 +207,7 @@ void AlarmFluctuate::AlarmCalculation(const std::string& key, std::vector<std::s
 			// 告警时间为当前时间（精确到秒）
 			a_data.alarm_date       = base::SimpleTime::Now().Time14();
 			// 告警目标名称为对应的字段名
-			a_data.alarm_targetname = m_pDBInfo->vec_fields[index];
+			a_data.alarm_targetname = m_pDBInfo->vec_fields[index].CN_name;
 			a_data.alarm_targetval  = ref_target;
 			// 告警对比源名称为波动时间
 			a_data.alarm_srcname    = m_strAlarmDate;
