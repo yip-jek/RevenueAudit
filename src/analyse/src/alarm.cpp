@@ -5,6 +5,7 @@
 #include "pubstr.h"
 #include "thresholdcompare.h"
 #include "alarmevent.h"
+#include "uniformcodetransfer.h"
 
 
 Alarm::Alarm()
@@ -12,6 +13,7 @@ Alarm::Alarm()
 ,m_pTaskInfo(NULL)
 ,m_pDBInfo(NULL)
 ,m_pAlarmRule(NULL)
+,m_pUnicodeTransfer(NULL)
 ,m_alarmThreshold(0.0)
 ,m_pThresholdCompare(NULL)
 ,m_kpiDimSize(0)
@@ -33,7 +35,7 @@ Alarm::~Alarm()
 bool Alarm::GenerateAlarmEvent(std::vector<AlarmEvent>& vec_event)
 {
 	std::vector<AlarmEvent> v_e;
-	if ( m_mResultData.empty() )
+	if ( !m_mResultData.empty() )
 	{
 		m_pLog->Output("[Alarm] 生成告警事件 ...");
 
@@ -96,6 +98,11 @@ void Alarm::SetAlarmRule(AlarmRule& alarm_rule)
 	m_pAlarmRule = &alarm_rule;
 }
 
+void Alarm::SetUnicodeTransfer(UniformCodeTransfer& unicode_transfer)
+{
+	m_pUnicodeTransfer = &unicode_transfer;
+}
+
 std::string Alarm::GenerateDimKey(std::vector<std::string>& vec_str) throw(base::Exception)
 {
 	if ( vec_str.size() < (size_t)m_kpiDimSize )
@@ -103,17 +110,22 @@ std::string Alarm::GenerateDimKey(std::vector<std::string>& vec_str) throw(base:
 		throw base::Exception(AE_GENERATE_DIM_KEY_FAILED, "[ALARM] 无法生成维度 KEY 值：数据列数(size:%lu) < 维度列数(size:%d) (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", vec_str.size(), m_kpiDimSize, m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
+	std::string dim;
 	std::string dim_key;
 	for ( int i = 0; i < m_kpiDimSize; ++i )
 	{
+		// 维度用双单引号引用
+		dim = base::PubStr::TrimB(vec_str[i]);
+		dim = "'" + TryGetUnicodeCN(dim) + "'";
+
 		// 维度 KEY 值：中间用竖线（'|'）分隔
 		if ( i != 0 )
 		{
-			dim_key += ("|" + base::PubStr::TrimB(vec_str[i]));
+			dim_key += ("|" + dim);
 		}
 		else
 		{
-			dim_key += base::PubStr::TrimB(vec_str[i]);
+			dim_key += dim;
 		}
 	}
 
@@ -166,6 +178,18 @@ void Alarm::DetermineThresholdCompare(bool contain_equal)
 	else		// 大于
 	{
 		m_pThresholdCompare = new G_ThresholdCompare(m_alarmThreshold);
+	}
+}
+
+std::string Alarm::TryGetUnicodeCN(const std::string& unicode)
+{
+	if ( m_pUnicodeTransfer != NULL )	// 使用统一编码转换
+	{
+		return m_pUnicodeTransfer->TryGetUniCodeCN(unicode);
+	}
+	else	// 无法转换
+	{
+		return unicode;
 	}
 }
 

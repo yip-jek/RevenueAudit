@@ -18,6 +18,7 @@ struct AnaDBInfo;
 struct AlarmRule;
 class AlarmEvent;
 class ThresholdCompare;
+class UniformCodeTransfer;
 
 // 告警数据
 struct AlarmData
@@ -69,6 +70,7 @@ public:
 	// 设置
 	virtual void SetTaskDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info);
 	virtual void SetAlarmRule(AlarmRule& alarm_rule);
+	virtual void SetUnicodeTransfer(UniformCodeTransfer& unicode_transfer);
 
 	// 生成告警事件
 	virtual bool GenerateAlarmEvent(std::vector<AlarmEvent>& vec_event);
@@ -83,13 +85,17 @@ protected:
 	// 确定比较的方法
 	virtual void DetermineThresholdCompare(bool contain_equal);
 
+	// 获取统一编码中文名
+	virtual std::string TryGetUnicodeCN(const std::string& unicode);
+
 protected:
 	base::Log*		m_pLog;
 
 protected:
-	AnaTaskInfo*	m_pTaskInfo;
-	AnaDBInfo*		m_pDBInfo;
-	AlarmRule*		m_pAlarmRule;
+	AnaTaskInfo*			m_pTaskInfo;
+	AnaDBInfo*				m_pDBInfo;
+	AlarmRule*				m_pAlarmRule;
+	UniformCodeTransfer*	m_pUnicodeTransfer;
 
 protected:
 	std::set<int>		m_setValCol;				// 值列集：值的列序号的集合

@@ -13,8 +13,10 @@ UniformCodeTransfer::~UniformCodeTransfer()
 void UniformCodeTransfer::InputChannelUniformCode(std::vector<ChannelUniformCode>& vec_channunicode) throw(base::Exception)
 {
 	m_mapChannelUniCode.clear();
+	m_mChannUniCodeCN.clear();
 
 	std::string channel_alias;
+	std::string channel_id;
 	const size_t VEC_SIZE = vec_channunicode.size();
 	for ( size_t i = 0; i < VEC_SIZE; ++i )
 	{
@@ -39,15 +41,24 @@ void UniformCodeTransfer::InputChannelUniformCode(std::vector<ChannelUniformCode
 			throw base::Exception(UCTERR_INPUT_CHANN_UNICODE_FAILED, "渠道别名已经存在，重复！[CHANNEL_ID:%s, CHANNEL_ALIAS:%s, CHANNEL_NAME:%s, REMARKS:%s] [FILE:%s, LINE:%d]", ref_chann.ChannelID.c_str(), ref_chann.ChannelAlias.c_str(), ref_chann.ChannelName.c_str(), ref_chann.Remarks.c_str(), __FILE__, __LINE__);
 		}
 
-		m_mapChannelUniCode[channel_alias] = ref_chann.ChannelID;
+		m_mapChannelUniCode[channel_alias]     = ref_chann.ChannelID;
+
+		// 是否为新的渠道统一编码中文名？
+		channel_id = base::PubStr::TrimB(ref_chann.ChannelID);
+		if ( m_mChannUniCodeCN.find(channel_id) == m_mChannUniCodeCN.end() )
+		{
+			m_mChannUniCodeCN[channel_id] = ref_chann.ChannelName;
+		}
 	}
 }
 
 void UniformCodeTransfer::InputCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode) throw(base::Exception)
 {
 	m_mapCityUniCode.clear();
+	m_mCityUniCodeCN.clear();
 
 	std::string city_alias;
+	std::string city_id;
 	const size_t VEC_SIZE = vec_cityunicode.size();
 	for ( size_t i = 0; i < VEC_SIZE; ++i )
 	{
@@ -74,6 +85,13 @@ void UniformCodeTransfer::InputCityUniformCode(std::vector<CityUniformCode>& vec
 		}
 
 		m_mapCityUniCode[city_alias] = ref_city.CityID;
+
+		// 是否为新的地市统一编码中文名？
+		city_id = base::PubStr::TrimUpperB(ref_city.CityID);
+		if ( m_mCityUniCodeCN.find(city_id) == m_mCityUniCodeCN.end() )
+		{
+			m_mCityUniCodeCN[city_id] = ref_city.CityName;
+		}
 	}
 }
 
@@ -101,5 +119,29 @@ bool UniformCodeTransfer::Transfer(const std::string& src_code, std::string& uni
 
 	// 找不到
 	return false;
+}
+
+std::string UniformCodeTransfer::TryGetUniCodeCN(const std::string& uni_code)
+{
+	std::string uni_c = base::PubStr::TrimB(uni_code);
+
+	// 先尝试从渠道统一编码中文名列表中找到中文名
+	std::map<std::string, std::string>::iterator it = m_mChannUniCodeCN.find(uni_c);
+	if ( it != m_mChannUniCodeCN.end() )
+	{
+		return it->second;
+	}
+
+	// 再尝试从地市统一编码中文名列表中找到中文名
+	// 地市统一编码需大写
+	base::PubStr::Upper(uni_c);
+	it = m_mCityUniCodeCN.find(uni_c);
+	if ( it != m_mCityUniCodeCN.end() )
+	{
+		return it->second;
+	}
+
+	// 找不到，返回源名称
+	return uni_code;
 }
 

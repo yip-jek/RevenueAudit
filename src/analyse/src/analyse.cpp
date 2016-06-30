@@ -189,8 +189,11 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info) throw(base::Exception)
 {
 	m_dbinfo.time_stamp = false;
 	std::string str_tmp;
+	std::string str_tmp_cn;
 
-	std::vector<std::string> v_fields;
+	AnaField ana_field;
+	std::vector<AnaField> v_fields;
+
 	int v_size = t_info.vecKpiDimCol.size();
 	for ( int i = 0; i < v_size; ++i )
 	{
@@ -208,7 +211,8 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info) throw(base::Exception)
 				if ( !m_dbinfo.time_stamp )
 				{
 					m_dbinfo.time_stamp = true;
-					str_tmp = col.DBName;
+					str_tmp    = col.DBName;
+					str_tmp_cn = col.CNName;
 				}
 				else
 				{
@@ -222,7 +226,9 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info) throw(base::Exception)
 		}
 		else
 		{
-			v_fields.push_back(col.DBName);
+			ana_field.field_name = col.DBName;
+			ana_field.CN_name    = col.CNName;
+			v_fields.push_back(ana_field);
 		}
 	}
 
@@ -241,7 +247,9 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info) throw(base::Exception)
 			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "无法识别的值字段序号: %d (KPI_ID=%s, COL_TYPE=CTYPE_VAL, DB_NAME=%s) [FILE:%s, LINE:%d]", col.ColSeq, col.KpiID.c_str(), col.DBName.c_str(), __FILE__, __LINE__);
 		}
 
-		v_fields.push_back(col.DBName);
+		ana_field.field_name = col.DBName;
+		ana_field.CN_name    = col.CNName;
+		v_fields.push_back(ana_field);
 	}
 
 	// 值的开始序号与维度的size相同
@@ -250,7 +258,9 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info) throw(base::Exception)
 	// 加时间戳
 	if ( m_dbinfo.time_stamp )
 	{
-		v_fields.push_back(str_tmp);
+		ana_field.field_name = str_tmp;
+		ana_field.CN_name    = str_tmp_cn;
+		v_fields.push_back(ana_field);
 
 		// 时间戳维度在最后，值开始序号前移
 		--(m_dbinfo.val_beg_pos);
@@ -268,13 +278,13 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info) throw(base::Exception)
 	{
 		if ( i != 0 )
 		{
-			m_dbinfo.db2_sql += ", " + v_fields[i];
+			m_dbinfo.db2_sql += ", " + v_fields[i].field_name;
 
 			str_tmp += ", ?";
 		}
 		else
 		{
-			m_dbinfo.db2_sql += v_fields[i];
+			m_dbinfo.db2_sql += v_fields[i].field_name;
 
 			str_tmp += "?";
 		}
@@ -1169,6 +1179,7 @@ void Analyse::FluctuateAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(bas
 	AlarmFluctuate alarm_flu;
 	alarm_flu.SetTaskDBInfo(info, m_dbinfo);
 	alarm_flu.SetAlarmRule(alarm_rule);
+	alarm_flu.SetUnicodeTransfer(m_UniCodeTransfer);
 	alarm_flu.AnalyseExpression();
 
 	const std::string ALARM_DATE = alarm_flu.GetFluctuateDate();
@@ -1212,6 +1223,7 @@ void Analyse::RatioAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::E
 	AlarmRatio alarm_rat;
 	alarm_rat.SetTaskDBInfo(info, m_dbinfo);
 	alarm_rat.SetAlarmRule(alarm_rule);
+	alarm_rat.SetUnicodeTransfer(m_UniCodeTransfer);
 	alarm_rat.AnalyseExpression();
 
 	// 是否为报表数据

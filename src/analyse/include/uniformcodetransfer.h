@@ -48,8 +48,15 @@ public:
 	// 编码转换
 	bool Transfer(const std::string& src_code, std::string& uni_code);
 
+	// 获取统一编码中文名
+	// 若无法成功获取，则返回源名称
+	std::string TryGetUniCodeCN(const std::string& uni_code);
+
 private:
 	std::map<std::string, std::string>	m_mapChannelUniCode;	// 渠道统一编码列表
 	std::map<std::string, std::string>	m_mapCityUniCode;		// 地市统一编码列表
+
+	std::map<std::string, std::string>	m_mChannUniCodeCN;		// 渠道统一编码中文名列表
+	std::map<std::string, std::string>	m_mCityUniCodeCN;		// 地市统一编码中文名列表
 };
 

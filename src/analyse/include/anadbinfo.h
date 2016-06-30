@@ -3,6 +3,12 @@
 #include <string>
 #include <vector>
 
+struct AnaField
+{
+	std::string field_name;				// 字段名
+	std::string CN_name;				// 中文名
+};
+
 // 数据库信息 [DB2]
 struct AnaDBInfo
 {
@@ -39,7 +45,7 @@ public:
 	std::string					db2_sql;			// 数据库SQL语句
 	bool						time_stamp;			// 入库是否带时间戳
 	std::string					date_time;			// 时间戳
-	std::vector<std::string>	vec_fields;			// 目标表字段信息
+	std::vector<AnaField>		vec_fields;			// 目标表字段信息
 	int							val_beg_pos;		// 值的开始序号
 };
 
