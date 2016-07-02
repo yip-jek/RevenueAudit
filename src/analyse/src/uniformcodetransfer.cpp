@@ -125,16 +125,33 @@ std::string UniformCodeTransfer::TryGetUniCodeCN(const std::string& uni_code)
 {
 	std::string uni_c = base::PubStr::TrimB(uni_code);
 
+	// 是否为渠道别名
+	std::map<std::string, std::string>::iterator it = m_mapChannelUniCode.find(uni_c);
+	if ( it != m_mapChannelUniCode.end() )
+	{
+		// 通过渠道别名找到对应的中文名
+		return m_mChannUniCodeCN.find(it->second)->second;
+	}
+
 	// 先尝试从渠道统一编码中文名列表中找到中文名
-	std::map<std::string, std::string>::iterator it = m_mChannUniCodeCN.find(uni_c);
+	it = m_mChannUniCodeCN.find(uni_c);
 	if ( it != m_mChannUniCodeCN.end() )
 	{
 		return it->second;
 	}
 
-	// 再尝试从地市统一编码中文名列表中找到中文名
 	// 地市统一编码需大写
 	base::PubStr::Upper(uni_c);
+
+	// 是否为地市别名
+	it = m_mapCityUniCode.find(uni_c);
+	if ( it != m_mapCityUniCode.end() )
+	{
+		// 通过地市别名找到对应的中文名
+		return m_mCityUniCodeCN.find(it->second)->second;
+	}
+
+	// 再尝试从地市统一编码中文名列表中找到中文名
 	it = m_mCityUniCodeCN.find(uni_c);
 	if ( it != m_mCityUniCodeCN.end() )
 	{
