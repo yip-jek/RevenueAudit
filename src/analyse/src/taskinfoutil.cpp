@@ -311,27 +311,27 @@ void TaskInfoUtil::GetOneRuleFields(std::string& dim_sql, std::string& val_sql, 
 	val_sql = sql_val;
 }
 
-std::string TaskInfoUtil::GetOneRuleValsNull(OneEtlRule& rule, const std::string& tab_prefix)
-{
-	std::string val_null_sql;
-
-	const int VAL_SIZE = rule.vecEtlVal.size();
-	for ( int i = 0; i < VAL_SIZE; ++i )
-	{
-		OneEtlVal& ref_val = rule.vecEtlVal[i];
-
-		if ( i != 0 )
-		{
-			val_null_sql += " or " + tab_prefix + ref_val.EtlValName + " is null";
-		}
-		else
-		{
-			val_null_sql += tab_prefix + ref_val.EtlValName + " is null";
-		}
-	}
-
-	return val_null_sql;
-}
+//std::string TaskInfoUtil::GetOneRuleValsNull(OneEtlRule& rule, const std::string& tab_prefix)
+//{
+//	std::string val_null_sql;
+//
+//	const int VAL_SIZE = rule.vecEtlVal.size();
+//	for ( int i = 0; i < VAL_SIZE; ++i )
+//	{
+//		OneEtlVal& ref_val = rule.vecEtlVal[i];
+//
+//		if ( i != 0 )
+//		{
+//			val_null_sql += " or " + tab_prefix + ref_val.EtlValName + " is null";
+//		}
+//		else
+//		{
+//			val_null_sql += tab_prefix + ref_val.EtlValName + " is null";
+//		}
+//	}
+//
+//	return val_null_sql;
+//}
 
 void TaskInfoUtil::GetEtlStatisticsSQLs(std::vector<OneEtlRule>& vec_rules, std::vector<std::string>& vec_hivesql, bool union_all)
 {

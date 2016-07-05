@@ -649,22 +649,37 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	v_hive_sql.push_back(hive_sql);
 
-	// 3) 明细：左有右无的Hive SQL语句
-	hive_sql = "select " + TaskInfoUtil::GetCompareFields(first_one, second_one);
-	hive_sql += ", '左有右无' from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
-	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
-	hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(second_one, "b.");
-	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
+	//// 3) 明细：左有右无的Hive SQL语句
+	//hive_sql = "select " + TaskInfoUtil::GetCompareFields(first_one, second_one);
+	//hive_sql += ", '左有右无' from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
+	//hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
+	//hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(second_one, "b.");
+	////TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
 
+	//v_hive_sql.push_back(hive_sql);
+
+	//// 4) 明细：左无右有的Hive SQL语句
+	//hive_sql = "select " + TaskInfoUtil::GetCompareFields(second_one, first_one, true);
+	//hive_sql += ", '左无右有' from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
+	//hive_sql += " a on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
+	//hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(first_one, "a.");
+	////TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
+
+	//v_hive_sql.push_back(hive_sql);
+
+	std::string dim_sql;
+	std::string val_sql;
+
+	// 3) 明细："左有右无"的数据，通过获取 A 和 B 两组数据分析得出
+	// 4) 明细："左无右有"的数据，通过获取 A 和 B 两组数据分析得出
+	GetOneRuleFields(dim_sql, val_sql, first_one, false);
+	hive_sql = "select " + dim_sql + val_sql + " from ";
+	hive_sql += first_one.TargetPatch + " group by " + dim_sql;
 	v_hive_sql.push_back(hive_sql);
 
-	// 4) 明细：左无右有的Hive SQL语句
-	hive_sql = "select " + TaskInfoUtil::GetCompareFields(second_one, first_one, true);
-	hive_sql += ", '左无右有' from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
-	hive_sql += " a on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
-	hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(first_one, "a.");
-	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
-
+	GetOneRuleFields(dim_sql, val_sql, second_one, false);
+	hive_sql = "select " + dim_sql + val_sql + " from ";
+	hive_sql += second_one.TargetPatch + " group by " + dim_sql;
 	v_hive_sql.push_back(hive_sql);
 
 	v_hive_sql.swap(vec_hivesql);
@@ -929,6 +944,9 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 	}
 	else
 	{
+		// 生成明细结果数据
+		DetailResultData(t_info);
+
 		const int VEC3_SIZE = m_v3HiveSrcData.size();
 		for ( int i = 0; i < VEC3_SIZE; ++i )
 		{
@@ -1033,6 +1051,18 @@ void Analyse::TransSrcDataToReportStatData()
 
 	// 释放Hive源数据
 	std::vector<std::vector<std::vector<std::string> > >().swap(m_v3HiveSrcData);
+}
+
+void Analyse::DetailResultData(AnaTaskInfo& info)
+{
+	// 是否为明细对比的分析规则类型？
+	if ( AnalyseRule::ANATYPE_DETAIL_COMPARE == t_info.AnaRule.AnaType )
+	{
+		const int VEC3_SIZE = m_v3HiveSrcData.size();
+		if ( VEC3_SIZE < 4 )
+		{
+		}
+	}
 }
 
 void Analyse::CollectDimVal(AnaTaskInfo& info)

@@ -109,6 +109,9 @@ private:
 	// 将Hive源数据转换为报表统计类型数据
 	void TransSrcDataToReportStatData();
 
+	// 生成明细结果数据
+	void DetailResultData(AnaTaskInfo& info) throw(base::Exception);
+
 	// 收集维度取值
 	void CollectDimVal(AnaTaskInfo& info);
 
