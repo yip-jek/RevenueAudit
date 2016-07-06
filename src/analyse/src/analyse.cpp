@@ -12,6 +12,7 @@
 #include "alarmevent.h"
 #include "alarmfluctuate.h"
 #include "alarmratio.h"
+#include "compareresult.h"
 
 
 Analyse g_Analyse;
@@ -64,6 +65,11 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CHANNEL");
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CITY");
 
+	m_cfg.RegisterItem("DESCRIPTION", "COMPARE_DESC_EQUAL");
+	m_cfg.RegisterItem("DESCRIPTION", "COMPARE_DESC_DIFF");
+	m_cfg.RegisterItem("DESCRIPTION", "COMPARE_DESC_LEFT");
+	m_cfg.RegisterItem("DESCRIPTION", "COMPARE_DESC_RIGHT");
+
 	m_cfg.ReadConfig();
 
 	// 数据库配置
@@ -99,6 +105,11 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_tabAlarmEvent  = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_EVENT");
 	m_tabDictChannel = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CHANNEL");
 	m_tabDictCity    = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
+
+	m_equalComResDesc = m_cfg.GetCfgValue("DESCRIPTION", "COMPARE_DESC_EQUAL");
+	m_diffComResDesc  = m_cfg.GetCfgValue("DESCRIPTION", "COMPARE_DESC_DIFF");
+	m_leftComResDesc  = m_cfg.GetCfgValue("DESCRIPTION", "COMPARE_DESC_LEFT");
+	m_rightComResDesc = m_cfg.GetCfgValue("DESCRIPTION", "COMPARE_DESC_RIGHT");
 
 	m_pLog->Output("[Analyse] Load configuration OK.");
 }
@@ -577,7 +588,7 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 
 	// 1) 汇总：对平的Hive SQL语句
 	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
-	hive_sql += ", '对平' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += ", '" + m_equalComResDesc + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += " and " + TaskInfoUtil::GetCompareEqualValsByCol(first_one, second_one, vec_col) + ")";
 	//TaskInfoUtil::AddConditionSql(hive_sql, CONDITION);
@@ -586,7 +597,7 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 
 	// 2) 汇总：有差异的Hive SQL语句
 	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
-	hive_sql += ", '有差异' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += ", '" + m_diffComResDesc + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetCompareUnequalValsByCol(first_one, second_one, vec_col);
 	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
@@ -633,7 +644,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	// 1) 明细：对平的Hive SQL语句
 	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFields(first_one, second_one);
-	hive_sql += ", '对平' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += ", '" + m_equalComResDesc + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += " and " + TaskInfoUtil::GetCompareEqualVals(first_one, second_one) + ")";
 	//TaskInfoUtil::AddConditionSql(hive_sql, CONDITION);
@@ -642,7 +653,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	// 2) 明细：有差异的Hive SQL语句
 	hive_sql = "select " + TaskInfoUtil::GetCompareFields(first_one, second_one);
-	hive_sql += ", '有差异' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += ", '" + m_diffComResDesc + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetCompareUnequalVals(first_one, second_one);
 	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
@@ -651,7 +662,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	//// 3) 明细：左有右无的Hive SQL语句
 	//hive_sql = "select " + TaskInfoUtil::GetCompareFields(first_one, second_one);
-	//hive_sql += ", '左有右无' from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
+	//hive_sql += ", '" + m_leftComResDesc + "' from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
 	//hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	//hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(second_one, "b.");
 	////TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
@@ -660,7 +671,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	//// 4) 明细：左无右有的Hive SQL语句
 	//hive_sql = "select " + TaskInfoUtil::GetCompareFields(second_one, first_one, true);
-	//hive_sql += ", '左无右有' from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
+	//hive_sql += ", '" + m_rightComResDesc + "' from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
 	//hive_sql += " a on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	//hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(first_one, "a.");
 	////TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
@@ -1058,10 +1069,27 @@ void Analyse::DetailResultData(AnaTaskInfo& info)
 	// 是否为明细对比的分析规则类型？
 	if ( AnalyseRule::ANATYPE_DETAIL_COMPARE == t_info.AnaRule.AnaType )
 	{
-		const int VEC3_SIZE = m_v3HiveSrcData.size();
-		if ( VEC3_SIZE < 4 )
+		if ( m_v3HiveSrcData.size() != DETAIL_HIVE_SRCDATA_SIZE )
 		{
+			throw base::Exception(ANAERR_DETAIL_RESULT_DATA, "不正确的明细对比源数据个数: %lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_v3HiveSrcData.size(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
+
+		int dim_size = t_info.vecKpiDimCol.size();
+		CompareResult com_result;
+		ComDataIndex left_index  = com_result.SetCompareData(m_v3HiveSrcData[2], dim_size);
+		ComDataIndex right_index = com_result.SetCompareData(m_v3HiveSrcData[3], dim_size);
+
+		// 删除 A、B 两组原始数据
+		m_v3HiveSrcData.erase(m_v3HiveSrcData.begin() + 3);
+		m_v3HiveSrcData.erase(m_v3HiveSrcData.begin() + 2);
+
+		std::vector<std::vector<std::string> > vec2_result;
+		// "左有右无" 的对比结果数据
+		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_LEFT, m_leftComResDesc, vec2_result);
+		base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec2_result);
+		// "左无右有" 的对比结果数据
+		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_RIGHT, m_rightComResDesc, vec2_result);
+		base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec2_result);
 	}
 }
 

@@ -16,6 +16,8 @@ public:
 	Analyse();
 	virtual ~Analyse();
 
+	static const size_t DETAIL_HIVE_SRCDATA_SIZE = 4;		// 明细对比源数据个数
+
 public:
 	enum ANA_ERROR
 	{
@@ -36,6 +38,7 @@ public:
 		ANAERR_GET_REPORT_STAT_FAILED = -3000015,			// 生成报表统计HIVE SQL失败
 		ANAERR_GET_STAT_BY_SET_FAILED = -3000016,			// 生成指定组的统计HIVE SQL失败
 		ANAERR_ALARM_JUDGEMENT_FAILED = -3000017,			// 告警判断失败
+		ANAERR_DETAIL_RESULT_DATA     = -3000018,			// 生成明细结果失败
 	};
 
 public:
@@ -175,6 +178,12 @@ private:
 	std::string m_tabAlarmEvent;		// 告警事件表
 	std::string m_tabDictChannel;		// 渠道统一编码表
 	std::string m_tabDictCity;			// 地市统一编码表
+
+	// 对比结果的描述
+	std::string m_equalComResDesc		// 对比结果：对平
+	std::string m_diffComResDesc		// 对比结果：有差异
+	std::string m_leftComResDesc		// 对比结果：左有右无
+	std::string m_rightComResDesc		// 对比结果：左无右有
 
 private:
 	DimValDiffer		m_DVDiffer;				// 用于维度取值范围的比较
