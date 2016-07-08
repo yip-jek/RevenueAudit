@@ -95,7 +95,7 @@ void UniformCodeTransfer::InputCityUniformCode(std::vector<CityUniformCode>& vec
 	}
 }
 
-bool UniformCodeTransfer::Transfer(const std::string& src_code, std::string& uni_code)
+std::string UniformCodeTransfer::Transfer(const std::string& src_code)
 {
 	std::string code = base::PubStr::TrimB(src_code);
 
@@ -103,8 +103,7 @@ bool UniformCodeTransfer::Transfer(const std::string& src_code, std::string& uni
 	std::map<std::string, std::string>::iterator it = m_mapChannelUniCode.find(code);
 	if ( it != m_mapChannelUniCode.end() )
 	{
-		uni_code = it->second;
-		return true;
+		return it->second;
 	}
 
 	// 再尝试从地市统一编码列表中找到统一编码
@@ -113,12 +112,11 @@ bool UniformCodeTransfer::Transfer(const std::string& src_code, std::string& uni
 	it = m_mapCityUniCode.find(code);
 	if ( it != m_mapCityUniCode.end() )
 	{
-		uni_code = it->second;
-		return true;
+		return it->second;
 	}
 
-	// 找不到
-	return false;
+	// 找不到则返回源编码
+	return src_code;
 }
 
 std::string UniformCodeTransfer::TryGetUniCodeCN(const std::string& uni_code)

@@ -46,7 +46,8 @@ public:
 	void InputCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode) throw(base::Exception);
 
 	// 编码转换
-	bool Transfer(const std::string& src_code, std::string& uni_code);
+	// 返回：成功-返回转换后的统一编码，失败-返回源编码
+	std::string Transfer(const std::string& src_code);
 
 	// 获取统一编码中文名
 	// 若无法成功获取，则返回源名称

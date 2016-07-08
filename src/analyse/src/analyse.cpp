@@ -981,8 +981,6 @@ void Analyse::TransSrcDataToReportStatData()
 
 	std::string str_tmp;
 	std::string m_key;
-	bool transfer_ok = true;
-	size_t ignore_count = 0;
 
 	const int VEC3_SIZE = m_v3HiveSrcData.size();
 	for ( int i = 0; i < VEC3_SIZE; ++i )
@@ -994,9 +992,6 @@ void Analyse::TransSrcDataToReportStatData()
 		{
 			std::vector<std::string>& ref_vec1 = ref_vec2[j];
 
-			// 默认：统一编码转换成功
-			transfer_ok = true;
-
 			// 组织key值
 			m_key.clear();
 			const int VEC1_SIZE = ref_vec1.size();
@@ -1005,21 +1000,9 @@ void Analyse::TransSrcDataToReportStatData()
 			{
 				std::string& ref_str = ref_vec1[k];
 
-				// 统一编码转换
-				if ( !m_UniCodeTransfer.Transfer(ref_str, ref_str) )
-				{
-					transfer_ok = false;
-					break;
-				}
+				ref_str = m_UniCodeTransfer.Transfer(ref_str);
 
 				m_key += ref_str;
-			}
-
-			// 统一编码转换失败，则忽略该数据
-			if ( !transfer_ok )
-			{
-				++ignore_count;		// 统计忽略的数据条数
-				continue;
 			}
 
 			// 值所在的列序号
@@ -1035,14 +1018,14 @@ void Analyse::TransSrcDataToReportStatData()
 			else		// key值不存在
 			{
 				str_tmp = ref_vec1[DIM_SIZE];
-				//ref_vec1[DIM_SIZE] = "NULL";
-				ref_vec1[DIM_SIZE] = "";		// 置为空
+				ref_vec1[DIM_SIZE] = "NULL";
+				//ref_vec1[DIM_SIZE] = "";		// 置为空
 
 				const int TOTAL_SIZE = VEC3_SIZE + VEC1_SIZE - 1;
 				for ( int l = VEC1_SIZE; l < TOTAL_SIZE; ++l )
 				{
-					//ref_vec1.push_back("NULL");
-					ref_vec1.push_back("");		// 置为空
+					ref_vec1.push_back("NULL");
+					//ref_vec1.push_back("");		// 置为空
 				}
 				ref_vec1[VAL_INDEX] = str_tmp;
 
@@ -1050,8 +1033,6 @@ void Analyse::TransSrcDataToReportStatData()
 			}
 		}
 	}
-
-	m_pLog->Output("[Analyse] 因统一编码转换失败，而被忽略的数据条数：%llu", ignore_count);
 
 	std::vector<std::vector<std::string> > vec2_reportdata;
 	for ( it = mReportStatData.begin(); it != mReportStatData.end(); ++it )
