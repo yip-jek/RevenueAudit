@@ -18,6 +18,9 @@ public:
 	explicit BaseDir(const std::string& path = std::string());
 	virtual ~BaseDir();
 
+	// 目录末尾加上斜杠
+	static void DirWithSlash(std::string& dir);
+
 public:
 	// 设置目录
 	virtual bool SetPath(const std::string& path);

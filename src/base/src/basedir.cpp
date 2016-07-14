@@ -18,6 +18,21 @@ BaseDir::~BaseDir()
 	Close();
 }
 
+void BaseDir::DirWithSlash(std::string& dir)
+{
+	if ( dir.empty() )
+	{
+		dir = "/";
+	}
+	else
+	{
+		if ( dir[dir.size()-1] != '/' )
+		{
+			dir.append("/");
+		}
+	}
+}
+
 bool BaseDir::SetPath(const std::string& path)
 {
 	if ( path.empty() )
@@ -28,10 +43,7 @@ bool BaseDir::SetPath(const std::string& path)
 	m_strPath = path;
 
 	// 加上末尾的斜杠
-	if ( m_strPath[m_strPath.size()-1] != '/' )
-	{
-		m_strPath.append("/");
-	}
+	DirWithSlash(m_strPath);
 
 	return true;
 }

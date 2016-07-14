@@ -25,7 +25,7 @@ public class HiveAgent {
 	private static final String USER_NAME_KEY = "username.client.kerberos.principal";
 
 	private static final String HIVE2_CONN_HEAD = "jdbc:hive2://";
-	private static final String HIVE2_CONN_TAIL = "/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2;sasl.qop=auth-conf;auth=KERBEROS;principal=hive/hadoop.domain2.com@DOMAIN2.COM;";
+	private static final String HIVE2_CONN_TAIL = "/ydjh;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2;sasl.qop=auth-conf;auth=KERBEROS;principal=hive/hadoop.hadoop.com@HADOOP.COM;";
 
 	private static String STR_ZK_QUORUM = null;
 	private static String STR_KRB5_CONF = null;

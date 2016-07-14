@@ -120,6 +120,7 @@ private:
 	std::string m_principal;
 	std::string m_jaas_conf;
 	std::string m_sLoadJarPath;			// 依赖的 jar 包路径
+	std::string m_hiveTabLocation;		// HIVE 库表的路径
 
 	std::string m_sHdfsHost;			// HDFS的主机信息
 	std::string m_sHdfsTmpPath;			// HDFS的临时目录

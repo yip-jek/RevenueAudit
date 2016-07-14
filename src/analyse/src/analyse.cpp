@@ -32,7 +32,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.16.0102 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.18.0110 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -1029,7 +1029,7 @@ void Analyse::TransSrcDataToReportStatData()
 				}
 				ref_vec1[VAL_INDEX] = str_tmp;
 
-				mReportStatData[m_key] = ref_vec1;
+				mReportStatData[m_key].swap(ref_vec1);
 			}
 		}
 	}

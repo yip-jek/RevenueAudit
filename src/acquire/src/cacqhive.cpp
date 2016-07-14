@@ -12,7 +12,7 @@ CAcqHive::~CAcqHive()
 {
 }
 
-void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field) throw(base::Exception)
+void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field, const std::string& tab_location) throw(base::Exception)
 {
 	if ( tab_name.empty() )
 	{
@@ -26,7 +26,7 @@ void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string
 
 	std::string sql_drop = "DROP TABLE IF EXISTS " + tab_name;
 
-	std::string sql_create = "CREATE TABLE " + tab_name + " ( ";
+	std::string sql_create = "CREATE EXTERNAL TABLE " + tab_name + " ( ";
 	const size_t VEC_SIZE = vec_field.size();
 	for ( size_t i = 0; i < VEC_SIZE; ++i )
 	{
@@ -47,6 +47,8 @@ void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string
 		}
 	}
 	sql_create += " ) row format delimited fields terminated by '|' stored as textfile";
+	// 指定建表的 location
+	sql_create += " location '" + tab_location + tab_name + "'";
 
 	try
 	{

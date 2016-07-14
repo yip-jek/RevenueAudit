@@ -3,6 +3,7 @@
 #include "log.h"
 #include "pubtime.h"
 #include "pubstr.h"
+#include "basedir.h"
 #include "autodisconnect.h"
 #include "simpletime.h"
 #include "cacqdb2.h"
@@ -28,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.15.0101 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.17.0109 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -48,6 +49,7 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("HIVE_SERVER", "PRINCIPAL");
 	m_cfg.RegisterItem("HIVE_SERVER", "JAAS_CONF");
 	m_cfg.RegisterItem("HIVE_SERVER", "LOAD_JAR_PATH");
+	m_cfg.RegisterItem("HIVE_SERVER", "HIVE_TAB_LOCATION");
 
 	m_cfg.RegisterItem("TABLE", "TAB_KPI_RULE");
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_RULE");
@@ -75,7 +77,9 @@ void Acquire::LoadConfig() throw(base::Exception)
 	//}
 	//m_sHiveUsr = m_cfg.GetCfgValue("HIVE_SERVER", "USERNAME");
 	//m_sHivePwd = m_cfg.GetCfgValue("HIVE_SERVER", "PASSWORD");
-	m_sLoadJarPath = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
+	m_sLoadJarPath    = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
+	m_hiveTabLocation = m_cfg.GetCfgValue("HIVE_SERVER", "HIVE_TAB_LOCATION");
+	base::BaseDir::DirWithSlash(m_hiveTabLocation);
 
 	// Tables
 	m_tabKpiRule = m_cfg.GetCfgValue("TABLE", "TAB_KPI_RULE");
@@ -354,10 +358,7 @@ void Acquire::LoadHdfsConfig() throw(base::Exception)
 	}
 
 	// 加上末尾的斜杠
-	if ( m_sHdfsTmpPath[m_sHdfsTmpPath.size()-1] != '/' )
-	{
-		m_sHdfsTmpPath += "/";
-	}
+	base::BaseDir::DirWithSlash(m_sHdfsTmpPath);
 }
 
 std::string Acquire::GeneralHdfsFileName()
@@ -470,7 +471,7 @@ int Acquire::RebuildHiveTable(AcqTaskInfo& info) throw(base::Exception)
 	std::vector<std::string> vec_field;
 	TaskInfo2TargetFields(info, vec_field);
 
-	m_pAcqHive->RebuildTable(info.EtlRuleTarget, vec_field);
+	m_pAcqHive->RebuildTable(info.EtlRuleTarget, vec_field, m_hiveTabLocation);
 
 	m_pLog->Output("[Acquire] HIVE 采集目标表 [%s] 重建完成!", info.EtlRuleTarget.c_str());
 	return vec_field.size();

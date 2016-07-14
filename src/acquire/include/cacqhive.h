@@ -21,7 +21,7 @@ public:
 
 public:
 	// 重建表数据
-	void RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field) throw(base::Exception);
+	void RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field, const std::string& tab_location) throw(base::Exception);
 
 	// 执行采集Hive SQL 
 	void ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exception);
