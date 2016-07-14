@@ -26,7 +26,7 @@ void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string
 
 	std::string sql_drop = "DROP TABLE IF EXISTS " + tab_name;
 
-	std::string sql_create = "CREATE EXTERNAL TABLE " + tab_name + " ( ";
+	std::string sql_create = "CREATE TABLE " + tab_name + " ( ";
 	const size_t VEC_SIZE = vec_field.size();
 	for ( size_t i = 0; i < VEC_SIZE; ++i )
 	{
