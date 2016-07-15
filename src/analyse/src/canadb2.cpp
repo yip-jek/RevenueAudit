@@ -442,7 +442,6 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 	}
 	m_pLog->Output("[DB2] Insert result data to [%s], SQL: %s", db_info.target_table.c_str(), db_info.db2_sql.c_str());
 
-	double dou_tmp = 0.0;
 	const size_t FIELDS_SIZE = vec2_fields.size();
 	try
 	{
@@ -465,16 +464,7 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 				{
 					std::string& ref_str = v_data[j];
 
-					// 是否为指数形式表示的值？例如：1.234567E10
-					if ( j >= db_info.val_beg_pos && ref_str.find('E') != std::string::npos
-						&& base::PubStr::T1TransT2(ref_str, dou_tmp) )
-					{
-						rs.Parameter(j+1) = dou_tmp;
-					}
-					else
-					{
-						rs.Parameter(j+1) = ref_str.c_str();
-					}
+					rs.Parameter(j+1) = ref_str.c_str();
 				}
 
 				// 绑定时间戳
@@ -501,16 +491,7 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 				{
 					std::string& ref_str = v_data[j];
 
-					// 是否为指数形式表示的值？例如：1.234567E10
-					if ( j >= db_info.val_beg_pos && ref_str.find('E') != std::string::npos
-						&& base::PubStr::T1TransT2(ref_str, dou_tmp) )
-					{
-						rs.Parameter(j+1) = dou_tmp;
-					}
-					else
-					{
-						rs.Parameter(j+1) = ref_str.c_str();
-					}
+					rs.Parameter(j+1) = ref_str.c_str();
 				}
 
 				rs.Execute();
@@ -570,7 +551,7 @@ size_t CAnaDB2::SelectResultData(AnaDBInfo& db_info) throw(base::Exception)
 	return num_of_data;
 }
 
-void CAnaDB2::DeleteResultData(AnaDBInfo& db_info) throw(base::Exception)
+void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -579,24 +560,34 @@ void CAnaDB2::DeleteResultData(AnaDBInfo& db_info) throw(base::Exception)
 
 	try
 	{
-		std::string sql = "delete from " + db_info.target_table;
-		// 时间字段在末尾
-		sql += " where " + db_info.vec_fields[db_info.vec_fields.size()-1].field_name + " = ?";
+		std::string sql;
+		if ( delete_all )		// 清空全表数据
+		{
+			sql  = "alter table " + db_info.target_table;
+			sql += " activate not logged initially with empty table";
+
+			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		}
+		else	// 删除指定数据
+		{
+			sql  = "delete from " + db_info.target_table;
+			// 时间字段在末尾
+			sql += " where " + db_info.vec_fields[db_info.vec_fields.size()-1].field_name + " = ?";
+
+			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+			Begin();
+			rs.Parameter(1) = db_info.date_time.c_str();
+		}
 
 		m_pLog->Output("[DB2] Execute sql: %s", sql.c_str());
-
-		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-
-		Begin();
-
-		rs.Parameter(1) = db_info.date_time.c_str();
 		rs.Execute();
 
 		Commit();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_DEL_REPORT_DATA, "[DB2] Delete report statistics data from [%s] failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_DEL_REPORT_DATA, "[DB2] Delete result data from [%s] failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 

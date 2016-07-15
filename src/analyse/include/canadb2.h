@@ -94,7 +94,7 @@ public:
 	size_t SelectResultData(AnaDBInfo& db_info) throw(base::Exception);
 
 	// 删除已经存在的报表统计数据
-	void DeleteResultData(AnaDBInfo& db_info) throw(base::Exception);
+	void DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::Exception);
 
 	// 插入报表统计数据
 	void InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_reportdata) throw(base::Exception);

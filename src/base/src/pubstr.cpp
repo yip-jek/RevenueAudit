@@ -318,5 +318,33 @@ void PubStr::TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, 
 	}
 }
 
+bool PubStr::DouStr2LongDouStr(std::string& double_str)
+{
+	long double ld_tmp = 0.0;
+	return (T1TransT2(double_str, ld_tmp) && T1TransT2(ld_tmp, double_str));
+}
+
+void PubStr::TransVecDouStrWithE2LongDouStr(std::vector<std::vector<std::string> >& vec2_str, int start_pos)
+{
+	std::string str_tmp;
+	const size_t VEC2_SIZE = vec2_str.size();
+	for ( size_t i = 0; i < VEC2_SIZE; ++i )
+	{
+		std::vector<std::string>& ref_vec = vec2_str[i];
+
+		const int VEC1_SIZE = ref_vec.size();
+		for ( int j = start_pos; j < VEC1_SIZE; ++j )
+		{
+			std::string& ref_str = ref_vec[j];
+
+			str_tmp = UpperB(ref_str);
+			if ( str_tmp.find('E') != std::string::npos )
+			{
+				DouStr2LongDouStr(ref_str);
+			}
+		}
+	}
+}
+
 }	// namespace base
 

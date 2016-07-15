@@ -903,6 +903,7 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception)
 	{
 	case AnaTaskInfo::TABTYPE_COMMON:		// 普通表
 		// Do nothing
+		m_pLog->Output("[Analyse] 结果表类型：普通表");
 		break;
 	case AnaTaskInfo::TABTYPE_DAY:			// 天表
 		if ( d_type > base::PubTime::DT_DAY )
@@ -913,6 +914,7 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception)
 		{
 			tab_name = tab_name + "_" + m_dbinfo.date_time;
 		}
+		m_pLog->Output("[Analyse] 结果表类型：天表");
 		break;
 	case AnaTaskInfo::TABTYPE_MONTH:		// 月表
 		if ( d_type > base::PubTime::DT_MONTH )
@@ -923,9 +925,11 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception)
 		{
 			tab_name = tab_name + "_" + m_dbinfo.date_time.substr(0, 6);
 		}
+		m_pLog->Output("[Analyse] 结果表类型：月表");
 		break;
 	case AnaTaskInfo::TABTYPE_YEAR:			// 年表
 		tab_name = tab_name + "_" + m_dbinfo.date_time.substr(0, 4);
+		m_pLog->Output("[Analyse] 结果表类型：年表");
 		break;
 	case AnaTaskInfo::TABTYPE_UNKNOWN:		// 未知类型
 	default:
@@ -950,6 +954,9 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 		// 将源数据中的空值字符串("NULL")转换为("0")
 		base::PubStr::ReplaceInStrVector2(m_v2ReportStatData, "NULL", "0", false, true);
 
+		// 将数组中的带 'E' 的精度字符串转换为长精度字符串表示
+		base::PubStr::TransVecDouStrWithE2LongDouStr(m_v2ReportStatData, m_dbinfo.val_beg_pos);
+
 		// 去除尾部的"."和其后的"0"
 		base::PubStr::TrimTail0StrVec2(m_v2ReportStatData, m_dbinfo.val_beg_pos);
 	}
@@ -965,6 +972,9 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 
 			// 将源数据中的空值字符串("NULL")转换为("0")
 			base::PubStr::ReplaceInStrVector2(ref_vec2, "NULL", "0", false, true);
+
+			// 将数组中的带 'E' 的精度字符串转换为长精度字符串表示
+			base::PubStr::TransVecDouStrWithE2LongDouStr(ref_vec2, m_dbinfo.val_beg_pos);
 
 			// 去除尾部的"."和其后的"0"
 			base::PubStr::TrimTail0StrVec2(ref_vec2, m_dbinfo.val_beg_pos);
@@ -1131,7 +1141,7 @@ void Analyse::CollectDimVal(AnaTaskInfo& info)
 void Analyse::StoreResult(AnaTaskInfo& t_info) throw(base::Exception)
 {
 	// 删除旧的数据
-	RemoveOldResult();
+	RemoveOldResult(t_info);
 
 	// 是否为报表统计类型
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )	// 报表统计类型
@@ -1152,26 +1162,39 @@ void Analyse::StoreResult(AnaTaskInfo& t_info) throw(base::Exception)
 	m_pLog->Output("[Analyse] 结果数据存储完毕!");
 }
 
-void Analyse::RemoveOldResult() throw(base::Exception)
+void Analyse::RemoveOldResult(AnaTaskInfo& info) throw(base::Exception)
 {
 	// 是否带时间戳
 	// 只有带时间戳才可以按采集时间删除结果数据
 	if ( m_dbinfo.time_stamp )
 	{
-		m_pLog->Output("[Analyse] 统计已存在的旧的结果数据 ...");
+		m_pLog->Output("[Analyse] 统计已存在的结果数据 ...");
 		const size_t NUM_OF_REPORT_DATA = m_pAnaDB2->SelectResultData(m_dbinfo);
-		m_pLog->Output("[Analyse] 统计到的旧结果数据大小: %llu ( DATE_TIME: %s )", NUM_OF_REPORT_DATA, m_dbinfo.date_time.c_str());
+		m_pLog->Output("[Analyse] 统计到已存在的结果数据大小: %llu ( DATE_TIME: %s )", NUM_OF_REPORT_DATA, m_dbinfo.date_time.c_str());
 
 		// 是否存在旧的结果数据
 		if ( NUM_OF_REPORT_DATA > 0 )
 		{
-			m_pLog->Output("[Analyse] 删除已存在的旧的结果数据 ...");
-			m_pAnaDB2->DeleteResultData(m_dbinfo);
+			// 结果表类型是否为天表？
+			if ( AnaTaskInfo::TABTYPE_DAY == info.ResultType )
+			{
+				m_pLog->Output("[Analyse] 清空天表数据 ...");
+				m_pAnaDB2->DeleteResultData(m_dbinfo, true);
+			}
+			else
+			{
+				m_pLog->Output("[Analyse] 删除已存在的结果数据 ...");
+				m_pAnaDB2->DeleteResultData(m_dbinfo, false);
+			}
+		}
+		else
+		{
+			m_pLog->Output("[Analyse] 没有需要删除的结果数据！");
 		}
 	}
 	else
 	{
-		m_pLog->Output("[Analyse] 没有需要删除的旧结果数据.");
+		m_pLog->Output("[Analyse] 无法按时间区分结果数据，因此不进行删除操作！");
 	}
 }
 
