@@ -36,6 +36,7 @@ public:
 		ADBERR_SEL_CITY_UNICODE  = -3002015,				// 获取地市统一编码数据出错
 		ADBERR_SEL_MAX_EVENTID   = -3002016,				// 获取最大告警事件 ID 出错
 		ADBERR_INS_ALARMEVENT    = -3002017,				// 插入告警事件出错
+		ADBERR_SEL_COM_RES_DESC  = -3002018,				// 查询对比结果描述出错
 	};
 
 public:
@@ -66,11 +67,14 @@ public:
 	// 设置告警事件表
 	void SetTabAlarmEvent(const std::string& t_alarmevent);
 
-	// 设置告警事件表
+	// 设置渠道统一编码表
 	void SetTabDictChannel(const std::string& t_dictchann);
 
-	// 设置告警事件表
+	// 设置地市统一编码表
 	void SetTabDictCity(const std::string& t_dictcity);
+
+	// 设置对比结果的字段名
+	void SetFNCompareResult(const std::string& com_result);
 
 	// 查询分析规则任务信息
 	void SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
@@ -131,6 +135,10 @@ private:
 	// 查询告警规则表
 	void SelectAlarmRule(AlarmRule& alarm) throw(base::Exception);
 
+	// 查询对比结果描述（从维度取值表中获取）
+	// 若没有获取到，则返回空集
+	void SelectCompareResultDesc(const std::string& kpi_id, std::vector<std::string>& vec_comresdesc);
+
 private:
 	// 数据库表名
 	std::string	m_tabKpiRule;			// 指标规则表
@@ -144,5 +152,7 @@ private:
 	std::string m_tabAlarmEvent;		// 告警事件表
 	std::string m_tabDictChannel;		// 渠道统一编码表
 	std::string m_tabDictCity;			// 地市统一编码表
+
+	std::string m_fNCompareResult;		// 对比结果的字段名
 };
 

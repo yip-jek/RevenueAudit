@@ -65,10 +65,7 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CHANNEL");
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CITY");
 
-	m_cfg.RegisterItem("DESCRIPTION", "COMPARE_DESC_EQUAL");
-	m_cfg.RegisterItem("DESCRIPTION", "COMPARE_DESC_DIFF");
-	m_cfg.RegisterItem("DESCRIPTION", "COMPARE_DESC_LEFT");
-	m_cfg.RegisterItem("DESCRIPTION", "COMPARE_DESC_RIGHT");
+	m_cfg.RegisterItem("FIELD_NAME", "FN_COMPARE_RESULT");
 
 	m_cfg.ReadConfig();
 
@@ -106,10 +103,7 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_tabDictChannel = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CHANNEL");
 	m_tabDictCity    = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
 
-	m_equalComResDesc = m_cfg.GetCfgValue("DESCRIPTION", "COMPARE_DESC_EQUAL");
-	m_diffComResDesc  = m_cfg.GetCfgValue("DESCRIPTION", "COMPARE_DESC_DIFF");
-	m_leftComResDesc  = m_cfg.GetCfgValue("DESCRIPTION", "COMPARE_DESC_LEFT");
-	m_rightComResDesc = m_cfg.GetCfgValue("DESCRIPTION", "COMPARE_DESC_RIGHT");
+	m_fNCompareResult = m_cfg.GetCfgValue("FIELD_NAME", "FN_COMPARE_RESULT");
 
 	m_pLog->Output("[Analyse] Load configuration OK.");
 }
@@ -136,6 +130,7 @@ void Analyse::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabAlarmEvent(m_tabAlarmEvent);
 	m_pAnaDB2->SetTabDictChannel(m_tabDictChannel);
 	m_pAnaDB2->SetTabDictCity(m_tabDictCity);
+	m_pAnaDB2->SetFNCompareResult(m_fNCompareResult);
 
 	//m_pHive = new CAnaHive(m_sHiveIP, m_nHivePort, m_sHiveUsr, m_sHivePwd);
 	m_pHive = new CAnaHive();
@@ -519,7 +514,8 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 		break;
 	}
 
-	// 格式样例: A-B, diff1:diff2
+	// 格式样例1: A-B, diff1:diff2:diff3:...:diffn		// 指定 1-n 列
+	// 格式样例2: A-B, all								// 所有列
 	std::string& ana_exp = t_info.AnaRule.AnaExpress;
 
 	std::vector<std::string> vec_str;
@@ -533,48 +529,60 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 	int second_index = -1;
 	DetermineDataGroup(vec_str[0], first_index, second_index);
 
-	std::string diff_str = vec_str[1];
-	base::PubStr::Str2StrVector(diff_str, ":", vec_str);
-	if ( vec_str.empty() )
-	{
-		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-	}
-
-	const int VAL_SIZE_1 = t_info.vecEtlRule[0].vecEtlVal.size();
-	std::set<int> set_diff;			// 用于查重
 	std::vector<int> vec_col;
-	const int DIFF_SIZE = vec_str.size();
-	for ( int i = 0; i < DIFF_SIZE; ++i )
-	{
-		std::string& ref_str = vec_str[i];
+	std::string diff_str = vec_str[1];
+	const int VAL_SIZE = t_info.vecEtlRule[0].vecEtlVal.size();
 
-		base::PubStr::Upper(ref_str);
-		size_t pos = ref_str.find("DIFF");
-		if ( std::string::npos == pos )
+	if ( base::PubStr::UpperB(diff_str) == "ALL" )		// 所有列
+	{
+		// 登记所有列序号
+		for ( int i = 0; i < VAL_SIZE; ++i )
+		{
+			vec_col.push_back(i);
+		}
+	}
+	else	// 指定列
+	{
+		base::PubStr::Str2StrVector(diff_str, ":", vec_str);
+		if ( vec_str.empty() )
 		{
 			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
 
-		int diff_no = -1;
-		if ( !base::PubStr::T1TransT2(ref_str.substr(pos+4), diff_no) )
+		std::set<int> set_diff;			// 用于查重
+		const int DIFF_SIZE = vec_str.size();
+		for ( int i = 0; i < DIFF_SIZE; ++i )
 		{
-			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：[%s] 转换失败! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_str.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			std::string& ref_str = vec_str[i];
+
+			base::PubStr::Upper(ref_str);
+			size_t pos = ref_str.find("DIFF");
+			if ( std::string::npos == pos )
+			{
+				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			}
+
+			int diff_no = -1;
+			if ( !base::PubStr::T1TransT2(ref_str.substr(pos+4), diff_no) )
+			{
+				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：[%s] 转换失败! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_str.c_str(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			}
+
+			if ( diff_no < 1 || diff_no > VAL_SIZE )
+			{
+				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：列值 [%d] 越界! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", diff_no, t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			}
+
+			if ( set_diff.find(diff_no) != set_diff.end() )
+			{
+				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：列值 [%d] 已经存在! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", diff_no, t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			}
+
+			set_diff.insert(diff_no);
+
+			// 表达式中DIFF从1开始，而列序号是从0开始的
+			vec_col.push_back(diff_no-1);
 		}
-
-		if ( diff_no < 1 || diff_no > VAL_SIZE_1 )
-		{
-			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：列值 [%d] 越界! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", diff_no, t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-		}
-
-		if ( set_diff.find(diff_no) != set_diff.end() )
-		{
-			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：列值 [%d] 已经存在! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", diff_no, t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-		}
-
-		set_diff.insert(diff_no);
-
-		// 表达式中DIFF从1开始，而列序号是从0开始的
-		vec_col.push_back(diff_no-1);
 	}
 
 	std::vector<std::string> v_hive_sql;
@@ -633,6 +641,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 	int second_index = -1;
 	DetermineDataGroup(ana_exp, first_index, second_index);
 
+	std::vector<int> vec_col;
 	std::vector<std::string> v_hive_sql;
 
 	OneEtlRule& first_one  = t_info.vecEtlRule[first_index];
@@ -643,7 +652,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 	//const std::string ADD_CONDITION = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, true);
 
 	// 1) 明细：对平的Hive SQL语句
-	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFields(first_one, second_one);
+	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
 	hive_sql += ", '" + m_equalComResDesc + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += " and " + TaskInfoUtil::GetCompareEqualVals(first_one, second_one) + ")";
@@ -652,7 +661,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 	v_hive_sql.push_back(hive_sql);
 
 	// 2) 明细：有差异的Hive SQL语句
-	hive_sql = "select " + TaskInfoUtil::GetCompareFields(first_one, second_one);
+	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
 	hive_sql += ", '" + m_diffComResDesc + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetCompareUnequalVals(first_one, second_one);
@@ -1306,11 +1315,11 @@ void Analyse::RatioAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::E
 
 	// 生成告警事件
 	std::vector<AlarmEvent> vec_event;
-	if ( alarm_rat.GenerateAlarmEvent(vec_event) )
+	if ( alarm_rat.GenerateAlarmEvent(vec_event) )		// 产生告警事件
 	{
 		HandleAlarmEvent(vec_event);
 	}
-	else
+	else		// 无告警事件
 	{
 		m_pLog->Output("[Analyse] 无告警生成！(ALARM_ID:%s, ALARM_NAME:%s)", alarm_rule.AlarmID.c_str(), alarm_rule.AlarmName.c_str());
 	}

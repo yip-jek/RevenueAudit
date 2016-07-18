@@ -480,11 +480,8 @@ public:
 	,vecEtlRule(info.vecEtlRule)
 	,vecKpiDimCol(info.vecKpiDimCol)
 	,vecKpiValCol(info.vecKpiValCol)
+	,vecComResDesc(info.vecComResDesc)
 	{
-		//this->vecAlarm.insert(this->vecAlarm.begin(), info.vecAlarm.begin(), info.vecAlarm.end());
-		//this->vecEtlRule.insert(this->vecEtlRule.begin(), info.vecEtlRule.begin(), info.vecEtlRule.end());
-		//this->vecKpiDimCol.insert(this->vecKpiDimCol.begin(), info.vecKpiDimCol.begin(), info.vecKpiDimCol.end());
-		//this->vecKpiValCol.insert(this->vecKpiValCol.begin(), info.vecKpiValCol.begin(), info.vecKpiValCol.end());
 	}
 
 	const AnaTaskInfo& operator = (const AnaTaskInfo& info)
@@ -498,14 +495,11 @@ public:
 			this->TableName   = info.TableName ;
 			this->AnaRule     = info.AnaRule   ;
 
-			//this->vecAlarm.insert(this->vecAlarm.begin(), info.vecAlarm.begin(), info.vecAlarm.end());
-			//this->vecEtlRule.insert(this->vecEtlRule.begin(), info.vecEtlRule.begin(), info.vecEtlRule.end());
-			//this->vecKpiDimCol.insert(this->vecKpiDimCol.begin(), info.vecKpiDimCol.begin(), info.vecKpiDimCol.end());
-			//this->vecKpiValCol.insert(this->vecKpiValCol.begin(), info.vecKpiValCol.begin(), info.vecKpiValCol.end());
-			this->vecAlarm     = info.vecAlarm;
-			this->vecEtlRule   = info.vecEtlRule;
-			this->vecKpiDimCol = info.vecKpiDimCol;
-			this->vecKpiValCol = info.vecKpiValCol;
+			this->vecAlarm      = info.vecAlarm;
+			this->vecEtlRule    = info.vecEtlRule;
+			this->vecKpiDimCol  = info.vecKpiDimCol;
+			this->vecKpiValCol  = info.vecKpiValCol;
+			this->vecComResDesc = info.vecComResDesc;
 		}
 
 		return *this;
@@ -554,5 +548,9 @@ public:
 	std::vector<OneEtlRule>		vecEtlRule;			// 采集规则集
 	std::vector<KpiColumn>		vecKpiDimCol;		// 指标维度字段集
 	std::vector<KpiColumn>		vecKpiValCol;		// 指标值字段集
+
+	// 对比结果描述（只有对比类型的才有）
+	// 对比结果按顺序依次是：对平，有差异，左有右无，左无右有
+	std::vector<std::string>	vecComResDesc;
 };
 

@@ -71,6 +71,11 @@ void CAnaDB2::SetTabDictCity(const std::string& t_dictcity)
 	m_tabDictCity = t_dictcity;
 }
 
+void CAnaDB2::SetFNCompareResult(const std::string& com_result)
+{
+	m_fNCompareResult = com_result;
+}
+
 void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 {
 	// 获取指标规则数据
@@ -1098,5 +1103,23 @@ void CAnaDB2::SelectAlarmRule(AlarmRule& alarm) throw(base::Exception)
 
 	m_pLog->Output("[DB2] Select %s: [ALARM_ID:%s] [ALARM_NAME:%s] [ALARM_TYPE:%s] [Record:%d]", 
 		m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), alarm.AlarmName.c_str(), alarm_type.c_str(), counter);
+}
+
+void CAnaDB2::SelectCompareResultDesc(const std::string& kpi_id, std::vector<std::string>& vec_comresdesc)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	try
+	{
+		std::string sql = "select DIM_VAL from " + m_tabDimValue + " where KPI_ID = '";
+		sql += kpi_id + "' and DB_NAME = '" + m_fNCompareResult + "' order by VAL_CNAME";
+
+		???????
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_COM_RES_DESC, "[DB2] Select compare result description from %s failed! (KPI_ID:%s, DIM_NAME:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), kpi_id.c_str(), m_fNCompareResult.c_str(), ex.what(), __FILE__, __LINE__);
+	}
 }
 

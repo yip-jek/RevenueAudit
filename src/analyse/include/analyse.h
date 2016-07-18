@@ -179,11 +179,7 @@ private:
 	std::string m_tabDictChannel;		// 渠道统一编码表
 	std::string m_tabDictCity;			// 地市统一编码表
 
-	// 对比结果的描述
-	std::string m_equalComResDesc		// 对比结果：对平
-	std::string m_diffComResDesc		// 对比结果：有差异
-	std::string m_leftComResDesc		// 对比结果：左有右无
-	std::string m_rightComResDesc		// 对比结果：左无右有
+	std::string m_fNCompareResult;		// 对比结果的字段名
 
 private:
 	DimValDiffer		m_DVDiffer;				// 用于维度取值范围的比较

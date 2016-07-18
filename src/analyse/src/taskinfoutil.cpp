@@ -60,56 +60,56 @@ int TaskInfoUtil::CheckPluralEtlRule(std::vector<OneEtlRule>& vec_etlrule)
 	return 0;
 }
 
-std::string TaskInfoUtil::GetCompareFields(OneEtlRule& rule_A, OneEtlRule& rule_B, bool inverse /*= false*/)
-{
-	std::string fields_sql;
-
-	std::string a_tab_prefix;
-	std::string b_tab_prefix;
-	if ( inverse )		// 反转
-	{
-		a_tab_prefix = "b.";
-		b_tab_prefix = "a.";
-	}
-	else		// 不反转
-	{
-		a_tab_prefix = "a.";
-		b_tab_prefix = "b.";
-	}
-
-	// 采集规则A的维度
-	const int DIM_SIZE = rule_A.vecEtlDim.size();
-	for ( int i = 0; i < DIM_SIZE; ++i )
-	{
-		OneEtlDim& dim = rule_A.vecEtlDim[i];
-
-		if ( i != 0 )
-		{
-			fields_sql += ", " + a_tab_prefix + dim.EtlDimName;
-		}
-		else
-		{
-			fields_sql += a_tab_prefix + dim.EtlDimName;
-		}
-	}
-
-	// 采集规则A的值
-	std::string v_sql_A;
-	std::string v_sql_B;
-	const int VAL_SIZE = rule_A.vecEtlVal.size();
-	for ( int i = 0; i < VAL_SIZE; ++i )
-	{
-		OneEtlVal& val_A = rule_A.vecEtlVal[i];
-		OneEtlVal& val_B = rule_B.vecEtlVal[i];
-
-		v_sql_A += ", " + a_tab_prefix + val_A.EtlValName;
-		v_sql_B += ", " + b_tab_prefix + val_B.EtlValName;
-	}
-
-	fields_sql += v_sql_A + v_sql_B;
-
-	return fields_sql;
-}
+//std::string TaskInfoUtil::GetCompareFields(OneEtlRule& rule_A, OneEtlRule& rule_B, bool inverse /*= false*/)
+//{
+//	std::string fields_sql;
+//
+//	std::string a_tab_prefix;
+//	std::string b_tab_prefix;
+//	if ( inverse )		// 反转
+//	{
+//		a_tab_prefix = "b.";
+//		b_tab_prefix = "a.";
+//	}
+//	else		// 不反转
+//	{
+//		a_tab_prefix = "a.";
+//		b_tab_prefix = "b.";
+//	}
+//
+//	// 采集规则A的维度
+//	const int DIM_SIZE = rule_A.vecEtlDim.size();
+//	for ( int i = 0; i < DIM_SIZE; ++i )
+//	{
+//		OneEtlDim& dim = rule_A.vecEtlDim[i];
+//
+//		if ( i != 0 )
+//		{
+//			fields_sql += ", " + a_tab_prefix + dim.EtlDimName;
+//		}
+//		else
+//		{
+//			fields_sql += a_tab_prefix + dim.EtlDimName;
+//		}
+//	}
+//
+//	// 采集规则A的值
+//	std::string v_sql_A;
+//	std::string v_sql_B;
+//	const int VAL_SIZE = rule_A.vecEtlVal.size();
+//	for ( int i = 0; i < VAL_SIZE; ++i )
+//	{
+//		OneEtlVal& val_A = rule_A.vecEtlVal[i];
+//		OneEtlVal& val_B = rule_B.vecEtlVal[i];
+//
+//		v_sql_A += ", " + a_tab_prefix + val_A.EtlValName;
+//		v_sql_B += ", " + b_tab_prefix + val_B.EtlValName;
+//	}
+//
+//	fields_sql += v_sql_A + v_sql_B;
+//
+//	return fields_sql;
+//}
 
 std::string TaskInfoUtil::GetCompareDims(OneEtlRule& rule_A, OneEtlRule& rule_B)
 {
@@ -200,21 +200,42 @@ std::string TaskInfoUtil::GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& 
 		}
 	}
 
-	// 采集规则A和B的值
+	// 采集规则A和B的值，以及它们的差值
 	std::string v_sql_A;
 	std::string v_sql_B;
-	const int COL_SIZE = vec_col.size();
-	for ( int i = 0; i < COL_SIZE; ++i )
-	{
-		int& col_index = vec_col[i];
-		OneEtlVal& val_A = rule_A.vecEtlVal[col_index];
-		OneEtlVal& val_B = rule_B.vecEtlVal[col_index];
+	std::string v_sql_diff;
 
-		v_sql_A += ", a." + val_A.EtlValName;
-		v_sql_B += ", b." + val_B.EtlValName;
+	if ( vec_col.empty() )		// 没有指定列集，则默认所有列
+	{
+		const int VAL_SIZE = rule_A.vecEtlVal.size();
+		for ( int i = 0; i < VAL_SIZE; ++i )
+		{
+			OneEtlVal& val_A = rule_A.vecEtlVal[i];
+			OneEtlVal& val_B = rule_B.vecEtlVal[i];
+
+			v_sql_A += ", a." + val_A.EtlValName;
+			v_sql_B += ", b." + val_B.EtlValName;
+
+			v_sql_diff += ", abs(a." + val_A.EtlValName + "-b." + val_B.EtlValName + ")";
+		}
+	}
+	else	// 指定列集
+	{
+		const int COL_SIZE = vec_col.size();
+		for ( int i = 0; i < COL_SIZE; ++i )
+		{
+			int& col_index = vec_col[i];
+			OneEtlVal& val_A = rule_A.vecEtlVal[col_index];
+			OneEtlVal& val_B = rule_B.vecEtlVal[col_index];
+
+			v_sql_A += ", a." + val_A.EtlValName;
+			v_sql_B += ", b." + val_B.EtlValName;
+
+			v_sql_diff += ", abs(a." + val_A.EtlValName + "-b." + val_B.EtlValName + ")";
+		}
 	}
 
-	fields_sql += v_sql_A + v_sql_B;
+	fields_sql += v_sql_A + v_sql_B + v_sql_diff;
 
 	return fields_sql;
 }
