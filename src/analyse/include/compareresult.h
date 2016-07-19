@@ -76,9 +76,12 @@ public:
 
 	// 获取对比结果数据
 	void GetCompareResult(const ComDataIndex& left_index, const ComDataIndex& right_index, COMPARE_TYPE com_type, 
-		std::string& result_desc, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception);
+		const std::string& result_desc, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception);
 
 private:
+	// 生成 "左有右无" 的对比结果
+	// 参数 left_zero：true-表示左边补零，false-表示右边补零
+	void LeftNotInRight(CompareData* pLeft, CompareData* pRight, bool left_zero, const std::string& result_desc, std::vector<std::vector<std::string> >& vec2_result);
 
 private:
 	std::vector<CompareData>	m_vComData;

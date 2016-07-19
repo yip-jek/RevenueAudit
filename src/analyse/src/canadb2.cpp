@@ -110,6 +110,9 @@ void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 
 		SelectAlarmRule(alarm);
 	}
+
+	// 获取对比结果描述（从维度取值表中获取）
+	SelectCompareResultDesc(info.KpiID, info.vecComResDesc);
 }
 
 void CAnaDB2::SelectChannelUniformCode(std::vector<ChannelUniformCode>& vec_channunicode) throw(base::Exception)
@@ -1114,8 +1117,23 @@ void CAnaDB2::SelectCompareResultDesc(const std::string& kpi_id, std::vector<std
 	{
 		std::string sql = "select DIM_VAL from " + m_tabDimValue + " where KPI_ID = '";
 		sql += kpi_id + "' and DB_NAME = '" + m_fNCompareResult + "' order by VAL_CNAME";
+		m_pLog->Output("[DB2] Select compare result description, SQL: %s", sql.c_str());
 
-		???????
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		//rs.Parameter(1) = kpi_id.c_str();
+		//rs.Parameter(1) = m_fNCompareResult.c_str();
+		rs.Execute();
+
+		std::vector<std::string> vec_desc;
+		while ( !rs.IsEOF() )
+		{
+			vec_desc.push_back((const char*)rs[1]);
+
+			rs.MoveNext();
+		}
+
+		m_pLog->Output("[DB2] Select compare result description, size: %lu", vec_desc.size());
+		vec_desc.swap(vec_comresdesc);
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{

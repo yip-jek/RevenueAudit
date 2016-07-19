@@ -387,6 +387,23 @@ void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 		throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析规则类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
+	if ( AnalyseRule::ANATYPE_SUMMARY_COMPARE == info.AnaRule.AnaType )
+	{
+		// 汇总对比的结果描述共 2 个：对平，有差异
+		if ( info.vecComResDesc.size() < (size_t)2 )
+		{
+			throw base::Exception(ANAERR_TASKINFO_INVALID, "汇总对比缺少结果描述，当前结果描述个数：%lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.vecComResDesc.size(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		}
+	}
+	else if ( AnalyseRule::ANATYPE_DETAIL_COMPARE == info.AnaRule.AnaType )
+	{
+		// 明细对比的结果描述共 4 个：对平，有差异，左有右无，左无右有
+		if ( info.vecComResDesc.size() < (size_t)4 )
+		{
+			throw base::Exception(ANAERR_TASKINFO_INVALID, "明细对比缺少结果描述，当前结果描述个数：%lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.vecComResDesc.size(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		}
+	}
+
 	// 分析规则表达式可能为空！
 	//if ( info.AnaRule.AnaExpress.empty() )
 	//{
@@ -596,7 +613,7 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 
 	// 1) 汇总：对平的Hive SQL语句
 	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
-	hive_sql += ", '" + m_equalComResDesc + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += ", '" + t_info.vecComResDesc[0] + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += " and " + TaskInfoUtil::GetCompareEqualValsByCol(first_one, second_one, vec_col) + ")";
 	//TaskInfoUtil::AddConditionSql(hive_sql, CONDITION);
@@ -605,7 +622,7 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 
 	// 2) 汇总：有差异的Hive SQL语句
 	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
-	hive_sql += ", '" + m_diffComResDesc + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += ", '" + t_info.vecComResDesc[1] + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetCompareUnequalValsByCol(first_one, second_one, vec_col);
 	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
@@ -653,7 +670,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	// 1) 明细：对平的Hive SQL语句
 	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
-	hive_sql += ", '" + m_equalComResDesc + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += ", '" + t_info.vecComResDesc[0] + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += " and " + TaskInfoUtil::GetCompareEqualVals(first_one, second_one) + ")";
 	//TaskInfoUtil::AddConditionSql(hive_sql, CONDITION);
@@ -662,7 +679,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	// 2) 明细：有差异的Hive SQL语句
 	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
-	hive_sql += ", '" + m_diffComResDesc + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += ", '" + t_info.vecComResDesc[1] + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetCompareUnequalVals(first_one, second_one);
 	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
@@ -671,7 +688,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	//// 3) 明细：左有右无的Hive SQL语句
 	//hive_sql = "select " + TaskInfoUtil::GetCompareFields(first_one, second_one);
-	//hive_sql += ", '" + m_leftComResDesc + "' from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
+	//hive_sql += ", '" + t_info.vecComResDesc[2] + "' from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
 	//hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	//hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(second_one, "b.");
 	////TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
@@ -680,7 +697,7 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	//// 4) 明细：左无右有的Hive SQL语句
 	//hive_sql = "select " + TaskInfoUtil::GetCompareFields(second_one, first_one, true);
-	//hive_sql += ", '" + m_rightComResDesc + "' from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
+	//hive_sql += ", '" + t_info.vecComResDesc[3] + "' from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
 	//hive_sql += " a on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	//hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(first_one, "a.");
 	////TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
@@ -692,12 +709,12 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	// 3) 明细："左有右无"的数据，通过获取 A 和 B 两组数据分析得出
 	// 4) 明细："左无右有"的数据，通过获取 A 和 B 两组数据分析得出
-	GetOneRuleFields(dim_sql, val_sql, first_one, false);
+	TaskInfoUtil::GetOneRuleFields(dim_sql, val_sql, first_one, false);
 	hive_sql = "select " + dim_sql + val_sql + " from ";
 	hive_sql += first_one.TargetPatch + " group by " + dim_sql;
 	v_hive_sql.push_back(hive_sql);
 
-	GetOneRuleFields(dim_sql, val_sql, second_one, false);
+	TaskInfoUtil::GetOneRuleFields(dim_sql, val_sql, second_one, false);
 	hive_sql = "select " + dim_sql + val_sql + " from ";
 	hive_sql += second_one.TargetPatch + " group by " + dim_sql;
 	v_hive_sql.push_back(hive_sql);
@@ -1064,17 +1081,18 @@ void Analyse::TransSrcDataToReportStatData()
 	std::vector<std::vector<std::vector<std::string> > >().swap(m_v3HiveSrcData);
 }
 
-void Analyse::DetailResultData(AnaTaskInfo& info)
+void Analyse::DetailResultData(AnaTaskInfo& info) throw(base::Exception)
 {
 	// 是否为明细对比的分析规则类型？
-	if ( AnalyseRule::ANATYPE_DETAIL_COMPARE == t_info.AnaRule.AnaType )
+	if ( AnalyseRule::ANATYPE_DETAIL_COMPARE == info.AnaRule.AnaType )
 	{
 		if ( m_v3HiveSrcData.size() != DETAIL_HIVE_SRCDATA_SIZE )
 		{
 			throw base::Exception(ANAERR_DETAIL_RESULT_DATA, "不正确的明细对比源数据个数: %lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_v3HiveSrcData.size(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
+		m_pLog->Output("[Analyse] 生成明细对比 \"%s\" 和 \"%s\" 的结果数据 ...", info.vecComResDesc[2].c_str(), info.vecComResDesc[3].c_str());
 
-		int dim_size = t_info.vecKpiDimCol.size();
+		int dim_size = info.vecKpiDimCol.size();
 		CompareResult com_result;
 		ComDataIndex left_index  = com_result.SetCompareData(m_v3HiveSrcData[2], dim_size);
 		ComDataIndex right_index = com_result.SetCompareData(m_v3HiveSrcData[3], dim_size);
@@ -1085,10 +1103,13 @@ void Analyse::DetailResultData(AnaTaskInfo& info)
 
 		std::vector<std::vector<std::string> > vec2_result;
 		// "左有右无" 的对比结果数据
-		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_LEFT, m_leftComResDesc, vec2_result);
+		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_LEFT, info.vecComResDesc[2], vec2_result);
+		m_pLog->Output("[Analyse] 成功生成明细对比 \"%s\" 结果数据, size: %llu", info.vecComResDesc[2].c_str(), vec2_result.size());
 		base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec2_result);
+
 		// "左无右有" 的对比结果数据
-		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_RIGHT, m_rightComResDesc, vec2_result);
+		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_RIGHT, info.vecComResDesc[3], vec2_result);
+		m_pLog->Output("[Analyse] 成功生成明细对比 \"%s\" 结果数据, size: %llu", info.vecComResDesc[3].c_str(), vec2_result.size());
 		base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec2_result);
 	}
 }
