@@ -1092,7 +1092,9 @@ void Analyse::DetailResultData(AnaTaskInfo& info) throw(base::Exception)
 		}
 		m_pLog->Output("[Analyse] 生成明细对比 \"%s\" 和 \"%s\" 的结果数据 ...", info.vecComResDesc[2].c_str(), info.vecComResDesc[3].c_str());
 
-		int dim_size = info.vecKpiDimCol.size();
+		// 维度个数与值的开始序号一致
+		int dim_size = m_dbinfo.val_beg_pos;
+
 		CompareResult com_result;
 		ComDataIndex left_index  = com_result.SetCompareData(m_v3HiveSrcData[2], dim_size);
 		ComDataIndex right_index = com_result.SetCompareData(m_v3HiveSrcData[3], dim_size);

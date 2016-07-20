@@ -119,9 +119,11 @@ void CompareResult::LeftNotInRight(CompareData* pLeft, CompareData* pRight, bool
 
 			for ( int j = 0; j < VAL_SIZE; ++j )
 			{
-				ref_vec.insert((ref_vec.begin()+ZERO_START_POS+j), "NULL");
+				ref_vec.insert((ref_vec.begin()+ZERO_START_POS+j), "0");
 			}
 
+			// 最后加上结果描述
+			ref_vec.push_back(result_desc);
 			base::PubStr::VVectorSwapPushBack(v2_res, ref_vec);
 		}
 	}
