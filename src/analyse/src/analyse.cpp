@@ -966,7 +966,7 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception)
 	m_pLog->Output("[Analyse] 最终目标表名：%s", tab_name.c_str());
 
 	// 设置目标表的备份表名
-	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )		// 报表统计
+	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == info.AnaRule.AnaType )		// 报表统计
 	{
 		m_dbinfo.backup_table = base::PubStr::UpperB(tab_name) + "_BAK";
 		m_pLog->Output("[Analyse] (报表统计) 目标表的备份表名：%s", m_dbinfo.backup_table.c_str());

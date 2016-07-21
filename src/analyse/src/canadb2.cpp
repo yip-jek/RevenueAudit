@@ -547,7 +547,7 @@ void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<s
 	m_pLog->Output("[DB2] Insert report statistics data to backup table: [%s]", db_info.backup_table.c_str());
 	ResultDataInsert(ins_backup_sql, db_info.date_time, vec2_reportdata);
 
-	m_pLog->Output("[DB2] Insert report statistics data to [%s]: %llu", db_info.target_table.c_str(), REPORT_DATA_SIZE);
+	m_pLog->Output("[DB2] Insert report statistics data successfully, size: %llu", vec2_reportdata.size());
 }
 
 void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
