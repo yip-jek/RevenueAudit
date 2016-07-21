@@ -29,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.17.0109 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.19.0115 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -546,12 +546,18 @@ void Acquire::TaskInfo2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql,
 {
 	switch ( info.EtlCondType )
 	{
-	case AcqTaskInfo::ETLCTYPE_NONE:		// 不带条件
-	case AcqTaskInfo::ETLCTYPE_STRAIGHT:	// 直接条件
+	case AcqTaskInfo::ETLCTYPE_NONE:					// 不带条件
+	case AcqTaskInfo::ETLCTYPE_STRAIGHT:				// 直接条件
+		m_pLog->Output("[Acquire] 采集规则的条件类型：%s", (AcqTaskInfo::ETLCTYPE_NONE == info.EtlCondType ? "不带条件":"直接条件"));
 		NoneOrStraight2Sql(info, vec_sql, hive);
 		break;
-	case AcqTaskInfo::ETLCTYPE_OUTER_JOIN:	// 外连条件
+	case AcqTaskInfo::ETLCTYPE_OUTER_JOIN:				// 外连条件
+		m_pLog->Output("[Acquire] 采集规则的条件类型：%s", "外连条件");
 		OuterJoin2Sql(info, vec_sql, hive);
+		break;
+	case AcqTaskInfo::ETLCTYPE_OUTER_JOIN_WITH_COND:	// 外连加条件
+		m_pLog->Output("[Acquire] 采集规则的条件类型：%s", "外连加条件");
+		OuterJoin2Sql(info, vec_sql, hive, true);
 		break;
 	case AcqTaskInfo::ETLCTYPE_UNKNOWN:		// 未知类型
 	default:
@@ -559,16 +565,18 @@ void Acquire::TaskInfo2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql,
 	}
 }
 
-void Acquire::OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive) throw(base::Exception)
+void Acquire::OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive, bool with_cond /*= false*/) throw(base::Exception)
 {
 	// 分析采集条件
-	// 格式：[外连表名]:[关联的维度字段(逗号分隔)]
+	// (不带条件)格式：[外连表名]:[关联的维度字段(逗号分隔)]
+	// (带条件)格式：[外连表名]:[关联的维度字段(逗号分隔)]:[Hive SQL条件语句(带或者不带where都可以)]
 	std::string& etl_cond = info.EtlCondition;
 	base::PubStr::Trim(etl_cond);
 
 	std::vector<std::string> vec_str;
 	base::PubStr::Str2StrVector(etl_cond, ":", vec_str);
-	if ( vec_str.empty() )
+	if ( (with_cond && vec_str.size() != 3) 		// 带条件，但格式不正确
+		|| (!with_cond && vec_str.size() != 2) )	// 不带条件，但格式不正确
 	{
 		throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "采集规则解析失败：无法识别的采集条件 [%s] (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", etl_cond.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
@@ -591,6 +599,13 @@ void Acquire::OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql
 		m_pLog->Output("<WARNING> [Acquire] %s Outer table did not exist: %s !", STR_IDENT.c_str(), outer_table.c_str());
 
 		throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "%s Outer table '%s' did not exist ! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", STR_IDENT.c_str(), outer_table.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
+
+	// 带条件
+	std::string sql_cond;
+	if ( with_cond )
+	{
+		sql_cond = GetSQLCondition(vec_str[2]);
 	}
 
 	// 拆分关联字段
@@ -622,8 +637,6 @@ void Acquire::OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql
 		}
 
 		sql += TaskInfoUtil::GetOuterJoinEtlSQL(info.vecEtlRuleDim[0], info.vecEtlRuleVal[0], SRC_TABLE, outer_table, vec_str);
-
-		v_sql.push_back(sql);
 	}
 	else	// 多个源数据
 	{
@@ -667,10 +680,16 @@ void Acquire::OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql
 
 		// Hive SQL tail
 		sql += ") TMP group by " + target_dim_sql;
-
-		v_sql.push_back(sql);
 	}
 
+	// 加上条件
+	if ( with_cond )
+	{
+		const size_t GROUP_POS = base::PubStr::UpperB(sql).rfind(" GROUP ");
+		sql.insert(GROUP_POS, sql_cond);
+	}
+
+	v_sql.push_back(sql);
 	v_sql.swap(vec_sql);
 }
 
@@ -680,21 +699,7 @@ void Acquire::NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& ve
 	// 是否为直接条件
 	if ( AcqTaskInfo::ETLCTYPE_STRAIGHT == info.EtlCondType )
 	{
-		condition = info.EtlCondition;
-		base::PubStr::Trim(condition);
-
-		std::string head_where = condition.substr(0, 5);
-		base::PubStr::Upper(head_where);
-
-		// 加上"where"
-		if ( head_where != "WHERE" )
-		{
-			condition = " where " + condition;
-		}
-		else
-		{
-			condition = " " + condition;
-		}
+		condition = GetSQLCondition(info.EtlCondition);
 	}
 
 	std::string sql;
@@ -712,8 +717,6 @@ void Acquire::NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& ve
 		sql += TaskInfoUtil::GetEtlDimSql(info.vecEtlRuleDim[0], true) + TaskInfoUtil::GetEtlValSql(info.vecEtlRuleVal[0]);
 		sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[0]) + condition;
 		sql += " group by " + TaskInfoUtil::GetEtlDimSql(info.vecEtlRuleDim[0], false);
-
-		v_sql.push_back(sql);
 	}
 	else	// 多个源数据
 	{
@@ -730,8 +733,8 @@ void Acquire::NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& ve
 		sql += " from (";
 
 		// SQL body
-		std::string tab_alias;
-		std::string tab_pre;
+		//std::string tab_alias;
+		//std::string tab_pre;
 		for ( int i = 0; i < SRC_SIZE; ++i )
 		{
 			if ( i != 0 )
@@ -743,23 +746,44 @@ void Acquire::NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& ve
 				sql += "select ";
 			}
 
-			tab_alias = base::PubStr::TabIndex2TabAlias(i);
-			tab_pre = tab_alias + ".";
+			//tab_alias = base::PubStr::TabIndex2TabAlias(i);
+			//tab_pre = tab_alias + ".";
 			AcqEtlDim& dim = info.vecEtlRuleDim[i];
 			AcqEtlVal& val = info.vecEtlRuleVal[i];
 
-			sql += TaskInfoUtil::GetEtlDimSql(dim, true, tab_pre) + TaskInfoUtil::GetEtlValSql(val, tab_pre);
-			sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]) + " " + tab_alias;
-			sql += " group by " + TaskInfoUtil::GetEtlDimSql(dim, false, tab_pre);
+			//sql += TaskInfoUtil::GetEtlDimSql(dim, true, tab_pre) + TaskInfoUtil::GetEtlValSql(val, tab_pre);
+			//sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]) + " " + tab_alias;
+			//sql += " group by " + TaskInfoUtil::GetEtlDimSql(dim, false, tab_pre);
+			sql += TaskInfoUtil::GetEtlDimSql(dim, true) + TaskInfoUtil::GetEtlValSql(val);
+			sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]);
+			sql += " group by " + TaskInfoUtil::GetEtlDimSql(dim, false);
 		}
 
 		// SQL tail
 		sql += ") TMP " + condition + " group by " + TARGET_DIM_SQL;
-
-		v_sql.push_back(sql);
 	}
 
+	v_sql.push_back(sql);
 	v_sql.swap(vec_sql);
+}
+
+std::string Acquire::GetSQLCondition(const std::string& cond)
+{
+	std::string sql_condition = cond;
+	base::PubStr::Trim(sql_condition);
+
+	std::string head_where = sql_condition.substr(0, 5);
+	base::PubStr::Upper(head_where);
+
+	// 加上"where"
+	if ( head_where != "WHERE" )
+	{
+		return (" where " + sql_condition);
+	}
+	else
+	{
+		return (" " + sql_condition);
+	}
 }
 
 std::string Acquire::TransDataSrcDate(const std::string& time, const std::string& data_src) throw(base::Exception)

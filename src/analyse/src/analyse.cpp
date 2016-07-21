@@ -964,12 +964,23 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception)
 
 	m_dbinfo.target_table = tab_name;
 	m_pLog->Output("[Analyse] 最终目标表名：%s", tab_name.c_str());
+
+	// 设置目标表的备份表名
+	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )		// 报表统计
+	{
+		m_dbinfo.backup_table = base::PubStr::UpperB(tab_name) + "_BAK";
+		m_pLog->Output("[Analyse] (报表统计) 目标表的备份表名：%s", m_dbinfo.backup_table.c_str());
+	}
+	else	// 非报表统计
+	{
+		// 置空：非报表统计没有备份表
+		m_dbinfo.backup_table.clear();
+	}
 }
 
 void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 {
-	// 报表统计
-	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )
+	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )		// 报表统计
 	{
 		m_pLog->Output("[Analyse] 报表统计类型数据转换 ...");
 
@@ -986,7 +997,7 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 		// 去除尾部的"."和其后的"0"
 		base::PubStr::TrimTail0StrVec2(m_v2ReportStatData, m_dbinfo.val_beg_pos);
 	}
-	else
+	else	// 非报表统计
 	{
 		// 生成明细结果数据
 		DetailResultData(t_info);

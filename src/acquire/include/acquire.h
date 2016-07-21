@@ -91,13 +91,20 @@ private:
 	void TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>& vec_field) throw(base::Exception);
 
 	// 分析采集任务规则，生成采集SQL
+	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
 	void TaskInfo2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
 
 	// 外连条件下：分析采集规则，生成采集SQL
-	void OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
+	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
+	// 参数 with_cond：true-带 SQL 条件，false-不带 SQL 条件(默认值)
+	void OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive, bool with_cond = false) throw(base::Exception);
 
 	// 不带条件或者直接条件下：分析采集规则，生成采集SQL
+	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
 	void NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive);
+
+	// 获取 SQL 条件
+	std::string GetSQLCondition(const std::string& cond);
 
 	// 采集源数据表名日期转换
 	std::string TransDataSrcDate(const std::string& time, const std::string& data_src) throw(base::Exception);

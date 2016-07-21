@@ -212,7 +212,7 @@ int TaskInfoUtil::GetNumOfEtlDimJoinOn(AcqEtlDim& etl_dim)
 
 std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_val, const std::string& src_tab, const std::string& outer_tab, std::vector<std::string>& vec_join_on)
 {
-	std::string etl_sql = " select ";
+	std::string etl_sql = "select ";
 
 	std::string join_on_sql;
 	std::string group_by_sql;

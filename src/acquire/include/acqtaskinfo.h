@@ -195,10 +195,11 @@ public:
 	// 采集条件类型
 	enum EtlConditionType
 	{
-		ETLCTYPE_UNKNOWN	= 0,		// 未知类型
-		ETLCTYPE_NONE		= 1,		// 不带条件
-		ETLCTYPE_STRAIGHT	= 2,		// 直接条件
-		ETLCTYPE_OUTER_JOIN	= 3,		// 外连条件
+		ETLCTYPE_UNKNOWN				= 0,		// 未知类型
+		ETLCTYPE_NONE					= 1,		// 不带条件
+		ETLCTYPE_STRAIGHT				= 2,		// 直接条件
+		ETLCTYPE_OUTER_JOIN				= 3,		// 外连条件
+		ETLCTYPE_OUTER_JOIN_WITH_COND	= 4,		// 外连加条件
 	};
 
 	// 数据源类型
@@ -288,6 +289,10 @@ public:
 		else if ( "OUTER_JOIN" == c_type )	// 外连条件
 		{
 			EtlCondType = ETLCTYPE_OUTER_JOIN;
+		}
+		else if ( "OUTER_JOIN_WITH_COND" == c_type )
+		{
+			EtlCondType = ETLCTYPE_OUTER_JOIN_WITH_COND;
 		}
 		else	// ERROR: 未知条件
 		{

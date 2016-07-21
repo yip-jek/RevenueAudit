@@ -439,88 +439,24 @@ void CAnaDB2::InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Excepti
 	m_pLog->Output("[DB2] Insert new dim_value to [%s]: %lu", m_tabDimValue.c_str(), vec_dv.size());
 }
 
-void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception)
+void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
 {
-	XDBO2::CRecordset rs(&m_CDB);
-	rs.EnableWarning(true);
-
 	if ( db_info.db2_sql.empty() )
 	{
-		throw base::Exception(ADBERR_INS_RESULT_DATA, "[DB2] Insert result data to [%s] failed: no sql to be executed! [FILE:%s, LINE:%d]", db_info.target_table.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_INS_RESULT_DATA, "[DB2] Insert result data failed: NO sql to be executed ! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB2] Insert result data to [%s], SQL: %s", db_info.target_table.c_str(), db_info.db2_sql.c_str());
+	m_pLog->Output("[DB2] Insert result data to table: [%s]", db_info.target_table.c_str());
 
-	const size_t FIELDS_SIZE = vec2_fields.size();
-	try
+	if ( db_info.time_stamp )		// 带时间戳
 	{
-		rs.Prepare(db_info.db2_sql.c_str(), XDBO2::CRecordset::forwardOnly);
-
-		Begin();
-
-		if ( db_info.time_stamp )		// 带时间戳
-		{
-			//// 时间格式：YYYYMMDDHHMISS (24小时制)
-			//// 例如：20160501121212 表示2016年05月01日12时12分12秒
-			//std::string date_time = base::SimpleTime::Now().Time14();
-
-			for ( size_t i = 0; i < FIELDS_SIZE; ++i )
-			{
-				std::vector<std::string>& v_data = vec2_fields[i];
-
-				const int DATA_SIZE = v_data.size();
-				for ( int j = 0; j < DATA_SIZE; ++j )
-				{
-					std::string& ref_str = v_data[j];
-
-					rs.Parameter(j+1) = ref_str.c_str();
-				}
-
-				// 绑定时间戳
-				//rs.Parameter(DATA_SIZE+1) = date_time.c_str();
-				rs.Parameter(DATA_SIZE+1) = db_info.date_time.c_str();
-
-				rs.Execute();
-
-				// 每达到最大值提交一次
-				if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
-				{
-					Commit();
-				}
-			}
-		}
-		else		// 不带时间戳
-		{
-			for ( size_t i = 0; i < FIELDS_SIZE; ++i )
-			{
-				std::vector<std::string>& v_data = vec2_fields[i];
-
-				const int DATA_SIZE = v_data.size();
-				for ( int j = 0; j < DATA_SIZE; ++j )
-				{
-					std::string& ref_str = v_data[j];
-
-					rs.Parameter(j+1) = ref_str.c_str();
-				}
-
-				rs.Execute();
-
-				// 每达到最大值提交一次
-				if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
-				{
-					Commit();
-				}
-			}
-		}
-
-		// 最后提交一次
-		Commit();
+		ResultDataInsert(db_info.db2_sql, db_info.date_time, vec2_data);
 	}
-	catch ( const XDBO2::CDBException& ex )
+	else	// 不带时间戳
 	{
-		throw base::Exception(ADBERR_INS_RESULT_DATA, "[DB2] Insert result data to [%s] failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
+		ResultDataInsert(db_info.db2_sql, "", vec2_data);
 	}
 
-	m_pLog->Output("[DB2] Insert result data to [%s]: %llu", db_info.target_table.c_str(), FIELDS_SIZE);
+	m_pLog->Output("[DB2] Insert result data successfully, size: %llu", vec2_data.size());
 }
 
 size_t CAnaDB2::SelectResultData(AnaDBInfo& db_info) throw(base::Exception)
@@ -561,96 +497,55 @@ size_t CAnaDB2::SelectResultData(AnaDBInfo& db_info) throw(base::Exception)
 
 void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::Exception)
 {
-	XDBO2::CRecordset rs(&m_CDB);
-	rs.EnableWarning(true);
-
-	m_pLog->Output("[DB2] Delete result data from [%s] ... ( DATE_TIME: %s )", db_info.target_table.c_str(), db_info.date_time.c_str());
-
-	try
+	if ( delete_all )		// 清空全表数据
 	{
-		std::string sql;
-		if ( delete_all )		// 清空全表数据
+		m_pLog->Output("[DB2] Empty result table: [%s]", db_info.target_table.c_str());
+		AlterEmptyTable(db_info.target_table);
+
+		// 若存在备份表，则将备份表数据一并清除
+		if ( !db_info.backup_table.empty() )
 		{
-			sql  = "alter table " + db_info.target_table;
-			sql += " activate not logged initially with empty table";
-
-			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+			m_pLog->Output("[DB2] Empty backup table: [%s]", db_info.backup_table.c_str());
+			AlterEmptyTable(db_info.backup_table);
 		}
-		else	// 删除指定数据
-		{
-			sql  = "delete from " + db_info.target_table;
-			// 时间字段在末尾
-			sql += " where " + db_info.vec_fields[db_info.vec_fields.size()-1].field_name + " = ?";
-
-			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-
-			Begin();
-			rs.Parameter(1) = db_info.date_time.c_str();
-		}
-
-		m_pLog->Output("[DB2] Execute sql: %s", sql.c_str());
-		rs.Execute();
-
-		Commit();
 	}
-	catch ( const XDBO2::CDBException& ex )
+	else	// 删除指定数据
 	{
-		throw base::Exception(ADBERR_DEL_REPORT_DATA, "[DB2] Delete result data from [%s] failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
+		// 时间条件：时间字段在末尾
+		std::string dt_condition = db_info.vec_fields[db_info.vec_fields.size()-1].field_name + " = '";
+		dt_condition += db_info.date_time + "'";
+
+		m_pLog->Output("[DB2] Delete result data from result table: [%s] (DATE_TIME: %s)", db_info.target_table.c_str(), db_info.date_time.c_str());
+		DeleteFromTable(db_info.target_table, dt_condition);
+
+		// 若存在备份表，则将备份表数据一并清除
+		if ( !db_info.backup_table.empty() )
+		{
+			m_pLog->Output("[DB2] Delete result data from backup table: [%s] (DATE_TIME: %s)", db_info.backup_table.c_str(), db_info.date_time.c_str());
+			DeleteFromTable(db_info.backup_table, dt_condition);
+		}
 	}
 }
 
 void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_reportdata) throw(base::Exception)
 {
-	XDBO2::CRecordset rs(&m_CDB);
-	rs.EnableWarning(true);
-
 	if ( db_info.db2_sql.empty() )
 	{
-		throw base::Exception(ADBERR_INS_REPORT_DATA, "[DB2] Insert report statistics data to [%s] failed: no sql to be executed! [FILE:%s, LINE:%d]", db_info.target_table.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_INS_RESULT_DATA, "[DB2] Insert report statistics data failed: NO sql to be executed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB2] Insert report statistics data to [%s], SQL: %s", db_info.target_table.c_str(), db_info.db2_sql.c_str());
 
-	const size_t REPORT_DATA_SIZE = vec2_reportdata.size();
-	try
-	{
-		rs.Prepare(db_info.db2_sql.c_str(), XDBO2::CRecordset::forwardOnly);
+	// 入库报表结果表
+	m_pLog->Output("[DB2] Insert report statistics data to result table: [%s]", db_info.target_table.c_str());
+	ResultDataInsert(db_info.db2_sql, db_info.date_time, vec2_reportdata);
 
-		Begin();
+	// 报表备份表替换报表结果表
+	const size_t TARGET_TAB_POS = db_info.db2_sql.find(db_info.target_table);
+	std::string ins_backup_sql = db_info.db2_sql;
+	ins_backup_sql.replace(TARGET_TAB_POS, db_info.target_table.size(), db_info.backup_table);
 
-		//// 时间格式：YYYYMMDD (24小时制)
-		//// 例如：20160501 表示2016年05月01日
-		//std::string now_day = base::SimpleTime::Now().DayTime8();
-
-		for ( size_t i = 0; i < REPORT_DATA_SIZE; ++i )
-		{
-			std::vector<std::string>& v_data = vec2_reportdata[i];
-
-			const int DATA_SIZE = v_data.size();
-			for ( int j = 0; j < DATA_SIZE; ++j )
-			{
-				rs.Parameter(j+1) = v_data[j].c_str();
-			}
-
-			// 绑定时间戳
-			//rs.Parameter(DATA_SIZE+1) = now_day.c_str();
-			rs.Parameter(DATA_SIZE+1) = db_info.date_time.c_str();
-
-			rs.Execute();
-
-			// 每达到最大值提交一次
-			if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
-			{
-				Commit();
-			}
-		}
-
-		// 最后提交一次
-		Commit();
-	}
-	catch ( const XDBO2::CDBException& ex )
-	{
-		throw base::Exception(ADBERR_INS_REPORT_DATA, "[DB2] Insert report statistics data to [%s] failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
-	}
+	// 入库报表结果备份表
+	m_pLog->Output("[DB2] Insert report statistics data to backup table: [%s]", db_info.backup_table.c_str());
+	ResultDataInsert(ins_backup_sql, db_info.date_time, vec2_reportdata);
 
 	m_pLog->Output("[DB2] Insert report statistics data to [%s]: %llu", db_info.target_table.c_str(), REPORT_DATA_SIZE);
 }
@@ -1138,6 +1033,121 @@ void CAnaDB2::SelectCompareResultDesc(const std::string& kpi_id, std::vector<std
 	catch ( const XDBO2::CDBException& ex )
 	{
 		throw base::Exception(ADBERR_SEL_COM_RES_DESC, "[DB2] Select compare result description from %s failed! (KPI_ID:%s, DIM_NAME:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), kpi_id.c_str(), m_fNCompareResult.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void CAnaDB2::AlterEmptyTable(const std::string& tab_name) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	try
+	{
+		std::string sql = "alter table " + tab_name;
+		sql += " activate not logged initially with empty table";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		m_pLog->Output("[DB2] Execute alter sql: %s", sql.c_str());
+
+		rs.Execute();
+		Commit();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_ALTER_EMPTY_TAB, "[DB2] Alter table [%s] to empty table failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void CAnaDB2::DeleteFromTable(const std::string& tab_name, const std::string& condition) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	try
+	{
+		std::string sql = "delete from " + tab_name;
+		sql += " where " + condition;
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		m_pLog->Output("[DB2] Execute delete sql: %s", sql.c_str());
+
+		Begin();
+		rs.Execute();
+		Commit();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_DEL_FROM_TAB, "[DB2] Delete result data from [%s] failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void CAnaDB2::ResultDataInsert(const std::string& ins_sql, const std::string& date_time, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	try
+	{
+		rs.Prepare(ins_sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		m_pLog->Output("[DB2] Execute result-data insert SQL: %s", ins_sql.c_str());
+
+		Begin();
+
+		const size_t V2_DATA_SIZE = vec2_data.size();
+		if ( date_time.empty() )	// 不带时间戳
+		{
+			for ( size_t i = 0; i < V2_DATA_SIZE; ++i )
+			{
+				std::vector<std::string>& ref_vec_data = vec2_data[i];
+
+				const int REF_DATA_SIZE = ref_vec_data.size();
+				for ( int j = 0; j < REF_DATA_SIZE; ++j )
+				{
+					std::string& ref_str = ref_vec_data[j];
+					rs.Parameter(j+1) = ref_str.c_str();
+				}
+
+				rs.Execute();
+
+				// 每达到最大值提交一次
+				if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
+				{
+					Commit();
+				}
+			}
+		}
+		else	// 带时间戳
+		{
+			for ( size_t i = 0; i < V2_DATA_SIZE; ++i )
+			{
+				std::vector<std::string>& ref_vec_data = vec2_data[i];
+
+				const int REF_DATA_SIZE = ref_vec_data.size();
+				for ( int j = 0; j < REF_DATA_SIZE; ++j )
+				{
+					std::string& ref_str = ref_vec_data[j];
+					rs.Parameter(j+1) = ref_str.c_str();
+				}
+
+				// 绑定时间戳
+				rs.Parameter(REF_DATA_SIZE+1) = date_time.c_str();
+
+				rs.Execute();
+
+				// 每达到最大值提交一次
+				if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
+				{
+					Commit();
+				}
+			}
+		}
+
+		// 最后再提交一次
+		Commit();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_INS_RESULT_DATA, "[DB2] Insert result-data failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 }
 

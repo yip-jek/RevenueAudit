@@ -19,24 +19,24 @@ public:
 
 	enum ADB_ERROR
 	{
-		ADBERR_SEL_KPI_RULE      = -3002001,				// 查询指标规则出错
-		ADBERR_SEL_KPI_COL       = -3002002,				// 查询指标字段出错
-		ADBERR_SEL_DIM_VALUE     = -3002003,				// 查询维度取值出错
-		ADBERR_INS_DIM_VALUE     = -3002004,				// 插入维度取值出错
-		ADBERR_SEL_ETL_RULE      = -3002005,				// 查询采集规则出错
-		ADBERR_SEL_ANA_RULE      = -3002006,				// 查询分析规则出错
-		ADBERR_SEL_ALARM_RULE    = -3002007,				// 查询告警规则出错
-		ADBERR_INS_RESULT_DATA   = -3002008,				// 插入结果数据出错
-		ADBERR_SEL_ETL_DIM       = -3002009,				// 查询采集维度规则出错
-		ADBERR_SEL_ETL_VAL       = -3002010,				// 查询采集值规则出错
-		ADBERR_SEL_REPORT_DATA   = -3002011,				// 统计报表统计数据出错
-		ADBERR_DEL_REPORT_DATA   = -3002012,				// 删除报表统计数据出错
-		ADBERR_INS_REPORT_DATA   = -3002013,				// 插入报表统计数据出错
-		ADBERR_SEL_CHANN_UNICODE = -3002014,				// 获取渠道统一编码数据出错
-		ADBERR_SEL_CITY_UNICODE  = -3002015,				// 获取地市统一编码数据出错
-		ADBERR_SEL_MAX_EVENTID   = -3002016,				// 获取最大告警事件 ID 出错
-		ADBERR_INS_ALARMEVENT    = -3002017,				// 插入告警事件出错
-		ADBERR_SEL_COM_RES_DESC  = -3002018,				// 查询对比结果描述出错
+		ADBERR_SEL_KPI_RULE      = -3002001,			// 查询指标规则出错
+		ADBERR_SEL_KPI_COL       = -3002002,			// 查询指标字段出错
+		ADBERR_SEL_DIM_VALUE     = -3002003,			// 查询维度取值出错
+		ADBERR_INS_DIM_VALUE     = -3002004,			// 插入维度取值出错
+		ADBERR_SEL_ETL_RULE      = -3002005,			// 查询采集规则出错
+		ADBERR_SEL_ANA_RULE      = -3002006,			// 查询分析规则出错
+		ADBERR_SEL_ALARM_RULE    = -3002007,			// 查询告警规则出错
+		ADBERR_SEL_ETL_DIM       = -3002008,			// 查询采集维度规则出错
+		ADBERR_SEL_ETL_VAL       = -3002009,			// 查询采集值规则出错
+		ADBERR_SEL_REPORT_DATA   = -3002010,			// 统计报表统计数据出错
+		ADBERR_SEL_CHANN_UNICODE = -3002011,			// 获取渠道统一编码数据出错
+		ADBERR_SEL_CITY_UNICODE  = -3002012,			// 获取地市统一编码数据出错
+		ADBERR_SEL_MAX_EVENTID   = -3002013,			// 获取最大告警事件 ID 出错
+		ADBERR_INS_ALARMEVENT    = -3002014,			// 插入告警事件出错
+		ADBERR_SEL_COM_RES_DESC  = -3002015,			// 查询对比结果描述出错
+		ADBERR_ALTER_EMPTY_TAB   = -3002016,			// 清空结果表数据出错
+		ADBERR_DEL_FROM_TAB      = -3002017,			// 删除结果表数据出错
+		ADBERR_INS_RESULT_DATA   = -3002018,			// 插入结果数据出错
 	};
 
 public:
@@ -92,7 +92,7 @@ public:
 	void InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Exception);
 
 	// 插入结果数据
-	void InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception);
+	void InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
 
 	// 统计已经存在的报表统计数据
 	size_t SelectResultData(AnaDBInfo& db_info) throw(base::Exception);
@@ -138,6 +138,16 @@ private:
 	// 查询对比结果描述（从维度取值表中获取）
 	// 若没有获取到，则返回空集
 	void SelectCompareResultDesc(const std::string& kpi_id, std::vector<std::string>& vec_comresdesc);
+
+	// 清空结果表数据
+	void AlterEmptyTable(const std::string& tab_name) throw(base::Exception);
+
+	// 删除结果表数据
+	void DeleteFromTable(const std::string& tab_name, const std::string& condition) throw(base::Exception);
+
+	// 结果数据入库
+	// 参数 date_time：时间戳，如果为空则表示不带时间戳
+	void ResultDataInsert(const std::string& ins_sql, const std::string& date_time, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
 
 private:
 	// 数据库表名
