@@ -8,7 +8,17 @@
 struct OneEtlDim
 {
 public:
-	OneEtlDim(): EtlDimSeq(0)
+	// 维度备注类型
+	enum DIM_MEMO_TYPE
+	{
+		DMTYPE_NONE			= 0,			// 无（即没有指定类型）
+		DMTYPE_JOIN_ON		= 1,			// 外连-关联类型
+		DMTYPE_JOIN_DIM		= 2,			// 外连-维度类型
+		DMTYPE_SHOW_UP		= 3,			// 显示类型（用于单独显示的维度）
+	};
+
+public:
+	OneEtlDim(): EtlDimSeq(0), EtlDimMemo(DMTYPE_NONE)
 	{}
 
 	OneEtlDim(const OneEtlDim& dim)
@@ -44,16 +54,58 @@ public:
 		EtlDimName.clear();
 		EtlDimDesc.clear();
 		EtlDimSrcName.clear();
-		EtlDimMemo.clear();
+		EtlDimMemo = DMTYPE_NONE;
 	}
 
 public:
-	std::string	EtlDimID;					// 采集维度ID
-	int			EtlDimSeq;					// 采集维度序号
-	std::string	EtlDimName;					// 采集维度名称
-	std::string	EtlDimDesc;					// 采集维度描述
-	std::string	EtlDimSrcName;				// 维度对应源字段名称
-	std::string EtlDimMemo;					// 备注
+	// 设置维度备注类型
+	void SetDimMemoType(const std::string& m_type)
+	{
+		const std::string TYPE = base::PubStr::TrimUpperB(m_type);
+
+		if ( "JOIN_ON" == TYPE )		// 外连-关联类型
+		{
+			EtlDimMemo = DMTYPE_JOIN_ON;
+		}
+		else if ( "JOIN_DIM" == TYPE )	// 外连-维度类型
+		{
+			EtlDimMemo = DMTYPE_JOIN_DIM;
+		}
+		else if ( "SHOW_UP" == TYPE )	// 显示类型
+		{
+			EtlDimMemo = DMTYPE_SHOW_UP;
+		}
+		else	// 无
+		{
+			EtlDimMemo = DMTYPE_NONE;
+		}
+	}
+
+	// 维度备注类型的字符串表示
+	std::string GetDimMemoTypeStr() const
+	{
+		switch ( EtlDimMemo )
+		{
+		case DMTYPE_NONE:
+			return std::string("<NONE>");
+		case DMTYPE_JOIN_ON:
+			return std::string("JOIN_ON");
+		case DMTYPE_JOIN_DIM:
+			return std::string("JOIN_DIM");
+		case DMTYPE_SHOW_UP:
+			return std::string("SHOW_UP");
+		default:
+			return std::string("<-Unknown->");
+		}
+	}
+
+public:
+	std::string		EtlDimID;					// 采集维度ID
+	int		   		EtlDimSeq;					// 采集维度序号
+	std::string		EtlDimName;					// 采集维度名称
+	std::string		EtlDimDesc;					// 采集维度描述
+	std::string		EtlDimSrcName;				// 维度对应源字段名称
+	DIM_MEMO_TYPE	EtlDimMemo;					// 维度备注类型
 };
 
 // 采集维度信息
@@ -100,7 +152,16 @@ public:
 struct OneEtlVal
 {
 public:
-	OneEtlVal(): EtlValSeq(0)
+	// 值备注类型
+	enum VAL_MEMO_TYPE
+	{
+		VMTYPE_NONE		= 0,			// 无（即没有指定类型）
+		VMTYPE_JOIN_VAL	= 1,			// 外连-值类型
+		VMTYPE_SHOW_UP	= 2,			// 显示类型（用于单独显示的值）
+	};
+
+public:
+	OneEtlVal(): EtlValSeq(0), EtlValMemo(VMTYPE_NONE)
 	{}
 
 	OneEtlVal(const OneEtlVal& val)
@@ -136,16 +197,52 @@ public:
 		EtlValName.clear();
 		EtlValDesc.clear();
 		EtlValSrcName.clear();
-		EtlValMemo.clear();
+		EtlValMemo = VMTYPE_NONE;
 	}
 
 public:
-	std::string	EtlValID;					// 采集值ID
-	int			EtlValSeq;					// 采集值序号
-	std::string	EtlValName;					// 采集值名称
-	std::string	EtlValDesc;					// 采集值描述
-	std::string	EtlValSrcName;				// 值对应源字段名称
-	std::string	EtlValMemo;					// 备注
+	// 设置值备注类型
+	void SetValMemoType(const std::string& m_type)
+	{
+		const std::string TYPE = base::PubStr::TrimUpperB(m_type);
+
+		if ( "JOIN_VAL" == TYPE )		// 外连-值类型
+		{
+			EtlValMemo = VMTYPE_JOIN_VAL;
+		}
+		else if ( "SHOW_UP" == TYPE )	// 显示类型
+		{
+			EtlValMemo = VMTYPE_SHOW_UP;
+		}
+		else	// 无
+		{
+			EtlValMemo = VMTYPE_NONE;
+		}
+	}
+
+	// 值备注类型的字符串表示
+	std::string GetValMemoTypeStr() const
+	{
+		switch ( EtlValMemo )
+		{
+		case VMTYPE_NONE:
+			return std::string("<NONE>");
+		case VMTYPE_JOIN_VAL:
+			return std::string("JOIN_VAL");
+		case VMTYPE_SHOW_UP:
+			return std::string("SHOW_UP");
+		default:
+			return std::string("<-Unknown->");
+		}
+	}
+
+public:
+	std::string		EtlValID;					// 采集值ID
+	int				EtlValSeq;					// 采集值序号
+	std::string		EtlValName;					// 采集值名称
+	std::string		EtlValDesc;					// 采集值描述
+	std::string		EtlValSrcName;				// 值对应源字段名称
+	VAL_MEMO_TYPE	EtlValMemo;					// 值备注类型
 };
 
 // 采集值信息

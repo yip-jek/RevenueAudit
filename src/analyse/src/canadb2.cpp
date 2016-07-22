@@ -798,7 +798,7 @@ void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 
 	try
 	{
-		std::string sql = "select ETLDIM_SEQ, ETLDIM_NAME from " + m_tabEtlDim;
+		std::string sql = "select ETLDIM_SEQ, ETLDIM_NAME, ETLDIM_MEMO from " + m_tabEtlDim;
 		sql += " where ETLDIM_ID = ? order by ETLDIM_SEQ asc";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -811,11 +811,12 @@ void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 
 			one.EtlDimSeq  = (int)rs[index++];
 			one.EtlDimName = (const char*)rs[index++];
+			one.SetDimMemoType((const char*)rs[index++]);
 
 			if ( one.EtlDimSeq < 0 )
 			{
-				m_pLog->Output("[DB2] Select [%s]: Ignore invalid ETLDIM_SEQ [%d] (ETLDIM_ID:%s, ETLDIM_NAME:%s)", 
-					m_tabEtlDim.c_str(), one.EtlDimSeq, dim_id.c_str(), one.EtlDimName.c_str());
+				m_pLog->Output("[DB2] Select [%s]: Ignore invalid ETLDIM_SEQ [%d] (ETLDIM_ID:%s, ETLDIM_NAME:%s, ETLDIM_MEMO:%s)", 
+					m_tabEtlDim.c_str(), one.EtlDimSeq, dim_id.c_str(), one.EtlDimName.c_str(), one.GetDimMemoTypeStr().c_str());
 			}
 			else
 			{
@@ -851,7 +852,7 @@ void CAnaDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 
 	try
 	{
-		std::string sql = "select ETLVAL_SEQ, ETLVAL_NAME from " + m_tabEtlVal;
+		std::string sql = "select ETLVAL_SEQ, ETLVAL_NAME, ETLVAL_MEMO from " + m_tabEtlVal;
 		sql += " where ETLVAL_ID = ? order by ETLVAL_SEQ asc";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -864,11 +865,12 @@ void CAnaDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 
 			one.EtlValSeq  = (int)rs[index++];
 			one.EtlValName = (const char*)rs[index++];
+			one.SetValMemoType((const char*)rs[index++]);
 
 			if ( one.EtlValSeq < 0 )
 			{
-				m_pLog->Output("[DB2] Select [%s]: Ignore invalid ETLVAL_SEQ [%d] (ETLVAL_ID:%s, ETLVAL_NAME:%s)", 
-					m_tabEtlVal.c_str(), one.EtlValSeq, val_id.c_str(), one.EtlValName.c_str());
+				m_pLog->Output("[DB2] Select [%s]: Ignore invalid ETLVAL_SEQ [%d] (ETLVAL_ID:%s, ETLVAL_NAME:%s, ETLVAL_MEMO:%s)", 
+					m_tabEtlVal.c_str(), one.EtlValSeq, val_id.c_str(), one.EtlValName.c_str(), one.GetValMemoTypeStr().c_str());
 			}
 			else
 			{

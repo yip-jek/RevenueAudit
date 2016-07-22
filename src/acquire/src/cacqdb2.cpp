@@ -185,7 +185,8 @@ void CAcqDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 			dim.EtlDimName    = (const char*)rs[index++];
 			dim.EtlDimDesc    = (const char*)rs[index++];
 			dim.EtlDimSrcName = (const char*)rs[index++];
-			dim.EtlDimMemo    = (const char*)rs[index++];
+			//dim.EtlDimMemo    = (const char*)rs[index++];
+			dim.SetDimMemoType((const char*)rs[index++]);
 
 			v_dim.push_back(dim);
 
@@ -233,7 +234,8 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 			val.EtlValName    = (const char*)rs[index++];
 			val.EtlValDesc    = (const char*)rs[index++];
 			val.EtlValSrcName = (const char*)rs[index++];
-			val.EtlValMemo	  = (const char*)rs[index++];
+			//val.EtlValMemo	  = (const char*)rs[index++];
+			val.SetValMemoType((const char*)rs[index++]);
 
 			v_val.push_back(val);
 

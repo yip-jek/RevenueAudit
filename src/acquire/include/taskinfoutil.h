@@ -28,17 +28,17 @@ public:
 	// 获取采集规则的值SQL
 	static std::string GetEtlValSql(AcqEtlVal& etl_val, const std::string& tab_prefix = std::string());
 
-	static std::string TrimUpperDimMemo(OneEtlDim& dim);
-	static std::string TrimUpperValMemo(OneEtlVal& val);
+	//static std::string TrimUpperDimMemo(OneEtlDim& dim);
+	//static std::string TrimUpperValMemo(OneEtlVal& val);
 
-	// 是否为外连关联维度字段
-	static bool IsOuterJoinOnDim(OneEtlDim& dim);
+	//// 是否为外连关联维度字段
+	//static bool IsOuterJoinOnDim(OneEtlDim& dim);
 
-	// 是否为外连表的维度字段
-	static bool IsOuterTabJoinDim(OneEtlDim& dim);
+	//// 是否为外连表的维度字段
+	//static bool IsOuterTabJoinDim(OneEtlDim& dim);
 
-	// 是否为外连表的值字段
-	static bool IsOuterTabJoinVal(OneEtlVal& val);
+	//// 是否为外连表的值字段
+	//static bool IsOuterTabJoinVal(OneEtlVal& val);
 
 	// 获取采集维度规则的(外连)关联字段个数
 	static int GetNumOfEtlDimJoinOn(AcqEtlDim& etl_dim);

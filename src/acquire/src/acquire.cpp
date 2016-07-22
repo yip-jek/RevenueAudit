@@ -502,7 +502,7 @@ void Acquire::TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>&
 		if ( one.EtlDimSeq < 0 )
 		{
 			m_pLog->Output("[目标表字段] 忽略维度: DIM_ID[%s], DIM_SEQ[%d], DIM_NAME[%s], DIM_SRCNAME[%s], DIM_MEMO[%s]",
-				one.EtlDimID.c_str(), one.EtlDimSeq, one.EtlDimName.c_str(), one.EtlDimSrcName.c_str(), one.EtlDimMemo.c_str());
+				one.EtlDimID.c_str(), one.EtlDimSeq, one.EtlDimName.c_str(), one.EtlDimSrcName.c_str(), one.GetDimMemoTypeStr().c_str());
 			continue;
 		}
 
@@ -526,7 +526,7 @@ void Acquire::TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>&
 		if ( one.EtlValSeq < 0 )
 		{
 			m_pLog->Output("[目标表字段] 忽略值: VAL_ID[%s], VAL_SEQ[%d], VAL_NAME[%s], VAL_SRCNAME[%s], VAL_MEMO[%s]",
-				one.EtlValID.c_str(), one.EtlValSeq, one.EtlValName.c_str(), one.EtlValSrcName.c_str(), one.EtlValMemo.c_str());
+				one.EtlValID.c_str(), one.EtlValSeq, one.EtlValName.c_str(), one.EtlValSrcName.c_str(), one.GetValMemoTypeStr().c_str());
 			continue;
 		}
 
