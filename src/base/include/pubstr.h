@@ -58,13 +58,15 @@ public:
 	static bool StrTrans2Double(const std::string& str, double& d);
 
 	// 去除数组中每个的字符串结尾的"."和其后的"0"
-	static void TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, int start_pos);
+	// 参数 start_pos 和 end_pos 组成前闭后开区间，即[start_pos, end_pos)
+	static void TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos);
 
 	// 将短精度字符串转换为长精度字符串表示
 	static bool DouStr2LongDouStr(std::string& double_str);
 
 	// 将数组中的带 'E' 的精度字符串转换为长精度字符串表示
-	static void TransVecDouStrWithE2LongDouStr(std::vector<std::vector<std::string> >& vec2_str, int start_pos);
+	// 参数 start_pos 和 end_pos 组成前闭后开区间，即[start_pos, end_pos)
+	static void TransVecDouStrWithE2LongDouStr(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos);
 
 public:
 	// 将Vector进行交换push back

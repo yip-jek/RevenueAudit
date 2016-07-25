@@ -282,15 +282,16 @@ bool PubStr::StrTrans2Double(const std::string& str, double& d)
 	}
 }
 
-void PubStr::TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, int start_pos)
+void PubStr::TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos)
 {
+	const int BEGIN_POS = (start_pos < 0 ? 0 : start_pos);
 	const size_t VEC2_SIZE = vec2_str.size();
 	for ( size_t i = 0; i < VEC2_SIZE; ++i )
 	{
 		std::vector<std::string>& ref_vec = vec2_str[i];
 
-		const int VEC1_SIZE = ref_vec.size();
-		for ( int j = start_pos; j < VEC1_SIZE; ++j )
+		const int LAST_POS = (end_pos < (int)ref_vec.size() ? end_pos : ref_vec.size());
+		for ( int j = BEGIN_POS; j < LAST_POS; ++j )
 		{
 			std::string& ref_str = ref_vec[j];
 
@@ -324,16 +325,17 @@ bool PubStr::DouStr2LongDouStr(std::string& double_str)
 	return (T1TransT2(double_str, ld_tmp) && T1TransT2(ld_tmp, double_str));
 }
 
-void PubStr::TransVecDouStrWithE2LongDouStr(std::vector<std::vector<std::string> >& vec2_str, int start_pos)
+void PubStr::TransVecDouStrWithE2LongDouStr(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos)
 {
 	std::string str_tmp;
+	const int BEGIN_POS = (start_pos < 0 ? 0 : start_pos);
 	const size_t VEC2_SIZE = vec2_str.size();
 	for ( size_t i = 0; i < VEC2_SIZE; ++i )
 	{
 		std::vector<std::string>& ref_vec = vec2_str[i];
 
-		const int VEC1_SIZE = ref_vec.size();
-		for ( int j = start_pos; j < VEC1_SIZE; ++j )
+		const int LAST_POS = (end_pos < (int)ref_vec.size() ? end_pos : ref_vec.size());
+		for ( int j = BEGIN_POS; j < LAST_POS; ++j )
 		{
 			std::string& ref_str = ref_vec[j];
 

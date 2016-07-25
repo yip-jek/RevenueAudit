@@ -85,6 +85,11 @@ public:
 	}
 
 public:
+	// 是否为显示类型
+	bool IsShowUp() const
+	{ return (DMTYPE_SHOW_UP == EtlDimMemo); }
+
+public:
 	std::string		EtlDimID;					// 采集维度ID
 	int				EtlDimSeq;					// 采集维度序号
 	std::string		EtlDimName;					// 采集维度名称
@@ -100,7 +105,7 @@ public:
 	{
 		VMTYPE_NONE		= 0,			// 无（即没有指定类型）
 		VMTYPE_JOIN_VAL	= 1,			// 外连-值类型
-		VMTYPE_SHOW_UP	= 2,			// 显示类型（用于单独显示的值）
+		//VMTYPE_SHOW_UP	= 2,			// 显示类型（用于单独显示的值）
 	};
 
 public:
@@ -138,10 +143,10 @@ public:
 		{
 			EtlValMemo = VMTYPE_JOIN_VAL;
 		}
-		else if ( "SHOW_UP" == TYPE )	// 显示类型
-		{
-			EtlValMemo = VMTYPE_SHOW_UP;
-		}
+		//else if ( "SHOW_UP" == TYPE )	// 显示类型
+		//{
+		//	EtlValMemo = VMTYPE_SHOW_UP;
+		//}
 		else	// 无
 		{
 			EtlValMemo = VMTYPE_NONE;
@@ -157,12 +162,17 @@ public:
 			return std::string("<NONE>");
 		case VMTYPE_JOIN_VAL:
 			return std::string("JOIN_VAL");
-		case VMTYPE_SHOW_UP:
-			return std::string("SHOW_UP");
+		//case VMTYPE_SHOW_UP:
+		//	return std::string("SHOW_UP");
 		default:
 			return std::string("<-Unknown->");
 		}
 	}
+
+public:
+	//// 是否为显示类型
+	//bool IsShowUp() const
+	//{ return (VMTYPE_SHOW_UP == EtlValMemo); }
 
 public:
 	std::string		EtlValID;					// 采集值ID
@@ -186,6 +196,7 @@ public:
 	,DimID(one.DimID)
 	,ValID(one.ValID)
 	,vecEtlDim(one.vecEtlDim)
+	,vecEtlSingleDim(one.vecEtlSingleDim)
 	,vecEtlVal(one.vecEtlVal)
 	{}
 
@@ -193,14 +204,15 @@ public:
 	{
 		if ( this != &one )
 		{
-			this->EtlRuleID   = one.EtlRuleID;
-			this->KpiID       = one.KpiID;
-			this->EtlTime     = one.EtlTime;
-			this->TargetPatch = one.TargetPatch;
-			this->DimID       = one.DimID;
-			this->ValID       = one.ValID;
-			this->vecEtlDim   = one.vecEtlDim;
-			this->vecEtlVal   = one.vecEtlVal;
+			this->EtlRuleID       = one.EtlRuleID;
+			this->KpiID           = one.KpiID;
+			this->EtlTime         = one.EtlTime;
+			this->TargetPatch     = one.TargetPatch;
+			this->DimID           = one.DimID;
+			this->ValID           = one.ValID;
+			this->vecEtlDim       = one.vecEtlDim;
+			this->vecEtlSingleDim = one.vecEtlSingleDim;
+			this->vecEtlVal       = one.vecEtlVal;
 		}
 
 		return *this;
@@ -214,8 +226,9 @@ public:
 	std::string DimID;				// 采集维度规则ID
 	std::string ValID;				// 采集值规则ID
 
-	std::vector<OneEtlDim>	vecEtlDim;			// 采集维度信息集
-	std::vector<OneEtlVal>	vecEtlVal;			// 采集值信息集
+	std::vector<OneEtlDim>	vecEtlDim;				// 采集维度信息集
+	std::vector<OneEtlDim>	vecEtlSingleDim;		// 采集单独显示的维度信息集
+	std::vector<OneEtlVal>	vecEtlVal;				// 采集值信息集
 };
 
 // 指标字段
@@ -239,8 +252,17 @@ public:
 		DTYPE_TEXT		= 3,		// 文件显示方式
 	};
 
+	// 后台表示方式
+	enum ExpWayType
+	{
+		EWTYPE_UNKNOWN		= 0,		// 未知表示方式
+		EWTYPE_NORMAL		= 1,		// 一般表示方式
+		EWTYPE_SINGLE_LEFT	= 2,		// 左侧单独显示方式
+		EWTYPE_SINGLE_RIGHT	= 3,		// 右侧单独显示方式
+	};
+
 public:
-	KpiColumn(): ColType(CTYPE_UNKNOWN), ColSeq(0), DisType(DTYPE_UNKNOWN)
+	KpiColumn(): ColType(CTYPE_UNKNOWN), ColSeq(0), DisType(DTYPE_UNKNOWN), ExpWay(EWTYPE_UNKNOWN)
 	{}
 
 	KpiColumn(const KpiColumn& col)
@@ -250,6 +272,7 @@ public:
 	,DBName(col.DBName)
 	,CNName(col.CNName)
 	,DisType(col.DisType)
+	,ExpWay(col.ExpWay)
 	{}
 
 	const KpiColumn& operator = (const KpiColumn& col)
@@ -262,6 +285,7 @@ public:
 			this->DBName  = col.DBName ;
 			this->CNName  = col.CNName ;
 			this->DisType = col.DisType;
+			this->ExpWay  = col.ExpWay;
 		}
 
 		return *this;
@@ -316,6 +340,32 @@ public:
 		return true;
 	}
 
+	// 设置后台表示方式
+	bool SetExpWayType(const std::string& ew_type)
+	{
+		const std::string TYPE = base::PubStr::TrimUpperB(ew_type);
+
+		if ( "NORMAL" == TYPE )				// 一般表示方式
+		{
+			ExpWay = EWTYPE_NORMAL;
+		}
+		else if ( "SINGLE_LEFT" == TYPE )	// 左侧单独显示方式
+		{
+			ExpWay = EWTYPE_SINGLE_LEFT;
+		}
+		else if ( "SINGLE_RIGHT" == TYPE )	// 右侧单独显示方式
+		{
+			ExpWay = EWTYPE_SINGLE_RIGHT;
+		}
+		else	// 未知表示方式
+		{
+			ExpWay = EWTYPE_UNKNOWN;
+			return false;
+		}
+
+		return true;
+	}
+
 public:
 	std::string	KpiID;				// 指标ID
 	ColumnType	ColType;			// 字段类型
@@ -323,6 +373,7 @@ public:
 	std::string DBName;				// 字段名称
 	std::string CNName;				// 字段中文名称
 	DisplayType	DisType;			// 前台显示方式
+	ExpWayType	ExpWay;				// 后台表示方式
 };
 
 // 维度取值
@@ -583,6 +634,8 @@ public:
 	,vecEtlRule(info.vecEtlRule)
 	,vecKpiDimCol(info.vecKpiDimCol)
 	,vecKpiValCol(info.vecKpiValCol)
+	,vecLeftKpiCol(info.vecLeftKpiCol)
+	,vecRightKpiCol(info.vecRightKpiCol)
 	,vecComResDesc(info.vecComResDesc)
 	{
 	}
@@ -598,11 +651,13 @@ public:
 			this->TableName   = info.TableName ;
 			this->AnaRule     = info.AnaRule   ;
 
-			this->vecAlarm      = info.vecAlarm;
-			this->vecEtlRule    = info.vecEtlRule;
-			this->vecKpiDimCol  = info.vecKpiDimCol;
-			this->vecKpiValCol  = info.vecKpiValCol;
-			this->vecComResDesc = info.vecComResDesc;
+			this->vecAlarm       = info.vecAlarm;
+			this->vecEtlRule     = info.vecEtlRule;
+			this->vecKpiDimCol   = info.vecKpiDimCol;
+			this->vecKpiValCol   = info.vecKpiValCol;
+			this->vecLeftKpiCol  = info.vecLeftKpiCol;
+			this->vecRightKpiCol = info.vecRightKpiCol;
+			this->vecComResDesc  = info.vecComResDesc;
 		}
 
 		return *this;
@@ -651,6 +706,8 @@ public:
 	std::vector<OneEtlRule>		vecEtlRule;			// 采集规则集
 	std::vector<KpiColumn>		vecKpiDimCol;		// 指标维度字段集
 	std::vector<KpiColumn>		vecKpiValCol;		// 指标值字段集
+	std::vector<KpiColumn>		vecLeftKpiCol;		// 左侧单独显示的字段集
+	std::vector<KpiColumn>		vecRightKpiCol;		// 右侧单独显示的字段集
 
 	// 对比结果描述（只有对比类型的才有）
 	// 对比结果按顺序依次是：对平，有差异，左有右无，左无右有

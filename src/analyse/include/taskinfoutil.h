@@ -19,6 +19,9 @@ public:
 	//// inverse为true时，表示A和B的所属表反转
 	//static std::string GetCompareFields(OneEtlRule& rule_A, OneEtlRule& rule_B, bool inverse = false);
 
+	// 获取一个采集规则的维度SQL (外部保证正确性)
+	static std::string GetOneDim(std::vector<OneEtlDim>& vec_dim, const std::string& prefix);
+
 	// 获取采集规则A和B的维度SQL (外部保证正确性)
 	static std::string GetCompareDims(OneEtlRule& rule_A, OneEtlRule& rule_B);
 
@@ -31,6 +34,9 @@ public:
 	// 获取指定列的采集规则A和B的字段SQL (外部保证正确性)
 	// 若没有指定列集（即参数 vec_col 为空），则默认所有列
 	static std::string GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& rule_B, std::vector<int>& vec_col);
+
+	// 获取采集规则A和B的单独显示维度字段SQL (外部保证正确性)
+	static std::string GetBothSingleDims(OneEtlRule& rule_A, OneEtlRule& rule_B);
 
 	// 获取指定列的采集规则A和B的相等形式的值SQL (外部保证正确性)
 	static std::string GetCompareEqualValsByCol(OneEtlRule& rule_A, OneEtlRule& rule_B, std::vector<int>& vec_col);
@@ -50,6 +56,10 @@ public:
 
 	// 获取指定组的采集规则的统计SQL集 (外部保证正确性)
 	static void GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules, std::set<int>& set_int, std::vector<std::string>& vec_hivesql, bool union_all);
+
+	// 指标字段集转换并加入到目标表字段信息列表
+	// 参数 err_msg：失败时，带回的错误信息
+	static bool KpiColumnPushBackAnaFields(std::vector<AnaField>& vec_anafields, std::vector<KpiColumn>& vec_kpicol, std::string& err_msg);
 
 	//// 获取直接分析表达式
 	//static std::string GetStraightAnaCondition(AnalyseRule::AnalyseConditionType cond_type, const std::string& condition, bool add);

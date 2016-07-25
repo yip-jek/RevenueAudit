@@ -78,22 +78,9 @@ int TaskInfoUtil::CheckPluralEtlRule(std::vector<OneEtlRule>& vec_etlrule)
 //	}
 //
 //	// 采集规则A的维度
-//	const int DIM_SIZE = rule_A.vecEtlDim.size();
-//	for ( int i = 0; i < DIM_SIZE; ++i )
-//	{
-//		OneEtlDim& dim = rule_A.vecEtlDim[i];
+//	fields_sql += GetOneDim(rule_A.vecEtlDim, a_tab_prefix);
 //
-//		if ( i != 0 )
-//		{
-//			fields_sql += ", " + a_tab_prefix + dim.EtlDimName;
-//		}
-//		else
-//		{
-//			fields_sql += a_tab_prefix + dim.EtlDimName;
-//		}
-//	}
-//
-//	// 采集规则A的值
+//	// 采集规则A和B的值
 //	std::string v_sql_A;
 //	std::string v_sql_B;
 //	const int VAL_SIZE = rule_A.vecEtlVal.size();
@@ -110,6 +97,27 @@ int TaskInfoUtil::CheckPluralEtlRule(std::vector<OneEtlRule>& vec_etlrule)
 //
 //	return fields_sql;
 //}
+
+std::string TaskInfoUtil::GetOneDim(std::vector<OneEtlDim>& vec_dim, const std::string& prefix)
+{
+	std::string dim_sql;
+	const int VEC_DIM_SIZE = vec_dim.size();
+	for ( int i = 0; i < VEC_DIM_SIZE; ++i )
+	{
+		OneEtlDim& ref_dim = vec_dim[i];
+
+		if ( dim_sql.empty() )
+		{
+			dim_sql = prefix + ref_dim.EtlDimName;
+		}
+		else
+		{
+			dim_sql += ", " + prefix + ref_dim.EtlDimName;
+		}
+	}
+
+	return dim_sql;
+}
 
 std::string TaskInfoUtil::GetCompareDims(OneEtlRule& rule_A, OneEtlRule& rule_B)
 {
@@ -185,20 +193,7 @@ std::string TaskInfoUtil::GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& 
 	std::string fields_sql;
 
 	// 采集规则A的维度
-	const int DIM_SIZE = rule_A.vecEtlDim.size();
-	for ( int i = 0; i < DIM_SIZE; ++i )
-	{
-		OneEtlDim& dim = rule_A.vecEtlDim[i];
-
-		if ( i != 0 )
-		{
-			fields_sql += ", a." + dim.EtlDimName;
-		}
-		else
-		{
-			fields_sql += "a." + dim.EtlDimName;
-		}
-	}
+	fields_sql += GetOneDim(rule_A.vecEtlDim, "a.");
 
 	// 采集规则A和B的值，以及它们的差值
 	std::string v_sql_A;
@@ -238,6 +233,13 @@ std::string TaskInfoUtil::GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& 
 	fields_sql += v_sql_A + v_sql_B + v_sql_diff;
 
 	return fields_sql;
+}
+
+std::string TaskInfoUtil::GetBothSingleDims(OneEtlRule& rule_A, OneEtlRule& rule_B)
+{
+	std::string single_dims_sql = ", " + GetOneDim(rule_A.vecEtlSingleDim, "a.");
+	single_dims_sql += ", " + GetOneDim(rule_B.vecEtlSingleDim, "b.");
+	return single_dims_sql;
 }
 
 std::string TaskInfoUtil::GetCompareEqualValsByCol(OneEtlRule& rule_A, OneEtlRule& rule_B, std::vector<int>& vec_col)
@@ -290,37 +292,24 @@ std::string TaskInfoUtil::GetCompareUnequalValsByCol(OneEtlRule& rule_A, OneEtlR
 
 void TaskInfoUtil::GetOneRuleFields(std::string& dim_sql, std::string& val_sql, OneEtlRule& rule, bool set_as, const std::string& tab_prefix /*= std::string()*/)
 {
-	std::string sql_dim;
+	// 维度 SQL
+	std::string sql_dim = GetOneDim(rule.vecEtlDim, tab_prefix);
+
+	// 值 SQL
 	std::string sql_val;
-
-	int v_size = rule.vecEtlDim.size();
-	for ( int i = 0; i < v_size; ++i )
+	const int VEC_VAL_SIZE = rule.vecEtlVal.size();
+	if ( set_as )	// 带别名
 	{
-		OneEtlDim& dim = rule.vecEtlDim[i];
-
-		if ( i != 0 )
-		{
-			sql_dim += ", " + tab_prefix + dim.EtlDimName;
-		}
-		else
-		{
-			sql_dim += tab_prefix + dim.EtlDimName;
-		}
-	}
-
-	v_size = rule.vecEtlVal.size();
-	if ( set_as )		// 带别名
-	{
-		for ( int i = 0; i < v_size; ++i )
+		for ( int i = 0; i < VEC_VAL_SIZE; ++i )
 		{
 			OneEtlVal& val = rule.vecEtlVal[i];
 
 			sql_val += ", sum(" + tab_prefix + val.EtlValName + ") as " + val.EtlValName;
 		}
 	}
-	else		// 不带别名
+	else	// 不带别名
 	{
-		for ( int i = 0; i < v_size; ++i )
+		for ( int i = 0; i < VEC_VAL_SIZE; ++i )
 		{
 			OneEtlVal& val = rule.vecEtlVal[i];
 
@@ -494,6 +483,35 @@ void TaskInfoUtil::GetEtlStatisticsSQLsBySet(std::vector<OneEtlRule>& vec_rules,
 	}
 
 	v_hive_sql.swap(vec_hivesql);
+}
+
+bool TaskInfoUtil::KpiColumnPushBackAnaFields(std::vector<AnaField>& vec_anafields, std::vector<KpiColumn>& vec_kpicol, std::string& err_msg)
+{
+	AnaField ana_field;
+
+	const int KPI_COL_SIZE = vec_kpicol.size();
+	for ( int i = 0; i < KPI_COL_SIZE; ++i )
+	{
+		KpiColumn& ref_kpicol = vec_kpicol[i];
+
+		if ( ref_kpicol.DBName.empty() )
+		{
+			base::PubStr::SetFormatString(err_msg, "The DBName of KpiColumn is a blank! Invalid! (KPI_ID=%s, COL_TYPE=%s, COL_SEQ=%d)", ref_kpicol.KpiID.c_str(), (KpiColumn::CTYPE_DIM==ref_kpicol.ColType?"DIM":"VAL"), ref_kpicol.ColSeq);
+			return false;
+		}
+
+		if ( ref_kpicol.ColSeq < 0 )
+		{
+			base::PubStr::SetFormatString(err_msg, "The ColSeq of KpiColumn is invalid: %d (KPI_ID=%s, COL_TYPE=%s, DB_NAME=%s)", ref_kpicol.ColSeq, ref_kpicol.KpiID.c_str(), (KpiColumn::CTYPE_DIM==ref_kpicol.ColType?"DIM":"VAL"), ref_kpicol.DBName.c_str());
+			return false;
+		}
+
+		ana_field.field_name = ref_kpicol.DBName;
+		ana_field.CN_name    = ref_kpicol.CNName;
+		vec_anafields.push_back(ana_field);
+	}
+
+	return true;
 }
 
 //std::string TaskInfoUtil::GetStraightAnaCondition(AnalyseRule::AnalyseConditionType cond_type, const std::string& condition, bool add)

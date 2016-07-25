@@ -200,6 +200,7 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info) throw(base::Exception)
 	AnaField ana_field;
 	std::vector<AnaField> v_fields;
 
+	// 指标维度字段
 	int v_size = t_info.vecKpiDimCol.size();
 	for ( int i = 0; i < v_size; ++i )
 	{
@@ -238,28 +239,27 @@ void Analyse::GetAnaDBInfo(AnaTaskInfo& t_info) throw(base::Exception)
 		}
 	}
 
-	v_size = t_info.vecKpiValCol.size();
-	for ( int i = 0; i < v_size; ++i )
+	// 指标值字段
+	std::string error_msg;
+	if ( !TaskInfoUtil::KpiColumnPushBackAnaFields(v_fields, t_info.vecKpiValCol, error_msg) )
 	{
-		KpiColumn& col = t_info.vecKpiValCol[i];
-
-		if ( col.DBName.empty() )
-		{
-			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "值字段名为空! 无效! (KPI_ID=%s, COL_TYPE=CTYPE_VAL, COL_SEQ=%d) [FILE:%s, LINE:%d]", col.KpiID.c_str(), col.ColSeq, __FILE__, __LINE__);
-		}
-
-		if ( col.ColSeq < 0 )
-		{
-			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "无法识别的值字段序号: %d (KPI_ID=%s, COL_TYPE=CTYPE_VAL, DB_NAME=%s) [FILE:%s, LINE:%d]", col.ColSeq, col.KpiID.c_str(), col.DBName.c_str(), __FILE__, __LINE__);
-		}
-
-		ana_field.field_name = col.DBName;
-		ana_field.CN_name    = col.CNName;
-		v_fields.push_back(ana_field);
+		throw base::Exception(ANAERR_GET_DBINFO_FAILED, "指标值：%s [FILE:%s, LINE:%d]", error_msg.c_str(), __FILE__, __LINE__);
 	}
 
 	// 值的开始序号与维度的size相同
 	m_dbinfo.val_beg_pos = t_info.vecKpiDimCol.size();
+
+	// 指标单独显示的维度字段
+	// 左侧
+	if ( !TaskInfoUtil::KpiColumnPushBackAnaFields(v_fields, t_info.vecLeftKpiCol, error_msg) )
+	{
+		throw base::Exception(ANAERR_GET_DBINFO_FAILED, "左侧单独显示的指标维度：%s [FILE:%s, LINE:%d]", error_msg.c_str(), __FILE__, __LINE__);
+	}
+	// 右侧
+	if ( !TaskInfoUtil::KpiColumnPushBackAnaFields(v_fields, t_info.vecRightKpiCol, error_msg) )
+	{
+		throw base::Exception(ANAERR_GET_DBINFO_FAILED, "右侧单独显示的指标维度：%s [FILE:%s, LINE:%d]", error_msg.c_str(), __FILE__, __LINE__);
+	}
 
 	// 加时间戳
 	if ( m_dbinfo.time_stamp )
@@ -607,13 +607,24 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 	OneEtlRule& first_one  = t_info.vecEtlRule[first_index];
 	OneEtlRule& second_one = t_info.vecEtlRule[second_index];
 
+	// 检查：单独显示的字段是否对应
+	if ( first_one.vecEtlSingleDim.size() != t_info.vecLeftKpiCol.size() )
+	{
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "汇总对比：左侧，采集的单独显示字段数 [%lu] 与指标的单独显示字段数 [%lu] 不一致！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", first_one.vecEtlSingleDim.size(), t_info.vecLeftKpiCol.size(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
+	if ( second_one.vecEtlSingleDim.size() != t_info.vecRightKpiCol.size() )
+	{
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "汇总对比：右侧，采集的单独显示字段数 [%lu] 与指标的单独显示字段数 [%lu] 不一致！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", second_one.vecEtlSingleDim.size(), t_info.vecRightKpiCol.size(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
+
 	//// 指定分析条件
 	//const std::string CONDITION     = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, false);
 	//const std::string ADD_CONDITION = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, true);
 
 	// 1) 汇总：对平的Hive SQL语句
 	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
-	hive_sql += ", '" + t_info.vecComResDesc[0] + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += ", '" + t_info.vecComResDesc[0] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
+	hive_sql += " from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += " and " + TaskInfoUtil::GetCompareEqualValsByCol(first_one, second_one, vec_col) + ")";
 	//TaskInfoUtil::AddConditionSql(hive_sql, CONDITION);
@@ -622,7 +633,8 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 
 	// 2) 汇总：有差异的Hive SQL语句
 	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
-	hive_sql += ", '" + t_info.vecComResDesc[1] + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += ", '" + t_info.vecComResDesc[1] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
+	hive_sql += " from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetCompareUnequalValsByCol(first_one, second_one, vec_col);
 	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
@@ -664,13 +676,24 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 	OneEtlRule& first_one  = t_info.vecEtlRule[first_index];
 	OneEtlRule& second_one = t_info.vecEtlRule[second_index];
 
+	// 检查：单独显示的字段是否对应
+	if ( first_one.vecEtlSingleDim.size() != t_info.vecLeftKpiCol.size() )
+	{
+		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "明细对比：左侧，采集的单独显示字段数 [%lu] 与指标的单独显示字段数 [%lu] 不一致！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", first_one.vecEtlSingleDim.size(), t_info.vecLeftKpiCol.size(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
+	if ( second_one.vecEtlSingleDim.size() != t_info.vecRightKpiCol.size() )
+	{
+		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "明细对比：右侧，采集的单独显示字段数 [%lu] 与指标的单独显示字段数 [%lu] 不一致！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", second_one.vecEtlSingleDim.size(), t_info.vecRightKpiCol.size(), t_info.KpiID.c_str(), t_info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	}
+
 	//// 指定分析条件
 	//const std::string CONDITION     = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, false);
 	//const std::string ADD_CONDITION = TaskInfoUtil::GetStraightAnaCondition(t_info.AnaRule.AnaCondType, t_info.AnaRule.AnaCondition, true);
 
 	// 1) 明细：对平的Hive SQL语句
 	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
-	hive_sql += ", '" + t_info.vecComResDesc[0] + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += ", '" + t_info.vecComResDesc[0] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
+	hive_sql += " from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += " and " + TaskInfoUtil::GetCompareEqualVals(first_one, second_one) + ")";
 	//TaskInfoUtil::AddConditionSql(hive_sql, CONDITION);
@@ -679,7 +702,8 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	// 2) 明细：有差异的Hive SQL语句
 	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
-	hive_sql += ", '" + t_info.vecComResDesc[1] + "' from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
+	hive_sql += ", '" + t_info.vecComResDesc[1] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
+	hive_sql += " from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	hive_sql += ") where " + TaskInfoUtil::GetCompareUnequalVals(first_one, second_one);
 	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
@@ -688,7 +712,8 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	//// 3) 明细：左有右无的Hive SQL语句
 	//hive_sql = "select " + TaskInfoUtil::GetCompareFields(first_one, second_one);
-	//hive_sql += ", '" + t_info.vecComResDesc[2] + "' from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
+	//hive_sql += ", '" + t_info.vecComResDesc[2] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
+	//hive_sql += " from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
 	//hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	//hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(second_one, "b.");
 	////TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
@@ -697,7 +722,8 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	//// 4) 明细：左无右有的Hive SQL语句
 	//hive_sql = "select " + TaskInfoUtil::GetCompareFields(second_one, first_one, true);
-	//hive_sql += ", '" + t_info.vecComResDesc[3] + "' from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
+	//hive_sql += ", '" + t_info.vecComResDesc[3] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
+	//hive_sql += " from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
 	//hive_sql += " a on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
 	//hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(first_one, "a.");
 	////TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
@@ -706,17 +732,20 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	std::string dim_sql;
 	std::string val_sql;
+	std::string single_dim_sql;
 
 	// 3) 明细："左有右无"的数据，通过获取 A 和 B 两组数据分析得出
 	// 4) 明细："左无右有"的数据，通过获取 A 和 B 两组数据分析得出
 	TaskInfoUtil::GetOneRuleFields(dim_sql, val_sql, first_one, false);
-	hive_sql = "select " + dim_sql + val_sql + " from ";
-	hive_sql += first_one.TargetPatch + " group by " + dim_sql;
+	single_dim_sql = ", " + TaskInfoUtil::GetOneDim(first_one.vecEtlSingleDim, "");
+	hive_sql = "select " + dim_sql + val_sql + single_dim_sql;
+	hive_sql += " from " + first_one.TargetPatch + " group by " + dim_sql + single_dim_sql;
 	v_hive_sql.push_back(hive_sql);
 
 	TaskInfoUtil::GetOneRuleFields(dim_sql, val_sql, second_one, false);
-	hive_sql = "select " + dim_sql + val_sql + " from ";
-	hive_sql += second_one.TargetPatch + " group by " + dim_sql;
+	single_dim_sql = ", " + TaskInfoUtil::GetOneDim(second_one.vecEtlSingleDim, "");
+	hive_sql = "select " + dim_sql + val_sql + single_dim_sql;
+	hive_sql += " from " + second_one.TargetPatch + " group by " + dim_sql + single_dim_sql;
 	v_hive_sql.push_back(hive_sql);
 
 	v_hive_sql.swap(vec_hivesql);
@@ -980,6 +1009,8 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception)
 
 void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 {
+	const int END_POS = m_dbinfo.val_beg_pos + t_info.vecKpiValCol.size();
+
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )		// 报表统计
 	{
 		m_pLog->Output("[Analyse] 报表统计类型数据转换 ...");
@@ -992,10 +1023,10 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 		base::PubStr::ReplaceInStrVector2(m_v2ReportStatData, "NULL", "0", false, true);
 
 		// 将数组中的带 'E' 的精度字符串转换为长精度字符串表示
-		base::PubStr::TransVecDouStrWithE2LongDouStr(m_v2ReportStatData, m_dbinfo.val_beg_pos);
+		base::PubStr::TransVecDouStrWithE2LongDouStr(m_v2ReportStatData, m_dbinfo.val_beg_pos, END_POS);
 
 		// 去除尾部的"."和其后的"0"
-		base::PubStr::TrimTail0StrVec2(m_v2ReportStatData, m_dbinfo.val_beg_pos);
+		base::PubStr::TrimTail0StrVec2(m_v2ReportStatData, m_dbinfo.val_beg_pos, END_POS);
 	}
 	else	// 非报表统计
 	{
@@ -1011,10 +1042,10 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 			base::PubStr::ReplaceInStrVector2(ref_vec2, "NULL", "0", false, true);
 
 			// 将数组中的带 'E' 的精度字符串转换为长精度字符串表示
-			base::PubStr::TransVecDouStrWithE2LongDouStr(ref_vec2, m_dbinfo.val_beg_pos);
+			base::PubStr::TransVecDouStrWithE2LongDouStr(ref_vec2, m_dbinfo.val_beg_pos, END_POS);
 
 			// 去除尾部的"."和其后的"0"
-			base::PubStr::TrimTail0StrVec2(ref_vec2, m_dbinfo.val_beg_pos);
+			base::PubStr::TrimTail0StrVec2(ref_vec2, m_dbinfo.val_beg_pos, END_POS);
 		}
 	}
 

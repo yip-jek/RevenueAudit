@@ -82,7 +82,7 @@ void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 	SelectKpiRule(info);
 
 	// 获取指标字段数据
-	SelectKpiColumn(info.KpiID, info.vecKpiDimCol, info.vecKpiValCol);
+	SelectKpiColumn(info);
 
 	// 获取采集规则数据
 	size_t v_size = info.vecEtlRule.size();
@@ -93,7 +93,7 @@ void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 		SelectEtlRule(one);
 
 		// 获取采集维度信息
-		SelectEtlDim(one.DimID, one.vecEtlDim);
+		SelectEtlDim(one.DimID, one.vecEtlDim, one.vecEtlSingleDim);
 
 		// 获取采集值信息
 		SelectEtlVal(one.ValID, one.vecEtlVal);
@@ -277,28 +277,31 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 	vec_alarm.swap(info.vecAlarm);
 }
 
-void CAnaDB2::SelectKpiColumn(const std::string& kpi_id, std::vector<KpiColumn>& vec_dim, std::vector<KpiColumn>& vec_val) throw(base::Exception)
+void CAnaDB2::SelectKpiColumn(AnaTaskInfo& info) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
 	std::vector<KpiColumn> v_dim;
 	std::vector<KpiColumn> v_val;
+	std::vector<KpiColumn> v_left;
+	std::vector<KpiColumn> v_right;
 
 	KpiColumn col;
-	col.KpiID = kpi_id;
+	col.KpiID = info.KpiID;
 
 	try
 	{
-		std::string sql = "select COLUMN_TYPE, COLUMN_SEQ, DB_NAME, CN_NAME, DIS_TYPE from ";
+		std::string sql = "select COLUMN_TYPE, COLUMN_SEQ, DB_NAME, CN_NAME, DIS_TYPE, EXP_WAY from ";
 		sql += m_tabKpiColumn + " where KPI_ID = ? order by COLUMN_TYPE, COLUMN_SEQ asc";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(1) = kpi_id.c_str();
+		rs.Parameter(1) = info.KpiID.c_str();
 		rs.Execute();
 
 		std::string col_type;
 		std::string dis_type;
+		std::string exp_way;
 
 		while ( !rs.IsEOF() )
 		{
@@ -308,14 +311,33 @@ void CAnaDB2::SelectKpiColumn(const std::string& kpi_id, std::vector<KpiColumn>&
 			col.ColSeq  = (int)rs[index++];
 			col.DBName  = (const char*)rs[index++];
 			col.CNName  = (const char*)rs[index++];
-			dis_type  = (const char*)rs[index++];
+			dis_type    = (const char*)rs[index++];
+			exp_way     = (const char*)rs[index++];
 
 			if ( !col.SetDisplayType(dis_type) )
 			{
-				throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的前台显示方式: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), kpi_id.c_str(), dis_type.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的前台显示方式: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), dis_type.c_str(), __FILE__, __LINE__);
 			}
 
-			if ( col.SetColumnType(col_type) )
+			if ( !col.SetColumnType(col_type) )
+			{
+				throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的指标字段类型: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), col_type.c_str(), __FILE__, __LINE__);
+			}
+
+			if ( !col.SetExpWayType(exp_way) )
+			{
+				throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的后台表示方式: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), exp_way.c_str(), __FILE__, __LINE__);
+			}
+
+			if ( KpiColumn::EWTYPE_SINGLE_LEFT == col.ExpWay )		// 左侧单独显示方式
+			{
+				v_left.push_back(col);
+			}
+			else if ( KpiColumn::EWTYPE_SINGLE_RIGHT == col.ExpWay )	// 右侧单独显示方式
+			{
+				v_right.push_back(col);
+			}
+			else
 			{
 				switch ( col.ColType )
 				{
@@ -326,12 +348,8 @@ void CAnaDB2::SelectKpiColumn(const std::string& kpi_id, std::vector<KpiColumn>&
 					v_val.push_back(col);
 					break;
 				default:
-					throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的指标字段类型: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), kpi_id.c_str(), col_type.c_str(), __FILE__, __LINE__);
+					throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的指标字段类型: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), col_type.c_str(), __FILE__, __LINE__);
 				}
-			}
-			else
-			{
-				throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的指标字段类型: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), kpi_id.c_str(), col_type.c_str(), __FILE__, __LINE__);
 			}
 
 			rs.MoveNext();
@@ -339,21 +357,24 @@ void CAnaDB2::SelectKpiColumn(const std::string& kpi_id, std::vector<KpiColumn>&
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), kpi_id.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( v_dim.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 没有维度数据! [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), kpi_id.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 没有维度数据! [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
 	}
 	if ( v_val.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 没有值数据! [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), kpi_id.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 没有值数据! [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s) [ETLDIM size:%lu] [ETLVAL size:%lu]", m_tabKpiColumn.c_str(), kpi_id.c_str(), v_dim.size(), v_val.size());
 
-	v_dim.swap(vec_dim);
-	v_val.swap(vec_val);
+	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s) [ETLDIM size:%lu] [ETLVAL size:%lu] [SINGLE_LEFT size:%lu] [SINGLE_RIGHT size:%lu]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), v_dim.size(), v_val.size(), v_left.size(), v_right.size());
+
+	v_dim.swap(info.vecKpiDimCol);
+	v_val.swap(info.vecKpiValCol);
+	v_left.swap(info.vecLeftKpiCol);
+	v_right.swap(info.vecRightKpiCol);
 }
 
 void CAnaDB2::SelectDimValue(const std::string& kpi_id, DimValDiffer& differ) throw(base::Exception)
@@ -787,12 +808,14 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 	m_pLog->Output("[DB2] Select %s: (KPI_ID:%s, ETLRULE_ID:%s) [ETLRULE_TARGETPATCH:%s] [DIM_ID:%s] [VAL_ID:%s] [Record:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), one.TargetPatch.c_str(), one.DimID.c_str(), one.ValID.c_str(), counter);
 }
 
-void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception)
+void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim, std::vector<OneEtlDim>& vec_singledim) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
 	std::vector<OneEtlDim> v_dim;
+	std::vector<OneEtlDim> v_singledim;
+
 	OneEtlDim one;
 	one.EtlDimID = dim_id;
 
@@ -820,7 +843,14 @@ void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 			}
 			else
 			{
-				v_dim.push_back(one);
+				if ( one.IsShowUp() )	// 单独显示的维度
+				{
+					v_singledim.push_back(one);
+				}
+				else	// 一般维度
+				{
+					v_dim.push_back(one);
+				}
 			}
 
 			rs.MoveNext();
@@ -833,12 +863,13 @@ void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 
 	if ( v_dim.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB2] Select %s failed! No record (ETLDIM_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB2] Select %s failed! No etl_dim record! (ETLDIM_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), __FILE__, __LINE__);
 	}
 
-	m_pLog->Output("[DB2] Select %s successfully! (ETLDIM_ID:%s) [Record:%lu]", m_tabEtlDim.c_str(), dim_id.c_str(), v_dim.size());
+	m_pLog->Output("[DB2] Select %s successfully! (ETLDIM_ID:%s) [DIM size:%lu] [SINGLE_DIM size:%lu]", m_tabEtlDim.c_str(), dim_id.c_str(), v_dim.size(), v_singledim.size());
 
 	v_dim.swap(vec_dim);
+	v_singledim.swap(vec_singledim);
 }
 
 void CAnaDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception)

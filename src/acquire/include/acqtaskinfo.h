@@ -157,7 +157,7 @@ public:
 	{
 		VMTYPE_NONE		= 0,			// 无（即没有指定类型）
 		VMTYPE_JOIN_VAL	= 1,			// 外连-值类型
-		VMTYPE_SHOW_UP	= 2,			// 显示类型（用于单独显示的值）
+		//VMTYPE_SHOW_UP	= 2,			// 显示类型（用于单独显示的值）
 	};
 
 public:
@@ -210,10 +210,10 @@ public:
 		{
 			EtlValMemo = VMTYPE_JOIN_VAL;
 		}
-		else if ( "SHOW_UP" == TYPE )	// 显示类型
-		{
-			EtlValMemo = VMTYPE_SHOW_UP;
-		}
+		//else if ( "SHOW_UP" == TYPE )	// 显示类型
+		//{
+		//	EtlValMemo = VMTYPE_SHOW_UP;
+		//}
 		else	// 无
 		{
 			EtlValMemo = VMTYPE_NONE;
@@ -229,8 +229,8 @@ public:
 			return std::string("<NONE>");
 		case VMTYPE_JOIN_VAL:
 			return std::string("JOIN_VAL");
-		case VMTYPE_SHOW_UP:
-			return std::string("SHOW_UP");
+		//case VMTYPE_SHOW_UP:
+		//	return std::string("SHOW_UP");
 		default:
 			return std::string("<-Unknown->");
 		}

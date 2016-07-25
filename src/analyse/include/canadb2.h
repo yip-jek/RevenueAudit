@@ -118,13 +118,13 @@ private:
 	void SelectKpiRule(AnaTaskInfo& info) throw(base::Exception);
 
 	// 查询指标字段表
-	void SelectKpiColumn(const std::string& kpi_id, std::vector<KpiColumn>& vec_dim, std::vector<KpiColumn>& vec_val) throw(base::Exception);
+	void SelectKpiColumn(AnaTaskInfo& info) throw(base::Exception);
 
 	// 查询采集规则表
 	void SelectEtlRule(OneEtlRule& one) throw(base::Exception);
 
 	// 查询采集维度规则表
-	void SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception);
+	void SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim, std::vector<OneEtlDim>& vec_singledim) throw(base::Exception);
 
 	// 查询采集值规则表
 	void SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception);
