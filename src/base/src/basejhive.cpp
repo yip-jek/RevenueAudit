@@ -11,14 +11,9 @@
 namespace base
 {
 
-//BaseJHive::BaseJHive(const std::string& host, int port, const std::string& usr, const std::string& pwd)
 BaseJHive::BaseJHive()
 :m_pLog(Log::Instance())
 ,m_pJNI(NULL)
-//,m_strHost(host)
-//,m_nPort(port)
-//,m_strUsr(usr)
-//,m_strPwd(pwd)
 {
 }
 
@@ -145,11 +140,7 @@ void BaseJHive::Connect() throw(Exception)
 	}
 
 	m_pLog->Output("[BASE HIVE] Connect to <%s> ...", m_zk_quorum.c_str());
-	//jstring jstr_host = m_pJNI->p_jni_env->NewStringUTF(m_strHost.c_str());
-	//jstring jstr_usr  = m_pJNI->p_jni_env->NewStringUTF(m_strUsr.c_str());
-	//jstring jstr_pwd  = m_pJNI->p_jni_env->NewStringUTF(m_strPwd.c_str());
 
-	//jint res_conn = m_pJNI->p_jni_env->CallIntMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_connect, jstr_host, m_nPort, jstr_usr, jstr_pwd);
 	jint res_conn = m_pJNI->p_jni_env->CallIntMethod(m_pJNI->jobj_hiveagent, m_pJNI->jmid_connect);
 	switch ( res_conn )
 	{
@@ -385,7 +376,11 @@ void BaseJHive::DestroyJVM()
 
 void BaseJHive::InitHiveAgent() throw(Exception)
 {
+#ifdef TEST
+	const std::string JAVA_HIVE_CLASS_NAME = "HiveAgentTest";
+#else
 	const std::string JAVA_HIVE_CLASS_NAME = "HiveAgent";
+#endif
 
 	// 找寻 Java HIVE 代理类
 	jclass jclass_hiveagent = m_pJNI->p_jni_env->FindClass(JAVA_HIVE_CLASS_NAME.c_str());

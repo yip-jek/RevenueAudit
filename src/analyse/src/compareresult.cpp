@@ -9,7 +9,7 @@ CompareResult::~CompareResult()
 {
 }
 
-ComDataIndex CompareResult::SetCompareData(std::vector<std::vector<std::string> >& vec2_data, int size_dim)
+ComDataIndex CompareResult::SetCompareData(std::vector<std::vector<std::string> >& vec2_data, int size_dim, int size_val)
 {
 	if ( vec2_data.empty() )
 	{
@@ -21,23 +21,29 @@ ComDataIndex CompareResult::SetCompareData(std::vector<std::vector<std::string> 
 		throw base::Exception(CRERR_SET_COMPARE_DATA, "Invalid dim size: %d [FILE:%s, LINE:%d]", size_dim, __FILE__, __LINE__);
 	}
 
+	if ( size_val <= 0 )
+	{
+		throw base::Exception(CRERR_SET_COMPARE_DATA, "Invalid val size: %d [FILE:%s, LINE:%d]", size_val, __FILE__, __LINE__);
+	}
+
 	m_vComData.push_back(CompareData());
 	int new_index = m_vComData.size() - 1;
 
 	CompareData& ref_comdata = m_vComData[new_index];
-	ref_comdata.dim_size     = size_dim;
+	ref_comdata.dim_size = size_dim;
+	ref_comdata.val_size = size_val;
 
 	std::string str_key;
+	const int TOTAL_SIZE = size_dim + size_val;
 	const size_t VEC2_SIZE = vec2_data.size();
-
 	for ( size_t i = 0; i < VEC2_SIZE; ++i )
 	{
 		std::vector<std::string>& ref_vec = vec2_data[i];
 
 		const int REF_VSIZE = ref_vec.size();
-		if ( REF_VSIZE < size_dim )
+		if ( REF_VSIZE < TOTAL_SIZE )
 		{
-			throw base::Exception(CRERR_SET_COMPARE_DATA, "[Index:%llu] Compare data size [%d] less than dim size [%d] ! [FILE:%s, LINE:%d]", (i+1), REF_VSIZE, size_dim, __FILE__, __LINE__);
+			throw base::Exception(CRERR_SET_COMPARE_DATA, "[Index:%llu] Compare data size [%d] less than the total size [%d]! (The total size is the sum of dim_size [%d] and val_size [%d]) [FILE:%s, LINE:%d]", (i+1), REF_VSIZE, TOTAL_SIZE, size_dim, size_val, __FILE__, __LINE__);
 		}
 
 		str_key.clear();
@@ -97,33 +103,46 @@ void CompareResult::LeftNotInRight(CompareData* pLeft, CompareData* pRight, bool
 {
 	std::vector<std::vector<std::string> > v2_res;
 
-	CompareData::MAP_DATA::iterator it = pLeft->map_comdata.begin();
-	const int VEC_SIZE = it->second.size();					// 总列数
-	const int VAL_SIZE = VEC_SIZE - pLeft->dim_size;		// 值的列数
+	CompareData::MAP_DATA::iterator it_left = pLeft->map_comdata.begin();
+	const int TOTAL_COMPARE_SIZE = pLeft->dim_size + pLeft->val_size;						// 所有对比的列数
+	const int ZERO_START_POS = (left_zero ? pLeft->dim_size : TOTAL_COMPARE_SIZE);			// 零值插入的起始位置
+	const int RD_INSERT_POS = TOTAL_COMPARE_SIZE + (2 * pLeft->val_size);					// 结果描述插入的位置
 
-	// 零值插入的起始位置
-	const int ZERO_START_POS = (left_zero ? pLeft->dim_size : VEC_SIZE);
+	CompareData::MAP_DATA::iterator it_right = pRight->map_comdata.begin();
+	// 单独显示的维度个数
+	const int SINGAL_DIM_SIZE = it_right->second.size() - TOTAL_COMPARE_SIZE;		
+	// 单独显示的维度插入的起始位置
+	const int SINGLE_DIM_START_POS = (left_zero ? (RD_INSERT_POS+1) : (it_left->second.size()+1+(2*pLeft->val_size)));	
 
 	// 遍历 "左" 的数据
-	for ( ; it != pLeft->map_comdata.end(); ++it )
+	for ( ; it_left != pLeft->map_comdata.end(); ++it_left )
 	{
 		// 找寻不存在于 "右" 的数据
-		if ( pRight->map_comdata.find(it->first) == pRight->map_comdata.end() )
+		it_right = pRight->map_comdata.find(it_left->first);
+		if ( it_right == pRight->map_comdata.end() )
 		{
-			std::vector<std::string>& ref_vec = it->second;
+			std::vector<std::string>& ref_vec = it_left->second;
 
-			for ( int i = 0; i < VAL_SIZE; ++i )
+			for ( int i = 0; i < pLeft->val_size; ++i )
 			{
-				ref_vec.push_back(ref_vec[pLeft->dim_size+i]);
+				ref_vec.insert((ref_vec.begin()+TOTAL_COMPARE_SIZE+i), ref_vec[pLeft->dim_size+i]);
 			}
 
-			for ( int j = 0; j < VAL_SIZE; ++j )
+			for ( int j = 0; j < pLeft->val_size; ++j )
 			{
 				ref_vec.insert((ref_vec.begin()+ZERO_START_POS+j), "0");
 			}
 
-			// 最后加上结果描述
-			ref_vec.push_back(result_desc);
+			// 再加上结果描述
+			ref_vec.insert((ref_vec.begin()+RD_INSERT_POS), result_desc);
+
+			// 加上单独显示的列
+			std::vector<std::string>& ref_right_vec = it_right->second;
+			for ( int k = 0; k < SINGAL_DIM_SIZE; ++k )
+			{
+				ref_vec.insert((ref_vec.begin()+SINGLE_DIM_START_POS+k), ref_right_vec[TOTAL_COMPARE_SIZE+k]);
+			}
+
 			base::PubStr::VVectorSwapPushBack(v2_res, ref_vec);
 		}
 	}

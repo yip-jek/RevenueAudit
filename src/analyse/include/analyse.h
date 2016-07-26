@@ -122,7 +122,7 @@ private:
 	void StoreResult(AnaTaskInfo& t_info) throw(base::Exception);
 
 	// 删除旧数据
-	void RemoveOldResult(AnaTaskInfo& info) throw(base::Exception);
+	void RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception);
 
 	// 告警判断: 如果达到告警阀值，则生成告警
 	void AlarmJudgement(AnaTaskInfo& info) throw(base::Exception);

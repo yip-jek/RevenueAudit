@@ -32,7 +32,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.18.0110 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.20.0118 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -1135,11 +1135,12 @@ void Analyse::DetailResultData(AnaTaskInfo& info) throw(base::Exception)
 		m_pLog->Output("[Analyse] 生成明细对比 \"%s\" 和 \"%s\" 的结果数据 ...", info.vecComResDesc[2].c_str(), info.vecComResDesc[3].c_str());
 
 		// 维度个数与值的开始序号一致
-		int dim_size = m_dbinfo.val_beg_pos;
+		const int DIM_SIZE = m_dbinfo.val_beg_pos;
+		const int VAL_SIZE = info.vecKpiValCol.size();
 
 		CompareResult com_result;
-		ComDataIndex left_index  = com_result.SetCompareData(m_v3HiveSrcData[2], dim_size);
-		ComDataIndex right_index = com_result.SetCompareData(m_v3HiveSrcData[3], dim_size);
+		ComDataIndex left_index  = com_result.SetCompareData(m_v3HiveSrcData[2], DIM_SIZE, VAL_SIZE);
+		ComDataIndex right_index = com_result.SetCompareData(m_v3HiveSrcData[3], DIM_SIZE, VAL_SIZE);
 
 		// 删除 A、B 两组原始数据
 		m_v3HiveSrcData.erase(m_v3HiveSrcData.begin() + 3);
@@ -1215,7 +1216,7 @@ void Analyse::CollectDimVal(AnaTaskInfo& info)
 void Analyse::StoreResult(AnaTaskInfo& t_info) throw(base::Exception)
 {
 	// 删除旧的数据
-	RemoveOldResult(t_info);
+	RemoveOldResult(t_info.ResultType);
 
 	// 是否为报表统计类型
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )	// 报表统计类型
@@ -1236,7 +1237,7 @@ void Analyse::StoreResult(AnaTaskInfo& t_info) throw(base::Exception)
 	m_pLog->Output("[Analyse] 结果数据存储完毕!");
 }
 
-void Analyse::RemoveOldResult(AnaTaskInfo& info) throw(base::Exception)
+void Analyse::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception)
 {
 	// 是否带时间戳
 	// 只有带时间戳才可以按采集时间删除结果数据
@@ -1250,7 +1251,7 @@ void Analyse::RemoveOldResult(AnaTaskInfo& info) throw(base::Exception)
 		if ( NUM_OF_REPORT_DATA > 0 )
 		{
 			// 结果表类型是否为天表？
-			if ( AnaTaskInfo::TABTYPE_DAY == info.ResultType )
+			if ( AnaTaskInfo::TABTYPE_DAY == result_tabtype )
 			{
 				m_pLog->Output("[Analyse] 清空天表数据 ...");
 				m_pAnaDB2->DeleteResultData(m_dbinfo, true);

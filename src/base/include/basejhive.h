@@ -15,7 +15,6 @@ struct StructJNI;
 class BaseJHive
 {
 public:
-	//BaseJHive(const std::string& host, int port, const std::string& usr, const std::string& pwd);
 	BaseJHive();
 	virtual ~BaseJHive();
 
@@ -74,10 +73,6 @@ protected:
 	StructJNI*	m_pJNI;				// JNI 接口
 
 protected:
-	//std::string	m_strHost;			// HIVE 主机信息
-	//int			m_nPort;			// HIVE 主机 hiveserver2 的端口号
-	//std::string	m_strUsr;			// HIVE 主机用户名
-	//std::string	m_strPwd;			// HIVE 主机密码
 	std::string m_zk_quorum;
 };
 

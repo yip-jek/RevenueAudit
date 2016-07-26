@@ -9,7 +9,7 @@
 struct CompareData
 {
 public:
-	CompareData(): dim_size(0)
+	CompareData(): dim_size(0), val_size(0)
 	{}
 
 	typedef std::map<std::string, std::vector<std::string> >	MAP_DATA;
@@ -17,6 +17,7 @@ public:
 public:
 	MAP_DATA	map_comdata;		// 数据清单
 	int			dim_size;			// 维度个数
+	int			val_size;			// 值个数
 };
 
 class CompareResult;
@@ -72,7 +73,7 @@ public:
 
 public:
 	// 设置对比数据，返回数据索引
-	ComDataIndex SetCompareData(std::vector<std::vector<std::string> >& vec2_data, int size_dim);
+	ComDataIndex SetCompareData(std::vector<std::vector<std::string> >& vec2_data, int size_dim, int size_val);
 
 	// 获取对比结果数据
 	void GetCompareResult(const ComDataIndex& left_index, const ComDataIndex& right_index, COMPARE_TYPE com_type, 

@@ -2,6 +2,7 @@
 
 #include <set>
 #include "anataskinfo.h"
+#include "anadbinfo.h"
 
 // 分析任务信息的工具类
 class TaskInfoUtil
