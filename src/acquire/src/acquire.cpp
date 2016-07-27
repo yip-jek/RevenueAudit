@@ -29,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.19.0115 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.21.0119 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -49,7 +49,10 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("HIVE_SERVER", "PRINCIPAL");
 	m_cfg.RegisterItem("HIVE_SERVER", "JAAS_CONF");
 	m_cfg.RegisterItem("HIVE_SERVER", "LOAD_JAR_PATH");
+
+#ifndef TEST	// 测试环境：不指定建表的 location
 	m_cfg.RegisterItem("HIVE_SERVER", "HIVE_TAB_LOCATION");
+#endif
 
 	m_cfg.RegisterItem("TABLE", "TAB_KPI_RULE");
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_RULE");
@@ -78,8 +81,11 @@ void Acquire::LoadConfig() throw(base::Exception)
 	//m_sHiveUsr = m_cfg.GetCfgValue("HIVE_SERVER", "USERNAME");
 	//m_sHivePwd = m_cfg.GetCfgValue("HIVE_SERVER", "PASSWORD");
 	m_sLoadJarPath    = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
+
+#ifndef TEST	// 测试环境：不指定建表的 location
 	m_hiveTabLocation = m_cfg.GetCfgValue("HIVE_SERVER", "HIVE_TAB_LOCATION");
 	base::BaseDir::DirWithSlash(m_hiveTabLocation);
+#endif
 
 	// Tables
 	m_tabKpiRule = m_cfg.GetCfgValue("TABLE", "TAB_KPI_RULE");

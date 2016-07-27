@@ -18,6 +18,8 @@ Alarm::Alarm()
 ,m_pThresholdCompare(NULL)
 ,m_kpiDimSize(0)
 ,m_kpiValSize(0)
+,m_dimRegionIndex(0)
+,m_dimChannelIndex(0)
 {
 }
 
@@ -91,6 +93,10 @@ void Alarm::SetTaskDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info)
 	{
 		m_kpiDimSize -= 1;
 	}
+
+	// 设置地市和渠道维度字段的位置索引
+	m_dimRegionIndex  = m_pTaskInfo->GetDimRegionIndex();
+	m_dimChannelIndex = m_pTaskInfo->GetDimChannelIndex();
 }
 
 void Alarm::SetAlarmRule(AlarmRule& alarm_rule)
@@ -116,7 +122,7 @@ std::string Alarm::GenerateDimKey(std::vector<std::string>& vec_str) throw(base:
 	{
 		// 维度用双单引号引用
 		dim = base::PubStr::TrimB(vec_str[i]);
-		dim = "'" + TryGetUnicodeCN(dim) + "'";
+		dim = "'" + TryGetUnicodeCN(dim, i) + "'";
 
 		// 维度 KEY 值：中间用竖线（'|'）分隔
 		if ( i != 0 )
@@ -181,11 +187,22 @@ void Alarm::DetermineThresholdCompare(bool contain_equal)
 	}
 }
 
-std::string Alarm::TryGetUnicodeCN(const std::string& unicode)
+std::string Alarm::TryGetUnicodeCN(const std::string& unicode, const int& index)
 {
 	if ( m_pUnicodeTransfer != NULL )	// 使用统一编码转换
 	{
-		return m_pUnicodeTransfer->TryGetUniCodeCN(unicode);
+		if ( index == m_dimRegionIndex )	// 地市维度
+		{
+			return m_pUnicodeTransfer->TryGetRegionCNName(unicode);
+		}
+		else if ( index == m_dimChannelIndex )	// 渠道维度
+		{
+			return m_pUnicodeTransfer->TryGetChannelCNName(unicode);
+		}
+		else
+		{
+			return unicode;
+		}
 	}
 	else	// 无法转换
 	{

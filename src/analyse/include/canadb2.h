@@ -73,9 +73,6 @@ public:
 	// 设置地市统一编码表
 	void SetTabDictCity(const std::string& t_dictcity);
 
-	// 设置对比结果的字段名
-	void SetFNCompareResult(const std::string& com_result);
-
 	// 查询分析规则任务信息
 	void SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
 
@@ -137,7 +134,11 @@ private:
 
 	// 查询对比结果描述（从维度取值表中获取）
 	// 若没有获取到，则返回空集
-	void SelectCompareResultDesc(const std::string& kpi_id, std::vector<std::string>& vec_comresdesc);
+	void SelectCompareResultDesc(const std::string& kpi_id, const std::string& comp_res_name, std::vector<std::string>& vec_comresdesc);
+
+	// 获取对比结果字段名
+	// 找不到，则返回空字符串
+	std::string GetCompareResultName(std::vector<KpiColumn>& vec_kpival);
 
 	// 清空结果表数据
 	void AlterEmptyTable(const std::string& tab_name) throw(base::Exception);

@@ -289,7 +289,7 @@ void CAcqDB2::FetchEtlData(const std::string& sql, int data_size, std::vector<st
 		const size_t V2_DAT_SIZE = v2_data.size();
 		if ( 0 == V2_DAT_SIZE )
 		{
-			m_pLog->Output("[DB2] <WARNING> Fetch no data ! (size: 0)");
+			m_pLog->Output("<WARNING> [DB2] Fetch no data ! (size: 0)");
 		}
 		else
 		{

@@ -95,68 +95,69 @@ void UniformCodeTransfer::InputCityUniformCode(std::vector<CityUniformCode>& vec
 	}
 }
 
-std::string UniformCodeTransfer::Transfer(const std::string& src_code)
+bool UniformCodeTransfer::RegionTransfer(const std::string& src_code, std::string& unicode)
 {
-	std::string code = base::PubStr::TrimB(src_code);
-
-	// 先尝试从渠道统一编码列表中找到统一编码
-	std::map<std::string, std::string>::iterator it = m_mapChannelUniCode.find(code);
-	if ( it != m_mapChannelUniCode.end() )
-	{
-		return it->second;
-	}
-
-	// 再尝试从地市统一编码列表中找到统一编码
 	// 地市别名需大写
-	base::PubStr::Upper(code);
-	it = m_mapCityUniCode.find(code);
+	const std::string CODE = base::PubStr::TrimUpperB(src_code);
+
+	// 从地市统一编码列表中找到统一编码
+	std::map<std::string, std::string>::iterator it = m_mapCityUniCode.find(CODE);
 	if ( it != m_mapCityUniCode.end() )
 	{
-		return it->second;
+		unicode = it->second;
+		return true;
 	}
 
-	// 找不到则返回源编码
-	return src_code;
+	// 找不到，则返回源编码
+	unicode = CODE;
+	return false;
 }
 
-std::string UniformCodeTransfer::TryGetUniCodeCN(const std::string& uni_code)
+bool UniformCodeTransfer::ChannelTransfer(const std::string& src_code, std::string& unicode)
 {
-	std::string uni_c = base::PubStr::TrimB(uni_code);
+	const std::string CODE = base::PubStr::TrimB(src_code);
 
-	// 是否为渠道别名
-	std::map<std::string, std::string>::iterator it = m_mapChannelUniCode.find(uni_c);
+	// 从渠道统一编码列表中找到统一编码
+	std::map<std::string, std::string>::iterator it = m_mapChannelUniCode.find(CODE);
 	if ( it != m_mapChannelUniCode.end() )
 	{
-		// 通过渠道别名找到对应的中文名
-		return m_mChannUniCodeCN.find(it->second)->second;
+		unicode = it->second;
+		return true;
 	}
 
-	// 先尝试从渠道统一编码中文名列表中找到中文名
-	it = m_mChannUniCodeCN.find(uni_c);
-	if ( it != m_mChannUniCodeCN.end() )
-	{
-		return it->second;
-	}
+	// 找不到，则返回源编码
+	unicode = CODE;
+	return false;
+}
 
+std::string UniformCodeTransfer::TryGetRegionCNName(const std::string& unicode)
+{
 	// 地市统一编码需大写
-	base::PubStr::Upper(uni_c);
+	const std::string UNI_CODE = base::PubStr::TrimUpperB(unicode);
 
-	// 是否为地市别名
-	it = m_mapCityUniCode.find(uni_c);
-	if ( it != m_mapCityUniCode.end() )
-	{
-		// 通过地市别名找到对应的中文名
-		return m_mCityUniCodeCN.find(it->second)->second;
-	}
-
-	// 再尝试从地市统一编码中文名列表中找到中文名
-	it = m_mCityUniCodeCN.find(uni_c);
+	// 从地市统一编码中文名列表中找到中文名
+	std::map<std::string, std::string>::iterator it = m_mCityUniCodeCN.find(UNI_CODE);
 	if ( it != m_mCityUniCodeCN.end() )
 	{
 		return it->second;
 	}
 
 	// 找不到，返回源名称
-	return uni_code;
+	return UNI_CODE;
+}
+
+std::string UniformCodeTransfer::TryGetChannelCNName(const std::string& unicode)
+{
+	const std::string UNI_CODE = base::PubStr::TrimB(unicode);
+
+	// 从渠道统一编码中文名列表中找到中文名
+	std::map<std::string, std::string>::iterator it = m_mChannUniCodeCN.find(UNI_CODE);
+	if ( it != m_mChannUniCodeCN.end() )
+	{
+		return it->second;
+	}
+
+	// 找不到，返回源名称
+	return UNI_CODE;
 }
 

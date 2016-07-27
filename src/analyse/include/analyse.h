@@ -39,6 +39,7 @@ public:
 		ANAERR_GET_STAT_BY_SET_FAILED = -3000016,			// 生成指定组的统计HIVE SQL失败
 		ANAERR_ALARM_JUDGEMENT_FAILED = -3000017,			// 告警判断失败
 		ANAERR_DETAIL_RESULT_DATA     = -3000018,			// 生成明细结果失败
+		ANAERR_SRC_DATA_UNIFIED_CODE  = -3000019,			// 源数据的统一编码转换失败
 	};
 
 public:
@@ -66,6 +67,9 @@ private:
 
 	// 检查任务信息
 	void CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
+
+	// 检查后台表示方式类型
+	void CheckExpWayType(AnaTaskInfo& info) throw(base::Exception);
 
 	// 获取渠道、地市统一编码信息
 	void FetchUniformCode() throw(base::Exception);
@@ -108,6 +112,9 @@ private:
 
 	// 分析源数据，生成结果数据
 	void AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception);
+
+	// 源数据的地市与渠道的统一编码转换
+	void SrcDataUnifiedCoding(AnaTaskInfo& info) throw(base::Exception);
 
 	// 将Hive源数据转换为报表统计类型数据
 	void TransSrcDataToReportStatData();
@@ -179,19 +186,13 @@ private:
 	std::string m_tabDictChannel;		// 渠道统一编码表
 	std::string m_tabDictCity;			// 地市统一编码表
 
-	std::string m_fNCompareResult;		// 对比结果的字段名
-
 private:
 	DimValDiffer		m_DVDiffer;				// 用于维度取值范围的比较
 	UniformCodeTransfer	m_UniCodeTransfer;		// 统一编码转换
 
 private:
-	AnaDBInfo			m_dbinfo;				// 库表信息
-
-	// 获取到的Hive源数据集
-	std::vector<std::vector<std::vector<std::string> > >	m_v3HiveSrcData;
-
-	// 报表统计类型的数据集
-	std::vector<std::vector<std::string> >					m_v2ReportStatData;
+	AnaDBInfo												m_dbinfo;				// 库表信息
+	std::vector<std::vector<std::vector<std::string> > >	m_v3HiveSrcData;		// 获取到的Hive源数据集
+	std::vector<std::vector<std::string> >					m_v2ReportStatData;		// 报表统计类型的数据集
 };
 

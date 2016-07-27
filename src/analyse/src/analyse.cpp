@@ -32,7 +32,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.20.0118 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.22.0120 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -64,8 +64,6 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_EVENT");
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CHANNEL");
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CITY");
-
-	m_cfg.RegisterItem("FIELD_NAME", "FN_COMPARE_RESULT");
 
 	m_cfg.ReadConfig();
 
@@ -103,8 +101,6 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_tabDictChannel = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CHANNEL");
 	m_tabDictCity    = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
 
-	m_fNCompareResult = m_cfg.GetCfgValue("FIELD_NAME", "FN_COMPARE_RESULT");
-
 	m_pLog->Output("[Analyse] Load configuration OK.");
 }
 
@@ -130,7 +126,6 @@ void Analyse::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabAlarmEvent(m_tabAlarmEvent);
 	m_pAnaDB2->SetTabDictChannel(m_tabDictChannel);
 	m_pAnaDB2->SetTabDictCity(m_tabDictCity);
-	m_pAnaDB2->SetFNCompareResult(m_fNCompareResult);
 
 	//m_pHive = new CAnaHive(m_sHiveIP, m_nHivePort, m_sHiveUsr, m_sHivePwd);
 	m_pHive = new CAnaHive();
@@ -429,6 +424,63 @@ void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 	//{
 	//	throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析条件类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	//}
+
+	CheckExpWayType(info);
+}
+
+void Analyse::CheckExpWayType(AnaTaskInfo& info) throw(base::Exception)
+{
+	// 检查维度：是否存在重复的 '地市' 和 '渠道' 表示类型
+	bool region_existed  = false;
+	bool channel_existed = false;
+	int vec_size = info.vecKpiDimCol.size();
+	for ( int i = 0; i < vec_size; ++i )
+	{
+		KpiColumn& ref_kpi_dim = info.vecKpiDimCol[i];
+
+		if ( KpiColumn::EWTYPE_REGION == ref_kpi_dim.ExpWay )	// 地市
+		{
+			if ( region_existed )	// 地市已经存在
+			{
+				throw base::Exception(ANAERR_TASKINFO_INVALID, "地市维度字段重复配置！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			}
+			else
+			{
+				region_existed = true;
+			}
+		}
+		else if ( KpiColumn::EWTYPE_CHANNEL == ref_kpi_dim.ExpWay )	// 渠道
+		{
+			if ( channel_existed )	// 渠道已经存在
+			{
+				throw base::Exception(ANAERR_TASKINFO_INVALID, "渠道维度字段重复配置！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			}
+			else
+			{
+				channel_existed = true;
+			}
+		}
+	}
+
+	// 检查值：是否存在重复的 '对比结果' 表示类型
+	bool comp_result_existed = false;
+	vec_size = info.vecKpiValCol.size();
+	for ( int j = 0; j < vec_size; ++j )
+	{
+		KpiColumn& ref_kpi_val = info.vecKpiValCol[j];
+
+		if ( KpiColumn::EWTYPE_COMPARE_RESULT == ref_kpi_val.ExpWay )	// 对比结果
+		{
+			if ( comp_result_existed )	// 对比结果已经存在
+			{
+				throw base::Exception(ANAERR_TASKINFO_INVALID, "对比结果值字段重复配置！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			}
+			else
+			{
+				comp_result_existed = true;
+			}
+		}
+	}
 }
 
 void Analyse::FetchUniformCode() throw(base::Exception)
@@ -1009,8 +1061,9 @@ void Analyse::GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception)
 
 void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 {
-	const int END_POS = m_dbinfo.val_beg_pos + t_info.vecKpiValCol.size();
+	SrcDataUnifiedCoding(t_info);
 
+	const int END_POS = m_dbinfo.val_beg_pos + t_info.vecKpiValCol.size();
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == t_info.AnaRule.AnaType )		// 报表统计
 	{
 		m_pLog->Output("[Analyse] 报表统计类型数据转换 ...");
@@ -1052,10 +1105,81 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 	m_pLog->Output("[Analyse] 分析完成!");
 }
 
+void Analyse::SrcDataUnifiedCoding(AnaTaskInfo& info) throw(base::Exception)
+{
+	const int DIM_REGION_INDEX  = info.GetDimRegionIndex();
+	const int DIM_CHANNEL_INDEX = info.GetDimChannelIndex();
+
+	std::set<std::string> set_not_exist_region;			// 未成功转换的地市别名
+	std::set<std::string> set_not_exist_channel;		// 未成功转换的渠道别名
+
+	const int VEC3_SIZE = m_v3HiveSrcData.size();
+	for ( int i = 0; i < VEC3_SIZE; ++i )
+	{
+		std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
+
+		const size_t VEC2_SIZE = ref_vec2.size();
+		for ( size_t j = 0; j < VEC2_SIZE; ++j )
+		{
+			std::vector<std::string>& ref_vec1 = ref_vec2[j];
+
+			const int VEC1_SIZE = ref_vec1.size();
+			if ( DIM_REGION_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在-地市维度
+			{
+				if ( DIM_REGION_INDEX >= VEC1_SIZE )	// 地市维度位置索引越界？
+				{
+					throw base::Exception(ANAERR_SRC_DATA_UNIFIED_CODE, "The dim region index (%d) is out of range in HIVE source data (VEC_3:%d, VEC_2:%llu) [FILE:%s, LINE:%d]", DIM_REGION_INDEX, i, j, __FILE__, __LINE__);
+				}
+				else
+				{
+					std::string& ref_str = ref_vec1[DIM_REGION_INDEX];
+
+					// 地市统一编码转换不成功
+					if ( !m_UniCodeTransfer.RegionTransfer(ref_str, ref_str) )
+					{
+						set_not_exist_region.insert(ref_str);
+					}
+				}
+			}
+
+			if ( DIM_CHANNEL_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在-渠道维度
+			{
+				if ( DIM_CHANNEL_INDEX >= VEC1_SIZE )	// 渠道维度位置索引越界？
+				{
+					throw base::Exception(ANAERR_SRC_DATA_UNIFIED_CODE, "The dim channel index (%d) is out of range in HIVE source data (VEC_3:%d, VEC_2:%llu) [FILE:%s, LINE:%d]", DIM_CHANNEL_INDEX, i, j, __FILE__, __LINE__);
+				}
+				else
+				{
+					std::string& ref_str = ref_vec1[DIM_CHANNEL_INDEX];
+
+					// 渠道统一编码转换不成功
+					if ( !m_UniCodeTransfer.ChannelTransfer(ref_str, ref_str) )
+					{
+						set_not_exist_channel.insert(ref_str);
+					}
+				}
+			}
+		}
+	}
+
+	// 输出转换不成功的地市别名
+	std::set<std::string>::iterator s_it = set_not_exist_region.begin();
+	for ( ; s_it != set_not_exist_region.end(); ++s_it )
+	{
+		m_pLog->Output("<WARNING> [Analyse] 不存在对应地市统一编码的地市别名：[%s]", s_it->c_str());
+	}
+
+	// 输出转换不成功的渠道别名
+	for ( s_it = set_not_exist_channel.begin(); s_it != set_not_exist_channel.end(); ++s_it )
+	{
+		m_pLog->Output("<WARNING> [Analyse] 不存在对应渠道统一编码的渠道别名：[%s]", s_it->c_str());
+	}
+}
+
 void Analyse::TransSrcDataToReportStatData()
 {
-	std::map<std::string, std::vector<std::string> > 	mReportStatData;
-	std::map<std::string, std::vector<std::string> >::iterator	it = mReportStatData.end();
+	std::map<std::string, std::vector<std::string> > mReportStatData;
+	std::map<std::string, std::vector<std::string> >::iterator it = mReportStatData.end();
 
 	std::string str_tmp;
 	std::string m_key;
@@ -1077,9 +1201,6 @@ void Analyse::TransSrcDataToReportStatData()
 			for ( int k = 0; k < DIM_SIZE; ++k )
 			{
 				std::string& ref_str = ref_vec1[k];
-
-				ref_str = m_UniCodeTransfer.Transfer(ref_str);
-
 				m_key += ref_str;
 			}
 

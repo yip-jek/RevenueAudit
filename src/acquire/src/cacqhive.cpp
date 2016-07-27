@@ -47,8 +47,11 @@ void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string
 		}
 	}
 	sql_create += " ) row format delimited fields terminated by '|' stored as textfile";
+
+#ifndef TEST	// 测试环境：不指定建表的 location
 	// 指定建表的 location
 	sql_create += " location '" + tab_location + tab_name + "'";
+#endif
 
 	try
 	{

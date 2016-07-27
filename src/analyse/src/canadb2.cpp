@@ -71,11 +71,6 @@ void CAnaDB2::SetTabDictCity(const std::string& t_dictcity)
 	m_tabDictCity = t_dictcity;
 }
 
-void CAnaDB2::SetFNCompareResult(const std::string& com_result)
-{
-	m_fNCompareResult = com_result;
-}
-
 void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 {
 	// 获取指标规则数据
@@ -111,8 +106,11 @@ void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 		SelectAlarmRule(alarm);
 	}
 
+	// 获取对比结果字段名称
+	const std::string COMPARE_RESULT_DBNAME = GetCompareResultName(info.vecKpiValCol);
+
 	// 获取对比结果描述（从维度取值表中获取）
-	SelectCompareResultDesc(info.KpiID, info.vecComResDesc);
+	SelectCompareResultDesc(info.KpiID, COMPARE_RESULT_DBNAME, info.vecComResDesc);
 }
 
 void CAnaDB2::SelectChannelUniformCode(std::vector<ChannelUniformCode>& vec_channunicode) throw(base::Exception)
@@ -1036,20 +1034,25 @@ void CAnaDB2::SelectAlarmRule(AlarmRule& alarm) throw(base::Exception)
 		m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), alarm.AlarmName.c_str(), alarm_type.c_str(), counter);
 }
 
-void CAnaDB2::SelectCompareResultDesc(const std::string& kpi_id, std::vector<std::string>& vec_comresdesc)
+void CAnaDB2::SelectCompareResultDesc(const std::string& kpi_id, const std::string& comp_res_name, std::vector<std::string>& vec_comresdesc)
 {
+	if ( comp_res_name.empty() )
+	{
+		m_pLog->Output("<WARNING> [DB2] The DB_Name of compare result is a blank! [KPI_ID:%s]", kpi_id.c_str());
+	}
+
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
 	try
 	{
 		std::string sql = "select DIM_VAL from " + m_tabDimValue + " where KPI_ID = '";
-		sql += kpi_id + "' and DB_NAME = '" + m_fNCompareResult + "' order by VAL_CNAME";
+		sql += kpi_id + "' and DB_NAME = '" + comp_res_name + "' order by VAL_CNAME";
 		m_pLog->Output("[DB2] Select compare result description, SQL: %s", sql.c_str());
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 		//rs.Parameter(1) = kpi_id.c_str();
-		//rs.Parameter(1) = m_fNCompareResult.c_str();
+		//rs.Parameter(1) = comp_res_name.c_str();
 		rs.Execute();
 
 		std::vector<std::string> vec_desc;
@@ -1065,8 +1068,26 @@ void CAnaDB2::SelectCompareResultDesc(const std::string& kpi_id, std::vector<std
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_COM_RES_DESC, "[DB2] Select compare result description from %s failed! (KPI_ID:%s, DIM_NAME:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), kpi_id.c_str(), m_fNCompareResult.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_COM_RES_DESC, "[DB2] Select compare result description from %s failed! (KPI_ID:%s, DIM_NAME:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), kpi_id.c_str(), comp_res_name.c_str(), ex.what(), __FILE__, __LINE__);
 	}
+}
+
+std::string CAnaDB2::GetCompareResultName(std::vector<KpiColumn>& vec_kpival)
+{
+	const int VEC_VAL_SIZE = vec_kpival.size();
+	for ( int i = 0; i < VEC_VAL_SIZE; ++i )
+	{
+		KpiColumn& ref_kpi = vec_kpival[i];
+
+		if ( KpiColumn::EWTYPE_COMPARE_RESULT == ref_kpi.ExpWay )
+		{
+			return ref_kpi.DBName;
+		}
+	}
+
+	m_pLog->Output("[DB2] Can not find compare result db_name in KpiColumn val vector!");
+	// 找不到，返回空值
+	return std::string();
 }
 
 void CAnaDB2::AlterEmptyTable(const std::string& tab_name) throw(base::Exception)

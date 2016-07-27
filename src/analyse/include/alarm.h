@@ -86,7 +86,7 @@ protected:
 	virtual void DetermineThresholdCompare(bool contain_equal);
 
 	// 获取统一编码中文名
-	virtual std::string TryGetUnicodeCN(const std::string& unicode);
+	virtual std::string TryGetUnicodeCN(const std::string& unicode, const int& index);
 
 protected:
 	base::Log*		m_pLog;
@@ -108,5 +108,8 @@ protected:
 protected:
 	int m_kpiDimSize;			// 指标维度字段数
 	int m_kpiValSize;			// 指标值字段数
+
+	int m_dimRegionIndex;		// 地市维度字段的位置索引
+	int m_dimChannelIndex;		// 渠道维度字段的位置索引
 };
 

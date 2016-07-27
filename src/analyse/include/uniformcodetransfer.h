@@ -45,13 +45,21 @@ public:
 	// 录入地市统一编码信息
 	void InputCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode) throw(base::Exception);
 
-	// 编码转换
-	// 返回：成功-返回转换后的统一编码，失败-返回源编码
-	std::string Transfer(const std::string& src_code);
+	// 地市统一编码转换
+	// 输出参数 unicode：成功-返回转换后的统一编码，失败-返回源编码
+	bool RegionTransfer(const std::string& src_code, std::string& unicode);
 
-	// 获取统一编码中文名
+	// 渠道统一编码转换
+	// 输出参数 unicode：成功-返回转换后的统一编码，失败-返回源编码
+	bool ChannelTransfer(const std::string& src_code, std::string& unicode);
+
+	// 获取地市统一编码中文名
 	// 若无法成功获取，则返回源名称
-	std::string TryGetUniCodeCN(const std::string& uni_code);
+	std::string TryGetRegionCNName(const std::string& unicode);
+
+	// 获取渠道统一编码中文名
+	// 若无法成功获取，则返回源名称
+	std::string TryGetChannelCNName(const std::string& unicode);
 
 private:
 	std::map<std::string, std::string>	m_mapChannelUniCode;	// 渠道统一编码列表

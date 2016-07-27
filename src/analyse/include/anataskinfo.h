@@ -255,10 +255,13 @@ public:
 	// 后台表示方式
 	enum ExpWayType
 	{
-		EWTYPE_UNKNOWN		= 0,		// 未知表示方式
-		EWTYPE_NORMAL		= 1,		// 一般表示方式
-		EWTYPE_SINGLE_LEFT	= 2,		// 左侧单独显示方式
-		EWTYPE_SINGLE_RIGHT	= 3,		// 右侧单独显示方式
+		EWTYPE_UNKNOWN			= 0,		// 未知表示方式
+		EWTYPE_NORMAL			= 1,		// 一般表示方式
+		EWTYPE_REGION			= 2,		// 表示地市 (唯一)
+		EWTYPE_CHANNEL			= 3,		// 表示渠道 (唯一)
+		EWTYPE_COMPARE_RESULT	= 4,		// 表示对比结果 (唯一)
+		EWTYPE_SINGLE_LEFT		= 5,		// 左侧单独显示方式
+		EWTYPE_SINGLE_RIGHT		= 6,		// 右侧单独显示方式
 	};
 
 public:
@@ -345,15 +348,27 @@ public:
 	{
 		const std::string TYPE = base::PubStr::TrimUpperB(ew_type);
 
-		if ( "NORMAL" == TYPE )				// 一般表示方式
+		if ( "NORMAL" == TYPE )					// 一般表示方式
 		{
 			ExpWay = EWTYPE_NORMAL;
 		}
-		else if ( "SINGLE_LEFT" == TYPE )	// 左侧单独显示方式
+		else if ( "REGION" == TYPE )			// 表示地市 (唯一)
+		{
+			ExpWay = EWTYPE_REGION;
+		}
+		else if ( "CHANNEL" == TYPE )			// 表示渠道 (唯一)
+		{
+			ExpWay = EWTYPE_CHANNEL;
+		}
+		else if ( "COMPARE_RESULT" == TYPE )	// 表示对比结果 (唯一)
+		{
+			ExpWay = EWTYPE_COMPARE_RESULT;
+		}
+		else if ( "SINGLE_LEFT" == TYPE )		// 左侧单独显示方式
 		{
 			ExpWay = EWTYPE_SINGLE_LEFT;
 		}
-		else if ( "SINGLE_RIGHT" == TYPE )	// 右侧单独显示方式
+		else if ( "SINGLE_RIGHT" == TYPE )		// 右侧单独显示方式
 		{
 			ExpWay = EWTYPE_SINGLE_RIGHT;
 		}
@@ -619,6 +634,8 @@ public:
 		TABTYPE_YEAR		= 4,		// 年表
 	};
 
+	static const int INVALID_DIM_INDEX = -1;		// 无效的维度位置索引
+
 public:
 	AnaTaskInfo(): ResultType(TABTYPE_UNKNOWN)
 	{}
@@ -692,6 +709,46 @@ public:
 		}
 
 		return true;
+	}
+
+	// 获取地市维度字段的位置索引
+	// 没有地市维度字段，则返回 INVALID_DIM_INDEX
+	int GetDimRegionIndex()
+	{
+		const int VEC_DIM_SIZE = vecKpiDimCol.size();
+		for ( int i = 0; i < VEC_DIM_SIZE; ++i )
+		{
+			KpiColumn& ref_kpi_dim = vecKpiDimCol[i];
+
+			if ( KpiColumn::EWTYPE_REGION == ref_kpi_dim.ExpWay )
+			{
+				// 找到地市维度字段的位置索引
+				return i;
+			}
+		}
+
+		// 没有地市维度字段
+		return INVALID_DIM_INDEX;
+	}
+
+	// 获取渠道维度字段的位置索引
+	// 没有渠道维度字段，则返回 INVALID_DIM_INDEX
+	int GetDimChannelIndex()
+	{
+		const int VEC_DIM_SIZE = vecKpiDimCol.size();
+		for ( int i = 0; i < VEC_DIM_SIZE; ++i )
+		{
+			KpiColumn& ref_kpi_dim = vecKpiDimCol[i];
+
+			if ( KpiColumn::EWTYPE_CHANNEL == ref_kpi_dim.ExpWay )
+			{
+				// 找到渠道维度字段的位置索引
+				return i;
+			}
+		}
+
+		// 没有渠道维度字段
+		return INVALID_DIM_INDEX;
 	}
 
 public:
