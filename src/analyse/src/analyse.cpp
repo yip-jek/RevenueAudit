@@ -782,22 +782,12 @@ void Analyse::GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::stri
 
 	//v_hive_sql.push_back(hive_sql);
 
-	std::string dim_sql;
-	std::string val_sql;
-	std::string single_dim_sql;
-
 	// 3) 明细："左有右无"的数据，通过获取 A 和 B 两组数据分析得出
 	// 4) 明细："左无右有"的数据，通过获取 A 和 B 两组数据分析得出
-	TaskInfoUtil::GetOneRuleFields(dim_sql, val_sql, first_one, false);
-	single_dim_sql = ", " + TaskInfoUtil::GetOneDim(first_one.vecEtlSingleDim, "");
-	hive_sql = "select " + dim_sql + val_sql + single_dim_sql;
-	hive_sql += " from " + first_one.TargetPatch + " group by " + dim_sql + single_dim_sql;
+	hive_sql = TaskInfoUtil::GetOneEtlRuleDetailSQL(first_one);
 	v_hive_sql.push_back(hive_sql);
 
-	TaskInfoUtil::GetOneRuleFields(dim_sql, val_sql, second_one, false);
-	single_dim_sql = ", " + TaskInfoUtil::GetOneDim(second_one.vecEtlSingleDim, "");
-	hive_sql = "select " + dim_sql + val_sql + single_dim_sql;
-	hive_sql += " from " + second_one.TargetPatch + " group by " + dim_sql + single_dim_sql;
+	hive_sql = TaskInfoUtil::GetOneEtlRuleDetailSQL(second_one);
 	v_hive_sql.push_back(hive_sql);
 
 	v_hive_sql.swap(vec_hivesql);
@@ -1257,7 +1247,7 @@ void Analyse::DetailResultData(AnaTaskInfo& info) throw(base::Exception)
 
 		// 维度个数与值的开始序号一致
 		const int DIM_SIZE = m_dbinfo.val_beg_pos;
-		const int VAL_SIZE = info.vecKpiValCol.size();
+		const int VAL_SIZE = info.vecEtlRule[0].vecEtlVal.size();
 
 		CompareResult com_result;
 		ComDataIndex left_index  = com_result.SetCompareData(m_v3HiveSrcData[2], DIM_SIZE, VAL_SIZE);

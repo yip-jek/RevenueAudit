@@ -715,40 +715,72 @@ public:
 	// 没有地市维度字段，则返回 INVALID_DIM_INDEX
 	int GetDimRegionIndex()
 	{
+		// 默认：没有地市维度字段
+		int region_index = INVALID_DIM_INDEX;
+
+		bool time_stamp = false;
 		const int VEC_DIM_SIZE = vecKpiDimCol.size();
 		for ( int i = 0; i < VEC_DIM_SIZE; ++i )
 		{
 			KpiColumn& ref_kpi_dim = vecKpiDimCol[i];
 
-			if ( KpiColumn::EWTYPE_REGION == ref_kpi_dim.ExpWay )
+			if ( INVALID_DIM_INDEX == region_index 
+				&& KpiColumn::EWTYPE_REGION == ref_kpi_dim.ExpWay )
 			{
 				// 找到地市维度字段的位置索引
-				return i;
+				region_index = i;
+			}
+
+			// 是否带时间戳？
+			if ( -1 == ref_kpi_dim.ColSeq )
+			{
+				time_stamp = true;
 			}
 		}
 
-		// 没有地市维度字段
-		return INVALID_DIM_INDEX;
+		// 时间戳会被挪到最后，所以索引位置提前一位
+		if ( region_index != INVALID_DIM_INDEX && time_stamp )
+		{
+			--region_index;
+		}
+
+		return region_index;
 	}
 
 	// 获取渠道维度字段的位置索引
 	// 没有渠道维度字段，则返回 INVALID_DIM_INDEX
 	int GetDimChannelIndex()
 	{
+		// 默认：没有地市维度字段
+		int channel_index = INVALID_DIM_INDEX;
+
+		bool time_stamp = false;
 		const int VEC_DIM_SIZE = vecKpiDimCol.size();
 		for ( int i = 0; i < VEC_DIM_SIZE; ++i )
 		{
 			KpiColumn& ref_kpi_dim = vecKpiDimCol[i];
 
-			if ( KpiColumn::EWTYPE_CHANNEL == ref_kpi_dim.ExpWay )
+			if ( INVALID_DIM_INDEX == channel_index 
+				&& KpiColumn::EWTYPE_CHANNEL == ref_kpi_dim.ExpWay )
 			{
 				// 找到渠道维度字段的位置索引
-				return i;
+				channel_index = i;
+			}
+
+			// 是否带时间戳？
+			if ( -1 == ref_kpi_dim.ColSeq )
+			{
+				time_stamp = true;
 			}
 		}
 
-		// 没有渠道维度字段
-		return INVALID_DIM_INDEX;
+		// 时间戳会被挪到最后，所以索引位置提前一位
+		if ( channel_index != INVALID_DIM_INDEX && time_stamp )
+		{
+			--channel_index;
+		}
+
+		return channel_index;
 	}
 
 public:

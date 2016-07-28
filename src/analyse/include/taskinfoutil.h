@@ -49,6 +49,9 @@ public:
 	// tab_prefix为字段前置，例如："a.", "b."等
 	static void GetOneRuleFields(std::string& dim_sql, std::string& val_sql, OneEtlRule& rule, bool set_as, const std::string& tab_prefix = std::string());
 
+	// 获取单个采集规则的明细数据 SQL (外部保证正确性)
+	static std::string GetOneEtlRuleDetailSQL(OneEtlRule& one_rule);
+
 	//// 获取采集规则的 <NULL> 值SQL (外部保证正确性)
 	//static std::string GetOneRuleValsNull(OneEtlRule& rule, const std::string& tab_prefix);
 

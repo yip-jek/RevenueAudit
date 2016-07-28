@@ -237,9 +237,23 @@ std::string TaskInfoUtil::GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& 
 
 std::string TaskInfoUtil::GetBothSingleDims(OneEtlRule& rule_A, OneEtlRule& rule_B)
 {
-	std::string single_dims_sql = ", " + GetOneDim(rule_A.vecEtlSingleDim, "a.");
-	single_dims_sql += ", " + GetOneDim(rule_B.vecEtlSingleDim, "b.");
-	return single_dims_sql;
+	std::string both_single_dims_sql;
+
+	// 采集规则 A 的单独显示维度列集
+	std::string single_dim_sql = GetOneDim(rule_A.vecEtlSingleDim, "a.");
+	if ( !single_dim_sql.empty() )
+	{
+		both_single_dims_sql += (", " + single_dim_sql);
+	}
+
+	// 采集规则 B 的单独显示维度列集
+	single_dim_sql = GetOneDim(rule_B.vecEtlSingleDim, "b.");
+	if ( !single_dim_sql.empty() )
+	{
+		both_single_dims_sql += (", " + single_dim_sql);
+	}
+
+	return both_single_dims_sql;
 }
 
 std::string TaskInfoUtil::GetCompareEqualValsByCol(OneEtlRule& rule_A, OneEtlRule& rule_B, std::vector<int>& vec_col)
@@ -319,6 +333,25 @@ void TaskInfoUtil::GetOneRuleFields(std::string& dim_sql, std::string& val_sql, 
 
 	dim_sql = sql_dim;
 	val_sql = sql_val;
+}
+
+std::string TaskInfoUtil::GetOneEtlRuleDetailSQL(OneEtlRule& one_rule)
+{
+	// 生成单独显示的维度列集 SQL
+	std::string single_dim_sql;
+	std::string one_dim_sql = GetOneDim(one_rule.vecEtlSingleDim, "");
+	if ( !one_dim_sql.empty() )
+	{
+		single_dim_sql = ", " + one_dim_sql;
+	}
+
+	std::string dim_sql;
+	std::string val_sql;
+	GetOneRuleFields(dim_sql, val_sql, one_rule, false);
+
+	std::string detail_sql = "select " + dim_sql + val_sql + single_dim_sql;
+	detail_sql += " from " + one_rule.TargetPatch + " group by " + dim_sql + single_dim_sql;
+	return detail_sql;
 }
 
 //std::string TaskInfoUtil::GetOneRuleValsNull(OneEtlRule& rule, const std::string& tab_prefix)
