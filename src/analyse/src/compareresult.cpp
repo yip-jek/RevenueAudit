@@ -115,35 +115,36 @@ void CompareResult::LeftNotInRight(CompareData* pLeft, CompareData* pRight, bool
 	const int SINGLE_DIM_START_POS = (left_zero ? (RD_INSERT_POS+1) : (it_left->second.size()+1+(2*pLeft->val_size)));	
 
 	// 遍历 "左" 的数据
+	std::vector<std::string> vec_str;
 	for ( ; it_left != pLeft->map_comdata.end(); ++it_left )
 	{
 		// 找寻不存在于 "右" 的数据
 		it_right = pRight->map_comdata.find(it_left->first);
 		if ( it_right == pRight->map_comdata.end() )
 		{
-			std::vector<std::string>& ref_vec = it_left->second;
+			vec_str = it_left->second;
 
 			for ( int i = 0; i < pLeft->val_size; ++i )
 			{
-				ref_vec.insert((ref_vec.begin()+TOTAL_COMPARE_SIZE+i), ref_vec[pLeft->dim_size+i]);
+				vec_str.insert((vec_str.begin()+TOTAL_COMPARE_SIZE+i), vec_str[pLeft->dim_size+i]);
 			}
 
 			for ( int j = 0; j < pLeft->val_size; ++j )
 			{
-				ref_vec.insert((ref_vec.begin()+ZERO_START_POS+j), "0");
+				vec_str.insert((vec_str.begin()+ZERO_START_POS+j), "0");
 			}
 
 			// 再加上结果描述
-			ref_vec.insert((ref_vec.begin()+RD_INSERT_POS), result_desc);
+			vec_str.insert((vec_str.begin()+RD_INSERT_POS), result_desc);
 
 			// 加上另一侧的单独显示的列
 			// 但由于另一侧不存在，所以填空 (NULL)
 			for ( int k = 0; k < SINGLE_DIM_SIZE; ++k )
 			{
-				ref_vec.insert((ref_vec.begin()+SINGLE_DIM_START_POS+k), "NULL");
+				vec_str.insert((vec_str.begin()+SINGLE_DIM_START_POS+k), "NULL");
 			}
 
-			base::PubStr::VVectorSwapPushBack(v2_res, ref_vec);
+			base::PubStr::VVectorSwapPushBack(v2_res, vec_str);
 		}
 	}
 
