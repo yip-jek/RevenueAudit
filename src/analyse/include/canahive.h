@@ -6,7 +6,6 @@ class CAnaHive : public base::BaseJHive
 {
 
 public:
-	//CAnaHive(const std::string& ip, int port, const std::string& usr, const std::string& pwd);
 	CAnaHive();
 	virtual ~CAnaHive();
 

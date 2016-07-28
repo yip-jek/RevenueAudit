@@ -15,7 +15,6 @@ Acquire g_Acquire;
 
 
 Acquire::Acquire()
-//:m_nHivePort(0)
 :m_nHdfsPort(0)
 ,m_pAcqDB2(NULL)
 ,m_pAcqHive(NULL)
@@ -29,7 +28,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.21.0119 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.21.0121 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -39,10 +38,6 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("DATABASE", "DB_NAME");
 	m_cfg.RegisterItem("DATABASE", "USER_NAME");
 	m_cfg.RegisterItem("DATABASE", "PASSWORD");
-	//m_cfg.RegisterItem("HIVE_SERVER", "IP_ADDRESS");
-	//m_cfg.RegisterItem("HIVE_SERVER", "PORT");
-	//m_cfg.RegisterItem("HIVE_SERVER", "USERNAME");
-	//m_cfg.RegisterItem("HIVE_SERVER", "PASSWORD");
 	m_cfg.RegisterItem("HIVE_SERVER", "ZK_QUORUM");
 	m_cfg.RegisterItem("HIVE_SERVER", "KRB5_CONF");
 	m_cfg.RegisterItem("HIVE_SERVER", "USR_KEYTAB");
@@ -72,14 +67,6 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_usr_keytab = m_cfg.GetCfgValue("HIVE_SERVER", "USR_KEYTAB");
 	m_principal  = m_cfg.GetCfgValue("HIVE_SERVER", "PRINCIPAL");
 	m_jaas_conf  = m_cfg.GetCfgValue("HIVE_SERVER", "JAAS_CONF");
-	//m_sHiveIP   = m_cfg.GetCfgValue("HIVE_SERVER", "IP_ADDRESS");
-	//m_nHivePort = (int)m_cfg.GetCfgLongVal("HIVE_SERVER", "PORT");
-	//if ( m_nHivePort <= 0 )
-	//{
-	//	throw base::Exception(ACQERR_HIVE_PORT_INVALID, "Hive服务器端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHivePort, __FILE__, __LINE__);
-	//}
-	//m_sHiveUsr = m_cfg.GetCfgValue("HIVE_SERVER", "USERNAME");
-	//m_sHivePwd = m_cfg.GetCfgValue("HIVE_SERVER", "PASSWORD");
 	m_sLoadJarPath    = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
 
 #ifndef TEST	// 测试环境：不指定建表的 location
@@ -112,7 +99,6 @@ void Acquire::Init() throw(base::Exception)
 	m_pAcqDB2->SetTabEtlDim(m_tabEtlDim);
 	m_pAcqDB2->SetTabEtlVal(m_tabEtlVal);
 
-	//m_pHive = new CAcqHive(m_sHiveIP, m_nHivePort, m_sHiveUsr, m_sHivePwd);
 	m_pHive = new CAcqHive();
 	if ( NULL == m_pHive )
 	{

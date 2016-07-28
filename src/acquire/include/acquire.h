@@ -117,10 +117,6 @@ private:
 	std::string m_sUsrName;				// 用户名
 	std::string m_sPasswd;				// 密码
 
-	//std::string m_sHiveIP;				// Hive服务器IP地址
-	//int			m_nHivePort;			// Hive服务器端口
-	//std::string m_sHiveUsr;				// Hive服务器用户名
-	//std::string m_sHivePwd;				// Hive服务器密码
 	std::string m_zk_quorum;
 	std::string m_krb5_conf;
 	std::string m_usr_keytab;
