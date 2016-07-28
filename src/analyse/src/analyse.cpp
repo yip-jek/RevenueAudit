@@ -1229,13 +1229,14 @@ void Analyse::DetailResultData(AnaTaskInfo& info) throw(base::Exception)
 		{
 			throw base::Exception(ANAERR_DETAIL_RESULT_DATA, "不正确的明细对比源数据个数: %lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_v3HiveSrcData.size(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
-		m_pLog->Output("[Analyse] 生成明细对比 \"%s\" 和 \"%s\" 的结果数据 ...", info.vecComResDesc[2].c_str(), info.vecComResDesc[3].c_str());
+		m_pLog->Output("[Analyse] 进行 \"%s\" 和 \"%s\" 的明细数据对比 ...", info.vecComResDesc[2].c_str(), info.vecComResDesc[3].c_str());
 
 		// 维度个数与值的开始序号一致
 		const int DIM_SIZE = m_dbinfo.val_beg_pos;
 		const int VAL_SIZE = info.vecEtlRule[0].vecEtlVal.size();
 
 		CompareResult com_result;
+		m_pLog->Output("[Analyse] 录入两组原始明细数据 ...");
 		ComDataIndex left_index  = com_result.SetCompareData(m_v3HiveSrcData[2], DIM_SIZE, VAL_SIZE);
 		ComDataIndex right_index = com_result.SetCompareData(m_v3HiveSrcData[3], DIM_SIZE, VAL_SIZE);
 
@@ -1245,13 +1246,15 @@ void Analyse::DetailResultData(AnaTaskInfo& info) throw(base::Exception)
 
 		std::vector<std::vector<std::string> > vec2_result;
 		// "左有右无" 的对比结果数据
+		m_pLog->Output("[Analyse] 生成明细对比 \"%s\" 的结果数据 ...", info.vecComResDesc[2].c_str());
 		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_LEFT, info.vecComResDesc[2], vec2_result);
-		m_pLog->Output("[Analyse] 成功生成明细对比 \"%s\" 结果数据, size: %llu", info.vecComResDesc[2].c_str(), vec2_result.size());
+		m_pLog->Output("[Analyse] 成功生成明细对比 \"%s\" 的结果数据, size: %llu", info.vecComResDesc[2].c_str(), vec2_result.size());
 		base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec2_result);
 
 		// "左无右有" 的对比结果数据
+		m_pLog->Output("[Analyse] 生成明细对比 \"%s\" 的结果数据 ...", info.vecComResDesc[3].c_str());
 		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_RIGHT, info.vecComResDesc[3], vec2_result);
-		m_pLog->Output("[Analyse] 成功生成明细对比 \"%s\" 结果数据, size: %llu", info.vecComResDesc[3].c_str(), vec2_result.size());
+		m_pLog->Output("[Analyse] 成功生成明细对比 \"%s\" 的结果数据, size: %llu", info.vecComResDesc[3].c_str(), vec2_result.size());
 		base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec2_result);
 	}
 }

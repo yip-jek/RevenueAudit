@@ -110,7 +110,7 @@ void CompareResult::LeftNotInRight(CompareData* pLeft, CompareData* pRight, bool
 
 	CompareData::MAP_DATA::iterator it_right = pRight->map_comdata.begin();
 	// 单独显示的维度个数
-	const int SINGAL_DIM_SIZE = it_right->second.size() - TOTAL_COMPARE_SIZE;		
+	const int SINGLE_DIM_SIZE = it_right->second.size() - TOTAL_COMPARE_SIZE;		
 	// 单独显示的维度插入的起始位置
 	const int SINGLE_DIM_START_POS = (left_zero ? (RD_INSERT_POS+1) : (it_left->second.size()+1+(2*pLeft->val_size)));	
 
@@ -136,11 +136,11 @@ void CompareResult::LeftNotInRight(CompareData* pLeft, CompareData* pRight, bool
 			// 再加上结果描述
 			ref_vec.insert((ref_vec.begin()+RD_INSERT_POS), result_desc);
 
-			// 加上单独显示的列
-			std::vector<std::string>& ref_right_vec = it_right->second;
-			for ( int k = 0; k < SINGAL_DIM_SIZE; ++k )
+			// 加上另一侧的单独显示的列
+			// 但由于另一侧不存在，所以填空 (NULL)
+			for ( int k = 0; k < SINGLE_DIM_SIZE; ++k )
 			{
-				ref_vec.insert((ref_vec.begin()+SINGLE_DIM_START_POS+k), ref_right_vec[TOTAL_COMPARE_SIZE+k]);
+				ref_vec.insert((ref_vec.begin()+SINGLE_DIM_START_POS+k), "NULL");
 			}
 
 			base::PubStr::VVectorSwapPushBack(v2_res, ref_vec);
