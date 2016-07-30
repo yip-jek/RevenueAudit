@@ -3,6 +3,7 @@
 #include "baseframeapp.h"
 #include "acqtaskinfo.h"
 #include "hdfsconnector.h"
+#include "pubtime.h"
 
 class CAcqDB2;
 class CAcqHive;
@@ -30,6 +31,7 @@ public:
 		ACQERR_OUTPUT_HDFS_FILE_FAILED = -2000011,			// 输出到HDFS文件失败
 		ACQERR_LOAD_HIVE_FAILED        = -2000012,			// 载入数据到HIVE失败
 		ACQERR_CHECK_SRC_TAB_FAILED    = -2000013,			// 检查源表失败
+		ACQERR_GEN_ETL_DATE_FAILED     = -2000014,			// 生成采集时间失败
 	};
 
 public:
@@ -60,6 +62,9 @@ private:
 
 	// 进行数据采集
 	void DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception);
+
+	// 生成采集时间
+	void GenerateEtlDate(const std::string& date_fmt) throw(base::Exception);
 
 	// HIVE数据采集
 	void HiveDataAcquisition(AcqTaskInfo& info) throw(base::Exception);
@@ -107,7 +112,7 @@ private:
 	std::string GetSQLCondition(const std::string& cond);
 
 	// 采集源数据表名日期转换
-	std::string TransDataSrcDate(const std::string& time, const std::string& data_src) throw(base::Exception);
+	std::string TransSourceDate(const std::string& src_tabname) throw(base::Exception);
 
 private:
 	std::string	m_sKpiID;				// 指标ID
@@ -132,6 +137,10 @@ private:
 private:
 	CAcqDB2*	m_pAcqDB2;				// DB2数据库接口
 	CAcqHive*	m_pAcqHive;				// Hive接口
+
+private:
+	base::PubTime::DATE_TYPE	m_acqDateType;		// 采集时间类型
+	std::string					m_acqDate;			// 采集时间
 
 private:
 	// 数据库表名

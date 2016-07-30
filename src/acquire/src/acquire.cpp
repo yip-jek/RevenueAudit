@@ -1,7 +1,6 @@
 #include "acquire.h"
 #include <vector>
 #include "log.h"
-#include "pubtime.h"
 #include "pubstr.h"
 #include "basedir.h"
 #include "autodisconnect.h"
@@ -18,6 +17,7 @@ Acquire::Acquire()
 :m_nHdfsPort(0)
 ,m_pAcqDB2(NULL)
 ,m_pAcqHive(NULL)
+,m_acqDateType(base::PubTime::DT_UNKNOWN)
 {
 	g_pApp = &g_Acquire;
 }
@@ -28,7 +28,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 1.21.0121 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 1.21.0125 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -229,6 +229,8 @@ void Acquire::DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 {
 	m_pLog->Output("[Acquire] 分析采集规则 ...");
 
+	GenerateEtlDate(info.EtlRuleTime);
+
 	switch ( info.DataSrcType )
 	{
 	case AcqTaskInfo::DSTYPE_HIVE:
@@ -245,6 +247,14 @@ void Acquire::DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
 	}
 
 	m_pLog->Output("[Acquire] 采集数据完成.");
+}
+
+void Acquire::GenerateEtlDate(const std::string& date_fmt) throw(base::Exception)
+{
+	if ( !base::PubTime::DateApartFromNow(date_fmt, m_acqDateType, m_acqDate) )
+	{
+		throw base::Exception(ACQERR_GEN_ETL_DATE_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s [FILE:%s, LINE:%d]", date_fmt.c_str(), __FILE__, __LINE__);
+	}
 }
 
 void Acquire::HiveDataAcquisition(AcqTaskInfo& info) throw(base::Exception)
@@ -304,7 +314,7 @@ void Acquire::CheckSourceTable(AcqTaskInfo& info, bool hive) throw(base::Excepti
 	const std::string TYPE_IDENT = (hive ? "[HIVE]" : "[DB2]");
 	for ( int i = 0; i < datasrc_size; ++i )
 	{
-		trans_src_tab = TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]);
+		trans_src_tab = TransSourceDate(info.vecEtlRuleDataSrc[i]);
 
 		if ( (hive && !m_pAcqHive->CheckTableExisted(trans_src_tab)) 		// HIVE
 			|| (!hive && !m_pAcqDB2->CheckTableExisted(trans_src_tab)) )	// DB2
@@ -580,7 +590,7 @@ void Acquire::OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql
 	}
 
 	// 外连表名也可通过采集周期来指定
-	outer_table = TransDataSrcDate(info.EtlRuleTime, outer_table);
+	outer_table = TransSourceDate(outer_table);
 
 	// 检查外连表是否存在？
 	m_pLog->Output("[Acquire] Check outer table whether exist or not ...");
@@ -621,7 +631,7 @@ void Acquire::OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql
 			throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "采集规则解析失败：采集条件的关联字段数 [%d] 与 维度规则的关联字段数 [%d] (ETLRULE_ID:%s, ETLDIM_ID:%s) [FILE:%s, LINE:%d]", OUTER_ON_SIZE, NUM_JOIN_ON, info.EtlRuleID.c_str(), info.vecEtlRuleDim[0].acqEtlDimID.c_str(), __FILE__, __LINE__);
 		}
 
-		const std::string SRC_TABLE = TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[0]);
+		const std::string SRC_TABLE = TransSourceDate(info.vecEtlRuleDataSrc[0]);
 
 		if ( hive )
 		{
@@ -663,7 +673,7 @@ void Acquire::OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql
 				throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "采集规则解析失败：采集条件的关联字段数 [%d] 与 维度规则的关联字段数 [%d] (ETLRULE_ID:%s, ETLDIM_ID:%s) [FILE:%s, LINE:%d]", OUTER_ON_SIZE, num_join_on, info.EtlRuleID.c_str(), ref_etl_dim.acqEtlDimID.c_str(), __FILE__, __LINE__);
 			}
 
-			src_table = TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]);
+			src_table = TransSourceDate(info.vecEtlRuleDataSrc[i]);
 
 			AcqEtlVal& ref_etl_val = info.vecEtlRuleVal[i];
 
@@ -707,7 +717,7 @@ void Acquire::NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& ve
 
 		sql += "select ";
 		sql += TaskInfoUtil::GetEtlDimSql(info.vecEtlRuleDim[0], true) + TaskInfoUtil::GetEtlValSql(info.vecEtlRuleVal[0]);
-		sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[0]) + condition;
+		sql += " from " + TransSourceDate(info.vecEtlRuleDataSrc[0]) + condition;
 		sql += " group by " + TaskInfoUtil::GetEtlDimSql(info.vecEtlRuleDim[0], false);
 	}
 	else	// 多个源数据
@@ -744,10 +754,10 @@ void Acquire::NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& ve
 			AcqEtlVal& val = info.vecEtlRuleVal[i];
 
 			//sql += TaskInfoUtil::GetEtlDimSql(dim, true, tab_pre) + TaskInfoUtil::GetEtlValSql(val, tab_pre);
-			//sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]) + " " + tab_alias;
+			//sql += " from " + TransSourceDate(info.vecEtlRuleDataSrc[i]) + " " + tab_alias;
 			//sql += " group by " + TaskInfoUtil::GetEtlDimSql(dim, false, tab_pre);
 			sql += TaskInfoUtil::GetEtlDimSql(dim, true) + TaskInfoUtil::GetEtlValSql(val);
-			sql += " from " + TransDataSrcDate(info.EtlRuleTime, info.vecEtlRuleDataSrc[i]);
+			sql += " from " + TransSourceDate(info.vecEtlRuleDataSrc[i]);
 			sql += " group by " + TaskInfoUtil::GetEtlDimSql(dim, false);
 		}
 
@@ -761,8 +771,10 @@ void Acquire::NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& ve
 
 std::string Acquire::GetSQLCondition(const std::string& cond)
 {
-	std::string sql_condition = cond;
-	base::PubStr::Trim(sql_condition);
+	std::string sql_condition = base::PubStr::TrimB(cond);
+
+	// 标记替换
+	TaskInfoUtil::SQLMarkExchange(sql_condition, "ETL_DAY", m_acqDate);
 
 	std::string head_where = sql_condition.substr(0, 5);
 	base::PubStr::Upper(head_where);
@@ -778,37 +790,30 @@ std::string Acquire::GetSQLCondition(const std::string& cond)
 	}
 }
 
-std::string Acquire::TransDataSrcDate(const std::string& time, const std::string& data_src) throw(base::Exception)
+std::string Acquire::TransSourceDate(const std::string& src_tabname) throw(base::Exception)
 {
-	std::string date;
-	base::PubTime::DATE_TYPE d_type;
-	if ( !base::PubTime::DateApartFromNow(time, d_type, date) )
+	std::string date_mark;
+	if ( base::PubTime::DT_DAY == m_acqDateType )		// 日类型
 	{
-		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s [FILE:%s, LINE:%d]", time.c_str(), __FILE__, __LINE__);
+		date_mark = "YYYYMMDD";
 	}
-
-	std::string be_replace;
-	if ( base::PubTime::DT_DAY == d_type )		// 日类型
+	else if ( base::PubTime::DT_MONTH == m_acqDateType )	// 月类型
 	{
-		be_replace = "YYYYMMDD";
-	}
-	else if ( base::PubTime::DT_MONTH == d_type )	// 月类型
-	{
-		be_replace = "YYYYMM";
+		date_mark = "YYYYMM";
 	}
 	else
 	{
-		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "未知的采集时间类型！无法识别的采集时间表达式：%s [FILE:%s, LINE:%d]", time.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_TRANS_DATASRC_FAILED, "未知的采集时间类型：%d [FILE:%s, LINE:%d]", m_acqDateType, __FILE__, __LINE__);
 	}
 
 	// 找到时间标记才进行替换
-	std::string new_datasrc = base::PubStr::TrimUpperB(data_src);
-	size_t t_pos = new_datasrc.find(be_replace);
-	if ( t_pos != std::string::npos )
+	std::string tab_name = base::PubStr::TrimUpperB(src_tabname);
+	const size_t T_POS = tab_name.find(date_mark);
+	if ( T_POS != std::string::npos )
 	{
-		new_datasrc.replace(t_pos, be_replace.size(), date);
+		tab_name.replace(T_POS, date_mark.size(), m_acqDate);
 	}
 
-	return new_datasrc;
+	return tab_name;
 }
 

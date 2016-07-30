@@ -299,3 +299,33 @@ std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_
 	return etl_sql;
 }
 
+void TaskInfoUtil::SQLMarkExchange(std::string& src_sql, const std::string& mark, const std::string& substitute)
+{
+	const std::string MARK = base::PubStr::TrimUpperB(mark);
+
+	size_t pos_mark_beg = 0;
+	size_t pos_mark_end = 0;
+	std::string str_mark;
+	while ( (pos_mark_beg = src_sql.find("$(", pos_mark_beg)) != std::string::npos )
+	{
+		pos_mark_end = src_sql.find(")", pos_mark_beg+2);
+
+		// 没有找到一对 "$(...)"
+		if ( std::string::npos == pos_mark_end )
+		{
+			pos_mark_beg += 2;
+			continue;
+		}
+
+		str_mark = src_sql.substr(pos_mark_beg+2, pos_mark_end-pos_mark_beg-2);
+		if ( MARK == base::PubStr::TrimUpperB(str_mark) )
+		{
+			src_sql.replace(pos_mark_beg, str_mark.size()+3, substitute);
+		}
+		else
+		{
+			pos_mark_beg += 2;
+		}
+	}
+}
+
