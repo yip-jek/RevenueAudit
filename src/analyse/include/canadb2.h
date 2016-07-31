@@ -92,7 +92,7 @@ public:
 	void InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
 
 	// 统计已经存在的报表统计数据
-	size_t SelectResultData(AnaDBInfo& db_info) throw(base::Exception);
+	size_t SelectResultData(const std::string& tab_name, const std::string& condition) throw(base::Exception);
 
 	// 删除已经存在的报表统计数据
 	void DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::Exception);

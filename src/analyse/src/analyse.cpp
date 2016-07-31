@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 1.22.0122 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 1.22.0126 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -1343,28 +1343,16 @@ void Analyse::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype
 	// 只有带时间戳才可以按采集时间删除结果数据
 	if ( m_dbinfo.time_stamp )
 	{
-		m_pLog->Output("[Analyse] 统计已存在的结果数据 ...");
-		const size_t NUM_OF_REPORT_DATA = m_pAnaDB2->SelectResultData(m_dbinfo);
-		m_pLog->Output("[Analyse] 统计到已存在的结果数据大小: %llu ( DATE_TIME: %s )", NUM_OF_REPORT_DATA, m_dbinfo.date_time.c_str());
-
-		// 是否存在旧的结果数据
-		if ( NUM_OF_REPORT_DATA > 0 )
+		// 结果表类型是否为天表？
+		if ( AnaTaskInfo::TABTYPE_DAY == result_tabtype )
 		{
-			// 结果表类型是否为天表？
-			if ( AnaTaskInfo::TABTYPE_DAY == result_tabtype )
-			{
-				m_pLog->Output("[Analyse] 清空天表数据 ...");
-				m_pAnaDB2->DeleteResultData(m_dbinfo, true);
-			}
-			else
-			{
-				m_pLog->Output("[Analyse] 删除已存在的结果数据 ...");
-				m_pAnaDB2->DeleteResultData(m_dbinfo, false);
-			}
+			m_pLog->Output("[Analyse] 清空天表数据 ...");
+			m_pAnaDB2->DeleteResultData(m_dbinfo, true);
 		}
 		else
 		{
-			m_pLog->Output("[Analyse] 没有需要删除的结果数据！");
+			m_pLog->Output("[Analyse] 删除已存在的结果数据 ...");
+			m_pAnaDB2->DeleteResultData(m_dbinfo, false);
 		}
 	}
 	else

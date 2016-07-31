@@ -478,25 +478,25 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 	m_pLog->Output("[DB2] Insert result data successfully, size: %llu", vec2_data.size());
 }
 
-size_t CAnaDB2::SelectResultData(AnaDBInfo& db_info) throw(base::Exception)
+size_t CAnaDB2::SelectResultData(const std::string& tab_name, const std::string& condition) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	m_pLog->Output("[DB2] Select [%s] result data ...", db_info.target_table.c_str());
+	m_pLog->Output("[DB2] Select result data size from: [%s]", tab_name.c_str());
 
 	size_t num_of_data = 0;
-
 	try
 	{
-		std::string sql = "select count(0) from " + db_info.target_table;
-		// 时间字段在末尾
-		sql += " where " + db_info.vec_fields[db_info.vec_fields.size()-1].field_name + " = ?";
-
+		std::string sql = "select count(0) from " + tab_name;
+		// 是否带条件
+		if ( !condition.empty() )
+		{
+			sql += " where " + condition;
+		}
 		m_pLog->Output("[DB2] Execute sql: %s", sql.c_str());
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(1) = db_info.date_time.c_str();
 		rs.Execute();
 
 		while ( !rs.IsEOF() )
@@ -511,6 +511,7 @@ size_t CAnaDB2::SelectResultData(AnaDBInfo& db_info) throw(base::Exception)
 		throw base::Exception(ADBERR_SEL_REPORT_DATA, "[DB2] Select report statistics data failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 
+	m_pLog->Output("[DB2] Select the result data size: %llu", num_of_data);
 	return num_of_data;
 }
 
@@ -534,14 +535,30 @@ void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::
 		std::string dt_condition = db_info.vec_fields[db_info.vec_fields.size()-1].field_name + " = '";
 		dt_condition += db_info.date_time + "'";
 
-		m_pLog->Output("[DB2] Delete result data from result table: [%s] (DATE_TIME: %s)", db_info.target_table.c_str(), db_info.date_time.c_str());
-		DeleteFromTable(db_info.target_table, dt_condition);
+		size_t result_data_size = SelectResultData(db_info.target_table, dt_condition);
+		if ( result_data_size > 0 )
+		{
+			m_pLog->Output("[DB2] Delete result data from result table: [%s] (DATE_TIME: %s)", db_info.target_table.c_str(), db_info.date_time.c_str());
+			DeleteFromTable(db_info.target_table, dt_condition);
+		}
+		else
+		{
+			m_pLog->Output("[DB2] NO result data in result table: [%s] (DATE_TIME: %s)", db_info.target_table.c_str(), db_info.date_time.c_str());
+		}
 
 		// 若存在备份表，则将备份表数据一并清除
 		if ( !db_info.backup_table.empty() )
 		{
-			m_pLog->Output("[DB2] Delete result data from backup table: [%s] (DATE_TIME: %s)", db_info.backup_table.c_str(), db_info.date_time.c_str());
-			DeleteFromTable(db_info.backup_table, dt_condition);
+			result_data_size = SelectResultData(db_info.backup_table, dt_condition);
+			if ( result_data_size > 0 )
+			{
+				m_pLog->Output("[DB2] Delete result data from backup table: [%s] (DATE_TIME: %s)", db_info.backup_table.c_str(), db_info.date_time.c_str());
+				DeleteFromTable(db_info.backup_table, dt_condition);
+			}
+			else
+			{
+				m_pLog->Output("[DB2] NO result data in backup table: [%s] (DATE_TIME: %s)", db_info.backup_table.c_str(), db_info.date_time.c_str());
+			}
 		}
 	}
 }
