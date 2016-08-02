@@ -9,7 +9,7 @@
 struct CompareData
 {
 public:
-	CompareData(): dim_size(0), val_size(0)
+	CompareData(): dim_size(0), val_size(0), single_dim_size(0)
 	{}
 
 	typedef std::map<std::string, std::vector<std::string> >	MAP_DATA;
@@ -18,6 +18,7 @@ public:
 	MAP_DATA	map_comdata;		// 数据清单
 	int			dim_size;			// 维度个数
 	int			val_size;			// 值个数
+	int			single_dim_size;	// 单独显示的维度个数
 };
 
 class CompareResult;
@@ -28,8 +29,12 @@ class ComDataIndex
 	friend class CompareResult;
 
 public:
-	ComDataIndex(): m_dataIndex(-1)
+	ComDataIndex(): m_dataIndex(-1), m_dataSize(0)
 	{}
+
+public:
+	size_t GetDataSize() const
+	{ return m_dataSize; }
 
 private:
 	bool operator == (const ComDataIndex& cd_index) const
@@ -46,7 +51,8 @@ private:
 	{ return (IsValid(vec_comdata) ? &vec_comdata[m_dataIndex] : NULL); }
 
 private:
-	int m_dataIndex;
+	int		m_dataIndex;
+	size_t	m_dataSize;
 };
 
 // 数据对比结果类
@@ -73,7 +79,7 @@ public:
 
 public:
 	// 设置对比数据，返回数据索引
-	ComDataIndex SetCompareData(std::vector<std::vector<std::string> >& vec2_data, int size_dim, int size_val);
+	ComDataIndex SetCompareData(std::vector<std::vector<std::string> >& vec2_data, int size_dim, int size_val, int size_singledim) throw(base::Exception);
 
 	// 获取对比结果数据
 	void GetCompareResult(const ComDataIndex& left_index, const ComDataIndex& right_index, COMPARE_TYPE com_type, 

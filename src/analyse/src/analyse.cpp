@@ -1235,10 +1235,15 @@ void Analyse::DetailResultData(AnaTaskInfo& info) throw(base::Exception)
 		const int DIM_SIZE = m_dbinfo.val_beg_pos;
 		const int VAL_SIZE = info.vecEtlRule[0].vecEtlVal.size();
 
+		const int LEFT_SINGLE_DIM_SIZE  = info.vecLeftKpiCol.size();
+		const int RIGHT_SINGLE_DIM_SIZE = info.vecRightKpiCol.size();
+
 		CompareResult com_result;
 		m_pLog->Output("[Analyse] 录入两组原始明细数据 ...");
-		ComDataIndex left_index  = com_result.SetCompareData(m_v3HiveSrcData[2], DIM_SIZE, VAL_SIZE);
-		ComDataIndex right_index = com_result.SetCompareData(m_v3HiveSrcData[3], DIM_SIZE, VAL_SIZE);
+		ComDataIndex left_index  = com_result.SetCompareData(m_v3HiveSrcData[2], DIM_SIZE, VAL_SIZE, LEFT_SINGLE_DIM_SIZE);
+		m_pLog->Output("[Analyse] 明细数据 A 录入完成：(Before) Source data size: %llu, (After) Compare data size: %llu", m_v3HiveSrcData[2].size(), left_index.GetDataSize());
+		ComDataIndex right_index = com_result.SetCompareData(m_v3HiveSrcData[3], DIM_SIZE, VAL_SIZE, RIGHT_SINGLE_DIM_SIZE);
+		m_pLog->Output("[Analyse] 明细数据 B 录入完成：(Before) Source data size: %llu, (After) Compare data size: %llu", m_v3HiveSrcData[3].size(), right_index.GetDataSize());
 
 		// 删除 A、B 两组原始数据
 		m_v3HiveSrcData.erase(m_v3HiveSrcData.begin() + 3);

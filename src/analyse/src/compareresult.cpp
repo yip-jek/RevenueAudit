@@ -9,13 +9,8 @@ CompareResult::~CompareResult()
 {
 }
 
-ComDataIndex CompareResult::SetCompareData(std::vector<std::vector<std::string> >& vec2_data, int size_dim, int size_val)
+ComDataIndex CompareResult::SetCompareData(std::vector<std::vector<std::string> >& vec2_data, int size_dim, int size_val, int size_singledim) throw(base::Exception)
 {
-	if ( vec2_data.empty() )
-	{
-		throw base::Exception(CRERR_SET_COMPARE_DATA, "NO compare data to be set! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
-	}
-
 	if ( size_dim <= 0 )
 	{
 		throw base::Exception(CRERR_SET_COMPARE_DATA, "Invalid dim size: %d [FILE:%s, LINE:%d]", size_dim, __FILE__, __LINE__);
@@ -26,15 +21,21 @@ ComDataIndex CompareResult::SetCompareData(std::vector<std::vector<std::string> 
 		throw base::Exception(CRERR_SET_COMPARE_DATA, "Invalid val size: %d [FILE:%s, LINE:%d]", size_val, __FILE__, __LINE__);
 	}
 
-	m_vComData.push_back(CompareData());
-	int new_index = m_vComData.size() - 1;
+	if ( size_singledim < 0 )
+	{
+		throw base::Exception(CRERR_SET_COMPARE_DATA, "Invalid single dim size: %d [FILE:%s, LINE:%d]", size_singledim, __FILE__, __LINE__);
+	}
 
-	CompareData& ref_comdata = m_vComData[new_index];
-	ref_comdata.dim_size = size_dim;
-	ref_comdata.val_size = size_val;
+	m_vComData.push_back(CompareData());
+	const int NEW_INDEX = m_vComData.size() - 1;
+
+	CompareData& ref_comdata = m_vComData[NEW_INDEX];
+	ref_comdata.dim_size        = size_dim;
+	ref_comdata.val_size        = size_val;
+	ref_comdata.single_dim_size = size_singledim;
 
 	std::string str_key;
-	const int TOTAL_SIZE = size_dim + size_val;
+	const int TOTAL_SIZE = size_dim + size_val + size_singledim;
 	const size_t VEC2_SIZE = vec2_data.size();
 	for ( size_t i = 0; i < VEC2_SIZE; ++i )
 	{
@@ -43,7 +44,7 @@ ComDataIndex CompareResult::SetCompareData(std::vector<std::vector<std::string> 
 		const int REF_VSIZE = ref_vec.size();
 		if ( REF_VSIZE < TOTAL_SIZE )
 		{
-			throw base::Exception(CRERR_SET_COMPARE_DATA, "[Index:%llu] Compare data size [%d] less than the total size [%d]! (The total size is the sum of dim_size [%d] and val_size [%d]) [FILE:%s, LINE:%d]", (i+1), REF_VSIZE, TOTAL_SIZE, size_dim, size_val, __FILE__, __LINE__);
+			throw base::Exception(CRERR_SET_COMPARE_DATA, "[Index:%llu] Compare data size [%d] less than the total size [%d]! (The total size is the sum of dim_size [%d] and val_size [%d] and single_dim_size [%d]) [FILE:%s, LINE:%d]", (i+1), REF_VSIZE, TOTAL_SIZE, size_dim, size_val, size_singledim, __FILE__, __LINE__);
 		}
 
 		str_key.clear();
@@ -55,7 +56,8 @@ ComDataIndex CompareResult::SetCompareData(std::vector<std::vector<std::string> 
 	}
 
 	ComDataIndex cd_index;
-	cd_index.m_dataIndex = new_index;
+	cd_index.m_dataIndex = NEW_INDEX;
+	cd_index.m_dataSize  = ref_comdata.map_comdata.size();
 	return cd_index;
 }
 
@@ -103,48 +105,51 @@ void CompareResult::LeftNotInRight(CompareData* pLeft, CompareData* pRight, bool
 {
 	std::vector<std::vector<std::string> > v2_res;
 
-	CompareData::MAP_DATA::iterator it_left = pLeft->map_comdata.begin();
-	const int TOTAL_COMPARE_SIZE = pLeft->dim_size + pLeft->val_size;						// 所有对比的列数
-	const int ZERO_START_POS = (left_zero ? pLeft->dim_size : TOTAL_COMPARE_SIZE);			// 零值插入的起始位置
-	const int RD_INSERT_POS = TOTAL_COMPARE_SIZE + (2 * pLeft->val_size);					// 结果描述插入的位置
-
-	CompareData::MAP_DATA::iterator it_right = pRight->map_comdata.begin();
-	// 单独显示的维度个数
-	const int SINGLE_DIM_SIZE = it_right->second.size() - TOTAL_COMPARE_SIZE;		
-	// 单独显示的维度插入的起始位置
-	const int SINGLE_DIM_START_POS = (left_zero ? (RD_INSERT_POS+1) : (it_left->second.size()+1+(2*pLeft->val_size)));	
-
-	// 遍历 "左" 的数据
-	std::vector<std::string> vec_str;
-	for ( ; it_left != pLeft->map_comdata.end(); ++it_left )
+	// 左有右无：所以左侧必须保证有数据！
+	if ( !pLeft->map_comdata.empty() )
 	{
-		// 找寻不存在于 "右" 的数据
-		it_right = pRight->map_comdata.find(it_left->first);
-		if ( it_right == pRight->map_comdata.end() )
+		const int TOTAL_COMPARE_SIZE = pLeft->dim_size + pLeft->val_size;						// 所有对比的列数
+		const int ZERO_START_POS     = (left_zero ? pLeft->dim_size : TOTAL_COMPARE_SIZE);		// 零值插入的起始位置
+		const int RD_INSERT_POS      = TOTAL_COMPARE_SIZE + (2 * pLeft->val_size);				// 结果描述插入的位置
+
+		// 最终生成的左侧的最后一个位置
+		const int LAST_POS_OF_FINAL_LEFT = RD_INSERT_POS + pLeft->single_dim_size + 1;
+		// 单独显示的维度插入的起始位置
+		const int SINGLE_DIM_START_POS   = (left_zero ? (RD_INSERT_POS+1) : LAST_POS_OF_FINAL_LEFT);	
+
+		// 遍历 "左" 的数据
+		CompareData::MAP_DATA::iterator it_right;
+		std::vector<std::string> vec_str;
+		for ( CompareData::MAP_DATA::iterator it_left = pLeft->map_comdata.begin(); it_left != pLeft->map_comdata.end(); ++it_left )
 		{
-			vec_str = it_left->second;
-
-			for ( int i = 0; i < pLeft->val_size; ++i )
+			// 找寻不存在于 "右" 的数据
+			it_right = pRight->map_comdata.find(it_left->first);
+			if ( it_right == pRight->map_comdata.end() )
 			{
-				vec_str.insert((vec_str.begin()+TOTAL_COMPARE_SIZE+i), vec_str[pLeft->dim_size+i]);
+				vec_str = it_left->second;
+
+				for ( int i = 0; i < pLeft->val_size; ++i )
+				{
+					vec_str.insert((vec_str.begin()+TOTAL_COMPARE_SIZE+i), vec_str[pLeft->dim_size+i]);
+				}
+
+				for ( int j = 0; j < pLeft->val_size; ++j )
+				{
+					vec_str.insert((vec_str.begin()+ZERO_START_POS+j), "0");
+				}
+
+				// 再加上结果描述
+				vec_str.insert((vec_str.begin()+RD_INSERT_POS), result_desc);
+
+				// 加上另一侧的单独显示的列
+				// 但由于另一侧不存在，所以填空 (NULL)
+				for ( int k = 0; k < pRight->single_dim_size; ++k )
+				{
+					vec_str.insert((vec_str.begin()+SINGLE_DIM_START_POS+k), "NULL");
+				}
+
+				base::PubStr::VVectorSwapPushBack(v2_res, vec_str);
 			}
-
-			for ( int j = 0; j < pLeft->val_size; ++j )
-			{
-				vec_str.insert((vec_str.begin()+ZERO_START_POS+j), "0");
-			}
-
-			// 再加上结果描述
-			vec_str.insert((vec_str.begin()+RD_INSERT_POS), result_desc);
-
-			// 加上另一侧的单独显示的列
-			// 但由于另一侧不存在，所以填空 (NULL)
-			for ( int k = 0; k < SINGLE_DIM_SIZE; ++k )
-			{
-				vec_str.insert((vec_str.begin()+SINGLE_DIM_START_POS+k), "NULL");
-			}
-
-			base::PubStr::VVectorSwapPushBack(v2_res, vec_str);
 		}
 	}
 
