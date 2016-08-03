@@ -679,6 +679,8 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 
 	v_hive_sql.push_back(hive_sql);
 
+	// 3) 汇总：取 A、B 两份汇总数据，（后续）找出非共有的数据
+
 	v_hive_sql.swap(vec_hivesql);
 }
 
