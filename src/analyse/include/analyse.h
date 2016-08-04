@@ -16,7 +16,7 @@ public:
 	Analyse();
 	virtual ~Analyse();
 
-	static const size_t DETAIL_HIVE_SRCDATA_SIZE = 4;		// 明细对比源数据个数
+	static const size_t COMPARE_HIVE_SRCDATA_SIZE = 4;		// 对比源数据个数
 
 public:
 	enum ANA_ERROR
@@ -38,7 +38,7 @@ public:
 		ANAERR_GET_REPORT_STAT_FAILED = -3000015,			// 生成报表统计HIVE SQL失败
 		ANAERR_GET_STAT_BY_SET_FAILED = -3000016,			// 生成指定组的统计HIVE SQL失败
 		ANAERR_ALARM_JUDGEMENT_FAILED = -3000017,			// 告警判断失败
-		ANAERR_DETAIL_RESULT_DATA     = -3000018,			// 生成明细结果失败
+		ANAERR_COMPARE_RESULT_DATA    = -3000018,			// 生成对比结果失败
 		ANAERR_SRC_DATA_UNIFIED_CODE  = -3000019,			// 源数据的统一编码转换失败
 	};
 
@@ -119,8 +119,8 @@ private:
 	// 将Hive源数据转换为报表统计类型数据
 	void TransSrcDataToReportStatData();
 
-	// 生成明细结果数据
-	void DetailResultData(AnaTaskInfo& info) throw(base::Exception);
+	// 生成对比结果数据
+	void CompareResultData(AnaTaskInfo& info) throw(base::Exception);
 
 	// 收集维度取值
 	void CollectDimVal(AnaTaskInfo& info);

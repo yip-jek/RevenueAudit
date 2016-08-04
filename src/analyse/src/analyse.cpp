@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 2.0000.20160801 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 2.0001.20160804 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -680,6 +680,11 @@ void Analyse::GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::str
 	v_hive_sql.push_back(hive_sql);
 
 	// 3) 汇总：取 A、B 两份汇总数据，（后续）找出非共有的数据
+	hive_sql = TaskInfoUtil::GetOneEtlRuleDetailSQL(first_one);
+	v_hive_sql.push_back(hive_sql);
+
+	hive_sql = TaskInfoUtil::GetOneEtlRuleDetailSQL(second_one);
+	v_hive_sql.push_back(hive_sql);
 
 	v_hive_sql.swap(vec_hivesql);
 }
@@ -1062,7 +1067,7 @@ void Analyse::AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception)
 	else	// 非报表统计
 	{
 		// 生成明细结果数据
-		DetailResultData(t_info);
+		CompareResultData(t_info);
 
 		const int VEC3_SIZE = m_v3HiveSrcData.size();
 		for ( int i = 0; i < VEC3_SIZE; ++i )
@@ -1222,16 +1227,34 @@ void Analyse::TransSrcDataToReportStatData()
 	std::vector<std::vector<std::vector<std::string> > >().swap(m_v3HiveSrcData);
 }
 
-void Analyse::DetailResultData(AnaTaskInfo& info) throw(base::Exception)
+void Analyse::CompareResultData(AnaTaskInfo& info) throw(base::Exception)
 {
-	// 是否为明细对比的分析规则类型？
-	if ( AnalyseRule::ANATYPE_DETAIL_COMPARE == info.AnaRule.AnaType )
+	// 是否为对比分析类型？
+	if ( AnalyseRule::ANATYPE_DETAIL_COMPARE == info.AnaRule.AnaType 
+		|| AnalyseRule::ANATYPE_SUMMARY_COMPARE == info.AnaRule.AnaType )
 	{
-		if ( m_v3HiveSrcData.size() != DETAIL_HIVE_SRCDATA_SIZE )
+		if ( m_v3HiveSrcData.size() != COMPARE_HIVE_SRCDATA_SIZE )
 		{
-			throw base::Exception(ANAERR_DETAIL_RESULT_DATA, "不正确的明细对比源数据个数: %lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_v3HiveSrcData.size(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_COMPARE_RESULT_DATA, "不正确的对比源数据个数: %lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_v3HiveSrcData.size(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 		}
-		m_pLog->Output("[Analyse] 进行 \"%s\" 和 \"%s\" 的明细数据对比 ...", info.vecComResDesc[2].c_str(), info.vecComResDesc[3].c_str());
+
+		std::string com_desc;
+		std::string left_desc;
+		std::string right_desc;
+		if ( AnalyseRule::ANATYPE_DETAIL_COMPARE == info.AnaRule.AnaType )	// 明细
+		{
+			com_desc   = "明细";
+			left_desc  = info.vecComResDesc[2];
+			right_desc = info.vecComResDesc[3];
+			m_pLog->Output("[Analyse] 进行 \"%s\" 和 \"%s\" 的明细数据对比 ...", left_desc.c_str(), right_desc.c_str());
+		}
+		else	// 汇总
+		{
+			com_desc   = "汇总";
+			left_desc  = info.vecComResDesc[1];
+			right_desc = info.vecComResDesc[1];
+			m_pLog->Output("[Analyse] 进行 \"%s\" 的汇总数据对比 ...", left_desc.c_str());
+		}
 
 		// 维度个数与值的开始序号一致
 		const int DIM_SIZE = m_dbinfo.val_beg_pos;
@@ -1241,11 +1264,11 @@ void Analyse::DetailResultData(AnaTaskInfo& info) throw(base::Exception)
 		const int RIGHT_SINGLE_DIM_SIZE = info.vecRightKpiCol.size();
 
 		CompareResult com_result;
-		m_pLog->Output("[Analyse] 录入两组原始明细数据 ...");
+		m_pLog->Output("[Analyse] 录入两组原始%s数据 ...", com_desc.c_str());
 		ComDataIndex left_index  = com_result.SetCompareData(m_v3HiveSrcData[2], DIM_SIZE, VAL_SIZE, LEFT_SINGLE_DIM_SIZE);
-		m_pLog->Output("[Analyse] 明细数据 A 录入完成：(Before) Source data size: %llu, (After) Compare data size: %llu", m_v3HiveSrcData[2].size(), left_index.GetDataSize());
+		m_pLog->Output("[Analyse] %s数据 A 录入完成：(Before) Source data size: %llu, (After) Compare data size: %llu", com_desc.c_str(), m_v3HiveSrcData[2].size(), left_index.GetDataSize());
 		ComDataIndex right_index = com_result.SetCompareData(m_v3HiveSrcData[3], DIM_SIZE, VAL_SIZE, RIGHT_SINGLE_DIM_SIZE);
-		m_pLog->Output("[Analyse] 明细数据 B 录入完成：(Before) Source data size: %llu, (After) Compare data size: %llu", m_v3HiveSrcData[3].size(), right_index.GetDataSize());
+		m_pLog->Output("[Analyse] %s数据 B 录入完成：(Before) Source data size: %llu, (After) Compare data size: %llu", com_desc.c_str(), m_v3HiveSrcData[3].size(), right_index.GetDataSize());
 
 		// 删除 A、B 两组原始数据
 		m_v3HiveSrcData.erase(m_v3HiveSrcData.begin() + 3);
@@ -1253,15 +1276,15 @@ void Analyse::DetailResultData(AnaTaskInfo& info) throw(base::Exception)
 
 		std::vector<std::vector<std::string> > vec2_result;
 		// "左有右无" 的对比结果数据
-		m_pLog->Output("[Analyse] 生成明细对比 \"%s\" 的结果数据 ...", info.vecComResDesc[2].c_str());
-		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_LEFT, info.vecComResDesc[2], vec2_result);
-		m_pLog->Output("[Analyse] 成功生成明细对比 \"%s\" 的结果数据, size: %llu", info.vecComResDesc[2].c_str(), vec2_result.size());
+		m_pLog->Output("[Analyse] 生成%s对比 \"%s\" 的结果数据 ...", com_desc.c_str(), left_desc.c_str());
+		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_LEFT, left_desc, vec2_result);
+		m_pLog->Output("[Analyse] 成功生成%s对比 \"%s\" 的结果数据, size: %llu", com_desc.c_str(), left_desc.c_str(), vec2_result.size());
 		base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec2_result);
 
 		// "左无右有" 的对比结果数据
-		m_pLog->Output("[Analyse] 生成明细对比 \"%s\" 的结果数据 ...", info.vecComResDesc[3].c_str());
-		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_RIGHT, info.vecComResDesc[3], vec2_result);
-		m_pLog->Output("[Analyse] 成功生成明细对比 \"%s\" 的结果数据, size: %llu", info.vecComResDesc[3].c_str(), vec2_result.size());
+		m_pLog->Output("[Analyse] 生成%s对比 \"%s\" 的结果数据 ...", com_desc.c_str(), right_desc.c_str());
+		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_RIGHT, right_desc, vec2_result);
+		m_pLog->Output("[Analyse] 成功生成%s对比 \"%s\" 的结果数据, size: %llu", com_desc.c_str(), right_desc.c_str(), vec2_result.size());
 		base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec2_result);
 	}
 }
