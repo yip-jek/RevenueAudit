@@ -12,13 +12,13 @@ public:
 	CompareData(): dim_size(0), val_size(0), single_dim_size(0)
 	{}
 
-	typedef std::map<std::string, std::vector<std::string> >	MAP_DATA;
+	typedef std::map<std::string, std::vector<std::vector<std::string> > >	COM_MAP_DATA;
 
 public:
-	MAP_DATA	map_comdata;		// 数据清单
-	int			dim_size;			// 维度个数
-	int			val_size;			// 值个数
-	int			single_dim_size;	// 单独显示的维度个数
+	COM_MAP_DATA	map_comdata;				// 数据清单
+	int				dim_size;					// 维度个数
+	int				val_size;					// 值个数
+	int				single_dim_size;			// 单独显示的维度个数
 };
 
 class CompareResult;
@@ -29,12 +29,8 @@ class ComDataIndex
 	friend class CompareResult;
 
 public:
-	ComDataIndex(): m_dataIndex(-1), m_dataSize(0)
+	ComDataIndex(): m_dataIndex(-1)
 	{}
-
-public:
-	size_t GetDataSize() const
-	{ return m_dataSize; }
 
 private:
 	bool operator == (const ComDataIndex& cd_index) const
@@ -52,7 +48,6 @@ private:
 
 private:
 	int		m_dataIndex;
-	size_t	m_dataSize;
 };
 
 // 数据对比结果类

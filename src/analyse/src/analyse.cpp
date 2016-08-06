@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 2.0001.20160804 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 2.0002.20160806 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -1266,11 +1266,12 @@ void Analyse::CompareResultData(AnaTaskInfo& info) throw(base::Exception)
 		CompareResult com_result;
 		m_pLog->Output("[Analyse] 录入两组原始%s数据 ...", com_desc.c_str());
 		ComDataIndex left_index  = com_result.SetCompareData(m_v3HiveSrcData[2], DIM_SIZE, VAL_SIZE, LEFT_SINGLE_DIM_SIZE);
-		m_pLog->Output("[Analyse] %s数据 A 录入完成：(Before) Source data size: %llu, (After) Compare data size: %llu", com_desc.c_str(), m_v3HiveSrcData[2].size(), left_index.GetDataSize());
+		m_pLog->Output("[Analyse] 第 1 组原始%s数据录入完成, 录入 size: %llu", com_desc.c_str(), m_v3HiveSrcData[2].size());
 		ComDataIndex right_index = com_result.SetCompareData(m_v3HiveSrcData[3], DIM_SIZE, VAL_SIZE, RIGHT_SINGLE_DIM_SIZE);
-		m_pLog->Output("[Analyse] %s数据 B 录入完成：(Before) Source data size: %llu, (After) Compare data size: %llu", com_desc.c_str(), m_v3HiveSrcData[3].size(), right_index.GetDataSize());
+		m_pLog->Output("[Analyse] 第 2 组原始%s数据录入完成, 录入 size: %llu", com_desc.c_str(), m_v3HiveSrcData[3].size());
 
 		// 删除 A、B 两组原始数据
+		m_pLog->Output("[Analyse] 删除两组原始%s数据 ...", com_desc.c_str());
 		m_v3HiveSrcData.erase(m_v3HiveSrcData.begin() + 3);
 		m_v3HiveSrcData.erase(m_v3HiveSrcData.begin() + 2);
 
