@@ -24,7 +24,7 @@ void HdfsConnector::ToConnect() throw(base::Exception)
 	m_hdfsFS = hdfsConnect(m_sHost.c_str(), m_nPort);
 	if ( NULL == m_hdfsFS )
 	{
-		throw base::Exception(HCERR_CONNECT_FAILED, "[HDFS] Connect failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(HCERR_CONNECT_FAILED, "[HDFS] Connect <%s:%d> failed! [FILE:%s, LINE:%d]", m_sHost.c_str(), m_nPort, __FILE__, __LINE__);
 	}
 
 	m_pLogger->Output("[HDFS] Connect <%s:%d> OK.", m_sHost.c_str(), m_nPort);

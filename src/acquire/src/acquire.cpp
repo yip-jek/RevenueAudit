@@ -28,7 +28,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 2.0000.20160730 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 2.0001.20160815 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -62,12 +62,12 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_sPasswd  = m_cfg.GetCfgValue("DATABASE", "PASSWORD");
 
 	// Hive服务器配置
-	m_zk_quorum  = m_cfg.GetCfgValue("HIVE_SERVER", "ZK_QUORUM");
-	m_krb5_conf  = m_cfg.GetCfgValue("HIVE_SERVER", "KRB5_CONF");
-	m_usr_keytab = m_cfg.GetCfgValue("HIVE_SERVER", "USR_KEYTAB");
-	m_principal  = m_cfg.GetCfgValue("HIVE_SERVER", "PRINCIPAL");
-	m_jaas_conf  = m_cfg.GetCfgValue("HIVE_SERVER", "JAAS_CONF");
-	m_sLoadJarPath    = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
+	m_zk_quorum    = m_cfg.GetCfgValue("HIVE_SERVER", "ZK_QUORUM");
+	m_krb5_conf    = m_cfg.GetCfgValue("HIVE_SERVER", "KRB5_CONF");
+	m_usr_keytab   = m_cfg.GetCfgValue("HIVE_SERVER", "USR_KEYTAB");
+	m_principal    = m_cfg.GetCfgValue("HIVE_SERVER", "PRINCIPAL");
+	m_jaas_conf    = m_cfg.GetCfgValue("HIVE_SERVER", "JAAS_CONF");
+	m_sLoadJarPath = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
 
 #ifndef TEST	// 测试环境：不指定建表的 location
 	m_hiveTabLocation = m_cfg.GetCfgValue("HIVE_SERVER", "HIVE_TAB_LOCATION");
@@ -450,7 +450,11 @@ void Acquire::LoadHdfsFile2Hive(const std::string& target_tab, const std::string
 	m_pLog->Output("[Acquire] Load HDFS file [%s] to HIVE ...", hdfs_file.c_str());
 
 	std::string load_sql;
+#ifndef TEST	// 非测试环境
+	base::PubStr::SetFormatString(load_sql, "load data inpath 'hdfs://%s", m_sHdfsHost.c_str());
+#else	// 测试环境
 	base::PubStr::SetFormatString(load_sql, "load data inpath 'hdfs://%s:%d", m_sHdfsHost.c_str(), m_nHdfsPort);
+#endif
 
 	if ( hdfs_file[0] != '/' )
 	{
