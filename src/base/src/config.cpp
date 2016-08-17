@@ -1,8 +1,8 @@
 #include "config.h"
-#include <fstream>
 #include <sys/stat.h>
 #include "def.h"
 #include "pubstr.h"
+#include "basefile.h"
 
 namespace base
 {
@@ -98,11 +98,9 @@ void Config::ReadConfig() throw(Exception)
 		throw Exception(CFG_FILE_INVALID, "The configuration file unset! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	std::fstream m_fsCfg;
-	m_fsCfg.open(m_cfgFile.c_str(),std::ios_base::in);
-	if ( !m_fsCfg.is_open() || !m_fsCfg.good() )
+	BaseFile m_bfCfg;
+	if ( !m_bfCfg.Open(m_cfgFile) )
 	{
-		m_fsCfg.close();
 		throw Exception(CFG_OPEN_FILE_FAIL, "Open configuration file \"%s\" fail! [FILE:%s, LINE:%d]", m_cfgFile.c_str(), __FILE__, __LINE__);
 	}
 
@@ -110,11 +108,8 @@ void Config::ReadConfig() throw(Exception)
 	std::string strSegment;
 	std::string strName;
 	std::string strValue;
-	while ( !m_fsCfg.eof() )
+	while ( m_bfCfg.Read(strLine) )
 	{
-		strLine.clear();
-		std::getline(m_fsCfg, strLine);
-
 		CleanComment(strLine);
 		PubStr::Trim(strLine);
 		if ( strLine.empty() )
@@ -138,7 +133,7 @@ void Config::ReadConfig() throw(Exception)
 		}
 	}
 
-	m_fsCfg.close();
+	m_bfCfg.Close();
 }
 
 std::string Config::GetCfgValue(const std::string& segment, const std::string& name) throw(Exception)

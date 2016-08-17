@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
-#include <fstream>
 #include "def.h"
 #include "exception.h"
+#include "basefile.h"
 
 namespace base
 {
@@ -26,8 +26,7 @@ public:
 	static void Release();
 
 	static bool SetCCMID(long long ccm_id);
-	static bool ResetFileSize(unsigned long fsize);
-	static bool TryMakeDir(const std::string& path);
+	static bool ResetFileSize(unsigned long long fsize);
 
 public:
 	void Init() throw(Exception);
@@ -35,19 +34,17 @@ public:
 	bool Output(const char* format, ...);
 
 private:
-	void TryCloseFileLogger();
 	void OpenNewLogger() throw(Exception);
 
 private:
-	static int           _sInstances;				// 实例计数器
-	static Log*          _spLogger;					// 实例指针
-	static long long     _sLogCcmID;
-	static unsigned long _sMaxLogFileSize;
+	static int                _sInstances;					// 实例计数器
+	static Log*               _spLogger;					// 实例指针
+	static long long          _sLogCcmID;
+	static unsigned long long _sMaxLogFileSize;
 
 private:
-	std::string    m_sLogPath;
-	std::fstream   m_fsLogger;
-	unsigned long  m_sCurrentFileSize;
+	std::string   m_sLogPath;
+	BaseFile      m_bfLogger;
 };
 
 class AutoLogger

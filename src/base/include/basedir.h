@@ -21,6 +21,15 @@ public:
 	// 目录末尾加上斜杠
 	static void DirWithSlash(std::string& dir);
 
+	// 目录是否存在
+	static bool IsDirExist(const std::string& dir_path);
+
+	// 创建目录
+	static bool MakeDir(const std::string& dir_path);
+
+	// 创建目录 (递归)
+	static bool MakeDirRecursive(const std::string& dir_path);
+
 public:
 	// 设置目录
 	virtual bool SetPath(const std::string& path);
