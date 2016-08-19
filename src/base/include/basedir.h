@@ -27,8 +27,8 @@ public:
 	// 创建目录
 	static bool MakeDir(const std::string& dir_path);
 
-	// 创建目录 (递归)
-	static bool MakeDirRecursive(const std::string& dir_path);
+	// 创建全路径
+	static bool CreateFullPath(const std::string& path);
 
 public:
 	// 设置目录
@@ -46,6 +46,10 @@ public:
 
 	// 获取目录下的文件全名（包含目录）
 	virtual bool GetFullName(std::string& full_name);
+
+protected:
+	// 创建目录 (递归)
+	static bool MakeDirRecursive(const std::string& dir_path);
 
 protected:
 	DIR*		m_pDir;

@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
+#include "pubstr.h"
 
 namespace base
 {
@@ -51,51 +52,90 @@ bool BaseDir::MakeDir(const std::string& dir_path)
 	return true;
 }
 
+bool BaseDir::CreateFullPath(const std::string& path)
+{
+	std::string full_path = PubStr::TrimB(path);
+	if ( full_path.empty() )	// 空路径
+	{
+		return false;
+	}
+
+	// 是否存在双斜杠？
+	if ( full_path.find("//") != std::string::npos )
+	{
+		return false;
+	}
+
+	return MakeDirRecursive(full_path);
+}
+
 bool BaseDir::MakeDirRecursive(const std::string& dir_path)
 {
-	// 自动建日志路径
-	std::vector<std::string> vec_path;
-	PubStr::Str2StrVector(path, "/", vec_path);
-
-	// 去除末尾空白
-	if ( vec_path[vec_path.size()-1].empty() )
+	if ( dir_path.empty() )		// 空目录：Do nothing!
 	{
-		vec_path.erase(vec_path.end()-1);
+		return true;
 	}
-
-	std::string str_path;
-	const int VEC_SIZE = vec_path.size();
-	for ( int i = 0; i < VEC_SIZE; ++i )
+	else
 	{
-		std::string& ref_path = vec_path[i];
-
-		if ( i != 0 )
+		size_t pos_last_slash = dir_path.rfind('/');
+		if ( pos_last_slash != std::string::npos )	// 存在父目录
 		{
-			if ( ref_path.empty() )
+			// 先创建父目录
+			if ( !MakeDirRecursive(dir_path.substr(0, pos_last_slash)) )
 			{
-				throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
+				return false;
 			}
 
-			str_path += "/" + ref_path;
-
-			if ( !TryMakeDir(str_path) )
-			{
-				throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
-			}
+			// 再创建子目录
+			return MakeDir(dir_path);
 		}
-		else
+		else	// 不存在父目录
 		{
-			if ( !ref_path.empty() )		// 非绝对路径
-			{
-				str_path += ref_path;
-
-				if ( !TryMakeDir(str_path) )
-				{
-					throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
-				}
-			}
+			return MakeDir(dir_path);
 		}
 	}
+//	std::vector<std::string> vec_path;
+//	PubStr::Str2StrVector(dir_path, "/", vec_path);
+//
+//	// 去除末尾空白
+//	if ( vec_path[vec_path.size()-1].empty() )
+//	{
+//		vec_path.erase(vec_path.end()-1);
+//	}
+//
+//	std::string str_path;
+//	const int VEC_SIZE = vec_path.size();
+//	for ( int i = 0; i < VEC_SIZE; ++i )
+//	{
+//		std::string& ref_path = vec_path[i];
+//
+//		if ( i != 0 )
+//		{
+//			if ( ref_path.empty() )
+//			{
+//				throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
+//			}
+//
+//			str_path += "/" + ref_path;
+//
+//			if ( !TryMakeDir(str_path) )
+//			{
+//				throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
+//			}
+//		}
+//		else
+//		{
+//			if ( !ref_path.empty() )		// 非绝对路径
+//			{
+//				str_path += ref_path;
+//
+//				if ( !TryMakeDir(str_path) )
+//				{
+//					throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
+//				}
+//			}
+//		}
+//	}
 }
 
 bool BaseDir::SetPath(const std::string& path)

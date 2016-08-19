@@ -53,7 +53,7 @@ public:
 	// 文件路径
 	virtual std::string GetFilePath() const;
 
-private:
+protected:
 	// 重置状态
 	virtual void ResetState();
 
@@ -61,7 +61,7 @@ private:
 	// 输入参数 read_or_write: true-表示读取，false-表示写入
 	virtual bool ReadWriteReady(bool read_or_write);
 
-private:
+protected:
 	std::string		m_strFilePath;			// 文件路径
 	std::fstream	m_fsFile;				// 文件流
 };

@@ -1,10 +1,6 @@
 #include "log.h"
 #include <iostream>
 #include <stdio.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include "simpletime.h"
 #include "pubstr.h"
 #include "basedir.h"
@@ -96,12 +92,14 @@ void Log::SetPath(const std::string& path) throw(Exception)
 		throw Exception(LG_FILE_PATH_EMPTY, "[LOG] The log path is empty! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	if ( !BaseDir::MakeDirRecursive(path) )
+	// 自动建日志路径
+	if ( !BaseDir::CreateFullPath(path) )
 	{
 		throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
 	}
 
-	m_sLogPath = str_path + "/";
+	m_sLogPath = path;
+	BaseDir::DirWithSlash(m_sLogPath);
 }
 
 bool Log::Output(const char* format, ...)
