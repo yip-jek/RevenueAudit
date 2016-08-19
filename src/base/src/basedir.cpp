@@ -94,48 +94,6 @@ bool BaseDir::MakeDirRecursive(const std::string& dir_path)
 			return MakeDir(dir_path);
 		}
 	}
-//	std::vector<std::string> vec_path;
-//	PubStr::Str2StrVector(dir_path, "/", vec_path);
-//
-//	// 去除末尾空白
-//	if ( vec_path[vec_path.size()-1].empty() )
-//	{
-//		vec_path.erase(vec_path.end()-1);
-//	}
-//
-//	std::string str_path;
-//	const int VEC_SIZE = vec_path.size();
-//	for ( int i = 0; i < VEC_SIZE; ++i )
-//	{
-//		std::string& ref_path = vec_path[i];
-//
-//		if ( i != 0 )
-//		{
-//			if ( ref_path.empty() )
-//			{
-//				throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
-//			}
-//
-//			str_path += "/" + ref_path;
-//
-//			if ( !TryMakeDir(str_path) )
-//			{
-//				throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
-//			}
-//		}
-//		else
-//		{
-//			if ( !ref_path.empty() )		// 非绝对路径
-//			{
-//				str_path += ref_path;
-//
-//				if ( !TryMakeDir(str_path) )
-//				{
-//					throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
-//				}
-//			}
-//		}
-//	}
 }
 
 bool BaseDir::SetPath(const std::string& path)
