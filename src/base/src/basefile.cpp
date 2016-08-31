@@ -50,6 +50,7 @@ void BaseFile::Close()
 	if ( IsOpen() )
 	{
 		m_fsFile.close();
+		m_fsFile.clear();
 	}
 }
 
