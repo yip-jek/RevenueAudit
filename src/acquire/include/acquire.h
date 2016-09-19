@@ -32,6 +32,7 @@ public:
 		ACQERR_LOAD_HIVE_FAILED        = -2000012,			// 载入数据到HIVE失败
 		ACQERR_CHECK_SRC_TAB_FAILED    = -2000013,			// 检查源表失败
 		ACQERR_GEN_ETL_DATE_FAILED     = -2000014,			// 生成采集时间失败
+		ACQERR_EXCHANGE_SQLMARK_FAILED = -2000015,			// 标记转换失败
 	};
 
 public:
@@ -110,6 +111,9 @@ private:
 
 	// 获取 SQL 条件
 	std::string GetSQLCondition(const std::string& cond);
+
+	// 标识转换
+	void ExchangeSQLMark(std::string& sql) throw(base::Exception);
 
 	// 采集源数据表名日期转换
 	std::string TransSourceDate(const std::string& src_tabname) throw(base::Exception);

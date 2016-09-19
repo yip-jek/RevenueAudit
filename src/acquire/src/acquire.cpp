@@ -28,7 +28,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 2.0001.20160831 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 2.0002.20160919 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -776,21 +776,116 @@ void Acquire::NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& ve
 std::string Acquire::GetSQLCondition(const std::string& cond)
 {
 	std::string sql_condition = base::PubStr::TrimB(cond);
-
-	// 标记替换
-	TaskInfoUtil::SQLMarkExchange(sql_condition, "ETL_DAY", m_acqDate);
-
-	std::string head_where = sql_condition.substr(0, 5);
-	base::PubStr::Upper(head_where);
-
-	// 加上"where"
-	if ( head_where != "WHERE" )
+	if ( !sql_condition.empty() )
 	{
-		return (" where " + sql_condition);
+		// 标记替换
+		ExchangeSQLMark(sql_condition);
+
+		std::string head_where = sql_condition.substr(0, 5);
+		base::PubStr::Upper(head_where);
+
+		// 加上"where"
+		if ( head_where != "WHERE" )
+		{
+			return (" where " + sql_condition);
+		}
+		else
+		{
+			return (" " + sql_condition);
+		}
+	}
+}
+
+void Acquire::ExchangeSQLMark(std::string& sql) throw(base::Exception)
+{
+	const std::string ETL_DAY_MARK = "ETL_DAY";
+	const bool IS_ACQ_DAY = (m_acqDate.size() == 8);
+
+	// 分别获取年、月、日
+	int year = 0;
+	int mon  = 0;
+	int day  = 0;
+	if ( IS_ACQ_DAY )
+	{
+		base::PubStr::T1TransT2(m_acqDate.substr(0, 4), year);
+		base::PubStr::T1TransT2(m_acqDate.substr(4, 2), mon);
+		base::PubStr::T1TransT2(m_acqDate.substr(6, 2), day);
 	}
 	else
 	{
-		return (" " + sql_condition);
+		base::PubStr::T1TransT2(m_acqDate.substr(0, 4), year);
+		base::PubStr::T1TransT2(m_acqDate.substr(4, 2), mon);
+		day = 1;
+	}
+
+	std::string sql_mark;
+	std::string mark;
+	size_t pos;
+	while ( TaskInfoUtil::GetSQLMark(sql, sql_mark, pos) )
+	{
+		mark = base::PubStr::TrimUpperB(sql_mark);
+		if ( ETL_DAY_MARK == mark )
+		{
+			sql.replace(pos, sql_mark.size()+3, m_acqDate);
+		}
+		else
+		{
+			bool plus_or_minus = false;				// true-加，false-减
+			std::vector<std::string> vec_str;
+			if ( mark.find('+') != std::string::npos )		// 日期：加运算
+			{
+				plus_or_minus = true;
+				base::PubStr::Str2StrVector(mark, "+", vec_str);
+			}
+			else if ( mark.find('-') != std::string::npos )		// 日期：减运算
+			{
+				plus_or_minus = false;
+				base::PubStr::Str2StrVector(mark, "-", vec_str);
+			}
+			else
+			{
+				throw base::Exception(ACQERR_EXCHANGE_SQLMARK_FAILED, "在SQL条件 \"%s\" 中，无法识别的标志：%s [FILE:%s, LINE:%d]", sql.c_str(), sql_mark.c_str(), __FILE__, __LINE__);
+			}
+
+			std::string the_date;
+			if ( vec_str.size() == 2 && ETL_DAY_MARK == vec_str[0] )
+			{
+				unsigned int dt = 0;
+				if ( !base::PubStr::T1TransT2(vec_str[1], dt) )
+				{
+					throw base::Exception(ACQERR_EXCHANGE_SQLMARK_FAILED, "在SQL条件 \"%s\" 中，无法识别的标志：%s [FILE:%s, LINE:%d]", sql.c_str(), sql_mark.c_str(), __FILE__, __LINE__);
+				}
+
+				if ( IS_ACQ_DAY )	// Day
+				{
+					if ( plus_or_minus )	// +
+					{
+						the_date = base::PubTime::TheDatePlusDays(year, mon, day, dt);
+					}
+					else	// -
+					{
+						the_date = base::PubTime::TheDateMinusDays(year, mon, day, dt);
+					}
+				}
+				else	// Month
+				{
+					if ( plus_or_minus )	// +
+					{
+						the_date = base::PubTime::TheDatePlusMonths(year, mon, dt);
+					}
+					else	// -
+					{
+						the_date = base::PubTime::TheDateMinusMonths(year, mon, dt);
+					}
+				}
+			}
+			else
+			{
+				throw base::Exception(ACQERR_EXCHANGE_SQLMARK_FAILED, "在SQL条件 \"%s\" 中，无法识别的标志：%s [FILE:%s, LINE:%d]", sql.c_str(), sql_mark.c_str(), __FILE__, __LINE__);
+			}
+
+			sql.replace(pos, sql_mark.size()+3, the_date);
+		}
 	}
 }
 

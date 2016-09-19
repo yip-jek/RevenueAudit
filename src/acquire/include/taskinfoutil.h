@@ -46,9 +46,7 @@ public:
 	// 获取外连条件下采集规则的取数SQL
 	static std::string GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_val, const std::string& src_tab, const std::string& outer_tab, std::vector<std::string>& vec_join_on);
 
-	// 标记替换（全部替换）
-	// 将标记替换为（参数）substitute
-	// 例如：mark="ETL_DAY", substitute="20160730"，则 "$(ETL_DAY)" -> "20160730"
-	static void SQLMarkExchange(std::string& src_sql, const std::string& mark, const std::string& substitute);
+	// 获取 "$(...)" 标记的内容
+	static bool GetSQLMark(const std::string& src_sql, std::string& mark, size_t& m_beg);
 };
 

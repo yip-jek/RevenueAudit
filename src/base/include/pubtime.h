@@ -21,6 +21,16 @@ public:
 	static std::string DateType2String(DATE_TYPE dt);
 
 public:
+	// 指定某天之后的第n天，返回格式：YYYYMMDD
+	static std::string TheDatePlusDays(int year, int mon, int day, unsigned int days);
+	// 指定某天之前的第n天，返回格式：YYYYMMDD
+	static std::string TheDateMinusDays(int year, int mon, int day, unsigned int days);
+
+	// 指定某月之后的第n个月，返回格式：YYYYMM
+	static std::string TheDatePlusMonths(int year, int mon, unsigned int months);
+	// 指定某月之前的第n个月，返回格式：YYYYMM
+	static std::string TheDateMinusMonths(int year, int mon, unsigned int months);
+
 	// 今天之后的第n天, 返回格式：YYYYMMDD
 	static std::string DateNowPlusDays(unsigned int days);
 	// 今天之前的第n天, 返回格式：YYYYMMDD

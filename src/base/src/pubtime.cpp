@@ -20,6 +20,42 @@ std::string PubTime::DateType2String(PubTime::DATE_TYPE dt)
 	}
 }
 
+std::string PubTime::TheDatePlusDays(int year, int mon, int day, unsigned int days)
+{
+	boost::posix_time::ptime the_date(boost::gregorian::date(year, mon, day), boost::posix_time::time_duration(0, 0, 0));
+
+	the_date = the_date + boost::gregorian::days(days);
+
+	return boost::gregorian::to_iso_string(the_date.date());
+}
+
+std::string PubTime::TheDateMinusDays(int year, int mon, int day, unsigned int days)
+{
+	boost::posix_time::ptime the_date(boost::gregorian::date(year, mon, day), boost::posix_time::time_duration(0, 0, 0));
+
+	the_date = the_date - boost::gregorian::days(days);
+
+	return boost::gregorian::to_iso_string(the_date.date());
+}
+
+std::string PubTime::TheDatePlusMonths(int year, int mon, unsigned int months)
+{
+	boost::posix_time::ptime the_date(boost::gregorian::date(year, mon, 1), boost::posix_time::time_duration(0, 0, 0));
+
+	the_date = the_date + boost::gregorian::months(months);
+
+	return boost::gregorian::to_iso_string(the_date.date()).substr(0, 6);
+}
+
+std::string PubTime::TheDateMinusMonths(int year, int mon, unsigned int months)
+{
+	boost::posix_time::ptime the_date(boost::gregorian::date(year, mon, 1), boost::posix_time::time_duration(0, 0, 0));
+
+	the_date = the_date - boost::gregorian::months(months);
+
+	return boost::gregorian::to_iso_string(the_date.date()).substr(0, 6);
+}
+
 std::string PubTime::DateNowPlusDays(unsigned int days)
 {
 	boost::posix_time::ptime now(boost::posix_time::second_clock::local_time());
@@ -44,8 +80,7 @@ std::string PubTime::DateNowPlusMonths(unsigned int months)
 
 	now = now + boost::gregorian::months(months);
 
-	std::string str_mon = boost::gregorian::to_iso_string(now.date());
-	return str_mon.substr(0, 6);
+	return boost::gregorian::to_iso_string(now.date()).substr(0, 6);
 }
 
 std::string PubTime::DateNowMinusMonths(unsigned int months)
@@ -54,8 +89,7 @@ std::string PubTime::DateNowMinusMonths(unsigned int months)
 
 	now = now - boost::gregorian::months(months);
 
-	std::string str_mon = boost::gregorian::to_iso_string(now.date());
-	return str_mon.substr(0, 6);
+	return boost::gregorian::to_iso_string(now.date()).substr(0, 6);
 }
 
 bool PubTime::DateApartFromNow(const std::string& fmt, PubTime::DATE_TYPE& d_type, std::string& date)
