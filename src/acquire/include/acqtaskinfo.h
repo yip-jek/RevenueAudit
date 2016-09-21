@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include "pubstr.h"
 
 // 单个维度信息
@@ -112,11 +113,12 @@ public:
 struct AcqEtlDim
 {
 public:
-	AcqEtlDim()
+	AcqEtlDim(): isValid(false)
 	{}
 
 	AcqEtlDim(const AcqEtlDim& dim)
-	:acqEtlDimID(dim.acqEtlDimID)
+	:isValid(dim.isValid)
+	,acqEtlDimID(dim.acqEtlDimID)
 	,vecEtlDim(dim.vecEtlDim)
 	{
 		//this->vecEtlDim.insert(this->vecEtlDim.begin(), dim.vecEtlDim.begin(), dim.vecEtlDim.end());
@@ -127,6 +129,7 @@ public:
 	{
 		if ( this != &dim )
 		{
+			this->isValid     = dim.isValid;
 			this->acqEtlDimID = dim.acqEtlDimID;
 
 			//this->vecEtlDim.insert(this->vecEtlDim.begin(), dim.vecEtlDim.begin(), dim.vecEtlDim.end());
@@ -138,12 +141,14 @@ public:
 
 	void Clear()
 	{
+		isValid = false;
 		acqEtlDimID.clear();
 
 		std::vector<OneEtlDim>().swap(vecEtlDim);
 	}
 
 public:
+	bool					isValid;			// 是否有效
 	std::string				acqEtlDimID;		// 采集维度ID
 	std::vector<OneEtlDim>	vecEtlDim;			// 维度信息集
 };
@@ -249,11 +254,12 @@ public:
 struct AcqEtlVal
 {
 public:
-	AcqEtlVal()
+	AcqEtlVal(): isValid(false)
 	{}
 
 	AcqEtlVal(const AcqEtlVal& val)
-	:acqEtlValID(val.acqEtlValID)
+	:isValid(val.isValid)
+	,acqEtlValID(val.acqEtlValID)
 	,vecEtlVal(val.vecEtlVal)
 	{
 		//this->vecEtlVal.insert(this->vecEtlVal.begin(), val.vecEtlVal.begin(), val.vecEtlVal.end());
@@ -264,6 +270,7 @@ public:
 	{
 		if ( this != &val )
 		{
+			this->isValid     = val.isValid;
 			this->acqEtlValID = val.acqEtlValID;
 
 			//this->vecEtlVal.insert(this->vecEtlVal.begin(), val.vecEtlVal.begin(), val.vecEtlVal.end());
@@ -275,14 +282,97 @@ public:
 
 	void Clear()
 	{
+		isValid = false;
 		acqEtlValID.clear();
 
 		std::vector<OneEtlVal>().swap(vecEtlVal);
 	}
 
 public:
+	bool					isValid;			// 是否有效
 	std::string				acqEtlValID;		// 采集值ID
 	std::vector<OneEtlVal>	vecEtlVal;			// 值信息集
+};
+
+// 采集数据源信息
+struct EtlSrcInfo
+{
+public:
+	// 数据源条件类型
+	enum EtlSrcType
+	{
+		ESTYPE_UNKNOWN		= 0,		// 未知类型
+		ESTYPE_STRAIGHT		= 1,		// 直接条件
+	};
+
+public:
+	EtlSrcInfo(): src_type(ESTYPE_UNKNOWN)
+	{}
+	EtlSrcInfo(const EtlSrcInfo& es_info)
+	:src_type(es_info.src_type)
+	,condition(es_info.condition)
+	{}
+
+	const EtlSrcInfo& operator = (const EtlSrcInfo& es_info)
+	{
+		if ( this != &es_info )
+		{
+			this->src_type  = es_info.src_type;
+			this->condition = es_info.condition;
+		}
+
+		return *this;
+	}
+
+public:
+	// 设置数据源条件类型
+	bool SetEtlSrcType(const std::string& type)
+	{
+		const std::string C_TYPE = base::PubStr::TrimUpperB(type);
+
+		if ( "STRAIGHT" == C_TYPE )
+		{
+			src_type = ESTYPE_STRAIGHT;
+		}
+		else
+		{
+			src_type = ESTYPE_UNKNOWN;
+			return false;
+		}
+
+		return true;
+	}
+
+public:
+	EtlSrcType		src_type;			// 数据源条件类型
+	std::string		condition;			// 条件 SQL 语句
+};
+
+// 数据源
+struct DataSource
+{
+public:
+	DataSource(): isValid(false)
+	{}
+	DataSource(const DataSource& ds)
+	:isValid(ds.isValid)
+	,srcTabName(ds.srcTabName)
+	{}
+
+	const DataSource& operator = (const DataSource& ds)
+	{
+		if ( this != &ds )
+		{
+			this->isValid    = ds.isValid;
+			this->srcTabName = ds.srcTabName;
+		}
+
+		return *this;
+	}
+
+public:
+	bool		isValid;			// 是否有效
+	std::string	srcTabName;			// 数据源表名
 };
 
 // 采集规则任务信息
@@ -365,7 +455,7 @@ public:
 		EtlCondition.clear();
 		DataSrcType = DSTYPE_UNKNOWN;
 
-		std::vector<std::string>().swap(vecEtlRuleDataSrc);
+		std::vector<DataSource>().swap(vecEtlRuleDataSrc);
 		std::vector<AcqEtlDim>().swap(vecEtlRuleDim);
 		std::vector<AcqEtlVal>().swap(vecEtlRuleVal);
 	}
@@ -432,8 +522,10 @@ public:
 	std::string			EtlCondition;				// 采集条件
 	DataSourceType		DataSrcType;				// 数据源类型
 
-	std::vector<std::string>	vecEtlRuleDataSrc;			// 采集数据源
+	std::vector<DataSource>		vecEtlRuleDataSrc;			// 采集数据源
 	std::vector<AcqEtlDim>		vecEtlRuleDim;				// 采集维度信息
 	std::vector<AcqEtlVal>		vecEtlRuleVal;				// 采集值信息
+
+	std::map<int, EtlSrcInfo>	mapEtlSrc;			// 采集数据源信息
 };
 

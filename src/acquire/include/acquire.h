@@ -152,5 +152,6 @@ private:
 	std::string	m_tabEtlRule;			// 采集规则表
 	std::string	m_tabEtlDim;			// 采集维度规则表
 	std::string	m_tabEtlVal;			// 采集值规则表
+	std::string	m_tabEtlSrc;			// 采集数据源表
 };
 

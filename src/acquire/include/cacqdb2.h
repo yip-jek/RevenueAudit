@@ -16,6 +16,7 @@ public:
 		ADBERR_SEL_ETL_VAL      = -2002003,			// 查询采集值规则出错
 		ADBERR_FETCH_ETL_DATA   = -2002004,			// 执行数据采集出错
 		ADBERR_CHECK_SRC_TAB    = -2002005,			// 检查表是否存在出错
+		ADBERR_SEL_ETL_SRC      = -2002006,			// 查询采集数据源出错
 	};
 
 public:
@@ -30,6 +31,9 @@ public:
 
 	// 设置采集值规则表
 	void SetTabEtlVal(const std::string& t_etlval);
+
+	// 设置采集数据源表
+	void SetTabEtlSrc(const std::string& t_etlsrc);
 
 	// 查询采集规则任务信息
 	void SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception);
@@ -51,11 +55,15 @@ private:
 	// 查询采集值规则信息
 	void SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception);
 
+	// 查询采集数据源信息
+	void SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcInfo>& map_src) throw(base::Exception);
+
 private:
 	// 数据库表名
 	std::string	m_tabKpiRule;			// 指标规则表
 	std::string	m_tabEtlRule;			// 采集规则表
 	std::string	m_tabEtlDim;			// 采集维度规则表
 	std::string	m_tabEtlVal;			// 采集值规则表
+	std::string	m_tabEtlSrc;			// 采集数据源表
 };
 

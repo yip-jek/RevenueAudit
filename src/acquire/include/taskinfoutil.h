@@ -22,6 +22,10 @@ public:
 	// 获取采集规则的维度SQL
 	static std::string GetEtlDimSql(AcqEtlDim& etl_dim, bool set_as, const std::string& tab_prefix = std::string());
 
+	// 是否为采集值的负的和
+	// 格式：NEGATIVE_SUM(值)
+	static bool IsNegativeSumVal(const std::string& val_src, std::string& val);
+
 	// 采集值对应源字段名转换
 	static std::string TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix = std::string()) throw(base::Exception);
 
@@ -44,7 +48,7 @@ public:
 	static int GetNumOfEtlDimJoinOn(AcqEtlDim& etl_dim);
 
 	// 获取外连条件下采集规则的取数SQL
-	static std::string GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_val, const std::string& src_tab, const std::string& outer_tab, std::vector<std::string>& vec_join_on);
+	static std::string GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_val, const std::string& src_tab, const std::string& outer_tab, std::vector<std::string>& vec_join_on, const std::string& cond);
 
 	// 获取 "$(...)" 标记的内容
 	static bool GetSQLMark(const std::string& src_sql, std::string& mark, size_t& m_beg);

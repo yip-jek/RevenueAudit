@@ -94,6 +94,32 @@ std::string TaskInfoUtil::GetEtlDimSql(AcqEtlDim& etl_dim, bool set_as, const st
 	return dim_sql;
 }
 
+bool TaskInfoUtil::IsNegativeSumVal(const std::string& val_src, std::string& val)
+{
+	std::string val_check = base::PubStr::TrimUpperB(val_src);
+
+	// 是否为格式：NEGATIVE_SUM(值)
+	if ( val_check.size() > 14 && "NEGATIVE_SUM" == val_check.substr(0, 12) )
+	{
+		val_check.erase(0, 12);
+		base::PubStr::Trim(val_check);
+
+		if ( '(' == val_check[0] && ')' == val_check[val_check.size()-1] )
+		{
+			val_check = val_check.substr(1, val_check.size()-2);
+			base::PubStr::Trim(val_check);
+
+			if ( !val_check.empty() )
+			{
+				val = val_check;
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix /*= std::string()*/) throw(base::Exception)
 {
 	std::string val_src = base::PubStr::TrimUpperB(val.EtlValSrcName);
@@ -101,6 +127,11 @@ std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& 
 	if ( "<RECORD>" == val_src )	// 记录数
 	{
 		val_src = "count(*)";
+	}
+	else if ( IsNegativeSumVal(val_src, val_src) )
+	{
+		// 负的和
+		val_src = "(-1 * sum(" + tab_prefix + val_src + "))";
 	}
 	else
 	{
@@ -211,7 +242,7 @@ int TaskInfoUtil::GetNumOfEtlDimJoinOn(AcqEtlDim& etl_dim)
 	return join_on_count;
 }
 
-std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_val, const std::string& src_tab, const std::string& outer_tab, std::vector<std::string>& vec_join_on)
+std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_val, const std::string& src_tab, const std::string& outer_tab, std::vector<std::string>& vec_join_on, const std::string& cond)
 {
 	std::string etl_sql = "select ";
 
@@ -294,7 +325,7 @@ std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_
 	}
 
 	etl_sql += " from " + src_tab + " a left outer join " + outer_tab;
-	etl_sql += " b on (" + join_on_sql + ") group by " + group_by_sql;
+	etl_sql += " b on (" + join_on_sql + ")" + cond + " group by " + group_by_sql;
 
 	return etl_sql;
 }

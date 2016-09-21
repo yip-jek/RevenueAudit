@@ -31,6 +31,11 @@ void CAcqDB2::SetTabEtlVal(const std::string& t_etlval)
 	m_tabEtlVal = t_etlval;
 }
 
+void CAcqDB2::SetTabEtlSrc(const std::string& t_etlsrc)
+{
+	m_tabEtlSrc = t_etlsrc;
+}
+
 void CAcqDB2::SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 {
 	// 获取采集规则信息
@@ -53,6 +58,8 @@ void CAcqDB2::SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 
 		SelectEtlVal(val.acqEtlValID, val.vecEtlVal);
 	}
+
+	SelectEtlSrc(info.EtlRuleID, info.mapEtlSrc);
 }
 
 void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
@@ -115,43 +122,50 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	{
 		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! No record! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s, ETLRULE_ID:%s) [Record:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), counter);
+	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s, ETLRULE_ID:%s) [Record(s):%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), counter);
 
-	base::PubStr::Str2StrVector(data_source, ",", info.vecEtlRuleDataSrc);
-	size_t v_size = info.vecEtlRuleDataSrc.size();
+	DataSource data_src;
+	data_src.isValid = true;
+
+	std::vector<std::string> vec_str;
+	base::PubStr::Str2StrVector(data_source, ",", vec_str);
+	size_t v_size = vec_str.size();
 	for ( size_t i = 0; i < v_size; ++i )
 	{
-		std::string& ref_data_src = info.vecEtlRuleDataSrc[i];
-		if ( ref_data_src.empty() )
+		data_src.srcTabName = vec_str[i];
+		if ( data_src.srcTabName.empty() )
 		{
 			throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] 采集数据源(ETLRULE_DATASOURCE:%s)配置不正确: 第%lu个数据源为空值! (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", data_source.c_str(), (i+1), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 		}
+
+		info.vecEtlRuleDataSrc.push_back(data_src);
 	}
 
 	// 采集维度规则ID
-	std::vector<std::string> vec_id;
-	base::PubStr::Str2StrVector(dim_id, "|", vec_id);
+	base::PubStr::Str2StrVector(dim_id, "|", vec_str);
 
 	std::vector<AcqEtlDim> vec_dim;
 	AcqEtlDim dim;
-	v_size = vec_id.size();
+	dim.isValid = true;
+	v_size = vec_str.size();
 	for ( size_t i = 0; i < v_size; ++i )
 	{
-		dim.acqEtlDimID = vec_id[i];
+		dim.acqEtlDimID = vec_str[i];
 
 		vec_dim.push_back(dim);
 	}
 	vec_dim.swap(info.vecEtlRuleDim);
 
 	// 采集值规则ID
-	base::PubStr::Str2StrVector(val_id, "|", vec_id);
+	base::PubStr::Str2StrVector(val_id, "|", vec_str);
 
 	std::vector<AcqEtlVal> vec_val;
 	AcqEtlVal val;
-	v_size = vec_id.size();
+	val.isValid = true;
+	v_size = vec_str.size();
 	for ( size_t i = 0; i < v_size; ++i )
 	{
-		val.acqEtlValID = vec_id[i];
+		val.acqEtlValID = vec_str[i];
 
 		vec_val.push_back(val);
 	}
@@ -202,7 +216,7 @@ void CAcqDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 	{
 		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB2] Select %s failed! No record! (ETLDIM_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB2] Select %s successfully! (ETLDIM_ID:%s) [Record:%lu]", m_tabEtlDim.c_str(), dim_id.c_str(), v_dim.size());
+	m_pLog->Output("[DB2] Select %s successfully! (ETLDIM_ID:%s) [Record(s):%lu]", m_tabEtlDim.c_str(), dim_id.c_str(), v_dim.size());
 
 	v_dim.swap(vec_dim);
 }
@@ -252,9 +266,65 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 	{
 		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB2] Select %s failed! No record! (ETLVAL_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB2] Select %s successfully! (ETLVAL_ID:%s) [Record:%lu]", m_tabEtlVal.c_str(), val_id.c_str(), v_val.size());
+	m_pLog->Output("[DB2] Select %s successfully! (ETLVAL_ID:%s) [Record(s):%lu]", m_tabEtlVal.c_str(), val_id.c_str(), v_val.size());
 
 	v_val.swap(vec_val);
+}
+
+void CAcqDB2::SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcInfo>& map_src) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	int seq = 0;
+	std::string stype;
+	EtlSrcInfo src_info;
+	map_src.clear();
+
+	try
+	{
+		std::string sql = "select ETLSRC_SEQ, CONDITION_TYPE, CONDITION from ";
+		sql += m_tabEtlSrc + " where ETLRULE_ID = '" + etlrule_id + "' order by ETLSRC_SEQ";
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			int index = 1;
+
+			seq   = (int)rs[index++];
+			stype = (const char*)rs[index++];
+			src_info.condition = (const char*)rs[index++];
+
+			if ( !src_info.SetEtlSrcType(stype) )
+			{
+				throw base::Exception(ADBERR_SEL_ETL_SRC, "[DB2] Select %s failed! (ETLRULE_ID:%s) 无法识别的数据源条件类型：%s [FILE:%s, LINE:%d]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), stype.c_str(), __FILE__, __LINE__);
+			}
+
+			if ( seq <= 0 )
+			{
+				throw base::Exception(ADBERR_SEL_ETL_SRC, "[DB2] Select %s failed! (ETLRULE_ID:%s) 无效的采集源序号：%d [FILE:%s, LINE:%d]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), seq, __FILE__, __LINE__);
+			}
+
+			if ( map_src.find(seq) != map_src.end() )
+			{
+				throw base::Exception(ADBERR_SEL_ETL_SRC, "[DB2] Select %s failed! (ETLRULE_ID:%s) 重复的采集源序号：%d [FILE:%s, LINE:%d]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), seq, __FILE__, __LINE__);
+			}
+			else
+			{
+				map_src[seq] = src_info;
+			}
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_ETL_SRC, "[DB2] Select %s failed! (ETLRULE_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB2] Select %s successfully! (ETLRULE_ID:%s) [Record(s):%lu]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), map_src.size());
 }
 
 void CAcqDB2::FetchEtlData(const std::string& sql, int data_size, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
