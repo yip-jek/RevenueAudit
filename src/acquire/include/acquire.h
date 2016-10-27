@@ -33,6 +33,7 @@ public:
 		ACQERR_CHECK_SRC_TAB_FAILED    = -2000013,			// 检查源表失败
 		ACQERR_GEN_ETL_DATE_FAILED     = -2000014,			// 生成采集时间失败
 		ACQERR_EXCHANGE_SQLMARK_FAILED = -2000015,			// 标记转换失败
+		ACQERR_YC_STATRULE_SQL_FAILED  = -2000016,			// 生成业财稽核SQL失败
 	};
 
 public:
@@ -60,6 +61,9 @@ private:
 
 	// 检查采集任务信息
 	void CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception);
+
+	// 获取业财稽核的因子规则
+	void GetYCRAStatRule(AcqTaskInfo& info) throw(base::Exception);
 
 	// 进行数据采集
 	void DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception);
@@ -99,6 +103,10 @@ private:
 	// 分析采集任务规则，生成采集SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
 	void TaskInfo2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
+
+	// 分析统计因子规则，生成业财稽核SQL
+	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
+	void YCStatRule2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
 
 	// 外连条件下：分析采集规则，生成采集SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
@@ -153,5 +161,9 @@ private:
 	std::string	m_tabEtlDim;			// 采集维度规则表
 	std::string	m_tabEtlVal;			// 采集值规则表
 	std::string	m_tabEtlSrc;			// 采集数据源表
+
+private:
+	bool				m_isYCRA;			// 是否为业财稽核
+	std::vector<YCInfo>	m_vecYCInfo;		// 业财稽核因子规则信息
 };
 

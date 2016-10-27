@@ -17,6 +17,7 @@ public:
 		ADBERR_FETCH_ETL_DATA   = -2002004,			// 执行数据采集出错
 		ADBERR_CHECK_SRC_TAB    = -2002005,			// 检查表是否存在出错
 		ADBERR_SEL_ETL_SRC      = -2002006,			// 查询采集数据源出错
+		ADBERR_SEL_YC_STATRULE  = -2002007,			// 查询业财稽核因子规则信息出错
 	};
 
 public:
@@ -35,6 +36,9 @@ public:
 	// 设置采集数据源表
 	void SetTabEtlSrc(const std::string& t_etlsrc);
 
+	// 设置统计因子规则表
+	void SetTabYCStatRule(const std::string& t_statrule);
+
 	// 查询采集规则任务信息
 	void SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception);
 
@@ -44,6 +48,9 @@ public:
 	// 表是否存在
 	// 返回：true-表存在，false-表不存在
 	bool CheckTableExisted(const std::string& tab_name) throw(base::Exception);
+
+	// 查询业财稽核因子规则信息
+	void SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& vec_ycinfo) throw(base::Exception);
 
 private:
 	// 查询采集规则信息
@@ -65,5 +72,6 @@ private:
 	std::string	m_tabEtlDim;			// 采集维度规则表
 	std::string	m_tabEtlVal;			// 采集值规则表
 	std::string	m_tabEtlSrc;			// 采集数据源表
+	std::string m_tabYCStatRule;		// 统计因子规则表（业财稽核）
 };
 

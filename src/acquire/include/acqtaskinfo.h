@@ -529,3 +529,11 @@ public:
 	std::map<int, EtlSrcInfo>	mapEtlSrc;			// 采集数据源信息
 };
 
+// 业财稽核因子规则信息
+struct YCInfo
+{
+public:
+	std::string	stat_id;
+	std::string stat_sql;
+};
+

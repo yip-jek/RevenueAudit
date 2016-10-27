@@ -36,6 +36,11 @@ void CAcqDB2::SetTabEtlSrc(const std::string& t_etlsrc)
 	m_tabEtlSrc = t_etlsrc;
 }
 
+void CAcqDB2::SetTabYCStatRule(const std::string& t_statrule)
+{
+	m_tabYCStatRule = t_statrule;
+}
+
 void CAcqDB2::SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 {
 	// 获取采集规则信息
@@ -408,5 +413,40 @@ bool CAcqDB2::CheckTableExisted(const std::string& tab_name) throw(base::Excepti
 	{
 		throw base::Exception(ADBERR_CHECK_SRC_TAB, "[DB2] Check table '%s' whether exist or not failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
 	}
+}
+
+void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& vec_ycinfo) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	YCInfo yc_info;
+	std::vector<YCInfo> v_yc_info;
+
+	try
+	{
+		std::string sql = "select STATDIM_ID, STAT_SQL from " + m_tabYCStatRule;
+		sql += "where STAT_ID = '" + kpi_id + "' and STAT_PRIORITY = '00'";
+		m_pLog->Output("[DB2] Select table [%s]: %s", m_tabYCStatRule.c_str(), sql.c_str());
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			yc_info.stat_id  = (const char*)rs[1];
+			yc_info.stat_sql = (const char*)rs[2];
+			v_yc_info.push_back(yc_info);
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_YC_STATRULE, "[DB2] Select table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCStatRule.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	v_yc_info.swap(vec_ycinfo);
+	m_pLog->Output("[DB2] Select YCRA stat_rule successfully! Record(s): %lu", vec_ycinfo.size());
 }
 
