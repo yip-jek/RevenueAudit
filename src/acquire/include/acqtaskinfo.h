@@ -533,7 +533,7 @@ public:
 struct YCInfo
 {
 public:
-	std::string	stat_id;
-	std::string stat_sql;
+	std::string	stat_dimid;				// 统计维度ID
+	std::string stat_sql;				// 统计SQL
 };
 
