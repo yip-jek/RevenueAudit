@@ -349,6 +349,8 @@ void Analyse::FetchTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 
 	m_pLog->Output("[Analyse] 获取渠道、地市统一编码信息 ...");
 	FetchUniformCode();
+
+	GetYCRAStatRule(info);
 }
 
 void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
@@ -484,6 +486,13 @@ void Analyse::FetchUniformCode() throw(base::Exception)
 
 	m_pLog->Output("[Analyse] Fetch city uniform code, size: %llu", vec_city_uni_code.size());
 	m_UniCodeTransfer.InputCityUniformCode(vec_city_uni_code);
+}
+
+void Analyse::GetYCRAStatRule(AcqTaskInfo& info) throw(base::Exception)
+{
+	if ( m_isYCRA )
+	{
+	}
 }
 
 void Analyse::DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception)

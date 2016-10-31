@@ -434,8 +434,8 @@ void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& v
 
 		while ( !rs.IsEOF() )
 		{
-			yc_info.stat_id  = (const char*)rs[1];
-			yc_info.stat_sql = (const char*)rs[2];
+			yc_info.stat_dimid = (const char*)rs[1];
+			yc_info.stat_sql   = (const char*)rs[2];
 			v_yc_info.push_back(yc_info);
 
 			rs.MoveNext();

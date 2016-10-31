@@ -29,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 2.0002.20160921 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 2.0003.20161031 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -231,10 +231,14 @@ void Acquire::CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 	}
 
 	// 是否为业财稽核
-	m_isYCRA = ("YCRA" == PubStr::TrimUpperB(info.EtlRuleType));
+	m_isYCRA = ("YCRA" == base::PubStr::TrimUpperB(info.EtlRuleType));
 	if ( m_isYCRA )
 	{
 		m_pLog->Output("[Acquire] 采集类型：[业财稽核]");
+	}
+	else
+	{
+		m_pLog->Output("[Acquire] 采集类型：[一点稽核]");
 	}
 }
 
@@ -618,12 +622,51 @@ void Acquire::TaskInfo2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql,
 
 void Acquire::YCStatRule2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive) throw(base::Exception)
 {
-	if ( m_vecYCInfo.empty() )
+	const int VEC_YCINFO_SIZE = m_vecYCInfo.size();
+	if ( VEC_YCINFO_SIZE <= 0 )
 	{
 		throw base::Exception(ACQERR_YC_STATRULE_SQL_FAILED, "没有业财稽核因子规则信息! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
+	// HIVE: 前置 insert sql
+	std::string prefix_sql;
+	if ( hive )
+	{
+		prefix_sql = "insert into table " + info.EtlRuleTarget + " ";
+	}
+
+	size_t pos = 0;
+	std::string yc_dimid;
+	std::string yc_sql;
 	std::vector<std::string> v_yc_sql;
+
+	for ( int i = 0; i < VEC_YCINFO_SIZE; ++i )
+	{
+		YCInfo& ref_ycinf = m_vecYCInfo[i];
+
+		yc_dimid = base::PubStr::TrimUpperB(ref_ycinf.stat_dimid);
+		if ( yc_dimid.empty() )
+		{
+			throw base::Exception(ACQERR_YC_STATRULE_SQL_FAILED, "无效的业财稽核统计因子维度ID！(KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+		}
+		yc_dimid = "'" + yc_dimid + "', ";
+
+		yc_sql = base::PubStr::UpperB(ref_ycinf.stat_sql);
+		pos = yc_sql.find("SELECT ");
+		if ( std::string::npos == pos )
+		{
+			throw base::Exception(ACQERR_YC_STATRULE_SQL_FAILED, "业财稽核统计因子SQL没有正确配置！(KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+		}
+
+		pos += 7;
+		yc_sql = ref_ycinf.stat_sql;
+		yc_sql.insert(pos, yc_dimid);
+		yc_sql.insert(0, prefix_sql);
+
+		v_yc_sql.push_back(yc_sql);
+	}
+
+	v_yc_sql.swap(vec_sql);
 }
 
 void Acquire::OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive, bool with_cond /*= false*/) throw(base::Exception)

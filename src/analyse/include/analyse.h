@@ -74,6 +74,9 @@ private:
 	// 获取渠道、地市统一编码信息
 	void FetchUniformCode() throw(base::Exception);
 
+	// 获取业财稽核的因子规则
+	void GetYCRAStatRule(AcqTaskInfo& info) throw(base::Exception);
+
 	// 进行数据分析
 	void DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception);
 
@@ -190,5 +193,9 @@ private:
 	AnaDBInfo												m_dbinfo;				// 库表信息
 	std::vector<std::vector<std::vector<std::string> > >	m_v3HiveSrcData;		// 获取到的Hive源数据集
 	std::vector<std::vector<std::string> >					m_v2ReportStatData;		// 报表统计类型的数据集
+
+private:
+	bool					m_isYCRA;				// 是否为业财稽核
+	std::vector<YCStatInfo>	m_vecYCSInfo;			// 业财稽核因子规则信息
 };
 

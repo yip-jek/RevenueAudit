@@ -803,3 +803,42 @@ public:
 	std::vector<std::string>	vecComResDesc;
 };
 
+// 业财稽核因子规则信息
+struct YCStatInfo
+{
+public:
+	// 优先级类型
+	enum STAT_PRIORITY
+	{
+		SP_Unknown		= 0,		// 未知
+		SP_Level_0		= 1,		// 优先级_0（00-因子)
+		SP_Level_1		= 2,		// 优先级_1（01-组合分析)
+	};
+
+public:
+	YCStatInfo(): stat_pri(SP_Unknown) {}
+
+public:
+	std::string		stat_id;				// 统计指标ID
+	std::string		stat_name;				// 统计指标名称
+	std::string		statdim_id;				// 统计维度ID
+	STAT_PRIORITY	stat_pri;				// 优先级别
+	std::string		stat_sql;				// 统计SQL
+	std::string		stat_report;			// 关联报表
+};
+
+// 业财稽核因子结果信息
+struct YCStatResult
+{
+public:
+	YCStatResult(): stat_value(0.0) {}
+
+public:
+	std::string stat_report;				// 关联报表
+	std::string stat_id;					// 统计指标ID
+	std::string stat_name;					// 统计指标名称
+	std::string statdim_id;					// 统计维度ID
+	double		stat_value;					// 统计维度值
+	std::string stat_date;					// 统计日期（格式：YYYYMMDD）
+};
+
