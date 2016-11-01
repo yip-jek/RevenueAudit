@@ -71,6 +71,11 @@ void CAnaDB2::SetTabDictCity(const std::string& t_dictcity)
 	m_tabDictCity = t_dictcity;
 }
 
+void CAnaDB2::SetTabYCStatRule(const std::string& t_statrule)
+{
+	m_tabYCStatRule = t_statrule;
+}
+
 void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 {
 	// 获取指标规则数据
@@ -1087,6 +1092,55 @@ void CAnaDB2::SelectCompareResultDesc(const std::string& kpi_id, const std::stri
 	{
 		throw base::Exception(ADBERR_SEL_COM_RES_DESC, "[DB2] Select compare result description from %s failed! (KPI_ID:%s, DIM_NAME:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), kpi_id.c_str(), comp_res_name.c_str(), ex.what(), __FILE__, __LINE__);
 	}
+}
+
+void CAnaDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCStatInfo>& vec_ycsi) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string st_pri;				// 优先级别
+	YCStatInfo yc_si;
+	std::vector<YCStatInfo> v_yc_si;
+
+	try
+	{
+		std::string sql = "select STAT_ID, STAT_NAME, STATDIM_ID, STAT_PRIORITY, STAT_SQL, STAT_REPORT from ";
+		sql += m_tabYCStatRule + "where STAT_ID = '" + kpi_id + "'";
+		m_pLog->Output("[DB2] Select table [%s]: %s", m_tabYCStatRule.c_str(), sql.c_str());
+
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			int index = 1;
+
+			yc_si.stat_id    = (const char*)rs[index++];
+			yc_si.stat_name  = (const char*)rs[index++];
+			yc_si.statdim_id = (const char*)rs[index++];
+
+			st_pri = (const char*)rs[index++];
+			if ( !yc_si.SetStatPriority(st_pri) )
+			{
+				throw base::Exception(ADBERR_SEL_YC_STATRULE, "[DB2] Select table '%s' failed! (KPI_ID:%s) 无法识别的优先级别：%s [FILE:%s, LINE:%d]", m_tabYCStatRule.c_str(), kpi_id.c_str(), st_pri.c_str(), __FILE__, __LINE__);
+			}
+
+			yc_si.stat_sql    = (const char*)rs[index++];
+			yc_si.stat_report = (const char*)rs[index++];
+
+			v_yc_si.push_back(yc_si);
+
+			rs.MoveNext();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_YC_STATRULE, "[DB2] Select table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCStatRule.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	v_yc_si.swap(vec_ycsi);
+	m_pLog->Output("[DB2] Select YCRA stat_rule successfully! Record(s): %lu", vec_ycsi.size());
 }
 
 std::string CAnaDB2::GetCompareResultName(std::vector<KpiColumn>& vec_kpival)

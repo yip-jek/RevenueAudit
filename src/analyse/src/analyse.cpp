@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 2.0002.20160921 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 2.0003.20161101 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -413,6 +413,16 @@ void Analyse::CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 	//	throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析条件类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	//}
 
+	// 是否为业财稽核类型
+	if ( AnalyseRule::ANATYPE_YC_STAT == info.AnaRule.AnaType )
+	{
+		m_pLog->Output("[Analyse] 分析类型：[业财稽核]");
+	}
+	else
+	{
+		m_pLog->Output("[Analyse] 分析类型：[一点稽核]");
+	}
+
 	CheckExpWayType(info);
 }
 
@@ -490,8 +500,17 @@ void Analyse::FetchUniformCode() throw(base::Exception)
 
 void Analyse::GetYCRAStatRule(AcqTaskInfo& info) throw(base::Exception)
 {
-	if ( m_isYCRA )
+	if ( AnalyseRule::ANATYPE_YC_STAT == info.AnaRule.AnaType )
 	{
+		m_pLog->Output("[Analyse] 获取业财稽核因子规则信息 ...");
+
+		// 载入配置
+		m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
+		m_cfg.ReadConfig();
+		std::string tab_rule = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
+
+		m_pAnaDB2->SetTabYCStatRule(tab_rule);
+		m_pAnaDB2->SelectYCStatRule(info.KpiID, m_vecYCSInfo);
 	}
 }
 

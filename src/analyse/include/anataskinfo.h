@@ -440,7 +440,9 @@ public:
 
 		// 可执行的HIVE SQL语句
 		// 分析规则表达式即是可执行的HIVE SQL语句
-		ANATYPE_HIVE_SQL	= 99
+		ANATYPE_HIVE_SQL	= 99,
+
+		ANATYPE_YC_STAT		= 1001,					// 业财稽核统计类型
 	};
 
 	//// 分析条件类型
@@ -505,6 +507,10 @@ public:
 		else if ( "HIVE_SQL" == TYPE )		// 可执行的HIVE SQL语句
 		{
 			AnaType = ANATYPE_HIVE_SQL;
+		}
+		else if ( "STATISTICS_YC" == TYPE )		// 业财稽核统计类型
+		{
+			AnaType = ANATYPE_YC_STAT;
 		}
 		else		// 未知类型
 		{
@@ -817,6 +823,29 @@ public:
 
 public:
 	YCStatInfo(): stat_pri(SP_Unknown) {}
+
+public:
+	// 设置优先级别
+	bool SetStatPriority(const std::string& st_p)
+	{
+		const std::string SP = base::PubStr::TrimUpperB(st_p);
+
+		if ( "00" == SP )
+		{
+			stat_pri = SP_Level_0;
+		}
+		else if ( "01" == SP )
+		{
+			stat_pri = SP_Level_1;
+		}
+		else
+		{
+			stat_pri = SP_Unknown;
+			return false;
+		}
+
+		return true;
+	}
 
 public:
 	std::string		stat_id;				// 统计指标ID

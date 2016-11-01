@@ -37,6 +37,7 @@ public:
 		ADBERR_ALTER_EMPTY_TAB   = -3002016,			// 清空结果表数据出错
 		ADBERR_DEL_FROM_TAB      = -3002017,			// 删除结果表数据出错
 		ADBERR_INS_RESULT_DATA   = -3002018,			// 插入结果数据出错
+		ADBERR_SEL_YC_STATRULE   = -3002019,			// 查询业财稽核因子规则信息出错
 	};
 
 public:
@@ -72,6 +73,9 @@ public:
 
 	// 设置地市统一编码表
 	void SetTabDictCity(const std::string& t_dictcity);
+
+	// 设置统计因子规则表
+	void SetTabYCStatRule(const std::string& t_statrule);
 
 	// 查询分析规则任务信息
 	void SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
@@ -136,6 +140,9 @@ private:
 	// 若没有获取到，则返回空集
 	void SelectCompareResultDesc(const std::string& kpi_id, const std::string& comp_res_name, std::vector<std::string>& vec_comresdesc);
 
+	// 查询业财稽核因子规则信息
+	void SelectYCStatRule(const std::string& kpi_id, std::vector<YCStatInfo>& vec_ycsi) throw(base::Exception);
+
 	// 获取对比结果字段名
 	// 找不到，则返回空字符串
 	std::string GetCompareResultName(std::vector<KpiColumn>& vec_kpival);
@@ -153,17 +160,18 @@ private:
 private:
 	// 数据库表名
 	std::string	m_tabKpiRule;			// 指标规则表
-	std::string m_tabKpiColumn;			// 指标字段表
-	std::string m_tabDimValue;			// 维度取值表
+	std::string	m_tabKpiColumn;			// 指标字段表
+	std::string	m_tabDimValue;			// 维度取值表
 	std::string	m_tabEtlRule;			// 采集规则表
 	std::string	m_tabEtlDim;			// 采集维度规则表
 	std::string	m_tabEtlVal;			// 采集值规则表
-	std::string m_tabAnaRule;			// 分析规则表
-	std::string m_tabAlarmRule;			// 告警规则表
-	std::string m_tabAlarmEvent;		// 告警事件表
-	std::string m_tabDictChannel;		// 渠道统一编码表
-	std::string m_tabDictCity;			// 地市统一编码表
+	std::string	m_tabAnaRule;			// 分析规则表
+	std::string	m_tabAlarmRule;			// 告警规则表
+	std::string	m_tabAlarmEvent;		// 告警事件表
+	std::string	m_tabDictChannel;		// 渠道统一编码表
+	std::string	m_tabDictCity;			// 地市统一编码表
+	std::string	m_tabYCStatRule;		// 统计因子规则表（业财稽核）
 
-	std::string m_fNCompareResult;		// 对比结果的字段名
+	std::string	m_fNCompareResult;		// 对比结果的字段名
 };
 

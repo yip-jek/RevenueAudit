@@ -195,7 +195,6 @@ private:
 	std::vector<std::vector<std::string> >					m_v2ReportStatData;		// 报表统计类型的数据集
 
 private:
-	bool					m_isYCRA;				// 是否为业财稽核
 	std::vector<YCStatInfo>	m_vecYCSInfo;			// 业财稽核因子规则信息
 };
 

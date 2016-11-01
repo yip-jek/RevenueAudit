@@ -72,6 +72,6 @@ private:
 	std::string	m_tabEtlDim;			// 采集维度规则表
 	std::string	m_tabEtlVal;			// 采集值规则表
 	std::string	m_tabEtlSrc;			// 采集数据源表
-	std::string m_tabYCStatRule;		// 统计因子规则表（业财稽核）
+	std::string	m_tabYCStatRule;		// 统计因子规则表（业财稽核）
 };
 
