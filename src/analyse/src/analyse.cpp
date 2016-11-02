@@ -1140,6 +1140,7 @@ void Analyse::AnalyseYCRAData() throw(base::Exception)
 void Analyse::TransYCStatFactor(std::map<std::string, double>& map_factor) throw(base::Exception)
 {
 	double yc_val = 0.0;
+	std::string yc_dim;
 	std::map<std::string, double> map_f;
 
 	const int VEC3_SIZE = m_v3HiveSrcData.size();
@@ -1153,10 +1154,10 @@ void Analyse::TransYCStatFactor(std::map<std::string, double>& map_factor) throw
 			std::vector<std::string>& ref_vec = ref_vec2[j];
 
 			// 因子重复！
-			std::string& ref_dim = base::PubStr::TrimUpperB(ref_vec[0]);
-			if ( map_f.find(ref_dim) != map_f.end() )
+			yc_dim = base::PubStr::TrimUpperB(ref_vec[0]);
+			if ( map_f.find(yc_dim) != map_f.end() )
 			{
-				throw base::Exception(ANAERR_TRANS_YCFACTOR_FAILED, "重复的业财稽核维度因子: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_dim.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_TRANS_YCFACTOR_FAILED, "重复的业财稽核维度因子: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", yc_dim.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 			}
 
 			// 维度值无法转换为精度型
@@ -1165,7 +1166,7 @@ void Analyse::TransYCStatFactor(std::map<std::string, double>& map_factor) throw
 				throw base::Exception(ANAERR_TRANS_YCFACTOR_FAILED, "无效的业财稽核统计维度值: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_vec[1].c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 			}
 
-			map_f[ref_dim] = yc_val;
+			map_f[yc_dim] = yc_val;
 		}
 	}
 
@@ -1184,7 +1185,7 @@ void Analyse::TransYCStatFactor(std::map<std::string, double>& map_factor) throw
 void Analyse::GenerateYCResultData(std::map<std::string, double>& map_factor) throw(base::Exception)
 {
 	YCStatResult yc_sr;
-	std::vector<std::string>& v_dat;
+	std::vector<std::string> v_dat;
 	std::vector<std::vector<std::string> > vec_yc_data;
 	std::map<std::string, double>::iterator m_it;
 
@@ -1261,7 +1262,7 @@ double Analyse::CalcYCComplexFactor(std::map<std::string, double>& map_factor, c
 
 	// 至少两个统计维度；且运算符个数比维度少一个
 	const int VEC_CF_SIZE = vec_cf_1.size();
-	if ( VEC_CF_SIZE < 2 || VEC_CF_SIZE != (vec_cf_2.size() + 1) )
+	if ( VEC_CF_SIZE < 2 || (size_t)VEC_CF_SIZE != (vec_cf_2.size() + 1) )
 	{
 		throw base::Exception(ANAERR_CAL_YCCMPLX_FAILED, "不匹配的组合因子表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", cmplx_factr_fmt.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
