@@ -863,11 +863,27 @@ public:
 	YCStatResult(): stat_value(0.0) {}
 
 public:
+	// 数据转换 -> std::vector<std::string>
+	void Trans2Vector(std::vector<std::string>& vec_str)
+	{
+		std::vector<std::string> v_str;
+		v_str.push_back(stat_report);
+		v_str.push_back(stat_id);
+		v_str.push_back(stat_name);
+		v_str.push_back(statdim_id);
+
+		std::string str_val;
+		base::PubStr::T1TransT2(stat_value, str_val);
+		v_str.push_back(str_val);
+
+		v_str.swap(vec_str);
+	}
+
+public:
 	std::string stat_report;				// 关联报表
 	std::string stat_id;					// 统计指标ID
 	std::string stat_name;					// 统计指标名称
 	std::string statdim_id;					// 统计维度ID
 	double		stat_value;					// 统计维度值
-	std::string stat_date;					// 统计日期（格式：YYYYMMDD）
 };
 

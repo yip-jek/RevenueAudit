@@ -40,6 +40,10 @@ public:
 		ANAERR_ALARM_JUDGEMENT_FAILED = -3000017,			// 告警判断失败
 		ANAERR_COMPARE_RESULT_DATA    = -3000018,			// 生成对比结果失败
 		ANAERR_SRC_DATA_UNIFIED_CODE  = -3000019,			// 源数据的统一编码转换失败
+		ANAERR_ANA_YCRA_DATA_FAILED   = -3000020,			// 分析业财稽核数据失败
+		ANAERR_TRANS_YCFACTOR_FAILED  = -3000021,			// 业财稽核统计因子转换失败
+		ANAERR_GENERATE_YCDATA_FAILED = -3000022,			// 生成业财稽核数据失败
+		ANAERR_CAL_YCCMPLX_FAILED     = -3000023,			// 计算业财稽核组合因子失败
 	};
 
 public:
@@ -60,43 +64,40 @@ private:
 	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
 
 	// 设置任务信息
-	void SetTaskInfo(AnaTaskInfo& info);
+	void SetTaskInfo();
 
 	// 获取任务信息
-	void FetchTaskInfo(AnaTaskInfo& info) throw(base::Exception);
+	void FetchTaskInfo() throw(base::Exception);
 
 	// 检查任务信息
-	void CheckAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
+	void CheckAnaTaskInfo() throw(base::Exception);
 
 	// 检查后台表示方式类型
-	void CheckExpWayType(AnaTaskInfo& info) throw(base::Exception);
+	void CheckExpWayType() throw(base::Exception);
 
 	// 获取渠道、地市统一编码信息
 	void FetchUniformCode() throw(base::Exception);
 
-	// 获取业财稽核的因子规则
-	void GetYCRAStatRule(AcqTaskInfo& info) throw(base::Exception);
-
 	// 进行数据分析
-	void DoDataAnalyse(AnaTaskInfo& t_info) throw(base::Exception);
+	void DoDataAnalyse() throw(base::Exception);
 
 	// 解析分析规则，生成Hive取数逻辑
-	void AnalyseRules(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 生成汇总对比类型的Hive SQL语句
-	void GetSummaryCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 生成明细对比类型的Hive SQL语句
-	void GetDetailCompareHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 生成一般统计类型的Hive SQL语句
-	void GetStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void GetStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 生成报表统计类型的Hive SQL语句
-	void GetReportStatisticsHiveSQL(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void GetReportStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 生成指定组的统计类型的Hive SQL语句
-	void GetStatisticsHiveSQLBySet(AnaTaskInfo& t_info, std::vector<std::string>& vec_hivesql, bool union_all) throw(base::Exception);
+	void GetStatisticsHiveSQLBySet(std::vector<std::string>& vec_hivesql, bool union_all) throw(base::Exception);
 
 	// 拆分可执行Hive SQL语句
 	void SplitHiveSqlExpress(const std::string& exp_sqls, std::vector<std::string>& vec_hivesql) throw(base::Exception);
@@ -105,52 +106,69 @@ private:
 	void DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception);
 
 	// 按类型生成目标表名称
-	void GenerateTableNameByType(AnaTaskInfo& info) throw(base::Exception);
+	void GenerateTableNameByType() throw(base::Exception);
 
 	// 生成数据库信息
-	void GetAnaDBInfo(AnaTaskInfo& t_info) throw(base::Exception);
+	void GetAnaDBInfo() throw(base::Exception);
 
 	// 获取Hive源数据
 	void FetchHiveSource(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 分析源数据，生成结果数据
-	void AnalyseSourceData(AnaTaskInfo& t_info) throw(base::Exception);
+	void AnalyseSourceData() throw(base::Exception);
 
 	// 源数据的地市与渠道的统一编码转换
-	void SrcDataUnifiedCoding(AnaTaskInfo& info) throw(base::Exception);
+	void SrcDataUnifiedCoding() throw(base::Exception);
 
 	// 将Hive源数据转换为报表统计类型数据
 	void TransSrcDataToReportStatData();
 
 	// 生成对比结果数据
-	void CompareResultData(AnaTaskInfo& info) throw(base::Exception);
+	void CompareResultData() throw(base::Exception);
 
 	// 收集维度取值
-	void CollectDimVal(AnaTaskInfo& info);
+	void CollectDimVal();
 
 	// 结果数据入库 [DB2]
-	void StoreResult(AnaTaskInfo& t_info) throw(base::Exception);
+	void StoreResult() throw(base::Exception);
 
 	// 删除旧数据
 	void RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception);
 
 	// 告警判断: 如果达到告警阀值，则生成告警
-	void AlarmJudgement(AnaTaskInfo& info) throw(base::Exception);
+	void AlarmJudgement() throw(base::Exception);
 
 	// 波动告警
-	void FluctuateAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::Exception);
+	void FluctuateAlarm(AlarmRule& alarm_rule) throw(base::Exception);
 
 	// 对比告警
-	void RatioAlarm(AnaTaskInfo& info, AlarmRule& alarm_rule) throw(base::Exception);
+	void RatioAlarm(AlarmRule& alarm_rule) throw(base::Exception);
 
 	// 处理告警事件
 	void HandleAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::Exception);
 
 	// 更新维度取值范围
-	void UpdateDimValue(AnaTaskInfo& info);
+	void UpdateDimValue();
 
 	//// 添加分析条件
 	//void AddAnalysisCondition(AnalyseRule& ana_rule, std::vector<std::string>& vec_sql);
+
+//// 业财稽核
+private:
+	// 获取业财稽核的因子规则
+	void GetYCRAStatRule() throw(base::Exception);
+
+	// 分析业财稽核源数据，生成结果数据
+	void AnalyseYCRAData() throw(base::Exception);
+
+	// 统计因子转换
+	void TransYCStatFactor(std::map<std::string, double>& map_factor) throw(base::Exception);
+
+	// 生成业财稽核结果数据
+	void GenerateYCResultData(std::map<std::string, double>& map_factor) throw(base::Exception);
+
+	// 计算组合因子的维度值
+	double CalcYCComplexFactor(std::map<std::string, double>& map_factor, const std::string& cmplx_factr_fmt) throw(base::Exception);
 
 private:
 	std::string	m_sKpiID;				// 指标ID
@@ -186,6 +204,7 @@ private:
 	std::string m_tabDictCity;			// 地市统一编码表
 
 private:
+	AnaTaskInfo			m_taskInfo;				// 指标任务信息
 	DimValDiffer		m_DVDiffer;				// 用于维度取值范围的比较
 	UniformCodeTransfer	m_UniCodeTransfer;		// 统一编码转换
 

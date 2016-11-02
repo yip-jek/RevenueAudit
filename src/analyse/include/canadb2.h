@@ -89,6 +89,9 @@ public:
 	// 查询维度取值表
 	void SelectDimValue(const std::string& kpi_id, DimValDiffer& differ) throw(base::Exception);
 
+	// 查询业财稽核因子规则信息
+	void SelectYCStatRule(const std::string& kpi_id, std::vector<YCStatInfo>& vec_ycsi) throw(base::Exception);
+
 	// 插入新的维度取值
 	void InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Exception);
 
@@ -139,9 +142,6 @@ private:
 	// 查询对比结果描述（从维度取值表中获取）
 	// 若没有获取到，则返回空集
 	void SelectCompareResultDesc(const std::string& kpi_id, const std::string& comp_res_name, std::vector<std::string>& vec_comresdesc);
-
-	// 查询业财稽核因子规则信息
-	void SelectYCStatRule(const std::string& kpi_id, std::vector<YCStatInfo>& vec_ycsi) throw(base::Exception);
 
 	// 获取对比结果字段名
 	// 找不到，则返回空字符串
