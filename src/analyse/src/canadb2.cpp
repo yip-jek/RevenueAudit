@@ -1206,7 +1206,7 @@ void CAnaDB2::DeleteFromTable(const std::string& tab_name, const std::string& co
 	}
 }
 
-void CAnaDB2::ResultDataInsert(const std::string& ins_sql, const std::string& date_time, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
+void CAnaDB2::ResultDataInsert(const std::string& ins_sql, const std::string& date_time, bool now_day, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);

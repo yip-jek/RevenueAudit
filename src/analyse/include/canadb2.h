@@ -155,7 +155,7 @@ private:
 
 	// 结果数据入库
 	// 参数 date_time：时间戳，如果为空则表示不带时间戳
-	void ResultDataInsert(const std::string& ins_sql, const std::string& date_time, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
+	void ResultDataInsert(const std::string& ins_sql, const std::string& date_time, bool now_day, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
 
 private:
 	// 数据库表名

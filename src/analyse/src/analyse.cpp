@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 2.0003.20161102 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 2.0003.20161103 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -173,9 +173,10 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 
 void Analyse::GetAnaDBInfo() throw(base::Exception)
 {
+	m_dbinfo.day_now    = false;
 	m_dbinfo.time_stamp = false;
-	std::string str_tmp;
-	std::string str_tmp_cn;
+	int index_dn = 0;
+	int index_ts = 0;
 
 	AnaField ana_field;
 	std::vector<AnaField> v_fields;
@@ -193,17 +194,28 @@ void Analyse::GetAnaDBInfo() throw(base::Exception)
 
 		if ( col.ColSeq < 0 )
 		{
-			if ( -1 == col.ColSeq )		// ColType为CTYPE_DIM时, col.ColSeq = -1 表示时间戳
+			if ( -1 == col.ColSeq )		// ColType为CTYPE_DIM时, col.ColSeq=-1 表示时间戳
 			{
 				if ( !m_dbinfo.time_stamp )
 				{
 					m_dbinfo.time_stamp = true;
-					str_tmp    = col.DBName;
-					str_tmp_cn = col.CNName;
+					index_ts = i;
 				}
 				else
 				{
 					throw base::Exception(ANAERR_GET_DBINFO_FAILED, "时间戳维度字段重复设置: KPI_ID=%s, COL_TYPE=CTYPE_DIM, COL_SEQ=%d, DB_NAME=%s [FILE:%s, LINE:%d]", col.KpiID.c_str(), col.ColSeq, col.DBName.c_str(), __FILE__, __LINE__);
+				}
+			}
+			else if ( -2 == col.ColSeq )	// ColType为CTYPE_DIM时, col.ColSeq=-2 表示当前时间（天）
+			{
+				if ( !m_dbinfo.day_now )
+				{
+					m_dbinfo.day_now = true;
+					index_dn = i;
+				}
+				else
+				{
+					throw base::Exception(ANAERR_GET_DBINFO_FAILED, "当前时间（天）维度字段重复设置: KPI_ID=%s, COL_TYPE=CTYPE_DIM, COL_SEQ=%d, DB_NAME=%s [FILE:%s, LINE:%d]", col.KpiID.c_str(), col.ColSeq, col.DBName.c_str(), __FILE__, __LINE__);
 				}
 			}
 			else
@@ -244,11 +256,24 @@ void Analyse::GetAnaDBInfo() throw(base::Exception)
 	// 加时间戳
 	if ( m_dbinfo.time_stamp )
 	{
-		ana_field.field_name = str_tmp;
-		ana_field.CN_name    = str_tmp_cn;
+		KpiColumn& ref_col = m_taskInfo.vecKpiDimCol[index_ts];
+		ana_field.field_name = ref_col.DBName;
+		ana_field.CN_name    = ref_col.CNName;
 		v_fields.push_back(ana_field);
 
 		// 时间戳维度在最后，值开始序号前移
+		--(m_dbinfo.val_beg_pos);
+	}
+
+	// 加当前时间（天）
+	if ( m_dbinfo.day_now )
+	{
+		KpiColumn& ref_col = m_taskInfo.vecKpiDimCol[index_dn];
+		ana_field.field_name = ref_col.DBName;
+		ana_field.CN_name    = ref_col.CNName;
+		v_fields.push_back(ana_field);
+
+		// 当前时间维度在最后，值开始序号前移
 		--(m_dbinfo.val_beg_pos);
 	}
 
@@ -258,7 +283,7 @@ void Analyse::GetAnaDBInfo() throw(base::Exception)
 	// 组织数据库入库SQL语句
 	m_dbinfo.db2_sql = "insert into " + m_dbinfo.target_table + "(";
 
-	str_tmp.clear();
+	std::string str_val_holder;
 	v_size = v_fields.size();
 	for ( int i = 0; i < v_size; ++i )
 	{
@@ -266,17 +291,17 @@ void Analyse::GetAnaDBInfo() throw(base::Exception)
 		{
 			m_dbinfo.db2_sql += ", " + v_fields[i].field_name;
 
-			str_tmp += ", ?";
+			str_val_holder += ", ?";
 		}
 		else
 		{
 			m_dbinfo.db2_sql += v_fields[i].field_name;
 
-			str_tmp += "?";
+			str_val_holder += "?";
 		}
 	}
 
-	m_dbinfo.db2_sql += ") values(" + str_tmp + ")";
+	m_dbinfo.db2_sql += ") values(" + str_val_holder + ")";
 
 	v_fields.swap(m_dbinfo.vec_fields);
 }
