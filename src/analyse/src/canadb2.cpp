@@ -473,11 +473,11 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 
 	if ( db_info.time_stamp )		// 带时间戳
 	{
-		ResultDataInsert(db_info.db2_sql, db_info.date_time, vec2_data);
+		ResultDataInsert(db_info.db2_sql, db_info.date_time, db_info.day_now, vec2_data);
 	}
 	else	// 不带时间戳
 	{
-		ResultDataInsert(db_info.db2_sql, "", vec2_data);
+		ResultDataInsert(db_info.db2_sql, "", db_info.day_now, vec2_data);
 	}
 
 	m_pLog->Output("[DB2] Insert result data successfully, size: %llu", vec2_data.size());
@@ -577,7 +577,7 @@ void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<s
 
 	// 入库报表结果表
 	m_pLog->Output("[DB2] Insert report statistics data to result table: [%s]", db_info.target_table.c_str());
-	ResultDataInsert(db_info.db2_sql, db_info.date_time, vec2_reportdata);
+	ResultDataInsert(db_info.db2_sql, db_info.date_time, db_info.day_now, vec2_reportdata);
 
 	// 报表备份表替换报表结果表
 	const size_t TARGET_TAB_POS = db_info.db2_sql.find(db_info.target_table);
@@ -586,7 +586,7 @@ void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<s
 
 	// 入库报表结果备份表
 	m_pLog->Output("[DB2] Insert report statistics data to backup table: [%s]", db_info.backup_table.c_str());
-	ResultDataInsert(ins_backup_sql, db_info.date_time, vec2_reportdata);
+	ResultDataInsert(ins_backup_sql, db_info.date_time, db_info.day_now, vec2_reportdata);
 
 	m_pLog->Output("[DB2] Insert report statistics data successfully, size: %llu", vec2_reportdata.size());
 }
@@ -1211,6 +1211,13 @@ void CAnaDB2::ResultDataInsert(const std::string& ins_sql, const std::string& da
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
+	// 当前时间（天）
+	std::string str_day_now;
+	if ( now_day )
+	{
+		str_day_now = base::SimpleTime::Now().DayTime8();
+	}
+
 	try
 	{
 		rs.Prepare(ins_sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -1230,6 +1237,12 @@ void CAnaDB2::ResultDataInsert(const std::string& ins_sql, const std::string& da
 				{
 					std::string& ref_str = ref_vec_data[j];
 					rs.Parameter(j+1) = ref_str.c_str();
+				}
+
+				// 入库当前时间（天）
+				if ( now_day )
+				{
+					rs.Parameter(REF_DATA_SIZE+1) = str_day_now.c_str();
 				}
 
 				rs.Execute();
@@ -1256,6 +1269,12 @@ void CAnaDB2::ResultDataInsert(const std::string& ins_sql, const std::string& da
 
 				// 绑定时间戳
 				rs.Parameter(REF_DATA_SIZE+1) = date_time.c_str();
+
+				// 入库当前时间（天）
+				if ( now_day )
+				{
+					rs.Parameter(REF_DATA_SIZE+2) = str_day_now.c_str();
+				}
 
 				rs.Execute();
 
