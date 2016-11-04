@@ -29,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 2.0003.20161031 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 2.0003.20161104 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -663,6 +663,7 @@ void Acquire::YCStatRule2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sq
 		yc_sql.insert(pos, yc_dimid);
 		yc_sql.insert(0, prefix_sql);
 
+		ExchangeSQLMark(yc_sql);
 		v_yc_sql.push_back(yc_sql);
 	}
 
