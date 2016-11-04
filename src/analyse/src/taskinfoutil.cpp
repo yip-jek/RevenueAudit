@@ -60,43 +60,43 @@ int TaskInfoUtil::CheckPluralEtlRule(std::vector<OneEtlRule>& vec_etlrule)
 	return 0;
 }
 
-//std::string TaskInfoUtil::GetCompareFields(OneEtlRule& rule_A, OneEtlRule& rule_B, bool inverse /*= false*/)
-//{
-//	std::string fields_sql;
-//
-//	std::string a_tab_prefix;
-//	std::string b_tab_prefix;
-//	if ( inverse )		// 反转
-//	{
-//		a_tab_prefix = "b.";
-//		b_tab_prefix = "a.";
-//	}
-//	else		// 不反转
-//	{
-//		a_tab_prefix = "a.";
-//		b_tab_prefix = "b.";
-//	}
-//
-//	// 采集规则A的维度
-//	fields_sql += GetOneDim(rule_A.vecEtlDim, a_tab_prefix);
-//
-//	// 采集规则A和B的值
-//	std::string v_sql_A;
-//	std::string v_sql_B;
-//	const int VAL_SIZE = rule_A.vecEtlVal.size();
-//	for ( int i = 0; i < VAL_SIZE; ++i )
-//	{
-//		OneEtlVal& val_A = rule_A.vecEtlVal[i];
-//		OneEtlVal& val_B = rule_B.vecEtlVal[i];
-//
-//		v_sql_A += ", " + a_tab_prefix + val_A.EtlValName;
-//		v_sql_B += ", " + b_tab_prefix + val_B.EtlValName;
-//	}
-//
-//	fields_sql += v_sql_A + v_sql_B;
-//
-//	return fields_sql;
-//}
+std::string TaskInfoUtil::GetCompareFields(OneEtlRule& rule_A, OneEtlRule& rule_B, bool inverse /*= false*/)
+{
+	std::string fields_sql;
+
+	std::string a_tab_prefix;
+	std::string b_tab_prefix;
+	if ( inverse )		// 反转
+	{
+		a_tab_prefix = "b.";
+		b_tab_prefix = "a.";
+	}
+	else		// 不反转
+	{
+		a_tab_prefix = "a.";
+		b_tab_prefix = "b.";
+	}
+
+	// 采集规则A的维度
+	fields_sql += GetOneDim(rule_A.vecEtlDim, a_tab_prefix);
+
+	// 采集规则A和B的值
+	std::string v_sql_A;
+	std::string v_sql_B;
+	const int VAL_SIZE = rule_A.vecEtlVal.size();
+	for ( int i = 0; i < VAL_SIZE; ++i )
+	{
+		OneEtlVal& val_A = rule_A.vecEtlVal[i];
+		OneEtlVal& val_B = rule_B.vecEtlVal[i];
+
+		v_sql_A += ", " + a_tab_prefix + val_A.EtlValName;
+		v_sql_B += ", " + b_tab_prefix + val_B.EtlValName;
+	}
+
+	fields_sql += v_sql_A + v_sql_B;
+
+	return fields_sql;
+}
 
 std::string TaskInfoUtil::GetOneDim(std::vector<OneEtlDim>& vec_dim, const std::string& prefix)
 {
@@ -354,27 +354,27 @@ std::string TaskInfoUtil::GetOneEtlRuleDetailSQL(OneEtlRule& one_rule)
 	return detail_sql;
 }
 
-//std::string TaskInfoUtil::GetOneRuleValsNull(OneEtlRule& rule, const std::string& tab_prefix)
-//{
-//	std::string val_null_sql;
-//
-//	const int VAL_SIZE = rule.vecEtlVal.size();
-//	for ( int i = 0; i < VAL_SIZE; ++i )
-//	{
-//		OneEtlVal& ref_val = rule.vecEtlVal[i];
-//
-//		if ( i != 0 )
-//		{
-//			val_null_sql += " or " + tab_prefix + ref_val.EtlValName + " is null";
-//		}
-//		else
-//		{
-//			val_null_sql += tab_prefix + ref_val.EtlValName + " is null";
-//		}
-//	}
-//
-//	return val_null_sql;
-//}
+std::string TaskInfoUtil::GetOneRuleValsNull(OneEtlRule& rule, const std::string& tab_prefix)
+{
+	std::string val_null_sql;
+
+	const int VAL_SIZE = rule.vecEtlVal.size();
+	for ( int i = 0; i < VAL_SIZE; ++i )
+	{
+		OneEtlVal& ref_val = rule.vecEtlVal[i];
+
+		if ( i != 0 )
+		{
+			val_null_sql += " or " + tab_prefix + ref_val.EtlValName + " is null";
+		}
+		else
+		{
+			val_null_sql += tab_prefix + ref_val.EtlValName + " is null";
+		}
+	}
+
+	return val_null_sql;
+}
 
 void TaskInfoUtil::GetEtlStatisticsSQLs(std::vector<OneEtlRule>& vec_rules, std::vector<std::string>& vec_hivesql, bool union_all)
 {

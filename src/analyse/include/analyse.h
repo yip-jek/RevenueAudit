@@ -123,8 +123,8 @@ private:
 	// 将Hive源数据转换为报表统计类型数据
 	void TransSrcDataToReportStatData();
 
-	// 生成对比结果数据
-	void CompareResultData() throw(base::Exception);
+	//// 生成对比结果数据
+	//void CompareResultData() throw(base::Exception);
 
 	// 收集维度取值
 	void CollectDimVal();

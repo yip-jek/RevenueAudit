@@ -16,9 +16,9 @@ public:
 	// 返回值: 0-成功, -1-没有采集规则, -2-维度不一致, -3-值不一致
 	static int CheckPluralEtlRule(std::vector<OneEtlRule>& vec_etlrule);
 
-	//// 获取采集规则A和B的字段SQL (外部保证正确性)
-	//// inverse为true时，表示A和B的所属表反转
-	//static std::string GetCompareFields(OneEtlRule& rule_A, OneEtlRule& rule_B, bool inverse = false);
+	// 获取采集规则A和B的字段SQL (外部保证正确性)
+	// inverse为true时，表示A和B的所属表反转
+	static std::string GetCompareFields(OneEtlRule& rule_A, OneEtlRule& rule_B, bool inverse = false);
 
 	// 获取一个采集规则的维度SQL (外部保证正确性)
 	static std::string GetOneDim(std::vector<OneEtlDim>& vec_dim, const std::string& prefix);
@@ -52,8 +52,8 @@ public:
 	// 获取单个采集规则的明细数据 SQL (外部保证正确性)
 	static std::string GetOneEtlRuleDetailSQL(OneEtlRule& one_rule);
 
-	//// 获取采集规则的 <NULL> 值SQL (外部保证正确性)
-	//static std::string GetOneRuleValsNull(OneEtlRule& rule, const std::string& tab_prefix);
+	// 获取采集规则的 <NULL> 值SQL (外部保证正确性)
+	static std::string GetOneRuleValsNull(OneEtlRule& rule, const std::string& tab_prefix);
 
 	// 获取采集规则的统计SQL集 (外部保证正确性)
 	static void GetEtlStatisticsSQLs(std::vector<OneEtlRule>& vec_rules, std::vector<std::string>& vec_hivesql, bool union_all);
