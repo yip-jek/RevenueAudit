@@ -23,11 +23,18 @@ public:
 	// 设置指标规则表
 	void SetTabRaKpi(const std::string& tab_kpi);
 
+	// 设置采集规则表
+	void SetTabEtlRule(const std::string& tab_etlrule);
+
 	// 表是否存在
 	bool IsTableExists(const std::string& tab_name) throw(base::Exception);
+
+	// 查询新的任务请求
+	void SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(base::Exception);
 
 private:
 	std::string m_tabTaskReq;				// 任务请求表
 	std::string m_tabRaKpi;					// 指标规则表
+	std::string m_tabEtlRule;				// 采集规则表
 };
 

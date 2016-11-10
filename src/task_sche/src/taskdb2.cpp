@@ -22,6 +22,11 @@ void TaskDB2::SetTabRaKpi(const std::string& tab_kpi)
 	m_tabRaKpi = tab_kpi;
 }
 
+void TaskDB2::SetTabEtlRule(const std::string& tab_etlrule)
+{
+	m_tabEtlRule = tab_etlrule;
+}
+
 bool TaskDB2::IsTableExists(const std::string& tab_name) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
@@ -56,5 +61,47 @@ bool TaskDB2::IsTableExists(const std::string& tab_name) throw(base::Exception)
 	{
 		throw base::Exception(TDB_ERR_TAB_EXISTS, "[DB2] Check table '%s' whether exist or not failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
 	}
+}
+
+void TaskDB2::SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	TaskReqInfo tr_info;
+	std::vector<TaskReqInfo> v_tri;
+
+	std::string sql = "select SEQ_ID, KPI_ID, STAT_CYCLE from " + m_tabTaskReq + " where TASK_STATUS = '00'";
+	m_pLog->Output("[DB2] Select new task request: %s", sql.c_str());
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			int index = 1;
+
+			tr_info.seq_id      = (int)rs[index++];
+			tr_info.kpi_id      = (const char*)rs[index++];
+			tr_info.stat_cycle  = (const char*)rs[index++];
+
+			rs.MoveNext();
+
+			tr_info.status.clear();
+			tr_info.status_desc.clear();
+			tr_info.gentime.clear();
+			tr_info.finishtime.clear();
+			tr_info.desc.clear();
+			v_tri.push_back(tr_info);
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(TDB_ERR_TAB_EXISTS, "[DB2] Check table '%s' whether exist or not failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	v_tri.swap(vec_trinfo);
 }
 

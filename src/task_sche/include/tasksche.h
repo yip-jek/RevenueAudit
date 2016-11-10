@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include "exception.h"
 #include "struct.h"
 
@@ -51,6 +52,15 @@ private:
 	// 处理任务
 	void DealTasks() throw(base::Exception);
 
+	// 获取新任务
+	void GetNewTask();
+
+	// 下发任务
+	void ExecuteTask();
+
+	// 任务完成
+	void FinishTask();
+
 private:
 	base::Config* m_pCfg;					// 配置文件
 	base::Log*    m_pLog;					// 日志输出
@@ -63,5 +73,9 @@ private:
 private:
 	std::string m_tabTaskReq;				// 任务请求表
 	std::string m_tabRaKpi;					// 指标规则表
+	std::string m_tabEtlRule;				// 采集规则表
+
+private:
+	std::map<int, TaskReqInfo> m_mTaskReqInfo;			// 任务列表
 };
 
