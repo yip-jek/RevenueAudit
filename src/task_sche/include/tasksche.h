@@ -19,7 +19,8 @@ public:
 	// 任务错误代码
 	enum TASK_ERROR
 	{
-		TERROR_CHECK = -10000001,		// 检查失败
+		TERROR_CHECK       = -10000001,					// 检查失败
+		TERROR_CREATE_TASK = -10000002,					// 下发任务失败
 	};
 
 public:
@@ -55,11 +56,14 @@ private:
 	// 获取新任务
 	void GetNewTask();
 
-	// 检查任务状态
-	void CheckTask();
-
 	// 执行任务
 	void ExecuteTask();
+
+	// 下发任务
+	void CreateTask(const TaskInfo& t_info) throw(base::Exception);
+
+	// 创建新任务
+	void BuildNewTask();
 
 	// 任务完成
 	void FinishTask();

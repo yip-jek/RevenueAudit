@@ -1,6 +1,8 @@
 #include "tasksche.h"
 #include "config.h"
 #include "log.h"
+#include "pubstr.h"
+#include "simletime.h"
 #include "taskdb2.h"
 
 
@@ -106,6 +108,13 @@ void TaskSche::Check() throw(base::Exception)
 	}
 	m_pLog->Output("[TASK] Check time seconds OK. [Wait seconds: %ld]", m_waitSeconds);
 
+	// 指定工作目录为Hive代理的路径
+	if ( chdir(m_hiveAgentPath.c_str()) < 0 )
+	{
+		throw base::Exception(TERROR_CHECK, "Change work dir to '%s' failed! %s [FILE:%s, LINE:%d]", m_hiveAgentPath.c_str(), strerror(errno), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[TASK] Change work dir to '%s' OK.", m_hiveAgentPath.c_str());
+
 	if ( !m_pTaskDB->IsTableExists(m_tabTaskReq) )
 	{
 		throw base::Exception(TERROR_CHECK, "The task request table is not existed: %s [FILE:%s, LINE:%d]", m_tabTaskReq.c_str(), __FILE__, __LINE__);
@@ -131,8 +140,6 @@ void TaskSche::DealTasks() throw(base::Exception)
 	{
 		GetNewTask();
 
-		CheckTask();
-
 		ExecuteTask();
 
 		FinishTask();
@@ -151,7 +158,45 @@ void TaskSche::GetNewTask()
 	{
 		m_pLog->Output("[TASK] Get the new task size: %lu", m_vecNewTask.size());
 	}
+}
 
+void TaskSche::ExecuteTask()
+{
+
+	BuildNewTask();
+}
+
+void TaskSche::CreateTask(const TaskInfo& t_info) throw(base::Exception)
+{
+	std::strint command;
+	if ( TaskInfo::TT_Acquire == t_info.t_type )		// 采集
+	{
+		// 更新采集时间
+		m_pTaskDB->UpdateEtlTime(t_type.sub_id, t_info.etl_time);
+
+		// 采集程序：守护进程
+		base::PubStr::SetFormatString(command, "%s 1 %lld %s 00001:%s:%s::", m_binAcquire.c_str(), t_info.task_id, m_cfgAcquire.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str());
+	}
+	else if ( TaskInfo::TT_Analyse == t_info.t_type )	// 分析
+	{
+		// 分析程序：守护进程
+		base::PubStr::SetFormatString(command, "%s 1 %lld %s 00001:%s:%s::", m_binAnalyse.c_str(), t_info.task_id, m_cfgAnalyse.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str());
+	}
+	else	// 未知
+	{
+		throw base::Exception(TERROR_CREATE_TASK, "Unknown task type: %d [FILE:%s, LINE:%d]", t_info.t_type, __FILE__, __LINE__);
+	}
+
+	// 拉起进程
+	m_pLog->Output("[TASK] Execute: %s", command.c_str());
+	system(command.c_str());
+}
+
+void TaskSche::BuildNewTask()
+{
+	TaskInfo task_info;
+
+	// 新建采集任务
 	const int VEC_TRI_SIZE = vecTaskReqInfo.size();
 	for ( int i = 0; i < VEC_TRI_SIZE; ++i )
 	{
@@ -160,21 +205,22 @@ void TaskSche::GetNewTask()
 
 		if ( m_mTaskReqInfo.find(ref_tri.seq_id) != m_mTaskReqInfo.end() )
 		{
-			m_pLog->Output("<WARNING> [TASK] The task (SEQ=%d) already exists ! So drop it !", ref_tri.seq_id);
+			m_pLog->Output("<WARNING> [TASK] The task (SEQ:%d) already exists ! So drop it !", ref_tri.seq_id);
 		}
 		else
 		{
+			task_info.t_type = TaskInfo::TT_Acquire;
+
+			task_info.task_id = TaskInfo::TT_Acquire;
+			task_info.t_type = TaskInfo::TT_Acquire;
+			task_info.t_type = TaskInfo::TT_Acquire;
+			task_info.t_type = TaskInfo::TT_Acquire;
+
+			CreateTask(task_info);
+
 			m_mTaskReqInfo[ref_tri.seq_id] = ref_tri;
 		}
 	}
-}
-
-void TaskSche::CheckTask()
-{
-}
-
-void TaskSche::ExecuteTask()
-{
 }
 
 void TaskSche::FinishTask()
@@ -190,5 +236,8 @@ void TaskSche::FinishTask()
 
 	// 清空已完成任务列表
 	std::vector<TaskReqInfo>().swap(m_vecEndTask);
+
+	// 等待下一次的任务执行
+	sleep(m_waitSeconds);
 }
 

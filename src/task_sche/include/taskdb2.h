@@ -14,6 +14,7 @@ public:
 		TDB_ERR_SEL_KPI_INFO   = -20000003,				// 查询指标规则信息失败
 		TDB_ERR_SEL_TASK_STATE = -20000004,				// 查询任务状态失败
 		TDB_ERR_UPD_TASK_REQ   = -20000005,				// 更新任务请求失败
+		TDB_ERR_UPD_ETL_TIME   = -20000006,				// 更新采集时间失败
 	};
 
 public:
@@ -44,6 +45,9 @@ public:
 
 	// 查询指标规则信息
 	void SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info) throw(base::Exception);
+
+	// 更新采集时间
+	void UpdateEtlTime(const std::string& etl_id, const std::string& etl_time) throw(base::Exception);
 
 private:
 	std::string m_tabTaskReq;				// 任务请求表

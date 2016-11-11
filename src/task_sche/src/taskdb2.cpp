@@ -1,6 +1,5 @@
 #include "taskdb2.h"
 #include "log.h"
-#include "pubstr.h"
 
 
 TaskDB2::TaskDB2(const DBInfo& db_info)
@@ -174,10 +173,9 @@ void TaskDB2::SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info) throw
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT ANALYSIS_ID, ETLRULE_ID FROM " + m_tabKpiRule + " WHERE KPI_ID = '" + kpi + "'";
+	std::string sql = "SELECT ETLRULE_ID, ANALYSIS_ID FROM " + m_tabKpiRule + " WHERE KPI_ID = '" + kpi + "'";
 	m_pLog->Output("[DB2] Select kpi rule info: %s", sql.c_str());
 
-	std::string etlrule_id;
 	kpi_info.kpi_id = kpi;
 
 	try
@@ -187,22 +185,41 @@ void TaskDB2::SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info) throw
 
 		while ( !rs.IsEOF() )
 		{
-			kpi_info.ana_id = (const char*)rs[1];
-			etlrule_id      = (const char*)rs[2];
+			kpi_info.etl_id = (const char*)rs[1];
+			kpi_info.ana_id = (const char*)rs[2];
 
 			rs.MoveNext();
 		}
 
-		if ( etlrule_id.empty() || kpi_info.ana_id.empty() )
+		if ( kpi_info.etl_id.empty() || kpi_info.ana_id.empty() )
 		{
-			throw base::Exception(TDB_ERR_SEL_KPI_INFO, "[DB2] Select kpi rule info from table '%s' failed! [KPI_ID:%s, ETL_ID:%s, ANA_ID:%s] [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), kpi.c_str(), etlrule_id.c_str(), kpi_info.ana_id.c_str(), __FILE__, __LINE__);
+			throw base::Exception(TDB_ERR_SEL_KPI_INFO, "[DB2] Select kpi rule info from table '%s' failed! [KPI_ID:%s, ETL_ID:%s, ANA_ID:%s] [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), kpi.c_str(), kpi_info.etl_id.c_str(), kpi_info.ana_id.c_str(), __FILE__, __LINE__);
 		}
-
-		base::PubStr::Str2StrVector(etlrule_id, "|", kpi_info.vec_etl_id);
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
 		throw base::Exception(TDB_ERR_SEL_KPI_INFO, "[DB2] Select kpi rule info from table '%s' failed! [KPI_ID:%s] [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), kpi.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void TaskDB2::UpdateEtlTime(const std::string& etl_id, const std::string& etl_time) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "UPDATE " + m_tabEtlRule + " SET ETLRULE_TIME = '" + etl_time + "' WHERE ETLRULE_ID = '" + etl_id + "'";
+	m_pLog->Output("[DB2] Update etlrule_time to [%s] (etlrule_id:%s)", etl_time.c_str(), etl_id.c_str());
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		Commit();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(TDB_ERR_UPD_ETL_TIME, "[DB2] Update etlrule_time from table '%s' failed! [ETLRULE_ID:%s] [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), etl_id.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
