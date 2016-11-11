@@ -30,7 +30,7 @@ public:
 };
 
 // 指标规则信息
-struct RaKpiInfo
+struct KpiRuleInfo
 {
 	std::string kpi_id;							// 指标ID
 	std::string ana_id;							// 分析ID

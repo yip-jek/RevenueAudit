@@ -55,7 +55,10 @@ private:
 	// 获取新任务
 	void GetNewTask();
 
-	// 下发任务
+	// 检查任务状态
+	void CheckTask();
+
+	// 执行任务
 	void ExecuteTask();
 
 	// 任务完成
@@ -71,11 +74,23 @@ private:
 	TaskDB2* m_pTaskDB;				// 数据库连接
 
 private:
+	std::string m_hiveAgentPath;			// Hive代理的路径
+	std::string m_binAcquire;				// 采集程序（带路径）
+	std::string m_cfgAcquire;				// 采集配置文件（带路径）
+	std::string m_binAnalyse;				// 分析程序（带路径）
+	std::string m_cfgAnalyse;				// 分析配置文件（带路径）
+
+private:
 	std::string m_tabTaskReq;				// 任务请求表
-	std::string m_tabRaKpi;					// 指标规则表
+	std::string m_tabKpiRule;				// 指标规则表
 	std::string m_tabEtlRule;				// 采集规则表
 
 private:
-	std::map<int, TaskReqInfo> m_mTaskReqInfo;			// 任务列表
+	std::vector<TaskReqInfo>   m_vecNewTask;			// 新任务列表
+	std::vector<TaskReqInfo>   m_vecEndTask;			// 已完成的任务列表
+	std::map<int, TaskReqInfo> m_mTaskReqInfo;			// 执行的任务列表
+
+	std::vector<int>           m_vecEtlSeq;				// 采集任务流水号列表
+	std::vector<int>           m_vecAnaSeq;				// 分析任务流水号列表
 };
 
