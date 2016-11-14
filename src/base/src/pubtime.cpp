@@ -92,6 +92,14 @@ std::string PubTime::DateNowMinusMonths(unsigned int months)
 	return boost::gregorian::to_iso_string(now.date()).substr(0, 6);
 }
 
+long PubTime::DayApartFromToday(int year, int mon, int day)
+{
+	boost::gregorian::date the_day(year, mon, day);
+	boost::gregorian::date today(boost::gregorian::day_clock::local_day());
+	boost::gregorian::date_duration day_apart = today - the_day;
+	return day_apart.days();
+}
+
 bool PubTime::DateApartFromNow(const std::string& fmt, PubTime::DATE_TYPE& d_type, std::string& date)
 {
 	// 默认：未知类型

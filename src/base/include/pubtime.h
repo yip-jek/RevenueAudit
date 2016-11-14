@@ -41,6 +41,9 @@ public:
 	// 这个月之前的第n个月, 返回格式：YYYYMM
 	static std::string DateNowMinusMonths(unsigned int months);
 
+	// 计算与当前时间相差的天数
+	static long DayApartFromToday(int year, int mon, int day);
+
 	// 与当前时间相隔的时间（支持 月时间 或者 日时间）
 	// fmt为时间格式：（月）[mon][+/-][月数]; （日）[day][+/-][日数]
 	// 成功返回true，失败返回false

@@ -38,7 +38,7 @@ public:
 	void SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(base::Exception);
 
 	// 查询任务状态
-	void SelectTaskState(int seq, std::string& task_state) throw(base::Exception);
+	void SelectTaskState(TaskState& t_state) throw(base::Exception);
 
 	// 更新任务请求
 	void UpdateTaskRequest(TaskReqInfo& task_req) throw(base::Exception);

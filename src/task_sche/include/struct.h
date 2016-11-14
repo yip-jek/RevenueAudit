@@ -62,3 +62,17 @@ public:
 	std::string etl_time;				// 采集时间
 };
 
+// 任务状态
+struct TaskState
+{
+public:
+	TaskState(): seq_id(0)
+	{}
+
+public:
+	int         seq_id;					// 流水号
+	std::string state;					// 状态
+	std::string state_desc;				// 状态说明
+	std::string task_desc;				// 备注
+};
+

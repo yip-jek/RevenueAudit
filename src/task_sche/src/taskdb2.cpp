@@ -72,7 +72,7 @@ void TaskDB2::SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(b
 	std::vector<TaskReqInfo> v_tri;
 
 	std::string sql = "SELECT SEQ_ID, KPI_ID, STAT_CYCLE FROM " + m_tabTaskReq + " WHERE TASK_STATUS = '00'";
-	m_pLog->Output("[DB2] Select new task request: %s", sql.c_str());
+	//m_pLog->Output("[DB2] Select new task request: %s", sql.c_str());
 
 	try
 	{
@@ -105,37 +105,41 @@ void TaskDB2::SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(b
 	v_tri.swap(vec_trinfo);
 }
 
-void TaskDB2::SelectTaskState(int seq, std::string& task_state) throw(base::Exception)
+void TaskDB2::SelectTaskState(TaskState& t_state) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT TASK_STATUS FROM " + m_tabTaskReq + " WHERE SEQ_ID = ?";
-	m_pLog->Output("[DB2] Select task state [%d]", seq);
+	std::string sql = "SELECT TASK_STATUS, STATUS_DESC, TASK_DESC FROM " + m_tabTaskReq + " WHERE SEQ_ID = ?";
+	//m_pLog->Output("[DB2] Select task state [%d]", t_state.seq_id);
 
 	try
 	{
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(1) = seq;
+		rs.Parameter(1) = t_state.seq_id;
 		rs.Execute();
 
 		int count = 0;
 		while ( !rs.IsEOF() )
 		{
 			++count;
-			task_state = (const char*)rs[1];
+
+			int index = 1;
+			t_state.state      = (const char*)rs[index++];
+			t_state.state_desc = (const char*)rs[index++];
+			t_state.task_desc  = (const char*)rs[index++];
 
 			rs.MoveNext();
 		}
 
 		if ( 0 == count )
 		{
-			throw base::Exception(TDB_ERR_SEL_TASK_STATE, "[DB2] Select task state from table '%s' failed! NO record! [SEQ:%d] [FILE:%s, LINE:%d]", m_tabTaskReq.c_str(), seq, __FILE__, __LINE__);
+			throw base::Exception(TDB_ERR_SEL_TASK_STATE, "[DB2] Select task state from table '%s' failed! NO record! [SEQ:%d] [FILE:%s, LINE:%d]", m_tabTaskReq.c_str(), t_state.seq_id, __FILE__, __LINE__);
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(TDB_ERR_SEL_TASK_STATE, "[DB2] Select task state from table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskReq.c_str(), seq, ex.what(), __FILE__, __LINE__);
+		throw base::Exception(TDB_ERR_SEL_TASK_STATE, "[DB2] Select task state from table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskReq.c_str(), t_state.seq_id, ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -156,7 +160,7 @@ void TaskDB2::UpdateTaskRequest(TaskReqInfo& task_req) throw(base::Exception)
 		rs.Parameter(index++) = task_req.status_desc.c_str();
 		rs.Parameter(index++) = task_req.finishtime.c_str();
 		rs.Parameter(index++) = task_req.desc.c_str();
-		rs.Parameter(index++) = task_req.seq_id
+		rs.Parameter(index++) = task_req.seq_id;
 
 		rs.Execute();
 
@@ -177,6 +181,8 @@ void TaskDB2::SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info) throw
 	m_pLog->Output("[DB2] Select kpi rule info: %s", sql.c_str());
 
 	kpi_info.kpi_id = kpi;
+	kpi_info.etl_id.clear();
+	kpi_info.ana_id.clear();
 
 	try
 	{
