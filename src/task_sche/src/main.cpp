@@ -49,6 +49,9 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	// 日志文件前缀
+	base::Log::SetLogFilePrefix("TaskSche");
+
 	base::AutoLogger aLog;
 	base::Log* pLog = aLog.Get();
 

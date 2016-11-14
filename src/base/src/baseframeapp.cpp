@@ -110,6 +110,9 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	// 设置日志文件名称前缀
+	Log::SetLogFilePrefix(g_pApp->GetLogFilePrefix());
+
 	AutoLogger aLog;
 	Log* pLog = aLog.Get();
 

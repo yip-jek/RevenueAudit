@@ -23,7 +23,7 @@ TaskSche::~TaskSche()
 
 const char* TaskSche::Version()
 {
-	return ("TaskSche: Version 1.0000 released. Compiled at "__TIME__" on "__DATE__);
+	return ("TaskSche: Version 1.0001 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void TaskSche::Do() throw(base::Exception)
@@ -211,7 +211,7 @@ void TaskSche::BuildNewTask()
 		{
 			task_info.t_type = TaskInfo::TT_Acquire;
 
-			task_info.task_id = TaskInfo::TT_Acquire;
+			task_info.task_id = GenerateTaskID();
 			task_info.t_type = TaskInfo::TT_Acquire;
 			task_info.t_type = TaskInfo::TT_Acquire;
 			task_info.t_type = TaskInfo::TT_Acquire;
@@ -221,6 +221,10 @@ void TaskSche::BuildNewTask()
 			m_mTaskReqInfo[ref_tri.seq_id] = ref_tri;
 		}
 	}
+}
+
+long long TaskSche::GenerateTaskID()
+{
 }
 
 void TaskSche::FinishTask()

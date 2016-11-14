@@ -31,7 +31,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 2.0004.20161104 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 2.0005.20161114 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -89,6 +89,11 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_tabDictCity    = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
 
 	m_pLog->Output("[Analyse] Load configuration OK.");
+}
+
+std::string Analyse::GetLogFilePrefix()
+{
+	return std::string("Analyse");
 }
 
 void Analyse::Init() throw(base::Exception)

@@ -30,6 +30,7 @@ public:
 };
 
 // 指标规则信息
+// 采集与分析，一一对应
 struct KpiRuleInfo
 {
 	std::string kpi_id;					// 指标规则ID

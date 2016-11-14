@@ -14,6 +14,8 @@ Log* Log::_spLogger = NULL;		// single log pointer
 long long Log::_sLogCcmID = 0;
 unsigned long long Log::_sMaxLogFileSize = 10*1024*1024;	// default log file size 10M
 
+std::string Log::_sLogFilePrefix = "LOG";			// default log file prefix
+
 Log::Log()
 {
 }
@@ -73,6 +75,14 @@ bool Log::ResetFileSize(unsigned long long fsize)
 	}
 
 	return false;
+}
+
+void Log::SetLogFilePrefix(const std::string& log_prefix)
+{
+	if ( !log_prefix.empty() )
+	{
+		_sLogFilePrefix = log_prefix;
+	}
 }
 
 void Log::Init() throw(Exception)
@@ -139,7 +149,7 @@ void Log::OpenNewLogger() throw(Exception)
 
 	do
 	{
-		PubStr::SetFormatString(fullLogPath, "%sLOG_%lld_%s_%04d.log", m_sLogPath.c_str(), _sLogCcmID, DAY_TIME.c_str(), log_id++);
+		PubStr::SetFormatString(fullLogPath, "%s%s_%lld_%s_%04d.log", m_sLogPath.c_str(), _sLogFilePrefix.c_str(), _sLogCcmID, DAY_TIME.c_str(), log_id++);
 
 	} while ( BaseFile::IsFileExist(fullLogPath) );
 

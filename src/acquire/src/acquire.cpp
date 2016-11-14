@@ -29,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 2.0003.20161104 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 2.0004.20161114 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -84,6 +84,11 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_tabEtlSrc  = m_cfg.GetCfgValue("TABLE", "TAB_ETL_SRC");
 
 	m_pLog->Output("[Acquire] Load configuration OK.");
+}
+
+std::string Acquire::GetLogFilePrefix()
+{
+	return std::string("Acquire");
 }
 
 void Acquire::Init() throw(base::Exception)

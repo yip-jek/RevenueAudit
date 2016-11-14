@@ -65,6 +65,9 @@ private:
 	// 创建新任务
 	void BuildNewTask();
 
+	// 生成新的任务ID
+	long long GenerateTaskID();
+
 	// 任务完成
 	void FinishTask();
 

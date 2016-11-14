@@ -33,6 +33,9 @@ public:
 	// 获取日志路径
 	virtual std::string GetLogPathConfig();
 
+	// 获取日志文件名称前缀
+	virtual std::string GetLogFilePrefix() = 0;
+
 	// 初始化
 	virtual void Init() throw(Exception) = 0;
 
