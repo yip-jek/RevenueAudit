@@ -138,7 +138,7 @@ private:
 	std::map<int, TaskReqInfo>         m_mTaskReqInfo;					// 执行的任务列表
 	std::map<std::string, KpiRuleInfo> m_mKpiRuleInfo;					// 指标规则信息列表
 
-	std::vector<int>           m_vecEtlSeq;				// 采集任务流水号列表
-	std::vector<int>           m_vecAnaSeq;				// 分析任务流水号列表
+	std::vector<TaskInfo> m_vecEtlTaskInfo;					// 采集任务列表
+	std::vector<TaskInfo> m_vecAnaTaskInfo;					// 分析任务列表
 };
 

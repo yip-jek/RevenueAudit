@@ -51,10 +51,11 @@ public:
 	};
 
 public:
-	TaskInfo(): t_type(TT_Unknown), task_id(0)
+	TaskInfo(): seq_id(0), t_type(TT_Unknown), task_id(0)
 	{}
 
 public:
+	int         seq_id;					// 任务流水号
 	TASK_TYPE   t_type;					// 任务类型
 	long long   task_id;				// 任务ID
 	std::string kpi_id;					// 指标规则ID
