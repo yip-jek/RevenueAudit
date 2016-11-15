@@ -41,6 +41,40 @@ void CAcqDB2::SetTabYCStatRule(const std::string& t_statrule)
 	m_tabYCStatRule = t_statrule;
 }
 
+#ifdef _YCRA_TASK
+void CAcqDB2::SetTabYCTaskReq(const std::string& t_yc_taskreq)
+{
+	m_tabYCTaskReq = t_yc_taskreq;
+}
+
+void CAcqDB2::UpdateYCTaskReq(int seq, const std::string& state, const std::string& state_desc, const std::string& task_desc) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "UPDATE " + m_tabYCTaskReq + " SET TASK_STATUS = ?, STATUS_DESC = ?, TASK_DESC = ? WHERE SEQ_ID = ?";
+	m_pLog->Output("[DB2] Update task request: STATE=%s, STATE_DESC=%s (SEQ:%d)", state.c_str(), state_desc.c_str(), seq);
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		int index = 1;
+		rs.Parameter(index++) = state.c_str();
+		rs.Parameter(index++) = state_desc.c_str();
+		rs.Parameter(index++) = task_desc.c_str();
+		rs.Parameter(index++) = seq;
+		rs.Execute();
+
+		Commit();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, ex.what(), __FILE__, __LINE__);
+	}
+}
+#endif
+
 void CAcqDB2::SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 {
 	// 获取采集规则信息

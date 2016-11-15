@@ -133,6 +133,8 @@ int main(int argc, char* argv[])
 	}
 	catch ( Exception& ex )
 	{
+		g_pApp->End(ex.ErrorCode(), ex.What());
+
 		std::cerr << "[ERROR] " << ex.What() << ", ERROR_CODE: " << ex.ErrorCode() << std::endl;
 		pLog->Output("[ERROR] %s, ERROR_CODE: %d", ex.What().c_str(), ex.ErrorCode());
 
@@ -144,6 +146,8 @@ int main(int argc, char* argv[])
 	}
 	catch ( ... )
 	{
+		g_pApp->End(-1, "Unknown error!");
+
 		std::cerr << "[ERROR] Unknown error! [FILE:" << __FILE__ << ", LINE:" << __LINE__ << "]" << std::endl;
 		pLog->Output("[ERROR] Unknown error! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 
@@ -153,6 +157,8 @@ int main(int argc, char* argv[])
 		ts.abort(str_err);
 		return -1;
 	}
+
+	g_pApp->End(0);
 
 	std::cout << argv[0] << " quit!" << std::endl;
 	pLog->Output("%s quit!", argv[0]);

@@ -5,7 +5,6 @@
 namespace base
 {
 
-class BaseDB2;
 class BaseJHive;
 
 // 连接器接口
@@ -20,22 +19,19 @@ public:
 	virtual void ToDisconnect() = 0;
 };
 
-// Hive和DB2连接器
-class HiveDB2Connector : public BaseConnector
+// Hive连接器
+class HiveConnector : public BaseConnector
 {
 public:
-	HiveDB2Connector(BaseDB2* pDB2, BaseJHive* pHive);
-	virtual ~HiveDB2Connector() {}
+	HiveConnector(BaseJHive* pHive);
+	virtual ~HiveConnector() {}
 
 public:
 	virtual void ToConnect() throw(Exception);
 	virtual void ToDisconnect();
 
 private:
-	bool		m_db2Connected;
 	bool		m_hiveConnected;
-
-	BaseDB2*	m_pDB2;				// DB2数据库接口
 	BaseJHive*	m_pHive;			// Hive接口
 };
 

@@ -18,6 +18,9 @@ Acquire::Acquire()
 ,m_pAcqDB2(NULL)
 ,m_pAcqHive(NULL)
 ,m_acqDateType(base::PubTime::DT_UNKNOWN)
+#ifdef _YCRA_TASK
+,m_ycSeqID(0)
+#endif
 ,m_isYCRA(false)
 {
 	g_pApp = &g_Acquire;
@@ -29,7 +32,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 2.0004.20161114 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 2.0005.20161115 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -55,6 +58,10 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_DIM");
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_VAL");
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_SRC");
+
+#ifdef _YCRA_TASK
+	m_cfg.RegisterItem("TABLE", "TAB_YC_TASK_REQ");
+#endif
 
 	m_cfg.ReadConfig();
 
@@ -83,6 +90,10 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_tabEtlVal  = m_cfg.GetCfgValue("TABLE", "TAB_ETL_VAL");
 	m_tabEtlSrc  = m_cfg.GetCfgValue("TABLE", "TAB_ETL_SRC");
 
+#ifdef _YCRA_TASK
+	m_tabYCTaskReq = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
+#endif
+
 	m_pLog->Output("[Acquire] Load configuration OK.");
 }
 
@@ -108,6 +119,16 @@ void Acquire::Init() throw(base::Exception)
 	m_pAcqDB2->SetTabEtlVal(m_tabEtlVal);
 	m_pAcqDB2->SetTabEtlSrc(m_tabEtlSrc);
 
+	// 连接数据库
+	m_pAcqDB2->Connect();
+
+#ifdef _YCRA_TASK
+	m_pAcqDB2->SetTabYCTaskReq(m_tabYCTaskReq);
+
+	// 更新任务状态为；"11"（正在采集）
+	m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "11", "正在采集", "采集开始时间："+base::SimpleTime::Now().TimeStamp());
+#endif
+
 	m_pHive = new CAcqHive();
 	if ( NULL == m_pHive )
 	{
@@ -127,7 +148,7 @@ void Acquire::Init() throw(base::Exception)
 
 void Acquire::Run() throw(base::Exception)
 {
-	base::AutoDisconnect a_disconn(new base::HiveDB2Connector(m_pAcqDB2, m_pAcqHive));
+	base::AutoDisconnect a_disconn(new base::HiveConnector(m_pAcqHive));
 	a_disconn.Connect();
 
 	AcqTaskInfo task_info;
@@ -136,6 +157,31 @@ void Acquire::Run() throw(base::Exception)
 	FetchTaskInfo(task_info);
 
 	DoDataAcquisition(task_info);
+}
+
+void Acquire::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
+{
+#ifdef _YCRA_TASK
+	// 更新任务状态
+	if ( 0 == err_code )	// 正常退出
+	{
+		// 更新任务状态为；"12"（采集完成）
+		m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "12", "采集完成", "采集开始时间："+base::SimpleTime::Now().TimeStamp());
+	}
+	else	// 异常退出
+	{
+		std::string err_task
+
+		// 更新任务状态为；"13"（采集失败）
+		m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "13", "采集失败", );
+	}
+#endif
+
+	// 断开数据库连接
+	if ( m_pAcqDB2 != NULL )
+	{
+		m_pAcqDB2->Disconnect();
+	}
 }
 
 void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exception)
@@ -164,6 +210,19 @@ void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 	}
 
 	m_pLog->Output("[Acquire] 任务参数信息：指标ID [KPI_ID:%s], 采集规则ID [ETL_ID:%s]", m_sKpiID.c_str(), m_sEtlID.c_str());
+
+#ifdef _YCRA_TASK
+	if ( vec_str.size() < 4 )
+	{
+		throw base::Exception(ACQERR_TASKINFO_ERROR, "任务参数信息异常(split size:%lu), 无法拆分出业财任务流水号! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
+	}
+
+	if ( !base::PubStr::T1TransT2(vec_str[3], m_ycSeqID) )
+	{
+		throw base::Exception(ACQERR_TASKINFO_ERROR, "无效的业财任务流水号：%s [FILE:%s, LINE:%d]", vec_str[3].c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[Acquire] 业财稽核任务流水号：%d", m_ycSeqID);
+#endif
 }
 
 void Acquire::SetTaskInfo(AcqTaskInfo& info)

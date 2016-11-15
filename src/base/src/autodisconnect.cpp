@@ -6,45 +6,28 @@
 namespace base
 {
 
-HiveDB2Connector::HiveDB2Connector(BaseDB2* pDB2, BaseJHive* pHive)
-:m_db2Connected(false)
-,m_hiveConnected(false)
-,m_pDB2(pDB2)
+HiveConnector::HiveConnector(BaseJHive* pHive)
+:m_hiveConnected(false)
 ,m_pHive(pHive)
 {
 }
 
-void HiveDB2Connector::ToConnect() throw(Exception)
+void HiveConnector::ToConnect() throw(Exception)
 {
 	if ( NULL == m_pHive )
 	{
 		throw Exception(AUTODIS_UNABLE_CONNECT, "无法连接HIVE (Pointer is NULL!) [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
+
 	if ( !m_hiveConnected )
 	{
 		m_pHive->Connect();
 		m_hiveConnected = true;
 	}
-
-	if ( NULL == m_pDB2 )
-	{
-		throw Exception(AUTODIS_UNABLE_CONNECT, "无法连接DB2 (Pointer is NULL!) [FILE:%s, LINE:%d]", __FILE__, __LINE__);
-	}
-	if ( !m_db2Connected )
-	{
-		m_pDB2->Connect();
-		m_db2Connected = true;
-	}
 }
 
-void HiveDB2Connector::ToDisconnect()
+void HiveConnector::ToDisconnect()
 {
-	if ( m_db2Connected && m_pDB2 != NULL )
-	{
-		m_pDB2->Disconnect();
-		m_db2Connected = false;
-	}
-
 	if ( m_hiveConnected && m_pHive != NULL )
 	{
 		m_pHive->Disconnect();

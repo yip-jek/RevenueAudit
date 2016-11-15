@@ -17,7 +17,7 @@ BaseDB2::BaseDB2(const std::string& db_name, const std::string& usr, const std::
 
 BaseDB2::~BaseDB2()
 {
-	Disconnect();
+	//Disconnect();
 
 	Log::Release();
 }

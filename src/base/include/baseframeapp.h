@@ -42,6 +42,9 @@ public:
 	// 任务执行
 	virtual void Run() throw(Exception) = 0;
 
+	// 任务结束（资源回收）
+	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(Exception) = 0;
+
 protected:
 	Config		m_cfg;
 	Log*		m_pLog;
