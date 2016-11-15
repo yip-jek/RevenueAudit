@@ -170,25 +170,26 @@ void TaskSche::GetNewTask()
 
 	if ( m_vecNewTask.empty() )
 	{
-		if ( m_mTaskReqInfo.empty() )
+		// 达到 NO_TASK_MAX_TIME（秒）都无新任务，则日志输出
+		if ( m_noTaskTime > 0 )
 		{
-			// 达到 NO_TASK_MAX_TIME（秒）都无任务，则日志输出
-			if ( m_noTaskTime > 0 )
-			{
-				if ( (time(NULL) - m_noTaskTime) >= NO_TASK_MAX_TIME )
-				{
-					m_noTaskTime = time(NULL);
-					m_pLog->Output("[TASK] NO task.");
-				}
-			}
-			else
+			if ( (time(NULL) - m_noTaskTime) >= NO_TASK_MAX_TIME )
 			{
 				m_noTaskTime = time(NULL);
+
+				if ( m_mTaskReqInfo.empty() )
+				{
+					m_pLog->Output("[TASK] NO task.");
+				}
+				else
+				{
+					m_pLog->Output("[TASK] Running task size: %lu", m_mTaskReqInfo.size());
+				}
 			}
 		}
 		else
 		{
-			m_noTaskTime = 0;
+			m_noTaskTime = time(NULL);
 		}
 	}
 	else
@@ -376,12 +377,12 @@ void TaskSche::CreateTask(const TaskInfo& t_info) throw(base::Exception)
 		m_pTaskDB->UpdateEtlTime(t_info.sub_id, t_info.etl_time);
 
 		// 采集程序：守护进程
-		base::PubStr::SetFormatString(command, "%s 1 %lld %s 00001:%s:%s::", m_binAcquire.c_str(), t_info.task_id, m_cfgAcquire.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str());
+		base::PubStr::SetFormatString(command, "%s 1 %lld %s 00001:%s:%s:%d:", m_binAcquire.c_str(), t_info.task_id, m_cfgAcquire.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str(), t_info.seq_id);
 	}
 	else if ( TaskInfo::TT_Analyse == t_info.t_type )	// 分析
 	{
 		// 分析程序：守护进程
-		base::PubStr::SetFormatString(command, "%s 1 %lld %s 00001:%s:%s::", m_binAnalyse.c_str(), t_info.task_id, m_cfgAnalyse.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str());
+		base::PubStr::SetFormatString(command, "%s 1 %lld %s 00001:%s:%s:%d:", m_binAnalyse.c_str(), t_info.task_id, m_cfgAnalyse.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str(), t_info.seq_id);
 	}
 	else	// 未知
 	{

@@ -38,6 +38,7 @@ public:
 		ADBERR_DEL_FROM_TAB      = -3002017,			// 删除结果表数据出错
 		ADBERR_INS_RESULT_DATA   = -3002018,			// 插入结果数据出错
 		ADBERR_SEL_YC_STATRULE   = -3002019,			// 查询业财稽核因子规则信息出错
+		ADBERR_UPD_YC_TASK_REQ   = -3002020,			// 更新任务请求表出错
 	};
 
 public:
@@ -117,6 +118,15 @@ public:
 	// 插入告警事件数据
 	void InsertAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::Exception);
 
+// 业财稽核-任务调度
+#ifdef _YCRA_TASK
+	// 设置任务请求表
+	void SetTabYCTaskReq(const std::string& t_yc_taskreq);
+
+	// 更新任务请求表
+	void UpdateYCTaskReq(int seq, const std::string& state, const std::string& state_desc, const std::string& task_desc) throw(base::Exception);
+#endif
+
 private:
 	// 查询指标规则信息
 	void SelectKpiRule(AnaTaskInfo& info) throw(base::Exception);
@@ -171,6 +181,11 @@ private:
 	std::string	m_tabDictChannel;		// 渠道统一编码表
 	std::string	m_tabDictCity;			// 地市统一编码表
 	std::string	m_tabYCStatRule;		// 统计因子规则表（业财稽核）
+
+// 业财稽核-任务调度
+#ifdef _YCRA_TASK
+	std::string m_tabYCTaskReq;			// （业财）任务请求表
+#endif
 
 	std::string	m_fNCompareResult;		// 对比结果的字段名
 };

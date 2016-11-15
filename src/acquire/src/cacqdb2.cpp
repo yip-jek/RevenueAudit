@@ -460,7 +460,7 @@ void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& v
 	try
 	{
 		std::string sql = "select STATDIM_ID, STAT_SQL from " + m_tabYCStatRule;
-		sql += "where STAT_ID = '" + kpi_id + "' and STAT_PRIORITY = '00'";
+		sql += " where STAT_ID = '" + kpi_id + "' and STAT_PRIORITY = '00'";
 		m_pLog->Output("[DB2] Select table [%s]: %s", m_tabYCStatRule.c_str(), sql.c_str());
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);

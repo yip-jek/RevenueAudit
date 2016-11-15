@@ -6,6 +6,7 @@
 #include "autodisconnect.h"
 #include "pubstr.h"
 #include "pubtime.h"
+#include "simpletime.h"
 #include "canadb2.h"
 #include "canahive.h"
 #include "taskinfoutil.h"
@@ -21,6 +22,9 @@ Analyse g_Analyse;
 Analyse::Analyse()
 :m_pAnaDB2(NULL)
 ,m_pAnaHive(NULL)
+#ifdef _YCRA_TASK
+,m_ycSeqID(0)
+#endif
 {
 	g_pApp = &g_Analyse;
 }
@@ -31,7 +35,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 2.0005.20161114 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 2.0006.20161115 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -60,6 +64,10 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CHANNEL");
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CITY");
 
+#ifdef _YCRA_TASK
+	m_cfg.RegisterItem("TABLE", "TAB_YC_TASK_REQ");
+#endif
+
 	m_cfg.ReadConfig();
 
 	// 数据库配置
@@ -68,11 +76,11 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_sPasswd  = m_cfg.GetCfgValue("DATABASE", "PASSWORD");
 
 	// Hive服务器配置
-	m_zk_quorum  = m_cfg.GetCfgValue("HIVE_SERVER", "ZK_QUORUM");
-	m_krb5_conf  = m_cfg.GetCfgValue("HIVE_SERVER", "KRB5_CONF");
-	m_usr_keytab = m_cfg.GetCfgValue("HIVE_SERVER", "USR_KEYTAB");
-	m_principal  = m_cfg.GetCfgValue("HIVE_SERVER", "PRINCIPAL");
-	m_jaas_conf  = m_cfg.GetCfgValue("HIVE_SERVER", "JAAS_CONF");
+	m_zk_quorum    = m_cfg.GetCfgValue("HIVE_SERVER", "ZK_QUORUM");
+	m_krb5_conf    = m_cfg.GetCfgValue("HIVE_SERVER", "KRB5_CONF");
+	m_usr_keytab   = m_cfg.GetCfgValue("HIVE_SERVER", "USR_KEYTAB");
+	m_principal    = m_cfg.GetCfgValue("HIVE_SERVER", "PRINCIPAL");
+	m_jaas_conf    = m_cfg.GetCfgValue("HIVE_SERVER", "JAAS_CONF");
 	m_sLoadJarPath = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
 
 	// Tables
@@ -87,6 +95,10 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_tabAlarmEvent  = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_EVENT");
 	m_tabDictChannel = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CHANNEL");
 	m_tabDictCity    = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
+
+#ifdef _YCRA_TASK
+	m_tabYCTaskReq   = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
+#endif
 
 	m_pLog->Output("[Analyse] Load configuration OK.");
 }
@@ -119,6 +131,16 @@ void Analyse::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabDictChannel(m_tabDictChannel);
 	m_pAnaDB2->SetTabDictCity(m_tabDictCity);
 
+	// 连接数据库
+	m_pAnaDB2->Connect();
+
+#ifdef _YCRA_TASK
+	m_pAnaDB2->SetTabYCTaskReq(m_tabYCTaskReq);
+
+	// 更新任务状态为；"21"（正在分析）
+	m_pAnaDB2->UpdateYCTaskReq(m_ycSeqID, "21", "正在分析", "分析开始时间："+base::SimpleTime::Now().TimeStamp());
+#endif
+
 	m_pHive = new CAnaHive();
 	if ( NULL == m_pHive )
 	{
@@ -138,7 +160,7 @@ void Analyse::Init() throw(base::Exception)
 
 void Analyse::Run() throw(base::Exception)
 {
-	base::AutoDisconnect a_disconn(new base::HiveDB2Connector(m_pAnaDB2, m_pAnaHive));
+	base::AutoDisconnect a_disconn(new base::HiveConnector(m_pAnaHive));
 	a_disconn.Connect();
 
 	SetTaskInfo();
@@ -146,6 +168,32 @@ void Analyse::Run() throw(base::Exception)
 	FetchTaskInfo();
 
 	DoDataAnalyse();
+}
+
+void Analyse::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
+{
+#ifdef _YCRA_TASK
+	// 更新任务状态
+	std::string task_desc;
+	if ( 0 == err_code )	// 正常退出
+	{
+		// 更新任务状态为；"22"（分析完成）
+		task_desc = "分析结束时间：" + base::SimpleTime::Now().TimeStamp();
+		m_pAnaDB2->UpdateYCTaskReq(m_ycSeqID, "22", "分析完成", task_desc);
+	}
+	else	// 异常退出
+	{
+		// 更新任务状态为；"23"（分析失败）
+		base::PubStr::SetFormatString(task_desc, "[ERROR] %s, ERROR_CODE: %d", err_msg.c_str(), err_code);
+		m_pAnaDB2->UpdateYCTaskReq(m_ycSeqID, "23", "分析失败", task_desc);
+	}
+#endif
+
+	// 断开数据库连接
+	if ( m_pAnaDB2 != NULL )
+	{
+		m_pAnaDB2->Disconnect();
+	}
 }
 
 void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exception)
@@ -174,6 +222,19 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 	}
 
 	m_pLog->Output("[Analyse] 任务参数信息：指标ID [KPI_ID:%s], 分析规则ID [ANA_ID:%s]", m_sKpiID.c_str(), m_sAnaID.c_str());
+
+#ifdef _YCRA_TASK
+	if ( vec_str.size() < 4 )
+	{
+		throw base::Exception(ANAERR_TASKINFO_ERROR, "任务参数信息异常(split size:%lu), 无法拆分出业财任务流水号! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
+	}
+
+	if ( !base::PubStr::T1TransT2(vec_str[3], m_ycSeqID) )
+	{
+		throw base::Exception(ANAERR_TASKINFO_ERROR, "无效的业财任务流水号：%s [FILE:%s, LINE:%d]", vec_str[3].c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[Analyse] 业财稽核任务流水号：%d", m_ycSeqID);
+#endif
 }
 
 void Analyse::GetAnaDBInfo() throw(base::Exception)

@@ -62,6 +62,9 @@ public:
 	// 任务执行
 	virtual void Run() throw(base::Exception);
 
+	// 任务结束（资源回收）
+	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(base::Exception);
+
 private:
 	// 获取参数任务信息
 	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
@@ -205,6 +208,12 @@ private:
 	std::string m_tabAlarmEvent;		// 告警事件表
 	std::string m_tabDictChannel;		// 渠道统一编码表
 	std::string m_tabDictCity;			// 地市统一编码表
+
+// 业财稽核-任务调度
+#ifdef _YCRA_TASK
+	int         m_ycSeqID;				// 任务流水号
+	std::string m_tabYCTaskReq;			// （业财）任务请求表
+#endif
 
 private:
 	AnaTaskInfo			m_taskInfo;				// 指标任务信息

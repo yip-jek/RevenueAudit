@@ -163,17 +163,18 @@ void Acquire::End(int err_code, const std::string& err_msg /*= std::string()*/) 
 {
 #ifdef _YCRA_TASK
 	// 更新任务状态
+	std::string task_desc;
 	if ( 0 == err_code )	// 正常退出
 	{
 		// 更新任务状态为；"12"（采集完成）
-		m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "12", "采集完成", "采集开始时间："+base::SimpleTime::Now().TimeStamp());
+		task_desc = "采集结束时间：" + base::SimpleTime::Now().TimeStamp();
+		m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "12", "采集完成", task_desc);
 	}
 	else	// 异常退出
 	{
-		std::string err_task
-
 		// 更新任务状态为；"13"（采集失败）
-		m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "13", "采集失败", );
+		base::PubStr::SetFormatString(task_desc, "[ERROR] %s, ERROR_CODE: %d", err_msg.c_str(), err_code);
+		m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "13", "采集失败", task_desc);
 	}
 #endif
 
@@ -259,32 +260,43 @@ void Acquire::CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 		throw base::Exception(ACQERR_TASKINFO_INVALID, "没有采集数据源! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
-	size_t src_size = info.vecEtlRuleDataSrc.size();
-	size_t dim_size = info.vecEtlRuleDim.size();
-	size_t val_size = info.vecEtlRuleVal.size();
-
-	if ( src_size != dim_size )
+	// 是否为业财稽核
+	m_isYCRA = ("YCRA" == base::PubStr::TrimUpperB(info.EtlRuleType));
+	if ( m_isYCRA )
 	{
-		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集维度个数 (dim_size:%lu) 不一致! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", src_size, dim_size, info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+		m_pLog->Output("[Acquire] 采集类型：[业财稽核]");
 	}
-
-	if ( src_size != val_size )
+	else	// 一点稽核才检查采集数据源与维度、值的匹配
 	{
-		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集值个数 (val_size:%lu) 不一致! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", src_size, val_size, info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
-	}
+		m_pLog->Output("[Acquire] 采集类型：[一点稽核]");
 
-	for ( size_t i = 0; i < dim_size; ++i )
-	{
-		AcqEtlDim& dim = info.vecEtlRuleDim[i];
-		if ( dim.vecEtlDim.empty() )
+		size_t src_size = info.vecEtlRuleDataSrc.size();
+		size_t dim_size = info.vecEtlRuleDim.size();
+		size_t val_size = info.vecEtlRuleVal.size();
+
+		if ( src_size != dim_size )
 		{
-			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集维度为空! 无效! [DIM_ID:%s] [FILE:%s, LINE:%d]", dim.acqEtlDimID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集维度个数 (dim_size:%lu) 不一致! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", src_size, dim_size, info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 		}
 
-		AcqEtlVal& val = info.vecEtlRuleVal[i];
-		if ( val.vecEtlVal.empty() )
+		if ( src_size != val_size )
 		{
-			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集值为空! 无效! [VAL_ID:%s] [FILE:%s, LINE:%d]", val.acqEtlValID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集值个数 (val_size:%lu) 不一致! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", src_size, val_size, info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+		}
+
+		for ( size_t i = 0; i < dim_size; ++i )
+		{
+			AcqEtlDim& dim = info.vecEtlRuleDim[i];
+			if ( dim.vecEtlDim.empty() )
+			{
+				throw base::Exception(ACQERR_TASKINFO_INVALID, "采集维度为空! 无效! [DIM_ID:%s] [FILE:%s, LINE:%d]", dim.acqEtlDimID.c_str(), __FILE__, __LINE__);
+			}
+
+			AcqEtlVal& val = info.vecEtlRuleVal[i];
+			if ( val.vecEtlVal.empty() )
+			{
+				throw base::Exception(ACQERR_TASKINFO_INVALID, "采集值为空! 无效! [VAL_ID:%s] [FILE:%s, LINE:%d]", val.acqEtlValID.c_str(), __FILE__, __LINE__);
+			}
 		}
 	}
 
@@ -292,17 +304,6 @@ void Acquire::CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 	if ( AcqTaskInfo::ETLCTYPE_UNKNOWN == info.EtlCondType )
 	{
 		throw base::Exception(ACQERR_TASKINFO_INVALID, "未知的采集条件类型: ETLCTYPE_UNKNOWN [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
-	}
-
-	// 是否为业财稽核
-	m_isYCRA = ("YCRA" == base::PubStr::TrimUpperB(info.EtlRuleType));
-	if ( m_isYCRA )
-	{
-		m_pLog->Output("[Acquire] 采集类型：[业财稽核]");
-	}
-	else
-	{
-		m_pLog->Output("[Acquire] 采集类型：[一点稽核]");
 	}
 }
 
