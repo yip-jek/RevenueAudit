@@ -102,6 +102,8 @@ void CAnaDB2::UpdateYCTaskReq(int seq, const std::string& state, const std::stri
 		rs.Execute();
 
 		Commit();
+
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -180,6 +182,7 @@ void CAnaDB2::SelectChannelUniformCode(std::vector<ChannelUniformCode>& vec_chan
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -219,6 +222,7 @@ void CAnaDB2::SelectCityUniformCode(std::vector<CityUniformCode>& vec_cityunicod
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -271,6 +275,7 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -391,6 +396,7 @@ void CAnaDB2::SelectKpiColumn(AnaTaskInfo& info) throw(base::Exception)
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -443,6 +449,7 @@ void CAnaDB2::SelectDimValue(const std::string& kpi_id, DimValDiffer& differ) th
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -488,6 +495,8 @@ void CAnaDB2::InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Excepti
 
 		//m_pLog->Output("[DB2] [%s] Final commit.", m_tabDimValue.c_str());
 		Commit();
+
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -544,6 +553,7 @@ size_t CAnaDB2::SelectResultData(const std::string& tab_name, const std::string&
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -679,6 +689,7 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -709,6 +720,7 @@ bool CAnaDB2::SelectMaxAlarmEventID(int& max_event_id) throw(base::Exception)
 
 			rs.MoveNext();
 		}
+		rs.Close();
 
 		if ( rec_count > 0 )			// 有记录
 		{
@@ -723,6 +735,7 @@ bool CAnaDB2::SelectMaxAlarmEventID(int& max_event_id) throw(base::Exception)
 
 				rs.MoveNext();
 			}
+			rs.Close();
 
 			return true;
 		}
@@ -779,6 +792,8 @@ void CAnaDB2::InsertAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::E
 		}
 
 		Commit();
+
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -817,6 +832,7 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -909,6 +925,7 @@ void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -964,6 +981,7 @@ void CAnaDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -1023,6 +1041,7 @@ void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -1075,6 +1094,7 @@ void CAnaDB2::SelectAlarmRule(AlarmRule& alarm) throw(base::Exception)
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -1118,6 +1138,7 @@ void CAnaDB2::SelectCompareResultDesc(const std::string& kpi_id, const std::stri
 
 			rs.MoveNext();
 		}
+		rs.Close();
 
 		m_pLog->Output("[DB2] Select compare result description, size: %lu", vec_desc.size());
 		vec_desc.swap(vec_comresdesc);
@@ -1167,6 +1188,7 @@ void CAnaDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCStatInfo
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -1210,6 +1232,8 @@ void CAnaDB2::AlterEmptyTable(const std::string& tab_name) throw(base::Exception
 
 		rs.Execute();
 		Commit();
+
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -1233,6 +1257,8 @@ void CAnaDB2::DeleteFromTable(const std::string& tab_name, const std::string& co
 		Begin();
 		rs.Execute();
 		Commit();
+
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -1322,6 +1348,8 @@ void CAnaDB2::ResultDataInsert(const std::string& ins_sql, const std::string& da
 
 		// 最后再提交一次
 		Commit();
+
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{

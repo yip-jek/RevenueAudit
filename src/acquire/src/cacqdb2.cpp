@@ -67,6 +67,8 @@ void CAcqDB2::UpdateYCTaskReq(int seq, const std::string& state, const std::stri
 		rs.Execute();
 
 		Commit();
+
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -151,6 +153,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -245,6 +248,7 @@ void CAcqDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -294,7 +298,7 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 
 			rs.MoveNext();
 		}
-
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -357,6 +361,7 @@ void CAcqDB2::SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcIn
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -378,8 +383,9 @@ void CAcqDB2::FetchEtlData(const std::string& sql, int data_size, std::vector<st
 	{
 		m_pLog->Output("[DB2] Execute acquire sql: %s", sql.c_str());
 
-		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Execute();
+		//rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		//rs.Execute();
+		rs.Open(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		while ( !rs.IsEOF() )
 		{
@@ -392,6 +398,7 @@ void CAcqDB2::FetchEtlData(const std::string& sql, int data_size, std::vector<st
 
 			rs.MoveNext();
 		}
+		rs.Close();
 
 		m_pLog->Output("[DB2] Execute acquire sql OK.");
 
@@ -433,6 +440,7 @@ bool CAcqDB2::CheckTableExisted(const std::string& tab_name) throw(base::Excepti
 
 			rs.MoveNext();
 		}
+		rs.Close();
 
 		if ( count < 0 )	// 没有返回结果
 		{
@@ -474,6 +482,7 @@ void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& v
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{

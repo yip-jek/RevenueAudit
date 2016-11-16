@@ -47,6 +47,7 @@ bool TaskDB2::IsTableExists(const std::string& tab_name) throw(base::Exception)
 
 			rs.MoveNext();
 		}
+		rs.Close();
 
 		if ( count < 0 )        // 没有返回结果
 		{
@@ -96,6 +97,7 @@ void TaskDB2::SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(b
 
 			rs.MoveNext();
 		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -131,6 +133,7 @@ void TaskDB2::SelectTaskState(TaskState& t_state) throw(base::Exception)
 
 			rs.MoveNext();
 		}
+		rs.Close();
 
 		if ( 0 == count )
 		{
@@ -165,6 +168,8 @@ void TaskDB2::UpdateTaskRequest(TaskReqInfo& task_req) throw(base::Exception)
 		rs.Execute();
 
 		Commit();
+
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
@@ -196,6 +201,7 @@ void TaskDB2::SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info) throw
 
 			rs.MoveNext();
 		}
+		rs.Close();
 
 		if ( kpi_info.etl_id.empty() || kpi_info.ana_id.empty() )
 		{
@@ -222,6 +228,8 @@ void TaskDB2::UpdateEtlTime(const std::string& etl_id, const std::string& etl_ti
 		rs.Execute();
 
 		Commit();
+
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
