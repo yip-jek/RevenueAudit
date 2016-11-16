@@ -60,31 +60,31 @@ private:
 	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
 
 	// 设置任务信息
-	void SetTaskInfo(AcqTaskInfo& info);
+	void SetTaskInfo();
 
 	// 获取任务信息
-	void FetchTaskInfo(AcqTaskInfo& info) throw(base::Exception);
+	void FetchTaskInfo() throw(base::Exception);
 
 	// 检查采集任务信息
-	void CheckTaskInfo(AcqTaskInfo& info) throw(base::Exception);
+	void CheckTaskInfo() throw(base::Exception);
 
 	// 获取业财稽核的因子规则
-	void GetYCRAStatRule(AcqTaskInfo& info) throw(base::Exception);
+	void GetYCRAStatRule() throw(base::Exception);
 
 	// 进行数据采集
-	void DoDataAcquisition(AcqTaskInfo& info) throw(base::Exception);
+	void DoDataAcquisition() throw(base::Exception);
 
 	// 生成采集时间
 	void GenerateEtlDate(const std::string& date_fmt) throw(base::Exception);
 
 	// HIVE数据采集
-	void HiveDataAcquisition(AcqTaskInfo& info) throw(base::Exception);
+	void HiveDataAcquisition() throw(base::Exception);
 
 	// DB2数据采集
-	void DB2DataAcquisition(AcqTaskInfo& info) throw(base::Exception);
+	void DB2DataAcquisition() throw(base::Exception);
 
 	// 检查源表是否存在
-	void CheckSourceTable(AcqTaskInfo& info, bool hive) throw(base::Exception);
+	void CheckSourceTable(bool hive) throw(base::Exception);
 
 	// 载入HDFS配置
 	void LoadHdfsConfig() throw(base::Exception);
@@ -101,27 +101,27 @@ private:
 
 	// 重建Hive目标表
 	// 返回：目标表的字段数
-	int RebuildHiveTable(AcqTaskInfo& info) throw(base::Exception);
+	int RebuildHiveTable() throw(base::Exception);
 
 	// 分析采集规则，生成目标表字段
-	void TaskInfo2TargetFields(AcqTaskInfo& info, std::vector<std::string>& vec_field) throw(base::Exception);
+	void TaskInfo2TargetFields(std::vector<std::string>& vec_field) throw(base::Exception);
 
 	// 分析采集任务规则，生成采集SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
-	void TaskInfo2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
+	void TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
 
 	// 分析统计因子规则，生成业财稽核SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
-	void YCStatRule2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
+	void YCStatRule2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
 
 	// 外连条件下：分析采集规则，生成采集SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
 	// 参数 with_cond：true-带 SQL 条件，false-不带 SQL 条件(默认值)
-	void OuterJoin2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive, bool with_cond = false) throw(base::Exception);
+	void OuterJoin2Sql(std::vector<std::string>& vec_sql, bool hive, bool with_cond = false) throw(base::Exception);
 
 	// 不带条件或者直接条件下：分析采集规则，生成采集SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
-	void NoneOrStraight2Sql(AcqTaskInfo& info, std::vector<std::string>& vec_sql, bool hive);
+	void NoneOrStraight2Sql(std::vector<std::string>& vec_sql, bool hive);
 
 	// 获取 SQL 条件
 	std::string GetSQLCondition(const std::string& cond);
@@ -157,6 +157,7 @@ private:
 	CAcqHive*	m_pAcqHive;				// Hive接口
 
 private:
+	AcqTaskInfo					m_taskInfo;			// 采集任务信息
 	base::PubTime::DATE_TYPE	m_acqDateType;		// 采集时间类型
 	std::string					m_acqDate;			// 采集时间
 

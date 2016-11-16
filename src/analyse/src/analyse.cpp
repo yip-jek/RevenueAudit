@@ -35,7 +35,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 2.0006.20161116 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 2.0006.20161117 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -1307,7 +1307,7 @@ void Analyse::GenerateYCResultData(std::map<std::string, double>& map_factor) th
 			yc_sr.Trans2Vector(v_dat);
 			base::PubStr::VVectorSwapPushBack(vec_yc_data, v_dat);
 		}
-		else if ( YCStatInfo::SP_Level_0 == ref_ycsi.stat_pri )
+		else if ( YCStatInfo::SP_Level_1 == ref_ycsi.stat_pri )
 		{
 			m_pLog->Output("[Analyse] 统计因子类型：组合因子");
 
