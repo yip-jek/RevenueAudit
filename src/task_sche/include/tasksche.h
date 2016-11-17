@@ -91,6 +91,9 @@ private:
 	// 创建新任务
 	void BuildNewTask();
 
+	// 删除已存在的旧任务
+	void RemoveOldTask(int task_seq);
+
 	// 生成新的任务ID
 	long long GenerateTaskID();
 

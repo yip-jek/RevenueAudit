@@ -26,7 +26,7 @@ TaskSche::~TaskSche()
 
 const char* TaskSche::Version()
 {
-	return ("TaskSche: Version 1.0002 released. Compiled at "__TIME__" on "__DATE__);
+	return ("TaskSche: Version 1.0003 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void TaskSche::Do() throw(base::Exception)
@@ -405,25 +405,65 @@ void TaskSche::BuildNewTask()
 		TaskReqInfo& ref_tri = m_vecNewTask[i];
 		m_pLog->Output("[TASK] Get task %d: SEQ=[%d], KPI=[%s], CYCLE=[%s]", (i+1), ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str());
 
+		// 同一流水号的任务重复下发，则认为是重跑数据。
+		// 所以摒弃旧任务，重新开始新任务
 		if ( m_mTaskReqInfo.find(ref_tri.seq_id) != m_mTaskReqInfo.end() )
 		{
-			m_pLog->Output("<WARNING> [TASK] The task (SEQ:%d) already exists ! So drop it !", ref_tri.seq_id);
+			m_pLog->Output("<WARNING> [TASK] The task (SEQ:%d) already exists ! So drop the OLD one !", ref_tri.seq_id);
+			RemoveOldTask(ref_tri.seq_id);
 		}
-		else
+
+		task_info.seq_id   = ref_tri.seq_id;
+		task_info.t_type   = TaskInfo::TT_Acquire;
+		task_info.task_id  = GenerateTaskID();
+		task_info.kpi_id   = ref_tri.kpi_id;
+		task_info.etl_time = EtlTimeTransform(ref_tri.stat_cycle);
+		GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Acquire, task_info.sub_id);
+		m_pLog->Output("[TASK] Acquire: TASK_ID=%ld, KPI_ID=%s, ETL_ID=%s, ETL_TIME=%s", task_info.task_id, task_info.kpi_id.c_str(), task_info.sub_id.c_str(), task_info.etl_time.c_str());
+
+		// 开始采集任务
+		CreateTask(task_info);
+
+		m_vecEtlTaskInfo.push_back(task_info);
+		m_mTaskReqInfo[ref_tri.seq_id] = ref_tri;
+	}
+}
+
+void TaskSche::RemoveOldTask(int task_seq)
+{
+	// 从正在执行的任务列表删除旧任务
+	m_mTaskReqInfo.erase(task_seq);
+
+	// 从已完成的任务列表删除旧任务
+	int vec_size = m_vecEndTask.size();
+	for ( int i = 0; i < vec_size; ++i )
+	{
+		if ( task_seq == m_vecEndTask[i].seq_id )
 		{
-			task_info.seq_id   = ref_tri.seq_id;
-			task_info.t_type   = TaskInfo::TT_Acquire;
-			task_info.task_id  = GenerateTaskID();
-			task_info.kpi_id   = ref_tri.kpi_id;
-			task_info.etl_time = EtlTimeTransform(ref_tri.stat_cycle);
-			GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Acquire, task_info.sub_id);
-			m_pLog->Output("[TASK] Acquire: TASK_ID=%ld, KPI_ID=%s, ETL_ID=%s, ETL_TIME=%s", task_info.task_id, task_info.kpi_id.c_str(), task_info.sub_id.c_str(), task_info.etl_time.c_str());
+			m_vecEndTask.erase(m_vecEndTask.begin()+i);
+			break;
+		}
+	}
 
-			// 开始采集任务
-			CreateTask(task_info);
+	// 从采集任务列表删除旧任务
+	vec_size = m_vecEtlTaskInfo.size();
+	for ( int j = 0; j < vec_size; ++j )
+	{
+		if ( task_seq == m_vecEtlTaskInfo[j].seq_id )
+		{
+			m_vecEtlTaskInfo.erase(m_vecEtlTaskInfo.begin()+j);
+			break;
+		}
+	}
 
-			m_vecEtlTaskInfo.push_back(task_info);
-			m_mTaskReqInfo[ref_tri.seq_id] = ref_tri;
+	// 从分析任务列表删除旧任务
+	vec_size = m_vecAnaTaskInfo.size();
+	for ( int k = 0; k < vec_size; ++k )
+	{
+		if ( task_seq == m_vecAnaTaskInfo[k].seq_id )
+		{
+			m_vecAnaTaskInfo.erase(m_vecAnaTaskInfo.begin()+k);
+			break;
 		}
 	}
 }

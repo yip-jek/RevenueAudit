@@ -6,7 +6,7 @@
 #include "pubstr.h"
 
 // 单个维度信息
-struct OneEtlDim
+class OneEtlDim
 {
 public:
 	// 维度备注类型
@@ -110,7 +110,7 @@ public:
 };
 
 // 采集维度信息
-struct AcqEtlDim
+class AcqEtlDim
 {
 public:
 	AcqEtlDim(): isValid(false)
@@ -154,7 +154,7 @@ public:
 };
 
 // 单个采集值信息
-struct OneEtlVal
+class OneEtlVal
 {
 public:
 	// 值备注类型
@@ -251,7 +251,7 @@ public:
 };
 
 // 采集值信息
-struct AcqEtlVal
+class AcqEtlVal
 {
 public:
 	AcqEtlVal(): isValid(false)
@@ -295,7 +295,7 @@ public:
 };
 
 // 采集数据源信息
-struct EtlSrcInfo
+class EtlSrcInfo
 {
 public:
 	// 数据源条件类型
@@ -349,7 +349,7 @@ public:
 };
 
 // 数据源
-struct DataSource
+class DataSource
 {
 public:
 	DataSource(): isValid(false)
@@ -376,7 +376,7 @@ public:
 };
 
 // 采集规则任务信息
-struct AcqTaskInfo
+class AcqTaskInfo
 {
 public:
 	// 采集条件类型
@@ -413,6 +413,7 @@ public:
 	,vecEtlRuleDataSrc(info.vecEtlRuleDataSrc)
 	,vecEtlRuleDim(info.vecEtlRuleDim)
 	,vecEtlRuleVal(info.vecEtlRuleVal)
+	,mapEtlSrc(info.mapEtlSrc)
 	{
 		//this->vecEtlRuleDataSrc.insert(this->vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.end());
 		//this->vecEtlRuleDim.insert(this->vecEtlRuleDim.begin(), info.vecEtlRuleDim.begin(), info.vecEtlRuleDim.end());
@@ -431,7 +432,7 @@ public:
 			this->EtlRuleTarget = info.EtlRuleTarget;
 			this->EtlCondType	= info.EtlCondType  ;
 			this->EtlCondition	= info.EtlCondition ;
-			this->DataSrcType	= info.DataSrcType ;
+			this->DataSrcType	= info.DataSrcType  ;
 
 			//this->vecEtlRuleDataSrc.insert(this->vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.begin(), info.vecEtlRuleDataSrc.end());
 			//this->vecEtlRuleDim.insert(this->vecEtlRuleDim.begin(), info.vecEtlRuleDim.begin(), info.vecEtlRuleDim.end());
@@ -439,12 +440,14 @@ public:
 			this->vecEtlRuleDataSrc = info.vecEtlRuleDataSrc;
 			this->vecEtlRuleDim     = info.vecEtlRuleDim;
 			this->vecEtlRuleVal     = info.vecEtlRuleVal;
+
+			this->mapEtlSrc = info.mapEtlSrc;
 		}
 
 		return *this;
 	}
 
-	void Clear()
+	inline void Clear()
 	{
 		EtlRuleID.clear();
 		KpiID.clear();
@@ -458,6 +461,8 @@ public:
 		std::vector<DataSource>().swap(vecEtlRuleDataSrc);
 		std::vector<AcqEtlDim>().swap(vecEtlRuleDim);
 		std::vector<AcqEtlVal>().swap(vecEtlRuleVal);
+
+		mapEtlSrc.clear();
 	}
 
 	// 设置采集条件类型
@@ -522,15 +527,17 @@ public:
 	std::string			EtlCondition;				// 采集条件
 	DataSourceType		DataSrcType;				// 数据源类型
 
+public:
 	std::vector<DataSource>		vecEtlRuleDataSrc;			// 采集数据源
 	std::vector<AcqEtlDim>		vecEtlRuleDim;				// 采集维度信息
 	std::vector<AcqEtlVal>		vecEtlRuleVal;				// 采集值信息
 
+public:
 	std::map<int, EtlSrcInfo>	mapEtlSrc;			// 采集数据源信息
 };
 
 // 业财稽核因子规则信息
-struct YCInfo
+class YCInfo
 {
 public:
 	std::string	stat_dimid;				// 统计维度ID
