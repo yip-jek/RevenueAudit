@@ -31,11 +31,8 @@ namespace base
 #define BJH_EXECUTE_SQL_FAILED               (-1003005)
 #define BJH_FETCH_DATA_FAILED                (-1003006)
 
-// PubStr error code
-#define PS_TRANS_FAILED                      (-1004001)
-
 // AutoDisconnect error code
-#define AUTODIS_UNABLE_CONNECT               (-1005001)
+#define AUTODIS_UNABLE_CONNECT               (-1004001)
 
 }	// namespace base
 

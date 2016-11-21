@@ -3,7 +3,6 @@
 #include <string>
 #include <set>
 #include <vector>
-#include <boost/lexical_cast.hpp>
 #include "exception.h"
 
 namespace base
@@ -30,14 +29,24 @@ public:
 	// 设置格式化的字符串
 	static void SetFormatString(std::string& str, const char* fmt, ...);
 
+// 类型转换
 public:
-	// 由字符串拆分为数值数组
-	// is_multi_dim为true时，表示多个连接的分隔符当作单个分隔符来处理
-	static void Str2IntVector(const std::string& src_str, const std::string& dim, std::vector<int>& i_vec, bool is_multi_dim = false) throw(Exception);
+	// string -> int
+	static bool Str2Int(const std::string& str, int& i);
+	// string -> unsigned int
+	static bool Str2UInt(const std::string& str, unsigned int& u);
+	// string -> long long
+	static bool Str2LLong(const std::string& str, long long& ll);
+	// string -> float
+	static bool Str2Float(const std::string& str, float& f);
+	// string -> double
+	static bool Str2Double(const std::string& str, double& d);
+	// string -> long double
+	static bool Str2LDouble(const std::string& str, long double& ld);
 
+public:
 	// 由字符串拆分为字符串数组
-	// is_multi_dim为true时，表示多个连接的分隔符当作单个分隔符来处理
-	static void Str2StrVector(const std::string& src_str, const std::string& dim, std::vector<std::string>& s_vec, bool is_multi_dim = false);
+	static void Str2StrVector(const std::string& src_str, const std::string& delim, std::vector<std::string>& vec_str);
 
 	// 计算std::vector<std::string>数量
 	static size_t CalcVVVectorStr(std::vector<std::vector<std::vector<std::string> > >& vec3_str);
@@ -85,21 +94,6 @@ public:
 		std::vector<std::vector<T> > vec2_empty;
 		vec3_T.push_back(vec2_empty);
 		vec2_T.swap(vec3_T[vec3_T.size()-1]);
-	}
-
-	// 类型转换
-	template <typename T1, typename T2>
-	static bool T1TransT2(const T1& src, T2& des)
-	{
-		try
-		{
-			des = boost::lexical_cast<T2>(src);
-			return true;
-		}
-		catch ( boost::bad_lexical_cast& ex )
-		{
-			return false;
-		}
 	}
 };
 

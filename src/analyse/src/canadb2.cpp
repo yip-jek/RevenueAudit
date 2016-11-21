@@ -580,8 +580,9 @@ void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::
 	}
 	else	// 删除指定数据
 	{
-		// 时间条件：时间字段在末尾
-		std::string dt_condition = db_info.vec_fields[db_info.vec_fields.size()-1].field_name + " = '";
+		// 时间条件：时间（账期）字段在尾部
+		const size_t BILL_TIME_INDEX = db_info.vec_fields.size() - (db_info.day_now ? 2 : 1);
+		std::string dt_condition = db_info.vec_fields[BILL_TIME_INDEX].field_name + " = '";
 		dt_condition += db_info.date_time + "'";
 
 		size_t result_data_size = SelectResultData(db_info.target_table, dt_condition);

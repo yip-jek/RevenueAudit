@@ -1,48 +1,63 @@
 #include "pubstr.h"
-#include <boost/algorithm/string.hpp>
-#include "def.h"
+#include <algorithm>
 
 namespace base
 {
 
 void PubStr::Trim(std::string& str)
 {
-	boost::trim(str);
+	if ( !str.empty() )
+	{
+		// 去除首部空白符
+		const size_t HEAD_POS = strspn(str.c_str(), "\x09\x0A\x0B\x0C\x0D\x20");
+		if ( HEAD_POS == str.size() )   // 全为空白符
+		{
+			str.clear();
+			return;
+		}
+
+		// 去除尾部空白符
+		for ( size_t s = str.size() - 1; s >= HEAD_POS; --s )
+		{
+			if ( !isspace(str[s]) )
+			{
+				str.assign(str, HEAD_POS, s+1-HEAD_POS);
+				return;
+			}
+		}
+	}
 }
 
 std::string PubStr::TrimB(const std::string& str)
 {
-	std::string str_trim = str;
-	boost::trim(str_trim);
-	return str_trim;
+	std::string t_str = str;
+	Trim(t_str);
+	return t_str;
 }
 
 void PubStr::Upper(std::string& str)
 {
-	boost::to_upper(str);
+	std::transform(str.begin(), str.end(), str.begin(), toupper);
 }
 
 std::string PubStr::UpperB(const std::string& str)
 {
-	std::string str_upper = str;
-	boost::to_upper(str_upper);
-	return str_upper;
+	std::string u_str = str;
+	Upper(u_str);
+	return u_str;
 }
 
 void PubStr::TrimUpper(std::string& str)
 {
-	boost::trim(str);
-	boost::to_upper(str);
+	Trim(str);
+	Upper(str);
 }
 
 std::string PubStr::TrimUpperB(const std::string& str)
 {
-	std::string str_tp = str;
-
-	boost::trim(str_tp);
-	boost::to_upper(str_tp);
-
-	return str_tp;
+	std::string tu_str = str;
+	TrimUpper(tu_str);
+	return tu_str;
 }
 
 void PubStr::SetFormatString(std::string& str, const char* fmt, ...)
@@ -57,55 +72,58 @@ void PubStr::SetFormatString(std::string& str, const char* fmt, ...)
 	str = buf;
 }
 
-void PubStr::Str2IntVector(const std::string& src_str, const std::string& dim, std::vector<int>& i_vec, bool is_multi_dim) throw(Exception)
+bool PubStr::Str2Int(const std::string& str, int& i)
 {
-	std::vector<std::string> vec_str;
-	Str2StrVector(src_str, dim, vec_str, is_multi_dim);
-
-	std::vector<int> vec_int;
-	const size_t V_SIZE = vec_str.size();
-
-	int int_val = 0;
-	for ( size_t i = 0; i < V_SIZE; ++i )
-	{
-		if ( T1TransT2(vec_str[i], int_val) )
-		{
-			vec_int.push_back(int_val);
-		}
-		else
-		{
-			throw Exception(PS_TRANS_FAILED, "字符串 (src:%s) 转数值数组失败：\"%s\" 无法转换！[FILE:%s, LINE:%d]", src_str.c_str(), vec_str[i].c_str(), __FILE__, __LINE__);
-		}
-	}
-
-	vec_int.swap(i_vec);
 }
 
-void PubStr::Str2StrVector(const std::string& src_str, const std::string& dim, std::vector<std::string>& s_vec, bool is_multi_dim)
+bool PubStr::Str2UInt(const std::string& str, unsigned int& u)
 {
-	std::vector<std::string> vec_str;
+}
+
+bool PubStr::Str2LLong(const std::string& str, long long& ll)
+{
+}
+
+bool PubStr::Str2Float(const std::string& str, float& f)
+{
+}
+
+bool PubStr::Str2Double(const std::string& str, double& d)
+{
+}
+
+bool PubStr::Str2LDouble(const std::string& str, long double& ld)
+{
+}
+
+void PubStr::Str2StrVector(const std::string& src_str, const std::string& delim, std::vector<std::string>& vec_str)
+{
+	std::vector<std::string> v_str;
 	if ( src_str.empty() )
 	{
-		vec_str.swap(s_vec);
+		v_str.swap(vec_str);
 		return;
 	}
 
-	if ( is_multi_dim )
+	const size_t DLM_SIZE = delim.size();
+	if ( DLM_SIZE == 0 )
 	{
-		boost::split(vec_str, src_str, boost::is_any_of(dim), boost::algorithm::token_compress_on);
-	}
-	else
-	{
-		boost::split(vec_str, src_str, boost::is_any_of(dim), boost::algorithm::token_compress_off);
-	}
-
-	const size_t V_SIZE = vec_str.size();
-	for( size_t i = 0; i < V_SIZE; ++i )
-	{
-		Trim(vec_str[i]);
+		v_str.push_back(src_str);
+		v_str.swap(vec_str);
+		return;
 	}
 
-	vec_str.swap(s_vec);
+	size_t pos   = 0;
+	size_t f_pos = 0;
+	while ( (f_pos = src_str.find(delim, pos)) != std::string::npos )
+	{
+		v_str.push_back(TrimB(str.substr(pos, f_pos-pos)));
+
+		pos = f_pos + DLM_SIZE;
+	}
+
+	v_str.push_back(TrimB(str.substr(pos)));
+	v_str.swap(vec_str);
 }
 
 size_t PubStr::CalcVVVectorStr(std::vector<std::vector<std::vector<std::string> > >& vec3_str)
