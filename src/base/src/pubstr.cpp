@@ -74,26 +74,58 @@ void PubStr::SetFormatString(std::string& str, const char* fmt, ...)
 
 bool PubStr::Str2Int(const std::string& str, int& i)
 {
+	char* end_ptr = NULL;
+	i = strtol(str.c_str(), &end_ptr, 0);
+	return (*end_ptr == '\0');
 }
 
 bool PubStr::Str2UInt(const std::string& str, unsigned int& u)
 {
+	char* end_ptr = NULL;
+	u = strtoul(str.c_str(), &end_ptr, 0);
+	return (*end_ptr == '\0');
 }
 
 bool PubStr::Str2LLong(const std::string& str, long long& ll)
 {
-}
-
-bool PubStr::Str2Float(const std::string& str, float& f)
-{
+	char* end_ptr = NULL;
+	ll = strtoq(str.c_str(), &end_ptr, 0);
+	return (*end_ptr == '\0');
 }
 
 bool PubStr::Str2Double(const std::string& str, double& d)
 {
+	char* end_ptr = NULL;
+	d = strtod(str.c_str(), &end_ptr);
+	return (*end_ptr == '\0');
 }
 
 bool PubStr::Str2LDouble(const std::string& str, long double& ld)
 {
+	char* end_ptr = NULL;
+	ld = strtold(str.c_str(), &end_ptr);
+	return (*end_ptr == '\0');
+}
+
+std::string PubStr::Int2Str(int i)
+{
+	char buf[32] = "";
+	sprintf(buf, "%d", i);
+	return buf;
+}
+
+std::string PubStr::Double2Str(double d)
+{
+	char buf[64] = "";
+	gcvt(d, 63, buf);
+	return buf;
+}
+
+std::string PubStr::LDouble2Str(long double ld)
+{
+	char buf[64] = "";
+	qgcvt(ld, 63, buf);
+	return buf;
 }
 
 void PubStr::Str2StrVector(const std::string& src_str, const std::string& delim, std::vector<std::string>& vec_str)
@@ -162,7 +194,7 @@ int PubStr::Express2IntSet(const std::string& src_str, std::set<int>& set_int)
 		if ( 1 == V_SIZE )		// 单个数字
 		{
 			int int_val = 0;
-			if ( !T1TransT2(vec_section[0], int_val) )	// 转换失败
+			if ( !Str2Int(vec_section[0], int_val) )	// 转换失败
 			{
 				return -1;
 			}
@@ -179,11 +211,11 @@ int PubStr::Express2IntSet(const std::string& src_str, std::set<int>& set_int)
 		{
 			int left  = 0;		// 左值
 			int right = 0;		// 右值
-			if ( !T1TransT2(vec_section[0], left) )		// 转换失败
+			if ( !Str2Int(vec_section[0], left) )		// 转换失败
 			{
 				return -1;
 			}
-			if ( !T1TransT2(vec_section[1], right) )	// 转换失败
+			if ( !Str2Int(vec_section[1], right) )	// 转换失败
 			{
 				return -1;
 			}
@@ -284,7 +316,7 @@ bool PubStr::StrTrans2Double(const std::string& str, double& d)
 	{
 		str_tmp.erase(str_tmp.size()-1);
 
-		if ( T1TransT2(str_tmp, d) )
+		if ( Str2Double(str_tmp, d) )
 		{
 			d /= 100;
 			return true;
@@ -296,7 +328,7 @@ bool PubStr::StrTrans2Double(const std::string& str, double& d)
 	}
 	else
 	{
-		return T1TransT2(str_tmp, d);
+		return Str2Double(str_tmp, d);
 	}
 }
 
@@ -339,8 +371,16 @@ void PubStr::TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, 
 
 bool PubStr::DouStr2LongDouStr(std::string& double_str)
 {
-	long double ld_tmp = 0.0;
-	return (T1TransT2(double_str, ld_tmp) && T1TransT2(ld_tmp, double_str));
+	long double ld_val = 0.0;
+	if ( Str2LDouble(double_str, ld_val) )
+	{
+		double_str = LDouble2Str(ld_val);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 void PubStr::TransVecDouStrWithE2LongDouStr(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos)

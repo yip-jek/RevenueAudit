@@ -37,12 +37,17 @@ public:
 	static bool Str2UInt(const std::string& str, unsigned int& u);
 	// string -> long long
 	static bool Str2LLong(const std::string& str, long long& ll);
-	// string -> float
-	static bool Str2Float(const std::string& str, float& f);
 	// string -> double
 	static bool Str2Double(const std::string& str, double& d);
 	// string -> long double
 	static bool Str2LDouble(const std::string& str, long double& ld);
+
+	// int -> string
+	static std::string Int2Str(int i);
+	// double -> string
+	static std::string Double2Str(double d);
+	// long double -> string
+	static std::string LDouble2Str(long double ld);
 
 public:
 	// 由字符串拆分为字符串数组

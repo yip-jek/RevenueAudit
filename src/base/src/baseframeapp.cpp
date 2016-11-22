@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
 	g_pApp->SetArgv(argv);
 
 	long long ll_ccmid = 0L;
-	if ( !PubStr::T1TransT2(argv[2], ll_ccmid) )
+	if ( !PubStr::Str2LLong(argv[2], ll_ccmid) )
 	{
 		std::cerr << "[ERROR] [MAIN] Trans \"" << argv[2] << "\" to number failed !" << std::endl;
 		return -1;

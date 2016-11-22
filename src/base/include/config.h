@@ -46,8 +46,8 @@ public:
 	void DeleteItems();
 	void ReadConfig() throw(Exception);
 	std::string GetCfgValue(const std::string& segment, const std::string& name) throw(Exception);
-	float GetCfgFloatVal(const std::string& segment, const std::string& name);
-	long long GetCfgLongVal(const std::string& segment, const std::string& name);
+	double GetCfgDoubleVal(const std::string& segment, const std::string& name) throw(Exception);
+	long long GetCfgLongVal(const std::string& segment, const std::string& name) throw(Exception);
 	bool GetCfgBoolVal(const std::string& segment, const std::string& name);
 
 private:

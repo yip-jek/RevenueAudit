@@ -136,7 +136,7 @@ bool PubTime::DateApartFromNow(const std::string& fmt, PubTime::DATE_TYPE& d_typ
 
 	// 获取时间偏移量
 	unsigned int date_off = 0;
-	if ( !PubStr::T1TransT2(PubStr::TrimB(vec_fmt[1]), date_off) )	// 转换失败
+	if ( !PubStr::Str2UInt(PubStr::TrimB(vec_fmt[1]), date_off) )	// 转换失败
 	{
 		return false;
 	}

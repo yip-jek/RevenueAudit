@@ -162,17 +162,27 @@ std::string Config::GetCfgValue(const std::string& segment, const std::string& n
 	}
 }
 
-float Config::GetCfgFloatVal(const std::string& segment, const std::string& name)
+double Config::GetCfgDoubleVal(const std::string& segment, const std::string& name) throw(Exception)
 {
-	float f_val = 0.0f;
-	PubStr::T1TransT2(GetCfgValue(segment, name), f_val);
-	return f_val;
+	double d_val = 0.0;
+	std::string d_str = GetCfgValue(segment, name);
+	if ( !PubStr::Str2Double(d_str, d_val) )
+	{
+		throw Exception(CFG_VALUE_INVALID, "Configure item [%s->%s] value ('%s') convert to double type failed! [FILE:%s, LINE:%d]", d_str.c_str(), segment.c_str(), name.c_str(), __FILE__, __LINE__);
+	}
+
+	return d_val;
 }
 
-long long Config::GetCfgLongVal(const std::string& segment, const std::string& name)
+long long Config::GetCfgLongVal(const std::string& segment, const std::string& name) throw(Exception)
 {
-	long long ll_val = 0L;
-	PubStr::T1TransT2(GetCfgValue(segment, name), ll_val);
+	long long ll_val = 0;
+	std::string ll_str = GetCfgValue(segment, name);
+	if ( !PubStr::Str2LLong(ll_str, ll_val) )
+	{
+		throw Exception(CFG_VALUE_INVALID, "Configure item [%s->%s] value ('%s') convert to long long type failed! [FILE:%s, LINE:%d]", ll_str.c_str(), segment.c_str(), name.c_str(), __FILE__, __LINE__);
+	}
+
 	return ll_val;
 }
 
