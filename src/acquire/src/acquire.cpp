@@ -32,7 +32,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 2.0006.20161117 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 2.0007.20161122 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -217,7 +217,7 @@ void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 		throw base::Exception(ACQERR_TASKINFO_ERROR, "任务参数信息异常(split size:%lu), 无法拆分出业财任务流水号! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
 	}
 
-	if ( !base::PubStr::T1TransT2(vec_str[3], m_ycSeqID) )
+	if ( !base::PubStr::Str2Int(vec_str[3], m_ycSeqID) )
 	{
 		throw base::Exception(ACQERR_TASKINFO_ERROR, "无效的业财任务流水号：%s [FILE:%s, LINE:%d]", vec_str[3].c_str(), __FILE__, __LINE__);
 	}
@@ -352,6 +352,8 @@ void Acquire::GenerateEtlDate(const std::string& date_fmt) throw(base::Exception
 	{
 		throw base::Exception(ACQERR_GEN_ETL_DATE_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s [FILE:%s, LINE:%d]", date_fmt.c_str(), __FILE__, __LINE__);
 	}
+
+	m_pLog->Output("[Acquire] 完成采集时间转换：[%s] -> [%s]", date_fmt.c_str(), m_acqDate.c_str());
 }
 
 void Acquire::HiveDataAcquisition() throw(base::Exception)
@@ -1017,14 +1019,14 @@ void Acquire::ExchangeSQLMark(std::string& sql) throw(base::Exception)
 	int day  = 0;
 	if ( IS_ACQ_DAY )
 	{
-		base::PubStr::T1TransT2(m_acqDate.substr(0, 4), year);
-		base::PubStr::T1TransT2(m_acqDate.substr(4, 2), mon);
-		base::PubStr::T1TransT2(m_acqDate.substr(6, 2), day);
+		base::PubStr::Str2Int(m_acqDate.substr(0, 4), year);
+		base::PubStr::Str2Int(m_acqDate.substr(4, 2), mon);
+		base::PubStr::Str2Int(m_acqDate.substr(6, 2), day);
 	}
 	else
 	{
-		base::PubStr::T1TransT2(m_acqDate.substr(0, 4), year);
-		base::PubStr::T1TransT2(m_acqDate.substr(4, 2), mon);
+		base::PubStr::Str2Int(m_acqDate.substr(0, 4), year);
+		base::PubStr::Str2Int(m_acqDate.substr(4, 2), mon);
 		day = 1;
 	}
 
@@ -1061,7 +1063,7 @@ void Acquire::ExchangeSQLMark(std::string& sql) throw(base::Exception)
 			if ( vec_str.size() == 2 && ETL_DAY_MARK == vec_str[0] )
 			{
 				unsigned int dt = 0;
-				if ( !base::PubStr::T1TransT2(vec_str[1], dt) )
+				if ( !base::PubStr::Str2UInt(vec_str[1], dt) )
 				{
 					throw base::Exception(ACQERR_EXCHANGE_SQLMARK_FAILED, "在SQL条件 \"%s\" 中，无法识别的标志：%s [FILE:%s, LINE:%d]", sql.c_str(), sql_mark.c_str(), __FILE__, __LINE__);
 				}

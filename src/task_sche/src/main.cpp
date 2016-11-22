@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 
 	// 日志配置
 	long long log_id = 0;
-	if ( !base::PubStr::T1TransT2(argv[2], log_id) )
+	if ( !base::PubStr::Str2LLong(argv[2], log_id) )
 	{
 		std::cerr << "[ERROR] Unknown log ID: '" << argv[2] << "'" << std::endl;
 		return -1;

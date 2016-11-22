@@ -871,10 +871,7 @@ public:
 		v_str.push_back(stat_id);
 		v_str.push_back(stat_name);
 		v_str.push_back(statdim_id);
-
-		std::string str_val;
-		base::PubStr::T1TransT2(stat_value, str_val);
-		v_str.push_back(str_val);
+		v_str.push_back(base::PubStr::Double2Str(stat_value));
 
 		v_str.swap(vec_str);
 	}

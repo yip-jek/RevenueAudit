@@ -35,7 +35,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 2.0006.20161118 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 2.0007.20161122 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -229,7 +229,7 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 		throw base::Exception(ANAERR_TASKINFO_ERROR, "任务参数信息异常(split size:%lu), 无法拆分出业财任务流水号! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
 	}
 
-	if ( !base::PubStr::T1TransT2(vec_str[3], m_ycSeqID) )
+	if ( !base::PubStr::Str2Int(vec_str[3], m_ycSeqID) )
 	{
 		throw base::Exception(ANAERR_TASKINFO_ERROR, "无效的业财任务流水号：%s [FILE:%s, LINE:%d]", vec_str[3].c_str(), __FILE__, __LINE__);
 	}
@@ -737,7 +737,7 @@ void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) th
 			}
 
 			int diff_no = -1;
-			if ( !base::PubStr::T1TransT2(ref_str.substr(pos+4), diff_no) )
+			if ( !base::PubStr::Str2Int(ref_str.substr(pos+4), diff_no) )
 			{
 				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：[%s] 转换失败! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_str.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 			}
@@ -1105,6 +1105,7 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 	{
 		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_etltime.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
+	m_pLog->Output("[Analyse] 完成采集时间转换：[%s] -> [%s]", ref_etltime.c_str(), m_dbinfo.date_time.c_str());
 
 	std::string tab_name = base::PubStr::TrimB(m_taskInfo.TableName);
 
@@ -1250,7 +1251,7 @@ void Analyse::TransYCStatFactor(std::map<std::string, double>& map_factor) throw
 			}
 
 			// 维度值无法转换为精度型
-			if ( !base::PubStr::T1TransT2(ref_vec[1], yc_val) )
+			if ( !base::PubStr::Str2Double(ref_vec[1], yc_val) )
 			{
 				throw base::Exception(ANAERR_TRANS_YCFACTOR_FAILED, "无效的业财稽核统计维度值: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_vec[1].c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 			}

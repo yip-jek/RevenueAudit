@@ -1,5 +1,4 @@
 #include "pubtime.h"
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include "pubstr.h"
 #include "simpletime.h"
 
@@ -14,6 +13,8 @@ std::string PubTime::DateType2String(PubTime::DATE_TYPE dt)
 		return "DAY";
 	case PubTime::DT_MONTH:
 		return "MONTH";
+	//case PubTime::DT_YEAR:
+	//	return "YEAR";
 	case PubTime::DT_UNKNOWN:
 	default:
 		return "UNKNOWN";
@@ -22,38 +23,22 @@ std::string PubTime::DateType2String(PubTime::DATE_TYPE dt)
 
 std::string PubTime::TheDatePlusDays(int year, int mon, int day, unsigned int days)
 {
-	boost::posix_time::ptime the_date(boost::gregorian::date(year, mon, day), boost::posix_time::time_duration(0, 0, 0));
-
-	the_date = the_date + boost::gregorian::days(days);
-
-	return boost::gregorian::to_iso_string(the_date.date());
+	return TheDateDays_S(year, mon, day, days, true);
 }
 
 std::string PubTime::TheDateMinusDays(int year, int mon, int day, unsigned int days)
 {
-	boost::posix_time::ptime the_date(boost::gregorian::date(year, mon, day), boost::posix_time::time_duration(0, 0, 0));
-
-	the_date = the_date - boost::gregorian::days(days);
-
-	return boost::gregorian::to_iso_string(the_date.date());
+	return TheDateDays_S(year, mon, day, days, false);
 }
 
 std::string PubTime::TheDatePlusMonths(int year, int mon, unsigned int months)
 {
-	boost::posix_time::ptime the_date(boost::gregorian::date(year, mon, 1), boost::posix_time::time_duration(0, 0, 0));
-
-	the_date = the_date + boost::gregorian::months(months);
-
-	return boost::gregorian::to_iso_string(the_date.date()).substr(0, 6);
+	return TheDateMonths_S(year, mon, months, true);
 }
 
 std::string PubTime::TheDateMinusMonths(int year, int mon, unsigned int months)
 {
-	boost::posix_time::ptime the_date(boost::gregorian::date(year, mon, 1), boost::posix_time::time_duration(0, 0, 0));
-
-	the_date = the_date - boost::gregorian::months(months);
-
-	return boost::gregorian::to_iso_string(the_date.date()).substr(0, 6);
+	return TheDateMonths_S(year, mon, months, false);
 }
 
 std::string PubTime::DateNowPlusDays(unsigned int days)
@@ -242,6 +227,117 @@ bool PubTime::TheDateOf(const std::string& date_of_what, std::string& date)
 	}
 
 	return true;
+}
+
+std::string PubTime::TheDateDays_S(int year, int mon, int day, unsigned int days, bool is_plus)
+{
+	int last_day = SimpleTime::LastDayOfTheMon(year, mon);
+	if ( year < MIN_YEAR || mon < 1 || mon > 12 || day < 1 || day > last_day ) // Invalid
+	{
+		return std::string();
+	}
+
+	int new_day = 0;
+	if ( is_plus )
+	{
+		new_day = day + days;
+	}
+	else
+	{
+		new_day = day - days;
+	}
+
+	int new_year = year;
+	int new_mon  = mon;
+	while ( true )
+	{
+		if ( new_day > last_day )
+		{
+			new_day -= last_day;
+
+			++new_mon;
+			if ( new_mon > 12 )
+			{
+				new_mon = 1;
+				++new_year;
+			}
+
+			last_day = SimpleTime::LastDayOfTheMon(new_year, new_mon);
+		}
+		else if ( new_day < 0 )
+		{
+			new_day += last_day;
+
+			--new_mon;
+			if ( new_mon < 1 )
+			{
+				new_mon = 12;
+				--new_year;
+			}
+
+			last_day = SimpleTime::LastDayOfTheMon(new_year, new_mon);
+		}
+		else if ( 0 == new_day )
+		{
+			--new_mon;
+			if ( new_mon < 1 )
+			{
+				new_mon = 12;
+				--new_year;
+			}
+
+			new_day = SimpleTime::LastDayOfTheMon(new_year, new_mon);
+			break;
+		}
+		else	// new_day >= 1 && new_day <= last_day
+		{
+			break;
+		}
+	}
+
+	if ( new_year < MIN_YEAR )
+	{
+		return std::string();
+	}
+
+	std::string str_date;
+	PubStr::SetFormatString(str_date, "%04d%02d%02d", new_year, new_mon, new_day);
+	return str_date;
+}
+
+std::string PubTime::TheDateMonths_S(int year, int mon, unsigned int months, bool is_plus)
+{
+	if ( year < MIN_YEAR || mon < 1 || mon > 12 )	// Invalid
+	{
+		return std::string();
+	}
+
+	int total_m = 0;
+	if ( is_plus )
+	{
+		total_m = year * 12 + mon + months;
+	}
+	else
+	{
+		total_m = year * 12 + mon - months;
+	}
+
+	if ( total_m <= (MIN_YEAR*12) )
+	{
+		return std::string();
+	}
+
+	int new_year = total_m / 12;
+	int new_mon  = total_m % 12;
+	if ( 0 == new_mon )
+	{
+		--new_year;
+		new_mon = 12;
+	}
+
+	std::string str_mon;
+	PubStr::SetFormatString(str_mon, "%04d%02d", new_year, new_mon);
+	return str_mon;
 }
 
 }	// namespace base

@@ -190,13 +190,13 @@ void AlarmFluctuate::AlarmCalculation(const std::string& key, std::vector<std::s
 		}
 
 		std::string& ref_target = vec_target[index];
-		if ( !base::PubStr::T1TransT2(ref_target, dou_target) )
+		if ( !base::PubStr::Str2Double(ref_target, dou_target) )
 		{
 			throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 目标数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_target.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 		}
 
 		std::string& ref_src = vec_src[index];
-		if ( !base::PubStr::T1TransT2(ref_src, dou_src) )
+		if ( !base::PubStr::Str2Double(ref_src, dou_src) )
 		{
 			throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 源数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_src.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 		}
@@ -257,10 +257,7 @@ std::string AlarmFluctuate::GetAlarmEventDesc(const std::string& key, const Alar
 	std::string event_desc = "波动告警：<维度>" + key + "的<值>" + a_data.alarm_targetname + "的数据";
 	event_desc += (a_data.alarm_targetval + ", 对比" + a_data.alarm_srcname + "的数据");
 	event_desc += (a_data.alarm_srcval + ", 阈值达到");
-
-	std::string str_tmp;
-	base::PubStr::T1TransT2(a_data.reach_threshold, str_tmp);
-	event_desc += (str_tmp + ", 超过了告警阈值" + m_expAlarmThreshold);
+	event_desc += (base::PubStr::Double2Str(a_data.reach_threshold) + ", 超过了告警阈值" + m_expAlarmThreshold);
 	return event_desc;
 }
 

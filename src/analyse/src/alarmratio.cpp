@@ -65,27 +65,16 @@ void AlarmRatio::AnalyseTargetData(std::vector<std::vector<std::string> >& vec2_
 
 std::string AlarmRatio::GetAlarmEventCont()
 {
-	std::string str_tmp;
-	base::PubStr::T1TransT2((*m_setValCol.begin())+1, str_tmp);
-	std::string event_cont = "对比告警_对比" + str_tmp + "和";
-
-	base::PubStr::T1TransT2((*m_setValCol.rbegin())+1, str_tmp);
-	event_cont += (str_tmp + "两组数据_超过告警阈值_" + m_expAlarmThreshold);
-
+	std::string event_cont = "对比告警_对比" + base::PubStr::Int2Str((*m_setValCol.begin())+1) + "和";
+	event_cont += (base::PubStr::Int2Str((*m_setValCol.rbegin())+1) + "两组数据_超过告警阈值_" + m_expAlarmThreshold);
 	return event_cont;
 }
 
 std::string AlarmRatio::GetAlarmEventDesc(const std::string& key, const AlarmData& a_data)
 {
-	std::string str_tmp;
-	base::PubStr::T1TransT2((*m_setValCol.begin())+1, str_tmp);
-	std::string event_desc = "对比告警：<维度>" + key + "第" + str_tmp + "列的数据" + a_data.alarm_targetval;
-
-	base::PubStr::T1TransT2((*m_setValCol.rbegin())+1, str_tmp);
-	event_desc += (", 对比第" + str_tmp + "列的数据" + a_data.alarm_srcval + ", 阈值达到");
-
-	base::PubStr::T1TransT2(a_data.reach_threshold, str_tmp);
-	event_desc += (str_tmp + ", 超过了告警阈值" + m_expAlarmThreshold);
+	std::string event_desc = "对比告警：<维度>" + key + "第" + base::PubStr::Int2Str((*m_setValCol.begin())+1) + "列的数据" + a_data.alarm_targetval;
+	event_desc += (", 对比第" + base::PubStr::Int2Str((*m_setValCol.rbegin())+1) + "列的数据" + a_data.alarm_srcval + ", 阈值达到");
+	event_desc += (base::PubStr::Double2Str(a_data.reach_threshold) + ", 超过了告警阈值" + m_expAlarmThreshold);
 	return event_desc;
 }
 
@@ -145,14 +134,14 @@ void AlarmRatio::AlarmCalculation(const std::string& key, std::vector<std::strin
 
 	const int TARGET_INDEX  = *m_setValCol.begin();
 	std::string& ref_target = vec_str[TARGET_INDEX];
-	if ( !base::PubStr::T1TransT2(ref_target, dou_target) )
+	if ( !base::PubStr::Str2Double(ref_target, dou_target) )
 	{
 		throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 目标数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_target.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	const int SRC_INDEX  = *m_setValCol.rbegin();
 	std::string& ref_src = vec_str[SRC_INDEX];
-	if ( !base::PubStr::T1TransT2(ref_src, dou_src) )
+	if ( !base::PubStr::Str2Double(ref_src, dou_src) )
 	{
 		throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 源数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_src.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}

@@ -17,6 +17,8 @@ public:
 		//DT_YEAR	= 3,		// 年-类型
 	};
 
+	static const int MIN_YEAR = 1970;			// 最小年份
+
 	// 时间类型转换为字符串
 	static std::string DateType2String(DATE_TYPE dt);
 
@@ -58,6 +60,10 @@ public:
 	//   THE_DAY_OF_LAST_YEAR   - 去年的今天
 	//   THE_MONTH_OF_LAST_YEAR - 去年的这个月
 	static bool TheDateOf(const std::string& date_of_what, std::string& date);
+
+private:
+	static std::string TheDateDays_S(int year, int mon, int day, unsigned int days, bool is_plus);
+	static std::string TheDateMonths_S(int year, int mon, unsigned int months, bool is_plus);
 };
 
 }	// namespace base

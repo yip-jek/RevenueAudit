@@ -474,7 +474,7 @@ long long TaskSche::GenerateTaskID()
 	std::string time_str = base::SimpleTime::Now().Time14().substr(2);
 
 	long long new_taskid = 0;
-	base::PubStr::T1TransT2(time_str, new_taskid);
+	base::PubStr::Str2LLong(time_str, new_taskid);
 
 	// 加上随机数
 	new_taskid *= 1000;
@@ -524,17 +524,17 @@ std::string TaskSche::EtlTimeTransform(const std::string& cycle) throw(base::Exc
 	int mon  = 0;
 	int day  = 0;
 
-	if ( !base::PubStr::T1TransT2(cycle.substr(0, 4), year) || year < 1970 )
+	if ( !base::PubStr::Str2Int(cycle.substr(0, 4), year) || year < 1970 )
 	{
 		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
 	}
 
-	if ( !base::PubStr::T1TransT2(cycle.substr(4, 2), mon) || mon < 1 || mon > 12 )
+	if ( !base::PubStr::Str2Int(cycle.substr(4, 2), mon) || mon < 1 || mon > 12 )
 	{
 		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
 	}
 
-	if ( !base::PubStr::T1TransT2(cycle.substr(6, 2), day) || day < 1 || day > base::SimpleTime::LastDayOfTheMon(year, mon) )
+	if ( !base::PubStr::Str2Int(cycle.substr(6, 2), day) || day < 1 || day > base::SimpleTime::LastDayOfTheMon(year, mon) )
 	{
 		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
 	}
