@@ -1,5 +1,7 @@
 #include "tasksche.h"
 #include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 #include "config.h"
 #include "log.h"
 #include "pubstr.h"
