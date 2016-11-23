@@ -44,6 +44,7 @@ public:
 	static std::string DateNowMinusMonths(unsigned int months);
 
 	// 计算与当前时间相差的天数
+	// 外部保证时间参数的有效性，否则返回0
 	static long DayApartFromToday(int year, int mon, int day);
 
 	// 与当前时间相隔的时间（支持 月时间 或者 日时间）
@@ -64,6 +65,7 @@ public:
 private:
 	static std::string TheDateDays_S(int year, int mon, int day, unsigned int days, bool is_plus);
 	static std::string TheDateMonths_S(int year, int mon, unsigned int months, bool is_plus);
+	static long SumDay_S(int year, int mon, int day);
 };
 
 }	// namespace base

@@ -1,5 +1,6 @@
 #include "pubstr.h"
 #include <algorithm>
+#include <string.h>
 
 namespace base
 {
@@ -149,12 +150,12 @@ void PubStr::Str2StrVector(const std::string& src_str, const std::string& delim,
 	size_t f_pos = 0;
 	while ( (f_pos = src_str.find(delim, pos)) != std::string::npos )
 	{
-		v_str.push_back(TrimB(str.substr(pos, f_pos-pos)));
+		v_str.push_back(TrimB(src_str.substr(pos, f_pos-pos)));
 
 		pos = f_pos + DLM_SIZE;
 	}
 
-	v_str.push_back(TrimB(str.substr(pos)));
+	v_str.push_back(TrimB(src_str.substr(pos)));
 	v_str.swap(vec_str);
 }
 

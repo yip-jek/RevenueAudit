@@ -43,46 +43,37 @@ std::string PubTime::TheDateMinusMonths(int year, int mon, unsigned int months)
 
 std::string PubTime::DateNowPlusDays(unsigned int days)
 {
-	boost::posix_time::ptime now(boost::posix_time::second_clock::local_time());
-
-	now = now + boost::gregorian::days(days);
-
-	return boost::gregorian::to_iso_string(now.date());
+	SimpleTime st_now(SimpleTime::Now());
+	return TheDateDays_S(st_now.GetYear(), st_now.GetMon(), st_now.GetDay(), days, true);
 }
 
 std::string PubTime::DateNowMinusDays(unsigned int days)
 {
-	boost::posix_time::ptime now(boost::posix_time::second_clock::local_time());
-
-	now = now - boost::gregorian::days(days);
-
-	return boost::gregorian::to_iso_string(now.date());
+	SimpleTime st_now(SimpleTime::Now());
+	return TheDateDays_S(st_now.GetYear(), st_now.GetMon(), st_now.GetDay(), days, false);
 }
 
 std::string PubTime::DateNowPlusMonths(unsigned int months)
 {
-	boost::posix_time::ptime now(boost::posix_time::second_clock::local_time());
-
-	now = now + boost::gregorian::months(months);
-
-	return boost::gregorian::to_iso_string(now.date()).substr(0, 6);
+	SimpleTime st_now(SimpleTime::Now());
+	return TheDateMonths_S(st_now.GetYear(), st_now.GetMon(), months, true);
 }
 
 std::string PubTime::DateNowMinusMonths(unsigned int months)
 {
-	boost::posix_time::ptime now(boost::posix_time::second_clock::local_time());
-
-	now = now - boost::gregorian::months(months);
-
-	return boost::gregorian::to_iso_string(now.date()).substr(0, 6);
+	SimpleTime st_now(SimpleTime::Now());
+	return TheDateMonths_S(st_now.GetYear(), st_now.GetMon(), months, false);
 }
 
 long PubTime::DayApartFromToday(int year, int mon, int day)
 {
-	boost::gregorian::date the_day(year, mon, day);
-	boost::gregorian::date today(boost::gregorian::day_clock::local_day());
-	boost::gregorian::date_duration day_apart = today - the_day;
-	return day_apart.days();
+	if ( year < MIN_YEAR || mon < 1 || mon > 12 || day < 1 || day > SimpleTime::LastDayOfTheMon(year, mon) ) // Invalid
+	{
+		return 0;
+	}
+
+	SimpleTime st_now(SimpleTime::Now());
+	return (SumDay_S(st_now.GetYear(), st_now.GetMon(), st_now.GetDay()) - SumDay_S(year, mon, day));
 }
 
 bool PubTime::DateApartFromNow(const std::string& fmt, PubTime::DATE_TYPE& d_type, std::string& date)
@@ -266,8 +257,6 @@ std::string PubTime::TheDateDays_S(int year, int mon, int day, unsigned int days
 		}
 		else if ( new_day < 0 )
 		{
-			new_day += last_day;
-
 			--new_mon;
 			if ( new_mon < 1 )
 			{
@@ -276,6 +265,7 @@ std::string PubTime::TheDateDays_S(int year, int mon, int day, unsigned int days
 			}
 
 			last_day = SimpleTime::LastDayOfTheMon(new_year, new_mon);
+			new_day += last_day;
 		}
 		else if ( 0 == new_day )
 		{
@@ -312,23 +302,23 @@ std::string PubTime::TheDateMonths_S(int year, int mon, unsigned int months, boo
 		return std::string();
 	}
 
-	int total_m = 0;
+	int sum_mon = 0;
 	if ( is_plus )
 	{
-		total_m = year * 12 + mon + months;
+		sum_mon = year * 12 + mon + months;
 	}
 	else
 	{
-		total_m = year * 12 + mon - months;
+		sum_mon = year * 12 + mon - months;
 	}
 
-	if ( total_m <= (MIN_YEAR*12) )
+	if ( sum_mon <= (MIN_YEAR*12) )
 	{
 		return std::string();
 	}
 
-	int new_year = total_m / 12;
-	int new_mon  = total_m % 12;
+	int new_year = sum_mon / 12;
+	int new_mon  = sum_mon % 12;
 	if ( 0 == new_mon )
 	{
 		--new_year;
@@ -338,6 +328,18 @@ std::string PubTime::TheDateMonths_S(int year, int mon, unsigned int months, boo
 	std::string str_mon;
 	PubStr::SetFormatString(str_mon, "%04d%02d", new_year, new_mon);
 	return str_mon;
+}
+
+long PubTime::SumDay_S(int year, int mon, int day)
+{
+	const int FOUR_YEARS_DAY = 365 * 3 + 366;
+	long sum_day = ((year - 1) / 4) * FOUR_YEARS_DAY + ((year - 1) % 4) * 365;
+	for ( int i = 1; i < mon; ++i )
+	{
+		sum_day += SimpleTime::LastDayOfTheMon(year, i);
+	}
+	sum_day += day;
+	return sum_day;
 }
 
 }	// namespace base

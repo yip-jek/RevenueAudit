@@ -151,6 +151,7 @@ private:
 	std::string m_sHdfsHost;			// HDFS的主机信息
 	std::string m_sHdfsTmpPath;			// HDFS的临时目录
 	int			m_nHdfsPort;			// HDFS的端口
+	int			m_seqHdfsFile;			// HDFS文件的流水号
 
 private:
 	CAcqDB2*	m_pAcqDB2;				// DB2数据库接口

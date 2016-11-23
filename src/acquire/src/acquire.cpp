@@ -15,6 +15,7 @@ Acquire g_Acquire;
 
 Acquire::Acquire()
 :m_nHdfsPort(0)
+,m_seqHdfsFile(0)
 ,m_pAcqDB2(NULL)
 ,m_pAcqHive(NULL)
 ,m_acqDateType(base::PubTime::DT_UNKNOWN)
@@ -32,7 +33,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 2.0007.20161122 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 2.0007.20161123 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -473,7 +474,9 @@ void Acquire::LoadHdfsConfig() throw(base::Exception)
 
 std::string Acquire::GeneralHdfsFileName()
 {
-	return (m_sKpiID + "_" + m_sEtlID + "_" + base::SimpleTime::Now().Time14());
+	std::string hdfs_file_name;
+	base::PubStr::SetFormatString(hdfs_file_name, "%s_%s_%s%02d", m_sKpiID.c_str(), m_sEtlID.c_str(), base::SimpleTime::Now().Time14().c_str(), ++m_seqHdfsFile);
+	return hdfs_file_name;
 }
 
 std::string Acquire::DB2DataOutputHdfsFile(std::vector<std::vector<std::string> >& vec2_data, hdfsFS& hd_fs, const std::string& hdfs_file) throw(base::Exception)
