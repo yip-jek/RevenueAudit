@@ -14,7 +14,8 @@ Acquire g_Acquire;
 
 
 Acquire::Acquire()
-:m_nHdfsPort(0)
+:m_bRetainResult(false)
+,m_nHdfsPort(0)
 ,m_seqHdfsFile(0)
 ,m_pAcqDB2(NULL)
 ,m_pAcqHive(NULL)
@@ -33,13 +34,15 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 2.0007.20161123 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 2.0008.20161124 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
 {
 	m_cfg.SetCfgFile(GetConfigFile());
 
+	m_cfg.RegisterItem("SYS", "RETAIN_RESULT");
+	m_cfg.RegisterItem("SYS", "OVER_WRITE");
 	m_cfg.RegisterItem("DATABASE", "DB_NAME");
 	m_cfg.RegisterItem("DATABASE", "USER_NAME");
 	m_cfg.RegisterItem("DATABASE", "PASSWORD");
@@ -65,6 +68,11 @@ void Acquire::LoadConfig() throw(base::Exception)
 #endif
 
 	m_cfg.ReadConfig();
+
+	// 是否保留结果数据
+	m_bRetainResult = m_cfg.GetCfgBoolVal("SYS", "RETAIN_RESULT");
+	// 是否覆盖重复的结果数据
+	m_sInsertMode = (m_cfg.GetCfgBoolVal("SYS", "OVER_WRITE") ? "overwrite" : "into");
 
 	// 数据库配置
 	m_sDBName  = m_cfg.GetCfgValue("DATABASE", "DB_NAME");
@@ -260,43 +268,34 @@ void Acquire::CheckTaskInfo() throw(base::Exception)
 		throw base::Exception(ACQERR_TASKINFO_INVALID, "没有采集数据源! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
-	// 是否为业财稽核
-	m_isYCRA = ("YCRA" == base::PubStr::TrimUpperB(m_taskInfo.EtlRuleType));
-	if ( m_isYCRA )
+	// 源表与之对应的采集维度、采集值必须一致！
+	// 注：后续的操作，这三个vector都会共用vecEtlRuleDataSrc的下标
+	size_t src_size = m_taskInfo.vecEtlRuleDataSrc.size();
+	size_t dim_size = m_taskInfo.vecEtlRuleDim.size();
+	size_t val_size = m_taskInfo.vecEtlRuleVal.size();
+
+	if ( src_size != dim_size )
 	{
-		m_pLog->Output("[Acquire] 采集类型：[业财稽核]");
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集维度个数 (dim_size:%lu) 不一致! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", src_size, dim_size, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
-	else	// 一点稽核才检查采集数据源与维度、值的匹配
+
+	if ( src_size != val_size )
 	{
-		m_pLog->Output("[Acquire] 采集类型：[一点稽核]");
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集值个数 (val_size:%lu) 不一致! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", src_size, val_size, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
 
-		size_t src_size = m_taskInfo.vecEtlRuleDataSrc.size();
-		size_t dim_size = m_taskInfo.vecEtlRuleDim.size();
-		size_t val_size = m_taskInfo.vecEtlRuleVal.size();
-
-		if ( src_size != dim_size )
+	for ( size_t i = 0; i < dim_size; ++i )
+	{
+		AcqEtlDim& dim = m_taskInfo.vecEtlRuleDim[i];
+		if ( dim.vecEtlDim.empty() )
 		{
-			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集维度个数 (dim_size:%lu) 不一致! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", src_size, dim_size, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集维度为空! 无效! [DIM_ID:%s] [FILE:%s, LINE:%d]", dim.acqEtlDimID.c_str(), __FILE__, __LINE__);
 		}
 
-		if ( src_size != val_size )
+		AcqEtlVal& val = m_taskInfo.vecEtlRuleVal[i];
+		if ( val.vecEtlVal.empty() )
 		{
-			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集数据源个数 (src_size:%lu) 与采集值个数 (val_size:%lu) 不一致! [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", src_size, val_size, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
-		}
-
-		for ( size_t i = 0; i < dim_size; ++i )
-		{
-			AcqEtlDim& dim = m_taskInfo.vecEtlRuleDim[i];
-			if ( dim.vecEtlDim.empty() )
-			{
-				throw base::Exception(ACQERR_TASKINFO_INVALID, "采集维度为空! 无效! [DIM_ID:%s] [FILE:%s, LINE:%d]", dim.acqEtlDimID.c_str(), __FILE__, __LINE__);
-			}
-
-			AcqEtlVal& val = m_taskInfo.vecEtlRuleVal[i];
-			if ( val.vecEtlVal.empty() )
-			{
-				throw base::Exception(ACQERR_TASKINFO_INVALID, "采集值为空! 无效! [VAL_ID:%s] [FILE:%s, LINE:%d]", val.acqEtlValID.c_str(), __FILE__, __LINE__);
-			}
+			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集值为空! 无效! [VAL_ID:%s] [FILE:%s, LINE:%d]", val.acqEtlValID.c_str(), __FILE__, __LINE__);
 		}
 	}
 
@@ -305,6 +304,10 @@ void Acquire::CheckTaskInfo() throw(base::Exception)
 	{
 		throw base::Exception(ACQERR_TASKINFO_INVALID, "未知的采集条件类型: ETLCTYPE_UNKNOWN [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
+
+	// 是否为业财稽核
+	m_isYCRA = ("YCRA" == base::PubStr::TrimUpperB(m_taskInfo.EtlRuleType));
+	m_pLog->Output("[Acquire] 采集类型：[%s]", (m_isYCRA ? "业财稽核":"一点稽核"));
 }
 
 void Acquire::GetYCRAStatRule() throw(base::Exception)
@@ -583,14 +586,30 @@ void Acquire::LoadHdfsFile2Hive(const std::string& target_tab, const std::string
 
 int Acquire::RebuildHiveTable() throw(base::Exception)
 {
-	m_pLog->Output("[Acquire] 重建 HIVE 采集目标表 ...");
-
 	std::vector<std::string> vec_field;
 	TaskInfo2TargetFields(vec_field);
 
-	m_pAcqHive->RebuildTable(m_taskInfo.EtlRuleTarget, vec_field, m_hiveTabLocation);
+	if ( m_bRetainResult )		// 保留旧的结果数据
+	{
+		// 检查 HIVE 目标表是否存在
+		if ( m_pAcqHive->CheckTableExisted(m_taskInfo.EtlRuleTarget) )
+		{
+			m_pLog->Output("[Acquire] HIVE 采集目标表 (%s) 已存在：Do nothing!", m_taskInfo.EtlRuleTarget.c_str());
+		}
+		else
+		{
+			m_pLog->Output("[Acquire] 创建 HIVE 采集目标表 (%s)", m_taskInfo.EtlRuleTarget.c_str());
+			m_pAcqHive->RebuildTable(m_taskInfo.EtlRuleTarget, vec_field, m_hiveTabLocation);
+			m_pLog->Output("[Acquire] HIVE 采集目标表 [%s] 创建完成!", m_taskInfo.EtlRuleTarget.c_str());
+		}
+	}
+	else	// 清空结果数据
+	{
+		m_pLog->Output("[Acquire] 重建 HIVE 采集目标表 (%s)", m_taskInfo.EtlRuleTarget.c_str());
+		m_pAcqHive->RebuildTable(m_taskInfo.EtlRuleTarget, vec_field, m_hiveTabLocation);
+		m_pLog->Output("[Acquire] HIVE 采集目标表 [%s] 重建完成!", m_taskInfo.EtlRuleTarget.c_str());
+	}
 
-	m_pLog->Output("[Acquire] HIVE 采集目标表 [%s] 重建完成!", m_taskInfo.EtlRuleTarget.c_str());
 	return vec_field.size();
 }
 
@@ -701,7 +720,7 @@ void Acquire::YCStatRule2Sql(std::vector<std::string>& vec_sql, bool hive) throw
 	std::string prefix_sql;
 	if ( hive )
 	{
-		prefix_sql = "insert into table " + m_taskInfo.EtlRuleTarget + " ";
+		prefix_sql = "insert " + m_sInsertMode + " table " + m_taskInfo.EtlRuleTarget + " ";
 	}
 
 	size_t pos = 0;
@@ -807,7 +826,7 @@ void Acquire::OuterJoin2Sql(std::vector<std::string>& vec_sql, bool hive, bool w
 
 		if ( hive )
 		{
-			sql += "insert into table " + m_taskInfo.EtlRuleTarget + " ";
+			sql += "insert " + m_sInsertMode + " table " + m_taskInfo.EtlRuleTarget + " ";
 		}
 
 		sql += TaskInfoUtil::GetOuterJoinEtlSQL(m_taskInfo.vecEtlRuleDim[0], m_taskInfo.vecEtlRuleVal[0], SRC_TABLE, outer_table, vec_str, "");
@@ -819,7 +838,7 @@ void Acquire::OuterJoin2Sql(std::vector<std::string>& vec_sql, bool hive, bool w
 		// Hive SQL head
 		if ( hive )
 		{
-			sql += "insert into table " + m_taskInfo.EtlRuleTarget + " ";
+			sql += "insert " + m_sInsertMode + " table " + m_taskInfo.EtlRuleTarget + " ";
 		}
 
 		sql += "select ";
@@ -907,7 +926,7 @@ void Acquire::NoneOrStraight2Sql(std::vector<std::string>& vec_sql, bool hive)
 	{
 		if ( hive )
 		{
-			sql += "insert into table " + m_taskInfo.EtlRuleTarget + " ";
+			sql += "insert " + m_sInsertMode + " table " + m_taskInfo.EtlRuleTarget + " ";
 		}
 
 		sql += "select ";
@@ -922,7 +941,7 @@ void Acquire::NoneOrStraight2Sql(std::vector<std::string>& vec_sql, bool hive)
 		// SQL head
 		if ( hive )
 		{
-			sql += "insert into table " + m_taskInfo.EtlRuleTarget + " ";
+			sql += "insert " + m_sInsertMode + " table " + m_taskInfo.EtlRuleTarget + " ";
 		}
 
 		sql += "select ";

@@ -133,6 +133,8 @@ private:
 	std::string TransSourceDate(const std::string& src_tabname) throw(base::Exception);
 
 private:
+	bool        m_bRetainResult;		// 是否保留结果数据
+	std::string m_sInsertMode;			// 插入模式（直接插入 或者 覆盖重复数据）
 	std::string	m_sKpiID;				// 指标ID
 	std::string	m_sEtlID;				// 采集规则ID
 
