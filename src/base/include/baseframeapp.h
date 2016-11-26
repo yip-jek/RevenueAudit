@@ -57,5 +57,3 @@ protected:
 
 }	// namespace base
 
-extern base::BaseFrameApp* g_pApp;
-

@@ -26,7 +26,7 @@ public:
 	static void Release();
 
 	// 设置日志ID
-	static bool SetCCMID(long long ccm_id);
+	static bool SetLogID(long long log_id);
 
 	// 重置日志文件大小
 	static bool ResetFileSize(unsigned long long fsize);
@@ -51,7 +51,7 @@ private:
 private:
 	static int                _sInstances;					// 实例计数器
 	static Log*               _spLogger;					// 实例指针
-	static long long          _sLogCcmID;					// 日志ID
+	static long long          _sLogID;						// 日志ID
 	static unsigned long long _sMaxLogFileSize;				// 最大日志文件大小
 	static std::string        _sLogFilePrefix;				// 日志文件名称前缀
 

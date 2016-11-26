@@ -11,9 +11,10 @@
 namespace base
 {
 
-BaseJHive::BaseJHive()
+BaseJHive::BaseJHive(const std::string& hive_jclassname)
 :m_pLog(Log::Instance())
 ,m_pJNI(NULL)
+,m_hiveJClassName(hive_jclassname)
 {
 }
 
@@ -376,115 +377,109 @@ void BaseJHive::DestroyJVM()
 
 void BaseJHive::InitHiveAgent() throw(Exception)
 {
-#ifdef TEST
-	const std::string JAVA_HIVE_CLASS_NAME = "HiveAgentTest";
-#else
-	const std::string JAVA_HIVE_CLASS_NAME = "HiveAgent";
-#endif
-
 	// 找寻 Java HIVE 代理类
-	jclass jclass_hiveagent = m_pJNI->p_jni_env->FindClass(JAVA_HIVE_CLASS_NAME.c_str());
+	jclass jclass_hiveagent = m_pJNI->p_jni_env->FindClass(m_hiveJClassName.c_str());
 	if ( NULL == jclass_hiveagent )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] Can not find Java class: %s [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] Can not find Java class: %s [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的构造方法
 	jmethodID mid = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "<init>", "()V");
 	if ( NULL == mid )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO construct method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO construct method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 构造 Java HIVE 代理类
 	m_pJNI->jobj_hiveagent = m_pJNI->p_jni_env->NewObject(jclass_hiveagent, mid);
 	if ( NULL == m_pJNI->jobj_hiveagent )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] Construct %s failed ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] Construct %s failed ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的 SetZooKeeperQuorum 方法
 	m_pJNI->jmid_set_zkquorum = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "SetZooKeeperQuorum", "(Ljava/lang/String;)V");
 	if ( NULL == m_pJNI->jmid_set_zkquorum )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetZooKeeperQuorum method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetZooKeeperQuorum method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的 SetKrb5Conf 方法
 	m_pJNI->jmid_set_krb5conf = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "SetKrb5Conf", "(Ljava/lang/String;)V");
 	if ( NULL == m_pJNI->jmid_set_krb5conf )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetKrb5Conf method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetKrb5Conf method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的 SetUserKeytab 方法
 	m_pJNI->jmid_set_usrkeytab = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "SetUserKeytab", "(Ljava/lang/String;)V");
 	if ( NULL == m_pJNI->jmid_set_usrkeytab )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetUserKeytab method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetUserKeytab method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的 SetPrincipal 方法
 	m_pJNI->jmid_set_principal = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "SetPrincipal", "(Ljava/lang/String;)V");
 	if ( NULL == m_pJNI->jmid_set_principal )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetPrincipal method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetPrincipal method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的 SetJaasConf 方法
 	m_pJNI->jmid_set_jaasconf = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "SetJaasConf", "(Ljava/lang/String;)V");
 	if ( NULL == m_pJNI->jmid_set_jaasconf )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetJaasConf method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO SetJaasConf method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的 Init 方法
 	m_pJNI->jmid_init = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "Init", "()Z");
 	if ( NULL == m_pJNI->jmid_init )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO Init method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO Init method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的 Connect 方法
 	m_pJNI->jmid_connect = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "Connect", "()I");
 	if ( NULL == m_pJNI->jmid_connect )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO connect method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO connect method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的 Disconnect 方法
 	m_pJNI->jmid_disconnect = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "Disconnect", "()Z");
 	if ( NULL == m_pJNI->jmid_disconnect )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO disconnect method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO disconnect method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的 IsConnected 方法
 	m_pJNI->jmid_is_connected = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "IsConnected", "()Z");
 	if ( NULL == m_pJNI->jmid_is_connected )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO isconnected method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO isconnected method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的 GetErrorMsg 方法
 	m_pJNI->jmid_get_error_msg = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "GetErrorMsg", "()Ljava/lang/String;");
 	if ( NULL == m_pJNI->jmid_get_error_msg )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO geterrormsg method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO geterrormsg method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的 ExecuteSQL 方法
 	m_pJNI->jmid_execute_sql = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "ExecuteSQL", "(Ljava/lang/String;)Z");
 	if ( NULL == m_pJNI->jmid_execute_sql )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO executesql method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO executesql method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 获取 Java HIVE 代理类的 FetchData 方法
 	m_pJNI->jmid_fetch_data = m_pJNI->p_jni_env->GetMethodID(jclass_hiveagent, "FetchData", "(Ljava/lang/String;)Ljava/util/ArrayList;");
 	if ( NULL == m_pJNI->jmid_fetch_data )
 	{
-		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO fetchdata method of %s ! [FILE:%s, LINE:%d]", JAVA_HIVE_CLASS_NAME.c_str(), __FILE__, __LINE__);
+		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO fetchdata method of %s ! [FILE:%s, LINE:%d]", m_hiveJClassName.c_str(), __FILE__, __LINE__);
 	}
 
 	// 找寻 Java ArrayList 类
@@ -508,7 +503,7 @@ void BaseJHive::InitHiveAgent() throw(Exception)
 		throw Exception(BJH_INIT_FAILED, "[BASE HIVE] NO get method of ArrayList ! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	m_pLog->Output("[BASE HIVE] Init %s OK.", JAVA_HIVE_CLASS_NAME.c_str());
+	m_pLog->Output("[BASE HIVE] Init %s OK.", m_hiveJClassName.c_str());
 }
 
 }	// namespace base

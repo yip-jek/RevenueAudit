@@ -8,7 +8,8 @@
 #include "pubstr.h"
 #include "basedb2.h"
 #include "basejhive.h"
-#include "TaskState.h"
+#include "factory.h"
+//#include "TaskState.h"
 
 namespace base
 {
@@ -69,13 +70,11 @@ std::string BaseFrameApp::GetLogPathConfig()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 using namespace base;
 
-BaseFrameApp* g_pApp = NULL;
-
 int main(int argc, char* argv[])
 {
-	if ( argc < 5 )
+	if ( argc < 7 )
 	{
-		std::cerr << "[usage] " << argv[0] << " daemon_flag ccm_id cfg_file [task_info]" << std::endl;
+		std::cerr << "[usage] " << argv[0] << " daemon_flag log_id mode variant cfg_file [task_info]" << std::endl;
 		return -1;
 	}
 
@@ -98,15 +97,15 @@ int main(int argc, char* argv[])
 
 	g_pApp->SetArgv(argv);
 
-	long long ll_ccmid = 0L;
-	if ( !PubStr::Str2LLong(argv[2], ll_ccmid) )
+	long long log_id = 0L;
+	if ( !PubStr::Str2LLong(argv[2], log_id) )
 	{
-		std::cerr << "[ERROR] [MAIN] Trans \"" << argv[2] << "\" to number failed !" << std::endl;
+		std::cerr << "[ERROR] [MAIN] Invalid log ID: " << argv[2] << std::endl;
 		return -1;
 	}
-	if ( !Log::SetCCMID(ll_ccmid) )
+	if ( !Log::SetLogID(log_id) )
 	{
-		std::cerr << "[LOG] Set CCM_ID failed !" << std::endl;
+		std::cerr << "[LOG] Set log ID failed !" << std::endl;
 		return -1;
 	}
 
@@ -116,8 +115,8 @@ int main(int argc, char* argv[])
 	AutoLogger aLog;
 	Log* pLog = aLog.Get();
 
-	TaskState ts(argv[4]);
-	ts.start();
+	//TaskState ts(argv[4]);
+	//ts.start();
 
 	try
 	{
@@ -138,10 +137,10 @@ int main(int argc, char* argv[])
 		std::cerr << "[ERROR] " << ex.What() << ", ERROR_CODE: " << ex.ErrorCode() << std::endl;
 		pLog->Output("[ERROR] %s, ERROR_CODE: %d", ex.What().c_str(), ex.ErrorCode());
 
-		// 上报错误码
-		std::string str_err;
-		PubStr::SetFormatString(str_err, "%s_ERROR_CODE:%d", argv[2], ex.ErrorCode());
-		ts.abort(str_err);
+		//// 上报错误码
+		//std::string str_err;
+		//PubStr::SetFormatString(str_err, "%s_ERROR_CODE:%d", argv[2], ex.ErrorCode());
+		//ts.abort(str_err);
 		return -1;
 	}
 	catch ( ... )
@@ -151,10 +150,10 @@ int main(int argc, char* argv[])
 		std::cerr << "[ERROR] Unknown error! [FILE:" << __FILE__ << ", LINE:" << __LINE__ << "]" << std::endl;
 		pLog->Output("[ERROR] Unknown error! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 
-		// 上报错误
-		std::string str_err;
-		PubStr::SetFormatString(str_err, "%s_ERROR:Unknown_error", argv[2]);
-		ts.abort(str_err);
+		//// 上报错误
+		//std::string str_err;
+		//PubStr::SetFormatString(str_err, "%s_ERROR:Unknown_error", argv[2]);
+		//ts.abort(str_err);
 		return -1;
 	}
 
@@ -163,7 +162,7 @@ int main(int argc, char* argv[])
 	std::cout << argv[0] << " quit!" << std::endl;
 	pLog->Output("%s quit!", argv[0]);
 
-	ts.done();
+	//ts.done();
 	return 0;
 }
 

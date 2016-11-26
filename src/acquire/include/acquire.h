@@ -55,7 +55,7 @@ public:
 	// 任务结束（资源回收）
 	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(base::Exception);
 
-private:
+protected:
 	// 获取参数任务信息
 	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
 
@@ -132,7 +132,7 @@ private:
 	// 采集源数据表名日期转换
 	std::string TransSourceDate(const std::string& src_tabname) throw(base::Exception);
 
-private:
+protected:
 	bool        m_bRetainResult;		// 是否保留结果数据
 	std::string m_sInsertMode;			// 插入模式（直接插入 或者 覆盖重复数据）
 	std::string	m_sKpiID;				// 指标ID
@@ -155,16 +155,16 @@ private:
 	int			m_nHdfsPort;			// HDFS的端口
 	int			m_seqHdfsFile;			// HDFS文件的流水号
 
-private:
+protected:
 	CAcqDB2*	m_pAcqDB2;				// DB2数据库接口
 	CAcqHive*	m_pAcqHive;				// Hive接口
 
-private:
+protected:
 	AcqTaskInfo					m_taskInfo;			// 采集任务信息
 	base::PubTime::DATE_TYPE	m_acqDateType;		// 采集时间类型
 	std::string					m_acqDate;			// 采集时间
 
-private:
+protected:
 	// 数据库表名
 	std::string	m_tabKpiRule;			// 指标规则表
 	std::string	m_tabEtlRule;			// 采集规则表
@@ -178,7 +178,7 @@ private:
 	std::string m_tabYCTaskReq;			// （业财）任务请求表
 #endif
 
-private:
+protected:
 	bool				m_isYCRA;			// 是否为业财稽核
 	std::vector<YCInfo>	m_vecYCInfo;		// 业财稽核因子规则信息
 };

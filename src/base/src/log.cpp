@@ -11,7 +11,7 @@ namespace base
 int Log::_sInstances = 0;
 Log* Log::_spLogger = NULL;		// single log pointer
 
-long long Log::_sLogCcmID = 0;
+long long Log::_sLogID = 0;
 unsigned long long Log::_sMaxLogFileSize = 10*1024*1024;	// default log file size 10M
 
 std::string Log::_sLogFilePrefix = "LOG";			// default log file prefix
@@ -55,11 +55,11 @@ void Log::Release()
 	}
 }
 
-bool Log::SetCCMID(long long ccm_id)
+bool Log::SetLogID(long long log_id)
 {
-	if ( ccm_id > 0 )
+	if ( log_id > 0 )
 	{
-		_sLogCcmID = ccm_id;
+		_sLogID = log_id;
 		return true;
 	}
 
@@ -149,7 +149,7 @@ void Log::OpenNewLogger() throw(Exception)
 
 	do
 	{
-		PubStr::SetFormatString(fullLogPath, "%s%s_%lld_%s_%04d.log", m_sLogPath.c_str(), _sLogFilePrefix.c_str(), _sLogCcmID, DAY_TIME.c_str(), log_id++);
+		PubStr::SetFormatString(fullLogPath, "%s%s_%lld_%s_%04d.log", m_sLogPath.c_str(), _sLogFilePrefix.c_str(), _sLogID, DAY_TIME.c_str(), log_id++);
 
 	} while ( BaseFile::IsFileExist(fullLogPath) );
 

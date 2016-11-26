@@ -11,11 +11,11 @@ class Log;
 struct StructJNI;
 
 // 基础 JHive 类
-// 通过 jni 调用 Java 的 HiveAgent 接口，实现对 HIVE 的访问
+// 通过 jni 调用 Java 的 HiveAgent/HiveAgentTest 接口，实现对 HIVE 的访问
 class BaseJHive
 {
 public:
-	BaseJHive();
+	BaseJHive(const std::string& hive_jclassname);
 	virtual ~BaseJHive();
 
 public:
@@ -67,12 +67,11 @@ protected:
 	virtual void InitHiveAgent() throw(Exception);
 
 protected:
-	Log*		m_pLog;				// 日志
+	Log*       m_pLog;				// 日志
+	StructJNI* m_pJNI;				// JNI 接口
 
 protected:
-	StructJNI*	m_pJNI;				// JNI 接口
-
-protected:
+	std::string m_hiveJClassName;				// Hive代理的Java接口类名
 	std::string m_zk_quorum;
 };
 
