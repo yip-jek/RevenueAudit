@@ -46,6 +46,9 @@ public:
 	// 获取日志文件名称前缀
 	virtual std::string GetLogFilePrefix();
 
+	// 设置TEST标志
+	virtual void SetTestFlag(bool is_test);
+
 	// 初始化
 	virtual void Init() throw(base::Exception);
 
@@ -58,6 +61,9 @@ public:
 protected:
 	// 获取参数任务信息
 	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
+
+	// 获取后续参数任务信息
+	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
 
 	// 设置任务信息
 	void SetTaskInfo();
@@ -133,6 +139,7 @@ protected:
 	std::string TransSourceDate(const std::string& src_tabname) throw(base::Exception);
 
 protected:
+	bool        m_isTest;				// 是否为测试版本
 	bool        m_bRetainResult;		// 是否保留结果数据
 	std::string m_sInsertMode;			// 插入模式（直接插入 或者 覆盖重复数据）
 	std::string	m_sKpiID;				// 指标ID
@@ -150,6 +157,7 @@ protected:
 	std::string m_sLoadJarPath;			// 依赖的 jar 包路径
 	std::string m_hiveTabLocation;		// HIVE 库表的路径
 
+	std::string m_sHdfsHostInfo;		// HDFS的主机组合信息
 	std::string m_sHdfsHost;			// HDFS的主机信息
 	std::string m_sHdfsTmpPath;			// HDFS的临时目录
 	int			m_nHdfsPort;			// HDFS的端口
@@ -171,15 +179,5 @@ protected:
 	std::string	m_tabEtlDim;			// 采集维度规则表
 	std::string	m_tabEtlVal;			// 采集值规则表
 	std::string	m_tabEtlSrc;			// 采集数据源表
-
-// 业财稽核-任务调度
-#ifdef _YCRA_TASK
-	int         m_ycSeqID;				// 任务流水号
-	std::string m_tabYCTaskReq;			// （业财）任务请求表
-#endif
-
-protected:
-	bool				m_isYCRA;			// 是否为业财稽核
-	std::vector<YCInfo>	m_vecYCInfo;		// 业财稽核因子规则信息
 };
 

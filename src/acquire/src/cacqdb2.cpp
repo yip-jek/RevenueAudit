@@ -41,7 +41,6 @@ void CAcqDB2::SetTabYCStatRule(const std::string& t_statrule)
 	m_tabYCStatRule = t_statrule;
 }
 
-#ifdef _YCRA_TASK
 void CAcqDB2::SetTabYCTaskReq(const std::string& t_yc_taskreq)
 {
 	m_tabYCTaskReq = t_yc_taskreq;
@@ -75,7 +74,6 @@ void CAcqDB2::UpdateYCTaskReq(int seq, const std::string& state, const std::stri
 		throw base::Exception(ADBERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, ex.what(), __FILE__, __LINE__);
 	}
 }
-#endif
 
 void CAcqDB2::SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 {

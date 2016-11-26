@@ -2,7 +2,8 @@
 #include <vector>
 #include "log.h"
 
-CAcqHive::CAcqHive()
+CAcqHive::CAcqHive(const std::string& hive_jclassname)
+:base::BaseJHive(hive_jclassname)
 {
 }
 
@@ -46,10 +47,12 @@ void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string
 	}
 	sql_create += " ) row format delimited fields terminated by '|' stored as textfile";
 
-#ifndef TEST	// 测试环境：不指定建表的 location
-	// 指定建表的 location
-	sql_create += " location '" + tab_location + tab_name + "'";
-#endif
+	// 测试环境：不指定建表的 location
+	if ( !tab_location.empty() )
+	{
+		// 指定建表的 location
+		sql_create += " location '" + tab_location + tab_name + "'";
+	}
 
 	try
 	{

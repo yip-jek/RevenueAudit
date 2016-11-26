@@ -33,6 +33,9 @@ public:
 	// 获取日志路径
 	virtual std::string GetLogPathConfig();
 
+	// 获取任务参数信息
+	virtual std::string GetTaskParaInfo();
+
 	// 获取日志文件名称前缀
 	virtual std::string GetLogFilePrefix() = 0;
 

@@ -9,7 +9,6 @@ namespace base
 class BaseFrameApp;
 
 // 工厂接口
-// 创建的对象如果没有销毁，在析构的时候会自动释放
 class Factory
 {
 public:
@@ -18,17 +17,40 @@ public:
 
 public:
 	// 创建
-	virtual BaseFrameApp* CreateApp(const std::string& mode, const std::string& var, std::string* pError);
+	virtual BaseFrameApp* Create(const std::string& mode, const std::string& var, std::string* pError);
 
-	// 销毁
-	virtual void DestroyApp(BaseFrameApp** ppAPP);
+	// 释放资源
+	virtual void Release();
 
 protected:
-	// 创建对象的接口
-	virtual BaseFrameApp* CreateOneApp(const std::string& mode, const std::string& var, std::string* pError) = 0;
+	// 创建对象
+	virtual BaseFrameApp* CreateApp(const std::string& mode, const std::string& var, std::string* pError) = 0;
+
+	// 销毁对象
+	virtual void DestroyApp(BaseFrameApp** ppApp) = 0;
 
 protected:
 	std::list<BaseFrameApp*> m_listApp;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// 工厂协助类
+class FactoryAssist
+{
+public:
+	FactoryAssist(Factory* pFactory): m_pFactory(pFactory)
+	{}
+
+	~FactoryAssist()
+	{
+		if ( m_pFactory != NULL )
+		{
+			m_pFactory->Release();
+		}
+	}
+
+private:
+	Factory* m_pFactory;
 };
 
 extern Factory* g_pFactory;

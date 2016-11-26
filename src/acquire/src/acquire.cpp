@@ -10,22 +10,15 @@
 #include "taskinfoutil.h"
 
 
-Acquire g_Acquire;
-
-
 Acquire::Acquire()
-:m_bRetainResult(false)
+:m_isTest(false)
+,m_bRetainResult(false)
 ,m_nHdfsPort(0)
 ,m_seqHdfsFile(0)
 ,m_pAcqDB2(NULL)
 ,m_pAcqHive(NULL)
 ,m_acqDateType(base::PubTime::DT_UNKNOWN)
-#ifdef _YCRA_TASK
-,m_ycSeqID(0)
-#endif
-,m_isYCRA(false)
 {
-	g_pApp = &g_Acquire;
 }
 
 Acquire::~Acquire()
@@ -34,7 +27,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 2.0008.20161124 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 3.0000.20161127 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -53,19 +46,17 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("HIVE_SERVER", "JAAS_CONF");
 	m_cfg.RegisterItem("HIVE_SERVER", "LOAD_JAR_PATH");
 
-#ifndef TEST	// 测试环境：不指定建表的 location
-	m_cfg.RegisterItem("HIVE_SERVER", "HIVE_TAB_LOCATION");
-#endif
+	// 测试环境：不指定建表的 location
+	if ( !m_isTest )
+	{
+		m_cfg.RegisterItem("HIVE_SERVER", "HIVE_TAB_LOCATION");
+	}
 
 	m_cfg.RegisterItem("TABLE", "TAB_KPI_RULE");
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_RULE");
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_DIM");
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_VAL");
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_SRC");
-
-#ifdef _YCRA_TASK
-	m_cfg.RegisterItem("TABLE", "TAB_YC_TASK_REQ");
-#endif
 
 	m_cfg.ReadConfig();
 
@@ -87,10 +78,12 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_jaas_conf    = m_cfg.GetCfgValue("HIVE_SERVER", "JAAS_CONF");
 	m_sLoadJarPath = m_cfg.GetCfgValue("HIVE_SERVER", "LOAD_JAR_PATH");
 
-#ifndef TEST	// 测试环境：不指定建表的 location
-	m_hiveTabLocation = m_cfg.GetCfgValue("HIVE_SERVER", "HIVE_TAB_LOCATION");
-	base::BaseDir::DirWithSlash(m_hiveTabLocation);
-#endif
+	// 测试环境：不指定建表的 location
+	if ( !m_isTest )
+	{
+		m_hiveTabLocation = m_cfg.GetCfgValue("HIVE_SERVER", "HIVE_TAB_LOCATION");
+		base::BaseDir::DirWithSlash(m_hiveTabLocation);
+	}
 
 	// Tables
 	m_tabKpiRule = m_cfg.GetCfgValue("TABLE", "TAB_KPI_RULE");
@@ -98,10 +91,6 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_tabEtlDim  = m_cfg.GetCfgValue("TABLE", "TAB_ETL_DIM");
 	m_tabEtlVal  = m_cfg.GetCfgValue("TABLE", "TAB_ETL_VAL");
 	m_tabEtlSrc  = m_cfg.GetCfgValue("TABLE", "TAB_ETL_SRC");
-
-#ifdef _YCRA_TASK
-	m_tabYCTaskReq = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
-#endif
 
 	m_pLog->Output("[Acquire] Load configuration OK.");
 }
@@ -111,9 +100,14 @@ std::string Acquire::GetLogFilePrefix()
 	return std::string("Acquire");
 }
 
+void Acquire::SetTestFlag(bool is_test)
+{
+	m_isTest = is_test;
+}
+
 void Acquire::Init() throw(base::Exception)
 {
-	GetParameterTaskInfo(m_ppArgv[4]);
+	GetParameterTaskInfo(GetTaskParaInfo());
 
 	m_pDB2 = new CAcqDB2(m_sDBName, m_sUsrName, m_sPasswd);
 	if ( NULL == m_pDB2 )
@@ -131,14 +125,15 @@ void Acquire::Init() throw(base::Exception)
 	// 连接数据库
 	m_pAcqDB2->Connect();
 
-#ifdef _YCRA_TASK
-	m_pAcqDB2->SetTabYCTaskReq(m_tabYCTaskReq);
+	if ( m_isTest )		// 测试环境
+	{
+		m_pHive = new CAcqHive(DEBUG_HIVE_JAVA_CLASS_NAME);
+	}
+	else	// 非测试环境
+	{
+		m_pHive = new CAcqHive(RELEASE_HIVE_JAVA_CLASS_NAME);
+	}
 
-	// 更新任务状态为；"11"（正在采集）
-	m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "11", "正在采集", "采集开始时间："+base::SimpleTime::Now().TimeStamp());
-#endif
-
-	m_pHive = new CAcqHive();
 	if ( NULL == m_pHive )
 	{
 		throw base::Exception(ACQERR_INIT_FAILED, "new CAcqHive failed: 无法申请到内存空间!");
@@ -169,23 +164,6 @@ void Acquire::Run() throw(base::Exception)
 
 void Acquire::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
 {
-#ifdef _YCRA_TASK
-	// 更新任务状态
-	std::string task_desc;
-	if ( 0 == err_code )	// 正常退出
-	{
-		// 更新任务状态为；"12"（采集完成）
-		task_desc = "采集结束时间：" + base::SimpleTime::Now().TimeStamp();
-		m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "12", "采集完成", task_desc);
-	}
-	else	// 异常退出
-	{
-		// 更新任务状态为；"13"（采集失败）
-		base::PubStr::SetFormatString(task_desc, "[ERROR] %s, ERROR_CODE: %d", err_msg.c_str(), err_code);
-		m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "13", "采集失败", task_desc);
-	}
-#endif
-
 	// 断开数据库连接
 	if ( m_pAcqDB2 != NULL )
 	{
@@ -220,18 +198,11 @@ void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 
 	m_pLog->Output("[Acquire] 任务参数信息：指标ID [KPI_ID:%s], 采集规则ID [ETL_ID:%s]", m_sKpiID.c_str(), m_sEtlID.c_str());
 
-#ifdef _YCRA_TASK
-	if ( vec_str.size() < 4 )
-	{
-		throw base::Exception(ACQERR_TASKINFO_ERROR, "任务参数信息异常(split size:%lu), 无法拆分出业财任务流水号! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
-	}
+	GetExtendParaTaskInfo(vec_str);
+}
 
-	if ( !base::PubStr::Str2Int(vec_str[3], m_ycSeqID) )
-	{
-		throw base::Exception(ACQERR_TASKINFO_ERROR, "无效的业财任务流水号：%s [FILE:%s, LINE:%d]", vec_str[3].c_str(), __FILE__, __LINE__);
-	}
-	m_pLog->Output("[Acquire] 业财稽核任务流水号：%d", m_ycSeqID);
-#endif
+void Acquire::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
+{
 }
 
 void Acquire::SetTaskInfo()
@@ -471,6 +442,16 @@ void Acquire::LoadHdfsConfig() throw(base::Exception)
 		throw base::Exception(ACQERR_HDFS_PORT_INVALID, "HDFS端口无效! (port=%d) [FILE:%s, LINE:%d]", m_nHdfsPort, __FILE__, __LINE__);
 	}
 
+	// 设置 HDFS 主机组合信息
+	if ( m_isTest )		// 测试环境
+	{
+		base::PubStr::SetFormatString(m_sHdfsHostInfo, "%s:%d", m_sHdfsHost.c_str(), m_nHdfsPort);
+	}
+	else	// 非测试环境
+	{
+		m_sHdfsHostInfo = m_sHdfsHost;
+	}
+
 	// 加上末尾的斜杠
 	base::BaseDir::DirWithSlash(m_sHdfsTmpPath);
 }
@@ -564,11 +545,7 @@ void Acquire::LoadHdfsFile2Hive(const std::string& target_tab, const std::string
 	m_pLog->Output("[Acquire] Load HDFS file [%s] to HIVE ...", hdfs_file.c_str());
 
 	std::string load_sql;
-#ifndef TEST	// 非测试环境
-	base::PubStr::SetFormatString(load_sql, "load data inpath 'hdfs://%s", m_sHdfsHost.c_str());
-#else	// 测试环境
-	base::PubStr::SetFormatString(load_sql, "load data inpath 'hdfs://%s:%d", m_sHdfsHost.c_str(), m_nHdfsPort);
-#endif
+	base::PubStr::SetFormatString(load_sql, "load data inpath 'hdfs://%s", m_sHdfsHostInfo.c_str());
 
 	if ( hdfs_file[0] != '/' )
 	{

@@ -41,7 +41,7 @@ BaseFrameApp::~BaseFrameApp()
 
 const char* BaseFrameApp::Version()
 {
-	return ("BaseFrameApp: Version 1.00 released. Compiled at "__TIME__" on "__DATE__);
+	return ("BaseFrameApp: Version 2.00 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void BaseFrameApp::SetArgv(char** pp_arg)
@@ -53,7 +53,7 @@ void BaseFrameApp::SetArgv(char** pp_arg)
 
 std::string BaseFrameApp::GetConfigFile()
 {
-	return m_ppArgv[3];
+	return m_ppArgv[5];
 }
 
 std::string BaseFrameApp::GetLogPathConfig()
@@ -63,6 +63,11 @@ std::string BaseFrameApp::GetLogPathConfig()
 	m_cfg.ReadConfig();
 
 	return m_cfg.GetCfgValue("SYS", "LOG_PATH");
+}
+
+std::string BaseFrameApp::GetTaskParaInfo()
+{
+	return m_ppArgv[6];
 }
 
 }	// namespace base
@@ -93,10 +98,6 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	assert(g_pApp);
-
-	g_pApp->SetArgv(argv);
-
 	long long log_id = 0L;
 	if ( !PubStr::Str2LLong(argv[2], log_id) )
 	{
@@ -109,8 +110,21 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	assert(g_pFactory);
+	FactoryAssist fa(g_pFactory);
+
+	std::string str_error;
+	BaseFrameApp* pApp = g_pFactory->CreateApp(argv[3], argv[4], &str_error);
+	if ( NULL == pApp )
+	{
+		std::cerr << "[ERROR] [MAIN] " << str_error << std::endl;
+		return -1;
+	}
+
+	pApp->SetArgv(argv);
+
 	// 设置日志文件名称前缀
-	Log::SetLogFilePrefix(g_pApp->GetLogFilePrefix());
+	Log::SetLogFilePrefix(pApp->GetLogFilePrefix());
 
 	AutoLogger aLog;
 	Log* pLog = aLog.Get();
@@ -120,19 +134,19 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		pLog->SetPath(g_pApp->GetLogPathConfig());
+		pLog->SetPath(pApp->GetLogPathConfig());
 		pLog->Init();
 
-		std::cout << g_pApp->Version() << std::endl;
-		pLog->Output(g_pApp->Version());
+		std::cout << pApp->Version() << std::endl;
+		pLog->Output(pApp->Version());
 
-		g_pApp->LoadConfig();
-		g_pApp->Init();
-		g_pApp->Run();
+		pApp->LoadConfig();
+		pApp->Init();
+		pApp->Run();
 	}
 	catch ( Exception& ex )
 	{
-		g_pApp->End(ex.ErrorCode(), ex.What());
+		pApp->End(ex.ErrorCode(), ex.What());
 
 		std::cerr << "[ERROR] " << ex.What() << ", ERROR_CODE: " << ex.ErrorCode() << std::endl;
 		pLog->Output("[ERROR] %s, ERROR_CODE: %d", ex.What().c_str(), ex.ErrorCode());
@@ -145,7 +159,7 @@ int main(int argc, char* argv[])
 	}
 	catch ( ... )
 	{
-		g_pApp->End(-1, "Unknown error!");
+		pApp->End(-1, "Unknown error!");
 
 		std::cerr << "[ERROR] Unknown error! [FILE:" << __FILE__ << ", LINE:" << __LINE__ << "]" << std::endl;
 		pLog->Output("[ERROR] Unknown error! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
@@ -157,7 +171,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	g_pApp->End(0);
+	pApp->End(0);
 
 	std::cout << argv[0] << " quit!" << std::endl;
 	pLog->Output("%s quit!", argv[0]);

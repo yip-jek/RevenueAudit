@@ -110,7 +110,7 @@ std::string Analyse::GetLogFilePrefix()
 
 void Analyse::Init() throw(base::Exception)
 {
-	GetParameterTaskInfo(m_ppArgv[4]);
+	GetParameterTaskInfo(GetTaskParaInfo());
 
 	m_pDB2 = new CAnaDB2(m_sDBName, m_sUsrName, m_sPasswd);
 	if ( NULL == m_pDB2 )
