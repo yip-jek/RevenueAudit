@@ -26,6 +26,9 @@ protected:
 	// 获取任务信息
 	virtual void FetchTaskInfo() throw(base::Exception);
 
+	// 检查采集任务信息
+	virtual void CheckTaskInfo() throw(base::Exception);
+
 	// 分析统计因子规则，生成业财稽核SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
 	virtual void TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);

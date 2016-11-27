@@ -76,7 +76,6 @@ void CAnaDB2::SetTabYCStatRule(const std::string& t_statrule)
 	m_tabYCStatRule = t_statrule;
 }
 
-#ifdef _YCRA_TASK
 void CAnaDB2::SetTabYCTaskReq(const std::string& t_yc_taskreq)
 {
 	m_tabYCTaskReq = t_yc_taskreq;
@@ -110,7 +109,6 @@ void CAnaDB2::UpdateYCTaskReq(int seq, const std::string& state, const std::stri
 		throw base::Exception(ADBERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, ex.what(), __FILE__, __LINE__);
 	}
 }
-#endif
 
 void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 {
@@ -660,7 +658,8 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 	// 是否带时间戳
 	if ( db_info.time_stamp )
 	{
-		sql += " where " + db_info.vec_fields[FIELD_SIZE-1].field_name + " = ?";
+		const int TS_INDEX = FIELD_SIZE - (db_info.day_now ? 2 : 1);
+		sql += " where " + db_info.vec_fields[TS_INDEX].field_name + " = ?";
 	}
 	m_pLog->Output("[DB2] Select targat table [%s], SQL: %s", db_info.target_table.c_str(), sql.c_str());
 

@@ -2,11 +2,6 @@
 
 #include "basejhive.h"
 
-// HIVE 代理Java类名称
-#define DEBUG_HIVE_JAVA_CLASS_NAME                      ("HiveAgentTest")
-#define RELEASE_HIVE_JAVA_CLASS_NAME                    ("HiveAgent")
-
-
 class CAcqHive : public base::BaseJHive
 {
 

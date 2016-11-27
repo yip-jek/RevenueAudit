@@ -20,9 +20,7 @@ void Acquire_YC::LoadConfig() throw(base::Exception)
 	Acquire::LoadConfig();
 
 	m_cfg.RegisterItem("TABLE", "TAB_YC_TASK_REQ");
-
 	m_cfg.ReadConfig();
-
 	m_tabYCTaskReq = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
 
 	m_pLog->Output("[Acquire_YC] Load configuration OK.");
@@ -71,14 +69,14 @@ void Acquire_YC::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(
 	{
 		throw base::Exception(Acquire::ACQERR_TASKINFO_ERROR, "无效的业财任务流水号：%s [FILE:%s, LINE:%d]", vec_str[3].c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[Acquire] 业财稽核任务流水号：%d", m_ycSeqID);
+	m_pLog->Output("[Acquire_YC] 业财稽核任务流水号：%d", m_ycSeqID);
 }
 
 void Acquire_YC::FetchTaskInfo() throw(base::Exception)
 {
 	Acquire::FetchTaskInfo();
 
-	m_pLog->Output("[Acquire] 获取业财稽核因子规则信息 ...");
+	m_pLog->Output("[Acquire_YC] 获取业财稽核因子规则信息 ...");
 
 	// 载入配置
 	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
@@ -87,6 +85,17 @@ void Acquire_YC::FetchTaskInfo() throw(base::Exception)
 
 	m_pAcqDB2->SetTabYCStatRule(tab_rule);
 	m_pAcqDB2->SelectYCStatRule(m_taskInfo.KpiID, m_vecYCInfo);
+}
+
+void Acquire_YC::CheckTaskInfo() throw(base::Exception)
+{
+	Acquire::CheckTaskInfo();
+
+	const std::string ETL_TYPE = base::PubStr::TrimUpperB(m_taskInfo.EtlRuleType);
+	if ( ETL_TYPE != "YCRA" )
+	{
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "未知的采集处理类型: %s [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", ETL_TYPE.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
 }
 
 void Acquire_YC::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception)

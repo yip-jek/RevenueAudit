@@ -15,6 +15,9 @@ public:
 	Factory();
 	virtual ~Factory();
 
+	static const char* const S_VAR_DEBUG;				// 测试版本
+	static const char* const S_VAR_RELEASE;				// 发布版本
+
 public:
 	// 创建
 	virtual BaseFrameApp* Create(const std::string& mode, const std::string& var, std::string* pError);
@@ -24,7 +27,7 @@ public:
 
 protected:
 	// 创建对象
-	virtual BaseFrameApp* CreateApp(const std::string& mode, const std::string& var, std::string* pError) = 0;
+	virtual BaseFrameApp* CreateApp(const std::string& mode, std::string* pError) = 0;
 
 	// 销毁对象
 	virtual void DestroyApp(BaseFrameApp** ppApp) = 0;

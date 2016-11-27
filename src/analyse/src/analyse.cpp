@@ -16,17 +16,11 @@
 //#include "compareresult.h"
 
 
-Analyse g_Analyse;
-
-
 Analyse::Analyse()
-:m_pAnaDB2(NULL)
+:m_sType("一点稽核")
+,m_pAnaDB2(NULL)
 ,m_pAnaHive(NULL)
-#ifdef _YCRA_TASK
-,m_ycSeqID(0)
-#endif
 {
-	g_pApp = &g_Analyse;
 }
 
 Analyse::~Analyse()
@@ -35,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 2.0007.20161122 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 3.0000.20161128 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -64,10 +58,6 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CHANNEL");
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CITY");
 
-#ifdef _YCRA_TASK
-	m_cfg.RegisterItem("TABLE", "TAB_YC_TASK_REQ");
-#endif
-
 	m_cfg.ReadConfig();
 
 	// 数据库配置
@@ -95,10 +85,6 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_tabAlarmEvent  = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_EVENT");
 	m_tabDictChannel = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CHANNEL");
 	m_tabDictCity    = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
-
-#ifdef _YCRA_TASK
-	m_tabYCTaskReq   = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
-#endif
 
 	m_pLog->Output("[Analyse] Load configuration OK.");
 }
@@ -134,14 +120,15 @@ void Analyse::Init() throw(base::Exception)
 	// 连接数据库
 	m_pAnaDB2->Connect();
 
-#ifdef _YCRA_TASK
-	m_pAnaDB2->SetTabYCTaskReq(m_tabYCTaskReq);
+	if ( m_isTest )		// 测试环境
+	{
+		m_pHive = new CAnaHive(base::BaseJHive::S_DEBUG_HIVE_JAVA_CLASS_NAME);
+	}
+	else	// 非测试环境
+	{
+		m_pHive = new CAnaHive(base::BaseJHive::S_RELEASE_HIVE_JAVA_CLASS_NAME);
+	}
 
-	// 更新任务状态为；"21"（正在分析）
-	m_pAnaDB2->UpdateYCTaskReq(m_ycSeqID, "21", "正在分析", "分析开始时间："+base::SimpleTime::Now().TimeStamp());
-#endif
-
-	m_pHive = new CAnaHive();
 	if ( NULL == m_pHive )
 	{
 		throw base::Exception(ANAERR_INIT_FAILED, "new CAnaHive failed: 无法申请到内存空间!");
@@ -172,23 +159,6 @@ void Analyse::Run() throw(base::Exception)
 
 void Analyse::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
 {
-#ifdef _YCRA_TASK
-	// 更新任务状态
-	std::string task_desc;
-	if ( 0 == err_code )	// 正常退出
-	{
-		// 更新任务状态为；"22"（分析完成）
-		task_desc = "分析结束时间：" + base::SimpleTime::Now().TimeStamp();
-		m_pAnaDB2->UpdateYCTaskReq(m_ycSeqID, "22", "分析完成", task_desc);
-	}
-	else	// 异常退出
-	{
-		// 更新任务状态为；"23"（分析失败）
-		base::PubStr::SetFormatString(task_desc, "[ERROR] %s, ERROR_CODE: %d", err_msg.c_str(), err_code);
-		m_pAnaDB2->UpdateYCTaskReq(m_ycSeqID, "23", "分析失败", task_desc);
-	}
-#endif
-
 	// 断开数据库连接
 	if ( m_pAnaDB2 != NULL )
 	{
@@ -223,18 +193,12 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 
 	m_pLog->Output("[Analyse] 任务参数信息：指标ID [KPI_ID:%s], 分析规则ID [ANA_ID:%s]", m_sKpiID.c_str(), m_sAnaID.c_str());
 
-#ifdef _YCRA_TASK
-	if ( vec_str.size() < 4 )
-	{
-		throw base::Exception(ANAERR_TASKINFO_ERROR, "任务参数信息异常(split size:%lu), 无法拆分出业财任务流水号! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
-	}
+	GetExtendParaTaskInfo(vec_str);
+}
 
-	if ( !base::PubStr::Str2Int(vec_str[3], m_ycSeqID) )
-	{
-		throw base::Exception(ANAERR_TASKINFO_ERROR, "无效的业财任务流水号：%s [FILE:%s, LINE:%d]", vec_str[3].c_str(), __FILE__, __LINE__);
-	}
-	m_pLog->Output("[Analyse] 业财稽核任务流水号：%d", m_ycSeqID);
-#endif
+void Analyse::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
+{
+	// DO NOTHING !
 }
 
 void Analyse::GetAnaDBInfo() throw(base::Exception)
@@ -388,12 +352,6 @@ void Analyse::FetchHiveSource(std::vector<std::string>& vec_hivesql) throw(base:
 
 void Analyse::UpdateDimValue()
 {
-	// 业财稽核统计，无需更新维度取值范围！
-	if ( AnalyseRule::ANATYPE_YC_STAT == m_taskInfo.AnaRule.AnaType )
-	{
-		return;
-	}
-
 	CollectDimVal();
 
 	m_pAnaDB2->SelectDimValue(m_taskInfo.KpiID, m_DVDiffer);
@@ -445,8 +403,6 @@ void Analyse::FetchTaskInfo() throw(base::Exception)
 
 	m_pLog->Output("[Analyse] 获取渠道、地市统一编码信息 ...");
 	FetchUniformCode();
-
-	GetYCRAStatRule();
 }
 
 void Analyse::CheckAnaTaskInfo() throw(base::Exception)
@@ -510,6 +466,8 @@ void Analyse::CheckAnaTaskInfo() throw(base::Exception)
 	//}
 
 	CheckExpWayType();
+
+	m_pLog->Output("[Analyse] 分析类型：[%s] (%s)", m_sType.c_str(), (m_isTest ? "测试":"发布"));
 }
 
 void Analyse::CheckExpWayType() throw(base::Exception)
@@ -584,22 +542,6 @@ void Analyse::FetchUniformCode() throw(base::Exception)
 	m_UniCodeTransfer.InputCityUniformCode(vec_city_uni_code);
 }
 
-void Analyse::GetYCRAStatRule() throw(base::Exception)
-{
-	if ( AnalyseRule::ANATYPE_YC_STAT == m_taskInfo.AnaRule.AnaType )
-	{
-		m_pLog->Output("[Analyse] 获取业财稽核因子规则信息 ...");
-
-		// 载入配置
-		m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
-		m_cfg.ReadConfig();
-		std::string tab_rule = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
-
-		m_pAnaDB2->SetTabYCStatRule(tab_rule);
-		m_pAnaDB2->SelectYCStatRule(m_taskInfo.KpiID, m_vecYCSInfo);
-	}
-}
-
 void Analyse::DoDataAnalyse() throw(base::Exception)
 {
 	m_pLog->Output("[Analyse] 解析分析规则 ...");
@@ -625,8 +567,8 @@ void Analyse::DoDataAnalyse() throw(base::Exception)
 
 void Analyse::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception)
 {
+	base::PubStr::Trim(m_taskInfo.AnaRule.AnaExpress);
 	std::string& ref_exp = m_taskInfo.AnaRule.AnaExpress;
-	base::PubStr::Trim(ref_exp);
 
 	// 分析规则类型
 	switch ( m_taskInfo.AnaRule.AnaType )
@@ -656,14 +598,9 @@ void Analyse::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Ex
 		// 分析表达式，即是可执行的Hive SQL语句（可多个，以分号分隔）
 		SplitHiveSqlExpress(ref_exp, vec_hivesql);
 		break;
-	case AnalyseRule::ANATYPE_YC_STAT:				// 业财稽核统计类型
-		m_pLog->Output("[Analyse] 分析规则类型：业财稽核统计 (KPI_ID:%s, ANA_ID:%s)", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str());
-		m_pLog->Output("[Analyse] 分析规则表达式：%s", ref_exp.c_str());
-		GetStatisticsHiveSQL(vec_hivesql);
-		break;
 	case AnalyseRule::ANATYPE_UNKNOWN:				// 未知类型
 	default:
-		throw base::Exception(ANAERR_ANA_RULE_FAILED, "无法识别的分析规则类型: ANATYPE_UNKNOWN (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ANA_RULE_FAILED, "不支持的分析规则类型: %d (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.AnaRule.AnaType, m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 生成数据库[DB2]信息
@@ -1203,210 +1140,9 @@ void Analyse::AnalyseSourceData() throw(base::Exception)
 			// 去除尾部的"."和其后的"0"
 			base::PubStr::TrimTail0StrVec2(ref_vec2, m_dbinfo.val_beg_pos, END_POS);
 		}
-
-		AnalyseYCRAData();
 	}
 
 	m_pLog->Output("[Analyse] 分析完成!");
-}
-
-void Analyse::AnalyseYCRAData() throw(base::Exception)
-{
-	// 是否为业财稽核统计
-	if ( AnalyseRule::ANATYPE_YC_STAT == m_taskInfo.AnaRule.AnaType )
-	{
-		if ( m_vecYCSInfo.empty() )
-		{
-			throw base::Exception(ANAERR_ANA_YCRA_DATA_FAILED, "没有业财稽核因子规则信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-		}
-
-		std::map<std::string, double> map_src;
-		TransYCStatFactor(map_src);
-
-		GenerateYCResultData(map_src);
-	}
-}
-
-void Analyse::TransYCStatFactor(std::map<std::string, double>& map_factor) throw(base::Exception)
-{
-	double yc_val = 0.0;
-	std::string yc_dim;
-	std::map<std::string, double> map_f;
-
-	const int VEC3_SIZE = m_v3HiveSrcData.size();
-	for ( int i = 0; i < VEC3_SIZE; ++i )
-	{
-		std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
-
-		const int VEC2_SIZE = ref_vec2.size();
-		for ( int j = 0; j < VEC2_SIZE; ++j )
-		{
-			std::vector<std::string>& ref_vec = ref_vec2[j];
-
-			// 因子重复！
-			yc_dim = base::PubStr::TrimUpperB(ref_vec[0]);
-			if ( map_f.find(yc_dim) != map_f.end() )
-			{
-				throw base::Exception(ANAERR_TRANS_YCFACTOR_FAILED, "重复的业财稽核维度因子: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", yc_dim.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-			}
-
-			// 维度值无法转换为精度型
-			if ( !base::PubStr::Str2Double(ref_vec[1], yc_val) )
-			{
-				throw base::Exception(ANAERR_TRANS_YCFACTOR_FAILED, "无效的业财稽核统计维度值: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_vec[1].c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-			}
-
-			map_f[yc_dim] = yc_val;
-		}
-	}
-
-	if ( map_f.empty() )
-	{
-		throw base::Exception(ANAERR_TRANS_YCFACTOR_FAILED, "没有业财稽核统计源数据! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-	}
-
-	map_f.swap(map_factor);
-	m_pLog->Output("[Analyse] 统计因子转换大小：%lu", map_factor.size());
-
-	// 释放Hive源数据
-	std::vector<std::vector<std::vector<std::string> > >().swap(m_v3HiveSrcData);
-}
-
-void Analyse::GenerateYCResultData(std::map<std::string, double>& map_factor) throw(base::Exception)
-{
-	YCStatResult yc_sr;
-	std::vector<std::string> v_dat;
-	std::vector<std::vector<std::string> > vec_yc_data;
-	std::map<std::string, double>::iterator m_it;
-
-	// 生成结果数据
-	const int VEC_YCSI_SIZE = m_vecYCSInfo.size();
-	for ( int i = 0; i < VEC_YCSI_SIZE; ++i )
-	{
-		YCStatInfo& ref_ycsi = m_vecYCSInfo[i];
-		base::PubStr::TrimUpper(ref_ycsi.statdim_id);
-		m_pLog->Output("[Analyse] [STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%d] 正在生成统计因子结果数据...", ref_ycsi.stat_id.c_str(), ref_ycsi.statdim_id.c_str(), ref_ycsi.stat_pri);
-
-		if ( YCStatInfo::SP_Level_0 == ref_ycsi.stat_pri )
-		{
-			m_pLog->Output("[Analyse] 统计因子类型：一般因子");
-
-			yc_sr.stat_report = ref_ycsi.stat_report;
-			yc_sr.stat_id     = ref_ycsi.stat_id;
-			yc_sr.stat_name   = ref_ycsi.stat_name;
-			yc_sr.statdim_id  = ref_ycsi.statdim_id;
-
-			if ( (m_it = map_factor.find(ref_ycsi.statdim_id)) != map_factor.end() )
-			{
-				yc_sr.stat_value = m_it->second;
-			}
-			else
-			{
-				throw base::Exception(ANAERR_GENERATE_YCDATA_FAILED, "不存在的业财稽核统计维度ID: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_ycsi.statdim_id.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-			}
-
-			yc_sr.Trans2Vector(v_dat);
-			base::PubStr::VVectorSwapPushBack(vec_yc_data, v_dat);
-		}
-		else if ( YCStatInfo::SP_Level_1 == ref_ycsi.stat_pri )
-		{
-			m_pLog->Output("[Analyse] 统计因子类型：组合因子");
-
-			yc_sr.stat_report = ref_ycsi.stat_report;
-			yc_sr.stat_id     = ref_ycsi.stat_id;
-			yc_sr.stat_name   = ref_ycsi.stat_name;
-			yc_sr.statdim_id  = ref_ycsi.statdim_id;
-			yc_sr.stat_value  = CalcYCComplexFactor(map_factor, ref_ycsi.stat_sql);
-
-			yc_sr.Trans2Vector(v_dat);
-			base::PubStr::VVectorSwapPushBack(vec_yc_data, v_dat);
-		}
-		else
-		{
-			throw base::Exception(ANAERR_GENERATE_YCDATA_FAILED, "未知的统计因子优先级别！(KPI_ID:%s, ANA_ID:%s, STATDIM_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), ref_ycsi.statdim_id.c_str(), __FILE__, __LINE__);
-		}
-	}
-
-	// 插入业财稽核结果数据
-	base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec_yc_data);
-}
-
-double Analyse::CalcYCComplexFactor(std::map<std::string, double>& map_factor, const std::string& cmplx_factr_fmt) throw(base::Exception)
-{
-	m_pLog->Output("[Analyse] 组合因子表达式：%s", cmplx_factr_fmt.c_str());
-
-	// 组合因子格式：[ A1, A2, A3, ...|+, -, ... ]
-	std::vector<std::string> vec_cf_1;
-	base::PubStr::Str2StrVector(cmplx_factr_fmt, "|", vec_cf_1);
-	if ( vec_cf_1.size() != 2 )
-	{
-		throw base::Exception(ANAERR_CAL_YCCMPLX_FAILED, "无法识别的组合因子表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", cmplx_factr_fmt.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-	}
-
-	std::string yc_dims = base::PubStr::TrimUpperB(vec_cf_1[0]);
-	std::string yc_oper = base::PubStr::TrimUpperB(vec_cf_1[1]);
-
-	std::vector<std::string> vec_cf_2;
-	base::PubStr::Str2StrVector(yc_dims, ",", vec_cf_1);
-	base::PubStr::Str2StrVector(yc_oper, ",", vec_cf_2);
-
-	// 至少两个统计维度；且运算符个数比维度少一个
-	const int VEC_CF_SIZE = vec_cf_1.size();
-	if ( VEC_CF_SIZE < 2 || (size_t)VEC_CF_SIZE != (vec_cf_2.size() + 1) )
-	{
-		throw base::Exception(ANAERR_CAL_YCCMPLX_FAILED, "不匹配的组合因子表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", cmplx_factr_fmt.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-	}
-
-	// 计算结果
-	std::map<std::string, double>::iterator m_it;
-	double cmplx_factr_result = 0.0;
-	for ( int i = 1; i < VEC_CF_SIZE; ++i )
-	{
-		if ( 1 == i )	// 首次
-		{
-			std::string& ref_dim_0 = vec_cf_1[0];
-			if ( (m_it = map_factor.find(ref_dim_0)) != map_factor.end() )
-			{
-				cmplx_factr_result += m_it->second;
-			}
-			else
-			{
-				throw base::Exception(ANAERR_CAL_YCCMPLX_FAILED, "不存在的业财稽核统计维度ID: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_dim_0.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-			}
-		}
-
-		std::string& ref_dim = vec_cf_1[i];
-		if ( (m_it = map_factor.find(ref_dim)) != map_factor.end() )
-		{
-			std::string& ref_oper = vec_cf_2[i-1];
-			if ( "+" == ref_oper )
-			{
-				cmplx_factr_result += m_it->second;
-			}
-			else if ( "-" == ref_oper )
-			{
-				cmplx_factr_result -= m_it->second;
-			}
-			else if ( "*" == ref_oper )
-			{
-				cmplx_factr_result *= m_it->second;
-			}
-			else if ( "/" == ref_oper )
-			{
-				cmplx_factr_result /= m_it->second;
-			}
-			else
-			{
-				throw base::Exception(ANAERR_CAL_YCCMPLX_FAILED, "无法识别的组合因子运算符: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_oper.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-			}
-		}
-		else
-		{
-			throw base::Exception(ANAERR_CAL_YCCMPLX_FAILED, "不存在的业财稽核统计维度ID: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_dim.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
-		}
-	}
-
-	return cmplx_factr_result;
 }
 
 void Analyse::SrcDataUnifiedCoding() throw(base::Exception)
@@ -1715,12 +1451,6 @@ void Analyse::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype
 
 void Analyse::AlarmJudgement() throw(base::Exception)
 {
-	// 业财稽核统计，暂不生成告警！
-	if ( AnalyseRule::ANATYPE_YC_STAT == m_taskInfo.AnaRule.AnaType )
-	{
-		return;
-	}
-
 	// 是否有配置告警？
 	if ( m_taskInfo.vecAlarm.empty() )
 	{

@@ -11,6 +11,9 @@
 namespace base
 {
 
+const char* const BaseJHive::S_DEBUG_HIVE_JAVA_CLASS_NAME   = "HiveAgentTest";		// HIVE代理Java类名称（测试版本）
+const char* const BaseJHive::S_RELEASE_HIVE_JAVA_CLASS_NAME = "HiveAgent";			// HIVE代理Java类名称（发布版本）
+
 BaseJHive::BaseJHive(const std::string& hive_jclassname)
 :m_pLog(Log::Instance())
 ,m_pJNI(NULL)

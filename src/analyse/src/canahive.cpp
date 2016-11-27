@@ -3,7 +3,8 @@
 #include "log.h"
 #include "pubstr.h"
 
-CAnaHive::CAnaHive()
+CAnaHive::CAnaHive(const std::string& hive_jclassname)
+:base::BaseJHive(hive_jclassname)
 {
 }
 

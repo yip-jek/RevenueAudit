@@ -18,6 +18,9 @@ public:
 	BaseJHive(const std::string& hive_jclassname);
 	virtual ~BaseJHive();
 
+	static const char* const S_DEBUG_HIVE_JAVA_CLASS_NAME;				// HIVE代理Java类名称（测试版本）
+	static const char* const S_RELEASE_HIVE_JAVA_CLASS_NAME;			// HIVE代理Java类名称（发布版本）
+
 public:
 	// 设置
 	virtual bool SetZooKeeperQuorum(const std::string& zk_quorum);

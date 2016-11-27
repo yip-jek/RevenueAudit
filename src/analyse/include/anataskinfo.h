@@ -724,7 +724,7 @@ public:
 		// 默认：没有地市维度字段
 		int region_index = INVALID_DIM_INDEX;
 
-		bool time_stamp = false;
+		int index_off = 0;
 		const int VEC_DIM_SIZE = vecKpiDimCol.size();
 		for ( int i = 0; i < VEC_DIM_SIZE; ++i )
 		{
@@ -737,17 +737,22 @@ public:
 				region_index = i;
 			}
 
-			// 是否带时间戳？
+			// 是否带当前时间: AnaDBInfo::day_now
+			if ( -2 == ref_kpi_dim.ColSeq )
+			{
+				++index_off;
+			}
+			// 是否带时间戳: AnaDBInfo::time_stamp
 			if ( -1 == ref_kpi_dim.ColSeq )
 			{
-				time_stamp = true;
+				++index_off;
 			}
 		}
 
-		// 时间戳会被挪到最后，所以索引位置提前一位
-		if ( region_index != INVALID_DIM_INDEX && time_stamp )
+		// 时间戳会被挪到最后，所以索引位置提前
+		if ( region_index != INVALID_DIM_INDEX )
 		{
-			--region_index;
+			region_index -= index_off;
 		}
 
 		return region_index;
@@ -760,7 +765,7 @@ public:
 		// 默认：没有地市维度字段
 		int channel_index = INVALID_DIM_INDEX;
 
-		bool time_stamp = false;
+		int index_off = 0;
 		const int VEC_DIM_SIZE = vecKpiDimCol.size();
 		for ( int i = 0; i < VEC_DIM_SIZE; ++i )
 		{
@@ -773,17 +778,22 @@ public:
 				channel_index = i;
 			}
 
-			// 是否带时间戳？
+			// 是否带当前时间: AnaDBInfo::day_now
+			if ( -2 == ref_kpi_dim.ColSeq )
+			{
+				++index_off;
+			}
+			// 是否带时间戳: AnaDBInfo::time_stamp
 			if ( -1 == ref_kpi_dim.ColSeq )
 			{
-				time_stamp = true;
+				++index_off;
 			}
 		}
 
-		// 时间戳会被挪到最后，所以索引位置提前一位
-		if ( channel_index != INVALID_DIM_INDEX && time_stamp )
+		// 时间戳会被挪到最后，所以索引位置提前
+		if ( channel_index != INVALID_DIM_INDEX )
 		{
-			--channel_index;
+			channel_index -= index_off;
 		}
 
 		return channel_index;

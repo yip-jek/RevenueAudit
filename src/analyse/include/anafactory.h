@@ -9,13 +9,13 @@ class BaseFrameApp;
 
 }
 
-class Acquire;
+class Analyse;
 
-class AcqFactory : public base::Factory
+class AnaFactory : public base::Factory
 {
 public:
-	AcqFactory();
-	virtual ~AcqFactory();
+	AnaFactory();
+	virtual ~AnaFactory();
 
 	static const char* const S_MODE_YDJH;				// 一点稽核
 	static const char* const S_MODE_YCRA;				// 业财稽核

@@ -15,7 +15,8 @@ namespace base
 {
 
 BaseFrameApp::BaseFrameApp()
-:m_pLog(Log::Instance())
+:m_isTest(false)
+,m_pLog(Log::Instance())
 ,m_ppArgv(NULL)
 ,m_pDB2(NULL)
 ,m_pHive(NULL)
@@ -42,6 +43,11 @@ BaseFrameApp::~BaseFrameApp()
 const char* BaseFrameApp::Version()
 {
 	return ("BaseFrameApp: Version 2.00 released. Compiled at "__TIME__" on "__DATE__);
+}
+
+void BaseFrameApp::SetTestFlag(bool is_test)
+{
+	m_isTest = is_test;
 }
 
 void BaseFrameApp::SetArgv(char** pp_arg)

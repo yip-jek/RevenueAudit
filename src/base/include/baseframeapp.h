@@ -21,6 +21,9 @@ public:
 	// 版本信息
 	virtual const char* Version();
 
+	// 设置TEST标志
+	virtual void SetTestFlag(bool is_test);
+
 	// 配置输入参数
 	virtual void SetArgv(char** pp_arg);
 
@@ -47,6 +50,9 @@ public:
 
 	// 任务结束（资源回收）
 	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(Exception) = 0;
+
+protected:
+	bool        m_isTest;				// 是否为测试版本
 
 protected:
 	Config		m_cfg;

@@ -89,6 +89,10 @@ void Alarm::SetTaskDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info)
 	m_kpiValSize = m_pTaskInfo->vecKpiValCol.size();
 
 	// 去除时间列
+	if ( m_pDBInfo->day_now )
+	{
+		m_kpiDimSize -= 1;
+	}
 	if ( m_pDBInfo->time_stamp )
 	{
 		m_kpiDimSize -= 1;

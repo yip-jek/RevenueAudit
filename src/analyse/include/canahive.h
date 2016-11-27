@@ -6,7 +6,7 @@ class CAnaHive : public base::BaseJHive
 {
 
 public:
-	CAnaHive();
+	CAnaHive(const std::string& hive_jclassname);
 	virtual ~CAnaHive();
 
 public:

@@ -46,9 +46,6 @@ public:
 	// 获取日志文件名称前缀
 	virtual std::string GetLogFilePrefix();
 
-	// 设置TEST标志
-	virtual void SetTestFlag(bool is_test);
-
 	// 初始化
 	virtual void Init() throw(base::Exception);
 
@@ -72,7 +69,7 @@ protected:
 	virtual void FetchTaskInfo() throw(base::Exception);
 
 	// 检查采集任务信息
-	void CheckTaskInfo() throw(base::Exception);
+	virtual void CheckTaskInfo() throw(base::Exception);
 
 	// 进行数据采集
 	void DoDataAcquisition() throw(base::Exception);
@@ -132,7 +129,6 @@ protected:
 	std::string TransSourceDate(const std::string& src_tabname) throw(base::Exception);
 
 protected:
-	bool        m_isTest;				// 是否为测试版本
 	bool        m_bRetainResult;		// 是否保留结果数据
 	std::string m_sInsertMode;			// 插入模式（直接插入 或者 覆盖重复数据）
 	std::string	m_sKpiID;				// 指标ID

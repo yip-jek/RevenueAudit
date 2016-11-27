@@ -11,15 +11,14 @@
 
 
 Acquire::Acquire()
-:m_isTest(false)
-,m_bRetainResult(false)
+:m_bRetainResult(false)
+,m_sType("一点稽核")
 ,m_nHdfsPort(0)
 ,m_seqHdfsFile(0)
 ,m_pAcqDB2(NULL)
 ,m_pAcqHive(NULL)
 ,m_acqDateType(base::PubTime::DT_UNKNOWN)
 {
-	m_sType = "一点稽核";
 }
 
 Acquire::~Acquire()
@@ -28,7 +27,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 3.0000.20161127 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 3.0000.20161128 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -101,11 +100,6 @@ std::string Acquire::GetLogFilePrefix()
 	return std::string("Acquire");
 }
 
-void Acquire::SetTestFlag(bool is_test)
-{
-	m_isTest = is_test;
-}
-
 void Acquire::Init() throw(base::Exception)
 {
 	GetParameterTaskInfo(GetTaskParaInfo());
@@ -128,11 +122,11 @@ void Acquire::Init() throw(base::Exception)
 
 	if ( m_isTest )		// 测试环境
 	{
-		m_pHive = new CAcqHive(DEBUG_HIVE_JAVA_CLASS_NAME);
+		m_pHive = new CAcqHive(base::BaseJHive::S_DEBUG_HIVE_JAVA_CLASS_NAME);
 	}
 	else	// 非测试环境
 	{
-		m_pHive = new CAcqHive(RELEASE_HIVE_JAVA_CLASS_NAME);
+		m_pHive = new CAcqHive(base::BaseJHive::S_RELEASE_HIVE_JAVA_CLASS_NAME);
 	}
 
 	if ( NULL == m_pHive )
@@ -204,6 +198,7 @@ void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 
 void Acquire::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
 {
+	// DO NOTHING !
 }
 
 void Acquire::SetTaskInfo()

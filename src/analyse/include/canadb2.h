@@ -119,13 +119,11 @@ public:
 	void InsertAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::Exception);
 
 // 业财稽核-任务调度
-#ifdef _YCRA_TASK
 	// 设置任务请求表
 	void SetTabYCTaskReq(const std::string& t_yc_taskreq);
 
 	// 更新任务请求表
 	void UpdateYCTaskReq(int seq, const std::string& state, const std::string& state_desc, const std::string& task_desc) throw(base::Exception);
-#endif
 
 private:
 	// 查询指标规则信息
@@ -183,9 +181,7 @@ private:
 	std::string	m_tabYCStatRule;		// 统计因子规则表（业财稽核）
 
 // 业财稽核-任务调度
-#ifdef _YCRA_TASK
 	std::string m_tabYCTaskReq;			// （业财）任务请求表
-#endif
 
 	std::string	m_fNCompareResult;		// 对比结果的字段名
 };
