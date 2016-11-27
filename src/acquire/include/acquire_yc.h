@@ -23,6 +23,13 @@ protected:
 	// 获取后续参数任务信息
 	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
 
+	// 获取任务信息
+	virtual void FetchTaskInfo() throw(base::Exception);
+
+	// 分析统计因子规则，生成业财稽核SQL
+	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
+	virtual void TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
+
 protected:
 	int                 m_ycSeqID;					// 任务流水号
 	std::string         m_tabYCTaskReq;				// （业财）任务请求表

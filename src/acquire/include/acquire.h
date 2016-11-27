@@ -69,13 +69,10 @@ protected:
 	void SetTaskInfo();
 
 	// 获取任务信息
-	void FetchTaskInfo() throw(base::Exception);
+	virtual void FetchTaskInfo() throw(base::Exception);
 
 	// 检查采集任务信息
 	void CheckTaskInfo() throw(base::Exception);
-
-	// 获取业财稽核的因子规则
-	void GetYCRAStatRule() throw(base::Exception);
 
 	// 进行数据采集
 	void DoDataAcquisition() throw(base::Exception);
@@ -114,11 +111,7 @@ protected:
 
 	// 分析采集任务规则，生成采集SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
-	void TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
-
-	// 分析统计因子规则，生成业财稽核SQL
-	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
-	void YCStatRule2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
+	virtual void TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
 
 	// 外连条件下：分析采集规则，生成采集SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
@@ -144,6 +137,7 @@ protected:
 	std::string m_sInsertMode;			// 插入模式（直接插入 或者 覆盖重复数据）
 	std::string	m_sKpiID;				// 指标ID
 	std::string	m_sEtlID;				// 采集规则ID
+	std::string m_sType;				// 采集类型
 
 	std::string m_sDBName;				// 数据库名称
 	std::string m_sUsrName;				// 用户名

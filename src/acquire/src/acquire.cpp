@@ -19,6 +19,7 @@ Acquire::Acquire()
 ,m_pAcqHive(NULL)
 ,m_acqDateType(base::PubTime::DT_UNKNOWN)
 {
+	m_sType = "一点稽核";
 }
 
 Acquire::~Acquire()
@@ -218,8 +219,6 @@ void Acquire::FetchTaskInfo() throw(base::Exception)
 
 	m_pLog->Output("[Acquire] 检查采集任务规则信息 ...");
 	CheckTaskInfo();
-
-	GetYCRAStatRule();
 }
 
 void Acquire::CheckTaskInfo() throw(base::Exception)
@@ -276,25 +275,7 @@ void Acquire::CheckTaskInfo() throw(base::Exception)
 		throw base::Exception(ACQERR_TASKINFO_INVALID, "未知的采集条件类型: ETLCTYPE_UNKNOWN [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
-	// 是否为业财稽核
-	m_isYCRA = ("YCRA" == base::PubStr::TrimUpperB(m_taskInfo.EtlRuleType));
-	m_pLog->Output("[Acquire] 采集类型：[%s]", (m_isYCRA ? "业财稽核":"一点稽核"));
-}
-
-void Acquire::GetYCRAStatRule() throw(base::Exception)
-{
-	if ( m_isYCRA )
-	{
-		m_pLog->Output("[Acquire] 获取业财稽核因子规则信息 ...");
-
-		// 载入配置
-		m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
-		m_cfg.ReadConfig();
-		std::string tab_rule = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
-
-		m_pAcqDB2->SetTabYCStatRule(tab_rule);
-		m_pAcqDB2->SelectYCStatRule(m_taskInfo.KpiID, m_vecYCInfo);
-	}
+	m_pLog->Output("[Acquire] 采集类型：[%s]", m_sType.c_str());
 }
 
 void Acquire::DoDataAcquisition() throw(base::Exception)
@@ -657,82 +638,25 @@ void Acquire::TaskInfo2TargetFields(std::vector<std::string>& vec_field) throw(b
 
 void Acquire::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception)
 {
-	if ( m_isYCRA )			// 业财稽核
+	switch ( m_taskInfo.EtlCondType )
 	{
-		YCStatRule2Sql(vec_sql, hive);
+		case AcqTaskInfo::ETLCTYPE_NONE:					// 不带条件
+		case AcqTaskInfo::ETLCTYPE_STRAIGHT:				// 直接条件
+			m_pLog->Output("[Acquire] 采集规则的条件类型：%s", (AcqTaskInfo::ETLCTYPE_NONE == m_taskInfo.EtlCondType ? "不带条件":"直接条件"));
+			NoneOrStraight2Sql(vec_sql, hive);
+			break;
+		case AcqTaskInfo::ETLCTYPE_OUTER_JOIN:				// 外连条件
+			m_pLog->Output("[Acquire] 采集规则的条件类型：%s", "外连条件");
+			OuterJoin2Sql(vec_sql, hive);
+			break;
+		case AcqTaskInfo::ETLCTYPE_OUTER_JOIN_WITH_COND:	// 外连加条件
+			m_pLog->Output("[Acquire] 采集规则的条件类型：%s", "外连加条件");
+			OuterJoin2Sql(vec_sql, hive, true);
+			break;
+		case AcqTaskInfo::ETLCTYPE_UNKNOWN:		// 未知类型
+		default:
+			throw base::Exception(ACQERR_TASKINFO_INVALID, "采集规则解析失败：未知的采集条件类型! (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
-	else
-	{
-		switch ( m_taskInfo.EtlCondType )
-		{
-			case AcqTaskInfo::ETLCTYPE_NONE:					// 不带条件
-			case AcqTaskInfo::ETLCTYPE_STRAIGHT:				// 直接条件
-				m_pLog->Output("[Acquire] 采集规则的条件类型：%s", (AcqTaskInfo::ETLCTYPE_NONE == m_taskInfo.EtlCondType ? "不带条件":"直接条件"));
-				NoneOrStraight2Sql(vec_sql, hive);
-				break;
-			case AcqTaskInfo::ETLCTYPE_OUTER_JOIN:				// 外连条件
-				m_pLog->Output("[Acquire] 采集规则的条件类型：%s", "外连条件");
-				OuterJoin2Sql(vec_sql, hive);
-				break;
-			case AcqTaskInfo::ETLCTYPE_OUTER_JOIN_WITH_COND:	// 外连加条件
-				m_pLog->Output("[Acquire] 采集规则的条件类型：%s", "外连加条件");
-				OuterJoin2Sql(vec_sql, hive, true);
-				break;
-			case AcqTaskInfo::ETLCTYPE_UNKNOWN:		// 未知类型
-			default:
-				throw base::Exception(ACQERR_TASKINFO_INVALID, "采集规则解析失败：未知的采集条件类型! (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
-		}
-	}
-}
-
-void Acquire::YCStatRule2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception)
-{
-	const int VEC_YCINFO_SIZE = m_vecYCInfo.size();
-	if ( VEC_YCINFO_SIZE <= 0 )
-	{
-		throw base::Exception(ACQERR_YC_STATRULE_SQL_FAILED, "没有业财稽核因子规则信息! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
-	}
-
-	// HIVE: 前置 insert sql
-	std::string prefix_sql;
-	if ( hive )
-	{
-		prefix_sql = "insert " + m_sInsertMode + " table " + m_taskInfo.EtlRuleTarget + " ";
-	}
-
-	size_t pos = 0;
-	std::string yc_dimid;
-	std::string yc_sql;
-	std::vector<std::string> v_yc_sql;
-
-	for ( int i = 0; i < VEC_YCINFO_SIZE; ++i )
-	{
-		YCInfo& ref_ycinf = m_vecYCInfo[i];
-
-		yc_dimid = base::PubStr::TrimUpperB(ref_ycinf.stat_dimid);
-		if ( yc_dimid.empty() )
-		{
-			throw base::Exception(ACQERR_YC_STATRULE_SQL_FAILED, "无效的业财稽核统计因子维度ID！(KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
-		}
-		yc_dimid = "'" + yc_dimid + "', ";
-
-		yc_sql = base::PubStr::UpperB(ref_ycinf.stat_sql);
-		pos = yc_sql.find("SELECT ");
-		if ( std::string::npos == pos )
-		{
-			throw base::Exception(ACQERR_YC_STATRULE_SQL_FAILED, "业财稽核统计因子SQL没有正确配置！(KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
-		}
-
-		pos += 7;
-		yc_sql = ref_ycinf.stat_sql;
-		yc_sql.insert(pos, yc_dimid);
-		yc_sql.insert(0, prefix_sql);
-
-		ExchangeSQLMark(yc_sql);
-		v_yc_sql.push_back(yc_sql);
-	}
-
-	v_yc_sql.swap(vec_sql);
 }
 
 void Acquire::OuterJoin2Sql(std::vector<std::string>& vec_sql, bool hive, bool with_cond /*= false*/) throw(base::Exception)
