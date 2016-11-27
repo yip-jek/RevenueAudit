@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
 	FactoryAssist fa(g_pFactory);
 
 	std::string str_error;
-	BaseFrameApp* pApp = g_pFactory->CreateApp(argv[3], argv[4], &str_error);
+	BaseFrameApp* pApp = g_pFactory->Create(argv[3], argv[4], &str_error);
 	if ( NULL == pApp )
 	{
 		std::cerr << "[ERROR] [MAIN] " << str_error << std::endl;

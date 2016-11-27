@@ -28,10 +28,10 @@ public:
 
 protected:
 	// 创建对象
-	virtual BaseFrameApp* CreateApp(const std::string& mode, const std::string& var, std::string* pError);
+	virtual base::BaseFrameApp* CreateApp(const std::string& mode, const std::string& var, std::string* pError);
 
 	// 销毁对象
-	virtual void DestroyApp(BaseFrameApp** ppApp);
+	virtual void DestroyApp(base::BaseFrameApp** ppApp);
 
 private:
 	Acquire* CreateAcq(const std::string& mode, bool is_test, std::string* pError);

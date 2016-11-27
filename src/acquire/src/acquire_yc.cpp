@@ -1,5 +1,8 @@
 #include "acquire_yc.h"
 #include "pubstr.h"
+#include "log.h"
+#include "simpletime.h"
+#include "cacqdb2.h"
 
 
 Acquire_YC::Acquire_YC()

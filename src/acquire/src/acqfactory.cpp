@@ -16,7 +16,7 @@ AcqFactory::~AcqFactory()
 {
 }
 
-BaseFrameApp* AcqFactory::CreateApp(const std::string& mode, const std::string& var, std::string* pError)
+base::BaseFrameApp* AcqFactory::CreateApp(const std::string& mode, const std::string& var, std::string* pError)
 {
 	const std::string VARIANT = base::PubStr::TrimUpperB(var);
 	if ( VAR_DEBUG == VARIANT )
@@ -31,14 +31,14 @@ BaseFrameApp* AcqFactory::CreateApp(const std::string& mode, const std::string& 
 	{
 		if ( pError != NULL )
 		{
-			base::PubStr::SetFormatString(*pError, "[ACQ_FACTORY] Create app failed - unknown variant: %s [FILE:%s, LINE:%d]", var.c_str(), __FILE__, __LINE__);
+			base::PubStr::SetFormatString(*pError, "[ACQ_FACTORY] Create app failed - unsupport variant: %s\nOnly support variant: %s %s [FILE:%s, LINE:%d]", var.c_str(), VAR_DEBUG, VAR_RELEASE, __FILE__, __LINE__);
 		}
 
 		return NULL;
 	}
 }
 
-void AcqFactory::DestroyApp(BaseFrameApp** ppApp)
+void AcqFactory::DestroyApp(base::BaseFrameApp** ppApp)
 {
 	if ( ppApp != NULL && *ppApp != NULL )
 	{
@@ -64,7 +64,7 @@ Acquire* AcqFactory::CreateAcq(const std::string& mode, bool is_test, std::strin
 	{
 		if ( pError != NULL )
 		{
-			base::PubStr::SetFormatString(*pError, "[ACQ_FACTORY] Create app failed - unknown variant: %s [FILE:%s, LINE:%d]", var.c_str(), __FILE__, __LINE__);
+			base::PubStr::SetFormatString(*pError, "[ACQ_FACTORY] Create app failed - unsupport mode: %s\nOnly support mode: %s %s [FILE:%s, LINE:%d]", mode.c_str(), MODE_YDJH, MODE_YCRA, __FILE__, __LINE__);
 		}
 
 		return NULL;

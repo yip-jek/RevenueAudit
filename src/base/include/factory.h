@@ -53,7 +53,7 @@ private:
 	Factory* m_pFactory;
 };
 
-extern Factory* g_pFactory;
-
 }	// namespace base
+
+extern base::Factory* g_pFactory;
 

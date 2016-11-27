@@ -275,7 +275,7 @@ void Acquire::CheckTaskInfo() throw(base::Exception)
 		throw base::Exception(ACQERR_TASKINFO_INVALID, "未知的采集条件类型: ETLCTYPE_UNKNOWN [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
-	m_pLog->Output("[Acquire] 采集类型：[%s]", m_sType.c_str());
+	m_pLog->Output("[Acquire] 采集类型：[%s] (%s)", m_sType.c_str(), (m_isTest ? "测试":"发布"));
 }
 
 void Acquire::DoDataAcquisition() throw(base::Exception)

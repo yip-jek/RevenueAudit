@@ -1,9 +1,9 @@
 #include "factory.h"
 
+base::Factory* g_pFactory = NULL;
+
 namespace base
 {
-
-Factory* g_pFactory = NULL;
 
 Factory::Factory()
 {
