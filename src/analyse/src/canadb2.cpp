@@ -243,7 +243,7 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 	int counter = 0;
 	try
 	{
-		std::string sql = "select DATA_SOURCE, ETLRULE_ID, KPI_CYCLE, ANALYSIS_ID, ALARM_ID, RESULT_TYPE, KPI_TABLENAME from ";
+		std::string sql = "select DATA_SOURCE, ETLRULE_ID, KPI_CYCLE, ALARM_ID, RESULT_TYPE, KPI_TABLENAME from ";
 		sql += m_tabKpiRule + " where KPI_ID = ?";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -261,9 +261,8 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 			info.DataSrcType   = (const char*)rs[index++];
 			str_etlruleid      = (const char*)rs[index++];
 			info.KpiCycle      = (const char*)rs[index++];
-			info.AnaRule.AnaID = (const char*)rs[index++];
 			str_alarmid        = (const char*)rs[index++];
-			result_type 	   = (const char*)rs[index++];
+			result_type        = (const char*)rs[index++];
 			info.TableName     = (const char*)rs[index++];
 
 			if ( !info.SetTableType(result_type) )
@@ -284,13 +283,13 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 	{
 		throw base::Exception(ADBERR_SEL_KPI_RULE, "[DB2] Select %s failed! No record! (KPI_ID:%s) [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s, ANALYSIS_ID:%s) [Record:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), info.AnaRule.AnaID.c_str(), counter);
+	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s) [Record:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), counter);
 
 	// 采集规则集
 	std::vector<std::string> vec_id;
 	base::PubStr::Str2StrVector(str_etlruleid, "|", vec_id);
 
-	std::vector<OneEtlRule>	vec_etl;
+	std::vector<OneEtlRule> vec_etl;
 	OneEtlRule one;
 	one.KpiID = info.KpiID;
 	size_t v_size = vec_id.size();
@@ -305,7 +304,7 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 	// 告警规则集
 	base::PubStr::Str2StrVector(str_alarmid, "|", vec_id);
 
-	std::vector<AlarmRule>	vec_alarm;
+	std::vector<AlarmRule> vec_alarm;
 	AlarmRule alarm;
 	v_size = vec_id.size();
 	for ( size_t i = 0; i < v_size; ++i )
@@ -1080,8 +1079,8 @@ void CAnaDB2::SelectAlarmRule(AlarmRule& alarm) throw(base::Exception)
 
 			int index = 1;
 
-			alarm.AlarmName	   = (const char*)rs[index++];
-			alarm_type		   = (const char*)rs[index++];
+			alarm.AlarmName    = (const char*)rs[index++];
+			alarm_type         = (const char*)rs[index++];
 			alarm.AlarmExpress = (const char*)rs[index++];
 			alarm.AlarmEvent   = (const char*)rs[index++];
 			alarm.SendAms      = (const char*)rs[index++];

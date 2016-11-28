@@ -177,15 +177,13 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 		throw base::Exception(ANAERR_TASKINFO_ERROR, "任务参数信息异常(split size:%lu), 无法按格式拆分! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
 	}
 
-	m_sKpiID = vec_str[1];
-	base::PubStr::Trim(m_sKpiID);
+	m_sKpiID = base::PubStr::TrimB(vec_str[1]);
 	if ( m_sKpiID.empty() )
 	{
 		throw base::Exception(ANAERR_KPIID_INVALID, "指标ID无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	m_sAnaID = vec_str[2];
-	base::PubStr::Trim(m_sAnaID);
+	m_sAnaID = base::PubStr::TrimB(vec_str[2]);
 	if ( m_sAnaID.empty() )
 	{
 		throw base::Exception(ANAERR_ANAID_INVALID, "分析规则ID无效! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
@@ -354,8 +352,8 @@ void Analyse::UpdateDimValue()
 {
 	CollectDimVal();
 
-	m_pAnaDB2->SelectDimValue(m_taskInfo.KpiID, m_DVDiffer);
-	m_pLog->Output("[Analyse] 从数据库中获取指标 (KPI_ID:%s) 的维度取值范围, size: %llu", m_taskInfo.KpiID.c_str(), m_DVDiffer.GetDBDimValSize());
+	m_pAnaDB2->SelectDimValue(m_sKpiID, m_DVDiffer);
+	m_pLog->Output("[Analyse] 从数据库中获取指标 (KPI_ID:%s) 的维度取值范围, size: %llu", m_sKpiID.c_str(), m_DVDiffer.GetDBDimValSize());
 
 	std::vector<DimVal> vec_diff_dv;
 	m_DVDiffer.GetDimValDiff(vec_diff_dv);
@@ -409,17 +407,17 @@ void Analyse::CheckAnaTaskInfo() throw(base::Exception)
 {
 	if ( AnaTaskInfo::TABTYPE_UNKNOWN == m_taskInfo.ResultType )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析结果表类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析结果表类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( m_taskInfo.TableName.empty() )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析结果表为空! 无效! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "分析结果表为空! 无效! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( AnalyseRule::ANATYPE_UNKNOWN == m_taskInfo.AnaRule.AnaType )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析规则类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析规则类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( AnalyseRule::ANATYPE_SUMMARY_COMPARE == m_taskInfo.AnaRule.AnaType )
@@ -427,7 +425,7 @@ void Analyse::CheckAnaTaskInfo() throw(base::Exception)
 		// 汇总对比的结果描述共 2 个：对平，有差异
 		if ( m_taskInfo.vecComResDesc.size() < (size_t)2 )
 		{
-			throw base::Exception(ANAERR_TASKINFO_INVALID, "汇总对比缺少结果描述，当前结果描述个数：%lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.vecComResDesc.size(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_TASKINFO_INVALID, "汇总对比缺少结果描述，当前结果描述个数：%lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.vecComResDesc.size(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 	}
 	else if ( AnalyseRule::ANATYPE_DETAIL_COMPARE == m_taskInfo.AnaRule.AnaType )
@@ -435,34 +433,34 @@ void Analyse::CheckAnaTaskInfo() throw(base::Exception)
 		// 明细对比的结果描述共 4 个：对平，有差异，左有右无，左无右有
 		if ( m_taskInfo.vecComResDesc.size() < (size_t)4 )
 		{
-			throw base::Exception(ANAERR_TASKINFO_INVALID, "明细对比缺少结果描述，当前结果描述个数：%lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.vecComResDesc.size(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_TASKINFO_INVALID, "明细对比缺少结果描述，当前结果描述个数：%lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.vecComResDesc.size(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 	}
 
 	// 分析规则表达式可能为空！
 	//if ( m_taskInfo.AnaRule.AnaExpress.empty() )
 	//{
-	//	throw base::Exception(ANAERR_TASKINFO_INVALID, "分析规则表达式为空! 无效! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	//	throw base::Exception(ANAERR_TASKINFO_INVALID, "分析规则表达式为空! 无效! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	//}
 
 	if ( m_taskInfo.vecEtlRule.empty() )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有采集规则信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有采集规则信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( m_taskInfo.vecKpiDimCol.empty() )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标维度信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标维度信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( m_taskInfo.vecKpiValCol.empty() )
 	{
-		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标值信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_TASKINFO_INVALID, "没有指标值信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	//if ( AnalyseRule::ACTYPE_UNKNOWN == m_taskInfo.AnaRule.AnaCondType )
 	//{
-	//	throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析条件类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+	//	throw base::Exception(ANAERR_TASKINFO_INVALID, "未知的分析条件类型! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	//}
 
 	CheckExpWayType();
@@ -484,7 +482,7 @@ void Analyse::CheckExpWayType() throw(base::Exception)
 		{
 			if ( region_existed )	// 地市已经存在
 			{
-				throw base::Exception(ANAERR_TASKINFO_INVALID, "地市维度字段重复配置！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_TASKINFO_INVALID, "地市维度字段重复配置！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 			}
 			else
 			{
@@ -495,7 +493,7 @@ void Analyse::CheckExpWayType() throw(base::Exception)
 		{
 			if ( channel_existed )	// 渠道已经存在
 			{
-				throw base::Exception(ANAERR_TASKINFO_INVALID, "渠道维度字段重复配置！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_TASKINFO_INVALID, "渠道维度字段重复配置！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 			}
 			else
 			{
@@ -515,7 +513,7 @@ void Analyse::CheckExpWayType() throw(base::Exception)
 		{
 			if ( comp_result_existed )	// 对比结果已经存在
 			{
-				throw base::Exception(ANAERR_TASKINFO_INVALID, "对比结果值字段重复配置！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_TASKINFO_INVALID, "对比结果值字段重复配置！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 			}
 			else
 			{
@@ -574,33 +572,33 @@ void Analyse::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Ex
 	switch ( m_taskInfo.AnaRule.AnaType )
 	{
 	case AnalyseRule::ANATYPE_SUMMARY_COMPARE:		// 汇总对比
-		m_pLog->Output("[Analyse] 分析规则类型：汇总对比 (KPI_ID:%s, ANA_ID:%s)", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str());
+		m_pLog->Output("[Analyse] 分析规则类型：汇总对比 (KPI_ID:%s, ANA_ID:%s)", m_sKpiID.c_str(), m_sAnaID.c_str());
 		m_pLog->Output("[Analyse] 分析规则表达式：%s", ref_exp.c_str());
 		GetSummaryCompareHiveSQL(vec_hivesql);
 		break;
 	case AnalyseRule::ANATYPE_DETAIL_COMPARE:		// 明细对比
-		m_pLog->Output("[Analyse] 分析规则类型：明细对比 (KPI_ID:%s, ANA_ID:%s)", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str());
+		m_pLog->Output("[Analyse] 分析规则类型：明细对比 (KPI_ID:%s, ANA_ID:%s)", m_sKpiID.c_str(), m_sAnaID.c_str());
 		m_pLog->Output("[Analyse] 分析规则表达式：%s", ref_exp.c_str());
 		GetDetailCompareHiveSQL(vec_hivesql);
 		break;
 	case AnalyseRule::ANATYPE_STATISTICS:			// 一般统计
-		m_pLog->Output("[Analyse] 分析规则类型：一般统计 (KPI_ID:%s, ANA_ID:%s)", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str());
+		m_pLog->Output("[Analyse] 分析规则类型：一般统计 (KPI_ID:%s, ANA_ID:%s)", m_sKpiID.c_str(), m_sAnaID.c_str());
 		m_pLog->Output("[Analyse] 分析规则表达式：%s", ref_exp.c_str());
 		GetStatisticsHiveSQL(vec_hivesql);
 		break;
 	case AnalyseRule::ANATYPE_REPORT_STATISTICS:	// 报表统计
-		m_pLog->Output("[Analyse] 分析规则类型：报表统计 (KPI_ID:%s, ANA_ID:%s)", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str());
+		m_pLog->Output("[Analyse] 分析规则类型：报表统计 (KPI_ID:%s, ANA_ID:%s)", m_sKpiID.c_str(), m_sAnaID.c_str());
 		m_pLog->Output("[Analyse] 分析规则表达式：%s", ref_exp.c_str());
 		GetReportStatisticsHiveSQL(vec_hivesql);
 		break;
 	case AnalyseRule::ANATYPE_HIVE_SQL:				// 可执行的HIVE SQL语句
-		m_pLog->Output("[Analyse] 分析规则类型：可执行的HIVE SQL语句 (KPI_ID:%s, ANA_ID:%s)", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str());
+		m_pLog->Output("[Analyse] 分析规则类型：可执行的HIVE SQL语句 (KPI_ID:%s, ANA_ID:%s)", m_sKpiID.c_str(), m_sAnaID.c_str());
 		// 分析表达式，即是可执行的Hive SQL语句（可多个，以分号分隔）
 		SplitHiveSqlExpress(ref_exp, vec_hivesql);
 		break;
 	case AnalyseRule::ANATYPE_UNKNOWN:				// 未知类型
 	default:
-		throw base::Exception(ANAERR_ANA_RULE_FAILED, "不支持的分析规则类型: %d (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.AnaRule.AnaType, m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ANA_RULE_FAILED, "不支持的分析规则类型: %d (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.AnaRule.AnaType, m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 生成数据库[DB2]信息
@@ -613,13 +611,13 @@ void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) th
 	switch ( TaskInfoUtil::CheckDualEtlRule(m_taskInfo.vecEtlRule) )
 	{
 	case -1:	// 采集规则个数不够
-		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "只有 %lu 份采集结果数据，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.vecEtlRule.size(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "只有 %lu 份采集结果数据，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.vecEtlRule.size(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		break;
 	case -2:	// 维度不一致
-		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "采集规则的维度size不一致，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "采集规则的维度size不一致，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		break;
 	case -3:	// 值不一致
-		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "采集规则的值size不一致，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "采集规则的值size不一致，无法进行汇总对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		break;
 	default:	// 正常
 		break;
@@ -633,7 +631,7 @@ void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) th
 	base::PubStr::Str2StrVector(ana_exp, ",", vec_str);
 	if ( vec_str.size() != 2 )
 	{
-		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	int first_index  = -1;
@@ -657,7 +655,7 @@ void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) th
 		base::PubStr::Str2StrVector(diff_str, ":", vec_str);
 		if ( vec_str.empty() )
 		{
-			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 
 		std::set<int> set_diff;			// 用于查重
@@ -670,23 +668,23 @@ void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) th
 			size_t pos = ref_str.find("DIFF");
 			if ( std::string::npos == pos )
 			{
-				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：不支持的表达式 [%s] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ana_exp.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 			}
 
 			int diff_no = -1;
 			if ( !base::PubStr::Str2Int(ref_str.substr(pos+4), diff_no) )
 			{
-				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：[%s] 转换失败! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_str.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：[%s] 转换失败! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_str.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 			}
 
 			if ( diff_no < 1 || diff_no > VAL_SIZE )
 			{
-				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：列值 [%d] 越界! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", diff_no, m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：列值 [%d] 越界! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", diff_no, m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 			}
 
 			if ( set_diff.find(diff_no) != set_diff.end() )
 			{
-				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：列值 [%d] 已经存在! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", diff_no, m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "分析规则表达式解析失败：列值 [%d] 已经存在! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", diff_no, m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 			}
 
 			set_diff.insert(diff_no);
@@ -704,11 +702,11 @@ void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) th
 	// 检查：单独显示的字段是否对应
 	if ( first_one.vecEtlSingleDim.size() != m_taskInfo.vecLeftKpiCol.size() )
 	{
-		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "汇总对比：左侧，采集的单独显示字段数 [%lu] 与指标的单独显示字段数 [%lu] 不一致！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", first_one.vecEtlSingleDim.size(), m_taskInfo.vecLeftKpiCol.size(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "汇总对比：左侧，采集的单独显示字段数 [%lu] 与指标的单独显示字段数 [%lu] 不一致！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", first_one.vecEtlSingleDim.size(), m_taskInfo.vecLeftKpiCol.size(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 	if ( second_one.vecEtlSingleDim.size() != m_taskInfo.vecRightKpiCol.size() )
 	{
-		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "汇总对比：右侧，采集的单独显示字段数 [%lu] 与指标的单独显示字段数 [%lu] 不一致！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", second_one.vecEtlSingleDim.size(), m_taskInfo.vecRightKpiCol.size(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_SUMMARY_FAILED, "汇总对比：右侧，采集的单独显示字段数 [%lu] 与指标的单独显示字段数 [%lu] 不一致！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", second_one.vecEtlSingleDim.size(), m_taskInfo.vecRightKpiCol.size(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	//// 指定分析条件
@@ -751,13 +749,13 @@ void Analyse::GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) thr
 	switch ( TaskInfoUtil::CheckDualEtlRule(m_taskInfo.vecEtlRule) )
 	{
 	case -1:	// 采集规则个数不够
-		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "只有 %lu 份采集结果数据，无法进行明细对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.vecEtlRule.size(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "只有 %lu 份采集结果数据，无法进行明细对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.vecEtlRule.size(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		break;
 	case -2:	// 维度不一致
-		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "采集规则的维度size不一致，无法进行明细对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "采集规则的维度size不一致，无法进行明细对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		break;
 	case -3:	// 值不一致
-		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "采集规则的值size不一致，无法进行明细对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "采集规则的值size不一致，无法进行明细对比! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		break;
 	default:	// 正常
 		break;
@@ -780,11 +778,11 @@ void Analyse::GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) thr
 	// 检查：单独显示的字段是否对应
 	if ( first_one.vecEtlSingleDim.size() != m_taskInfo.vecLeftKpiCol.size() )
 	{
-		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "明细对比：左侧，采集的单独显示字段数 [%lu] 与指标的单独显示字段数 [%lu] 不一致！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", first_one.vecEtlSingleDim.size(), m_taskInfo.vecLeftKpiCol.size(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "明细对比：左侧，采集的单独显示字段数 [%lu] 与指标的单独显示字段数 [%lu] 不一致！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", first_one.vecEtlSingleDim.size(), m_taskInfo.vecLeftKpiCol.size(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 	if ( second_one.vecEtlSingleDim.size() != m_taskInfo.vecRightKpiCol.size() )
 	{
-		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "明细对比：右侧，采集的单独显示字段数 [%lu] 与指标的单独显示字段数 [%lu] 不一致！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", second_one.vecEtlSingleDim.size(), m_taskInfo.vecRightKpiCol.size(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_DETAIL_FAILED, "明细对比：右侧，采集的单独显示字段数 [%lu] 与指标的单独显示字段数 [%lu] 不一致！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", second_one.vecEtlSingleDim.size(), m_taskInfo.vecRightKpiCol.size(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	//// 指定分析条件
@@ -847,13 +845,13 @@ void Analyse::GetStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) throw(
 	switch ( TaskInfoUtil::CheckPluralEtlRule(m_taskInfo.vecEtlRule) )
 	{
 	case -1:	// 没有采集规则
-		throw base::Exception(ANAERR_GET_STATISTICS_FAILED, "没有采集结果数据，无法进行一般统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.vecEtlRule.size(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_STATISTICS_FAILED, "没有采集结果数据，无法进行一般统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.vecEtlRule.size(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		break;
 	case -2:	// 维度不一致
-		throw base::Exception(ANAERR_GET_STATISTICS_FAILED, "采集规则的维度size不一致，无法进行一般统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_STATISTICS_FAILED, "采集规则的维度size不一致，无法进行一般统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		break;
 	case -3:	// 值不一致
-		throw base::Exception(ANAERR_GET_STATISTICS_FAILED, "采集规则的值size不一致，无法进行一般统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_STATISTICS_FAILED, "采集规则的值size不一致，无法进行一般统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		break;
 	default:	// 正常
 		break;
@@ -880,13 +878,13 @@ void Analyse::GetReportStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) 
 	switch ( TaskInfoUtil::CheckPluralEtlRule(m_taskInfo.vecEtlRule) )
 	{
 	case -1:	// 没有采集规则
-		throw base::Exception(ANAERR_GET_REPORT_STAT_FAILED, "没有采集结果数据，无法进行报表统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.vecEtlRule.size(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_REPORT_STAT_FAILED, "没有采集结果数据，无法进行报表统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.vecEtlRule.size(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		break;
 	case -2:	// 维度不一致
-		throw base::Exception(ANAERR_GET_REPORT_STAT_FAILED, "采集规则的维度size不一致，无法进行报表统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_REPORT_STAT_FAILED, "采集规则的维度size不一致，无法进行报表统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		break;
 	case -3:	// 值不一致
-		throw base::Exception(ANAERR_GET_REPORT_STAT_FAILED, "采集规则的值size不一致，无法进行报表统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_REPORT_STAT_FAILED, "采集规则的值size不一致，无法进行报表统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		break;
 	default:	// 正常
 		break;
@@ -896,7 +894,7 @@ void Analyse::GetReportStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) 
 	// 由于上面已经确保了值的size都是一致的，所以检查第一组就可以了
 	if ( m_taskInfo.vecEtlRule[0].vecEtlVal.size() != 1 )
 	{
-		throw base::Exception(ANAERR_GET_REPORT_STAT_FAILED, "采集规则的值不唯一，无法进行报表统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_REPORT_STAT_FAILED, "采集规则的值不唯一，无法进行报表统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	std::string& ana_exp = m_taskInfo.AnaRule.AnaExpress;
@@ -921,11 +919,11 @@ void Analyse::GetStatisticsHiveSQLBySet(std::vector<std::string>& vec_hivesql, b
 
 	if ( -1 == RESULT )		// 转换失败
 	{
-		throw base::Exception(ANAERR_GET_STAT_BY_SET_FAILED, "分析规则解析失败：分析规则表达式转换失败! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_STAT_BY_SET_FAILED, "分析规则解析失败：分析规则表达式转换失败! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 	else if ( 1 == RESULT )		// 数据重复
 	{
-		throw base::Exception(ANAERR_GET_STAT_BY_SET_FAILED, "分析规则解析失败：分析规则表达式存在重复数据! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GET_STAT_BY_SET_FAILED, "分析规则解析失败：分析规则表达式存在重复数据! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 	else
 	{
@@ -938,7 +936,7 @@ void Analyse::GetStatisticsHiveSQLBySet(std::vector<std::string>& vec_hivesql, b
 
 			if ( VAL < 1 || VAL > MAX_ETL_RULE_SIZE )
 			{
-				throw base::Exception(ANAERR_GET_STAT_BY_SET_FAILED, "分析规则解析失败：不存在指定的采集组 [%d] ! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", VAL, m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_GET_STAT_BY_SET_FAILED, "分析规则解析失败：不存在指定的采集组 [%d] ! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", VAL, m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 			}
 		}
 
@@ -1040,7 +1038,7 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 	base::PubTime::DATE_TYPE d_type;
 	if ( !base::PubTime::DateApartFromNow(ref_etltime, d_type, m_dbinfo.date_time) )
 	{
-		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_etltime.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_etltime.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[Analyse] 完成采集时间转换：[%s] -> [%s]", ref_etltime.c_str(), m_dbinfo.date_time.c_str());
 
@@ -1055,7 +1053,7 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 	case AnaTaskInfo::TABTYPE_DAY:			// 天表
 		if ( d_type > base::PubTime::DT_DAY )
 		{
-			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：DAY_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", base::PubTime::DateType2String(d_type).c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：DAY_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", base::PubTime::DateType2String(d_type).c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 		else
 		{
@@ -1066,7 +1064,7 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 	case AnaTaskInfo::TABTYPE_MONTH:		// 月表
 		if ( d_type > base::PubTime::DT_MONTH )
 		{
-			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：MONTH_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", base::PubTime::DateType2String(d_type).c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：MONTH_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", base::PubTime::DateType2String(d_type).c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 		else
 		{
@@ -1080,7 +1078,7 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 		break;
 	case AnaTaskInfo::TABTYPE_UNKNOWN:		// 未知类型
 	default:
-		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "无法识别的目标表类型: TABTYPE_UNKNOWN (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "无法识别的目标表类型: TABTYPE_UNKNOWN (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	m_dbinfo.target_table = tab_name;
@@ -1292,7 +1290,7 @@ void Analyse::TransSrcDataToReportStatData()
 //	{
 //		if ( m_v3HiveSrcData.size() != COMPARE_HIVE_SRCDATA_SIZE )
 //		{
-//			throw base::Exception(ANAERR_COMPARE_RESULT_DATA, "不正确的对比源数据个数: %lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_v3HiveSrcData.size(), m_taskInfo.KpiID.c_str(), m_taskInfo.AnaRule.AnaID.c_str(), __FILE__, __LINE__);
+//			throw base::Exception(ANAERR_COMPARE_RESULT_DATA, "不正确的对比源数据个数: %lu (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_v3HiveSrcData.size(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 //		}
 //
 //		std::string com_desc;
@@ -1352,7 +1350,7 @@ void Analyse::CollectDimVal()
 	m_pLog->Output("[Analyse] 收集源数据的所有维度取值 ...");
 
 	DimVal dv;
-	dv.KpiID = m_taskInfo.KpiID;
+	dv.KpiID = m_sKpiID;
 
 	std::vector<KpiColumn>& v_dimcol = m_taskInfo.vecKpiDimCol;
 	int vec_size = v_dimcol.size();
@@ -1466,7 +1464,7 @@ void Analyse::AlarmJudgement() throw(base::Exception)
 
 		if ( ref_rule.AlarmExpress.empty() )
 		{
-			throw base::Exception(ANAERR_ALARM_JUDGEMENT_FAILED, "告警规则表达式缺失！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), ref_rule.AlarmID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_ALARM_JUDGEMENT_FAILED, "告警规则表达式缺失！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), ref_rule.AlarmID.c_str(), __FILE__, __LINE__);
 		}
 
 		switch ( ref_rule.AlarmType )
@@ -1481,7 +1479,7 @@ void Analyse::AlarmJudgement() throw(base::Exception)
 			break;
 		case AlarmRule::AT_UNKNOWN:
 		default:
-			throw base::Exception(ANAERR_ALARM_JUDGEMENT_FAILED, "无法识别的告警规则类型：AT_UNKNOWN！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), ref_rule.AlarmID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_ALARM_JUDGEMENT_FAILED, "无法识别的告警规则类型：AT_UNKNOWN！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), ref_rule.AlarmID.c_str(), __FILE__, __LINE__);
 			break;
 		}
 	}

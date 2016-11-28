@@ -289,7 +289,7 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 			val.EtlValName    = (const char*)rs[index++];
 			val.EtlValDesc    = (const char*)rs[index++];
 			val.EtlValSrcName = (const char*)rs[index++];
-			//val.EtlValMemo	  = (const char*)rs[index++];
+			//val.EtlValMemo    = (const char*)rs[index++];
 			val.SetValMemoType((const char*)rs[index++]);
 
 			v_val.push_back(val);

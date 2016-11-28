@@ -163,8 +163,8 @@ protected:
 	//void AddAnalysisCondition(AnalyseRule& ana_rule, std::vector<std::string>& vec_sql);
 
 protected:
-	std::string	m_sKpiID;				// 指标ID
-	std::string	m_sAnaID;				// 分析规则ID
+	std::string m_sKpiID;				// 指标ID
+	std::string m_sAnaID;				// 分析规则ID
 	std::string m_sType;				// 分析类型
 
 	std::string m_sDBName;				// 数据库名称
@@ -179,17 +179,17 @@ protected:
 	std::string m_sLoadJarPath;			// 依赖的 jar 包的路径
 
 protected:
-	CAnaDB2*	m_pAnaDB2;				// DB2数据库接口
-	CAnaHive*	m_pAnaHive;				// Hive接口
+	CAnaDB2*    m_pAnaDB2;				// DB2数据库接口
+	CAnaHive*   m_pAnaHive;				// Hive接口
 
 protected:
 	// 数据库表名
-	std::string	m_tabKpiRule;			// 指标规则表
+	std::string m_tabKpiRule;			// 指标规则表
 	std::string m_tabKpiColumn;			// 指标字段表
 	std::string m_tabDimValue;			// 维度取值表
-	std::string	m_tabEtlRule;			// 采集规则表
-	std::string	m_tabEtlDim;			// 采集维度规则表
-	std::string	m_tabEtlVal;			// 采集值规则表
+	std::string m_tabEtlRule;			// 采集规则表
+	std::string m_tabEtlDim;			// 采集维度规则表
+	std::string m_tabEtlVal;			// 采集值规则表
 	std::string m_tabAnaRule;			// 分析规则表
 	std::string m_tabAlarmRule;			// 告警规则表
 	std::string m_tabAlarmEvent;		// 告警事件表
@@ -197,13 +197,13 @@ protected:
 	std::string m_tabDictCity;			// 地市统一编码表
 
 protected:
-	AnaTaskInfo			m_taskInfo;				// 指标任务信息
-	DimValDiffer		m_DVDiffer;				// 用于维度取值范围的比较
-	UniformCodeTransfer	m_UniCodeTransfer;		// 统一编码转换
+	AnaTaskInfo         m_taskInfo;				// 指标任务信息
+	DimValDiffer        m_DVDiffer;				// 用于维度取值范围的比较
+	UniformCodeTransfer m_UniCodeTransfer;		// 统一编码转换
 
 protected:
-	AnaDBInfo												m_dbinfo;				// 库表信息
-	std::vector<std::vector<std::vector<std::string> > >	m_v3HiveSrcData;		// 获取到的Hive源数据集
-	std::vector<std::vector<std::string> >					m_v2ReportStatData;		// 报表统计类型的数据集
+	AnaDBInfo                                            m_dbinfo;				// 库表信息
+	std::vector<std::vector<std::vector<std::string> > > m_v3HiveSrcData;		// 获取到的Hive源数据集
+	std::vector<std::vector<std::string> >               m_v2ReportStatData;	// 报表统计类型的数据集
 };
 

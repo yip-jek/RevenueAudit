@@ -75,12 +75,12 @@ private:
 
 private:
 	// 数据库表名
-	std::string	m_tabKpiRule;			// 指标规则表
-	std::string	m_tabEtlRule;			// 采集规则表
-	std::string	m_tabEtlDim;			// 采集维度规则表
-	std::string	m_tabEtlVal;			// 采集值规则表
-	std::string	m_tabEtlSrc;			// 采集数据源表
-	std::string	m_tabYCStatRule;		// 统计因子规则表（业财稽核）
+	std::string m_tabKpiRule;			// 指标规则表
+	std::string m_tabEtlRule;			// 采集规则表
+	std::string m_tabEtlDim;			// 采集维度规则表
+	std::string m_tabEtlVal;			// 采集值规则表
+	std::string m_tabEtlSrc;			// 采集数据源表
+	std::string m_tabYCStatRule;		// 统计因子规则表（业财稽核）
 
 // 业财稽核-任务调度
 	std::string m_tabYCTaskReq;			// （业财）任务请求表

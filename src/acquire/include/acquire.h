@@ -131,8 +131,8 @@ protected:
 protected:
 	bool        m_bRetainResult;		// 是否保留结果数据
 	std::string m_sInsertMode;			// 插入模式（直接插入 或者 覆盖重复数据）
-	std::string	m_sKpiID;				// 指标ID
-	std::string	m_sEtlID;				// 采集规则ID
+	std::string m_sKpiID;				// 指标ID
+	std::string m_sEtlID;				// 采集规则ID
 	std::string m_sType;				// 采集类型
 
 	std::string m_sDBName;				// 数据库名称
@@ -150,24 +150,24 @@ protected:
 	std::string m_sHdfsHostInfo;		// HDFS的主机组合信息
 	std::string m_sHdfsHost;			// HDFS的主机信息
 	std::string m_sHdfsTmpPath;			// HDFS的临时目录
-	int			m_nHdfsPort;			// HDFS的端口
-	int			m_seqHdfsFile;			// HDFS文件的流水号
+	int         m_nHdfsPort;			// HDFS的端口
+	int         m_seqHdfsFile;			// HDFS文件的流水号
 
 protected:
-	CAcqDB2*	m_pAcqDB2;				// DB2数据库接口
-	CAcqHive*	m_pAcqHive;				// Hive接口
+	CAcqDB2*    m_pAcqDB2;				// DB2数据库接口
+	CAcqHive*   m_pAcqHive;				// Hive接口
 
 protected:
-	AcqTaskInfo					m_taskInfo;			// 采集任务信息
-	base::PubTime::DATE_TYPE	m_acqDateType;		// 采集时间类型
-	std::string					m_acqDate;			// 采集时间
+	AcqTaskInfo              m_taskInfo;			// 采集任务信息
+	base::PubTime::DATE_TYPE m_acqDateType;			// 采集时间类型
+	std::string              m_acqDate;				// 采集时间
 
 protected:
 	// 数据库表名
-	std::string	m_tabKpiRule;			// 指标规则表
-	std::string	m_tabEtlRule;			// 采集规则表
-	std::string	m_tabEtlDim;			// 采集维度规则表
-	std::string	m_tabEtlVal;			// 采集值规则表
-	std::string	m_tabEtlSrc;			// 采集数据源表
+	std::string m_tabKpiRule;			// 指标规则表
+	std::string m_tabEtlRule;			// 采集规则表
+	std::string m_tabEtlDim;			// 采集维度规则表
+	std::string m_tabEtlVal;			// 采集值规则表
+	std::string m_tabEtlSrc;			// 采集数据源表
 };
 

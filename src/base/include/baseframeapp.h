@@ -52,16 +52,16 @@ public:
 	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(Exception) = 0;
 
 protected:
-	bool        m_isTest;				// 是否为测试版本
+	bool       m_isTest;				// 是否为测试版本
 
 protected:
-	Config		m_cfg;
-	Log*		m_pLog;
-	char**		m_ppArgv;
+	Config     m_cfg;
+	Log*       m_pLog;
+	char**     m_ppArgv;
 
 protected:
-	BaseDB2*	m_pDB2;
-	BaseJHive*	m_pHive;
+	BaseDB2*   m_pDB2;
+	BaseJHive* m_pHive;
 };
 
 }	// namespace base
