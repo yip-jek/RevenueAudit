@@ -7,6 +7,7 @@
 
 class CAcqDB2;
 class CAcqHive;
+class SQLTranslator;
 
 // 采集模块
 class Acquire : public base::BaseFrameApp
@@ -56,6 +57,9 @@ public:
 	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(base::Exception);
 
 protected:
+	// 释放 SQLTranslator 资源
+	void SQLTransRelease();
+
 	// 获取参数任务信息
 	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
 
@@ -161,6 +165,7 @@ protected:
 	AcqTaskInfo              m_taskInfo;			// 采集任务信息
 	base::PubTime::DATE_TYPE m_acqDateType;			// 采集时间类型
 	std::string              m_acqDate;				// 采集时间
+	SQLTranslator*           m_pSQLTrans;			// SQL语句转换
 
 protected:
 	// 数据库表名

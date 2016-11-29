@@ -2,10 +2,10 @@
 #include "pubstr.h"
 #include "simpletime.h"
 
-const char* const SQLTranslator::S_ETL_DAY = "ETL_DAY";				// 采集时间：天
-const char* const SQLTranslator::S_ETL_MON = "ETL_MON";				// 采集时间：月
-const char* const SQLTranslator::S_SYS_DAY = "SYS_DAY";				// 系统（当前）时间：天
-const char* const SQLTranslator::S_SYS_MON = "SYS_MON";				// 系统（当前）时间：月
+const char* const SQLTranslator::S_ETL_DAY = "ETL_DAY";				// 采集时间：day
+const char* const SQLTranslator::S_ETL_MON = "ETL_MON";				// 采集时间：month
+const char* const SQLTranslator::S_SYS_DAY = "SYS_DAY";				// 系统（当前）时间：day
+const char* const SQLTranslator::S_SYS_MON = "SYS_MON";				// 系统（当前）时间：month
 
 SQLTranslator::SQLTranslator(base::PubTime::DATE_TYPE dt, const std::string& etl_date)
 :m_dEtlType(dt), m_sEtlDate(etl_date)
@@ -22,7 +22,6 @@ bool SQLTranslator::Translate(std::string& sql, std::string* pError)
 	size_t mark_size = 0;
 	std::string mark;
 	std::string mark_val;
-	std::vector<std::string> vec_str;
 
 	while ( GetMark(sql, mark, pos) )
 	{
@@ -31,9 +30,17 @@ bool SQLTranslator::Translate(std::string& sql, std::string* pError)
 
 		if ( mark.find('+') != std::string::npos )			// 含 + 运算
 		{
+			if ( !CalcMark(mark, true, mark_val, pError) )
+			{
+				return false;
+			}
 		}
 		else if ( mark.find('-') != std::string::npos )		// 含 - 运算
 		{
+			if ( !CalcMark(mark, false, mark_val, pError) )
+			{
+				return false;
+			}
 		}
 		else	// 不含 + 或者 - 运算
 		{
@@ -42,6 +49,8 @@ bool SQLTranslator::Translate(std::string& sql, std::string* pError)
 				return false;
 			}
 		}
+
+		sql.replace(pos, mark_size, mark_val);
 	}
 
 	return true;
@@ -69,6 +78,82 @@ bool SQLTranslator::GetMark(const std::string& sql, std::string& mark, size_t& p
 	}
 }
 
+bool SQLTranslator::CalcMark(const std::string& mark, bool is_plus, std::string& val, std::string* pError)
+{
+	std::vector<std::string> vec_str;
+	const std::string OPER = (is_plus ? "+" : "-");
+	base::PubStr::Str2StrVector(mark, OPER, vec_str);
+
+	if ( vec_str.size() != 2 )
+	{
+		if ( pError != NULL )
+		{
+			base::PubStr::SetFormatString(*pError, "[SQLTranslator] Not support mark: %s [FILE:%s, LINE:%d]", mark.c_str(), __FILE__, __LINE__);
+		}
+		return false;
+	}
+
+	if ( !TransMark(vec_str[0], val, pError) )
+	{
+		return false;
+	}
+
+	unsigned int u_off = 0;
+	if ( !base::PubStr::Str2UInt(vec_str[1], u_off) )
+	{
+		if ( pError != NULL )
+		{
+			base::PubStr::SetFormatString(*pError, "[SQLTranslator] Not support mark: %s [FILE:%s, LINE:%d]", mark.c_str(), __FILE__, __LINE__);
+		}
+		return false;
+	}
+
+	int year = 0;
+	int mon  = 0;
+	int day  = 0;
+
+	const int VAL_SIZE = val.size();
+	if ( VAL_SIZE == 8 )	// day
+	{
+		base::PubStr::Str2Int(val.substr(0, 4), year);
+		base::PubStr::Str2Int(val.substr(4, 2), mon);
+		base::PubStr::Str2Int(val.substr(6, 2), day);
+
+		if ( is_plus )
+		{
+			val = base::PubTime::TheDatePlusDays(year, mon, day, u_off);
+		}
+		else
+		{
+			val = base::PubTime::TheDateMinusDays(year, mon, day, u_off);
+		}
+	}
+	else if ( VAL_SIZE == 6 )	// month
+	{
+		base::PubStr::Str2Int(val.substr(0, 4), year);
+		base::PubStr::Str2Int(val.substr(4, 2), mon);
+
+		if ( is_plus )
+		{
+			val = base::PubTime::TheDatePlusMonths(year, mon, u_off);
+		}
+		else
+		{
+			val = base::PubTime::TheDateMinusMonths(year, mon, u_off);
+		}
+	}
+	else
+	{
+		if ( pError != NULL )
+		{
+			base::PubStr::SetFormatString(*pError, "[SQLTranslator] Can not calculate the date: %s [FILE:%s, LINE:%d]", val.c_str(), __FILE__, __LINE__);
+		}
+		return false;
+	}
+
+	return true;
+}
+
 bool SQLTranslator::TransMark(const std::string& mark, std::string& val, std::string* pError)
 {
 	const std::string T_MARK = base::PubStr::TrimUpperB(mark);
@@ -78,7 +163,7 @@ bool SQLTranslator::TransMark(const std::string& mark, std::string& val, std::st
 		{
 			if ( pError != NULL )
 			{
-				;
+				base::PubStr::SetFormatString(*pError, "[SQLTranslator] Unknown DATE_TYPE for [%s]: %d [FILE:%s, LINE:%d]", T_MARK.c_str(), m_dEtlType, __FILE__, __LINE__);
 			}
 			return false;
 		}
@@ -97,6 +182,10 @@ bool SQLTranslator::TransMark(const std::string& mark, std::string& val, std::st
 		}
 		else
 		{
+			if ( pError != NULL )
+			{
+				base::PubStr::SetFormatString(*pError, "[SQLTranslator] Unknown DATE_TYPE for [%s]: %d [FILE:%s, LINE:%d]", T_MARK.c_str(), m_dEtlType, __FILE__, __LINE__);
+			}
 			return false;
 		}
 	}
@@ -110,6 +199,10 @@ bool SQLTranslator::TransMark(const std::string& mark, std::string& val, std::st
 	}
 	else
 	{
+		if ( pError != NULL )
+		{
+			base::PubStr::SetFormatString(*pError, "[SQLTranslator] Not support mark: %s [FILE:%s, LINE:%d]", T_MARK.c_str(), __FILE__, __LINE__);
+		}
 		return false;
 	}
 

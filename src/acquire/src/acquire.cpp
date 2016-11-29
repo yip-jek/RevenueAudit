@@ -18,16 +18,18 @@ Acquire::Acquire()
 ,m_pAcqDB2(NULL)
 ,m_pAcqHive(NULL)
 ,m_acqDateType(base::PubTime::DT_UNKNOWN)
+,m_pSQLTrans(NULL)
 {
 }
 
 Acquire::~Acquire()
 {
+	SQLTransRelease();
 }
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 3.0001.20161128 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 3.0002.20161129 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -163,6 +165,15 @@ void Acquire::End(int err_code, const std::string& err_msg /*= std::string()*/) 
 	if ( m_pAcqDB2 != NULL )
 	{
 		m_pAcqDB2->Disconnect();
+	}
+}
+
+void Acquire::SQLTransRelease()
+{
+	if ( m_pSQLTrans != NULL )
+	{
+		delete m_pSQLTrans;
+		m_pSQLTrans = NULL;
 	}
 }
 
@@ -302,6 +313,13 @@ void Acquire::GenerateEtlDate(const std::string& date_fmt) throw(base::Exception
 	if ( !base::PubTime::DateApartFromNow(date_fmt, m_acqDateType, m_acqDate) )
 	{
 		throw base::Exception(ACQERR_GEN_ETL_DATE_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s [FILE:%s, LINE:%d]", date_fmt.c_str(), __FILE__, __LINE__);
+	}
+
+	SQLTransRelease();
+	m_pSQLTrans = new SQLTranslator(m_acqDateType, m_acqDate);
+	if ( NULL == m_pSQLTrans )
+	{
+		throw base::Exception(ACQERR_GEN_ETL_DATE_FAILED, "new SQLTranslator failed: 无法申请到内存空间! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[Acquire] 完成采集时间转换：[%s] -> [%s]", date_fmt.c_str(), m_acqDate.c_str());
@@ -928,94 +946,15 @@ std::string Acquire::GetSQLCondition(const std::string& cond)
 
 void Acquire::ExchangeSQLMark(std::string& sql) throw(base::Exception)
 {
-	const std::string ETL_DAY_MARK = "ETL_DAY";
-	const bool IS_ACQ_DAY = (m_acqDate.size() == 8);
-
-	// 分别获取年、月、日
-	int year = 0;
-	int mon  = 0;
-	int day  = 0;
-	if ( IS_ACQ_DAY )
+	if ( NULL == m_pSQLTrans )
 	{
-		base::PubStr::Str2Int(m_acqDate.substr(0, 4), year);
-		base::PubStr::Str2Int(m_acqDate.substr(4, 2), mon);
-		base::PubStr::Str2Int(m_acqDate.substr(6, 2), day);
-	}
-	else
-	{
-		base::PubStr::Str2Int(m_acqDate.substr(0, 4), year);
-		base::PubStr::Str2Int(m_acqDate.substr(4, 2), mon);
-		day = 1;
+		throw base::Exception(ACQERR_EXCHANGE_SQLMARK_FAILED, "Exchange sql mark failed: NO SQL Translator! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	std::string sql_mark;
-	std::string mark;
-	size_t pos;
-	while ( TaskInfoUtil::GetSQLMark(sql, sql_mark, pos) )
+	std::string str_error;
+	if ( !m_pSQLTrans->Translate(sql, &str_error) )
 	{
-		mark = base::PubStr::TrimUpperB(sql_mark);
-		if ( ETL_DAY_MARK == mark )
-		{
-			sql.replace(pos, sql_mark.size()+3, m_acqDate);
-		}
-		else
-		{
-			bool plus_or_minus = false;				// true-加，false-减
-			std::vector<std::string> vec_str;
-			if ( mark.find('+') != std::string::npos )		// 日期：加运算
-			{
-				plus_or_minus = true;
-				base::PubStr::Str2StrVector(mark, "+", vec_str);
-			}
-			else if ( mark.find('-') != std::string::npos )		// 日期：减运算
-			{
-				plus_or_minus = false;
-				base::PubStr::Str2StrVector(mark, "-", vec_str);
-			}
-			else
-			{
-				throw base::Exception(ACQERR_EXCHANGE_SQLMARK_FAILED, "在SQL条件 \"%s\" 中，无法识别的标志：%s [FILE:%s, LINE:%d]", sql.c_str(), sql_mark.c_str(), __FILE__, __LINE__);
-			}
-
-			std::string the_date;
-			if ( vec_str.size() == 2 && ETL_DAY_MARK == vec_str[0] )
-			{
-				unsigned int dt = 0;
-				if ( !base::PubStr::Str2UInt(vec_str[1], dt) )
-				{
-					throw base::Exception(ACQERR_EXCHANGE_SQLMARK_FAILED, "在SQL条件 \"%s\" 中，无法识别的标志：%s [FILE:%s, LINE:%d]", sql.c_str(), sql_mark.c_str(), __FILE__, __LINE__);
-				}
-
-				if ( IS_ACQ_DAY )	// Day
-				{
-					if ( plus_or_minus )	// +
-					{
-						the_date = base::PubTime::TheDatePlusDays(year, mon, day, dt);
-					}
-					else	// -
-					{
-						the_date = base::PubTime::TheDateMinusDays(year, mon, day, dt);
-					}
-				}
-				else	// Month
-				{
-					if ( plus_or_minus )	// +
-					{
-						the_date = base::PubTime::TheDatePlusMonths(year, mon, dt);
-					}
-					else	// -
-					{
-						the_date = base::PubTime::TheDateMinusMonths(year, mon, dt);
-					}
-				}
-			}
-			else
-			{
-				throw base::Exception(ACQERR_EXCHANGE_SQLMARK_FAILED, "在SQL条件 \"%s\" 中，无法识别的标志：%s [FILE:%s, LINE:%d]", sql.c_str(), sql_mark.c_str(), __FILE__, __LINE__);
-			}
-
-			sql.replace(pos, sql_mark.size()+3, the_date);
-		}
+		throw base::Exception(ACQERR_EXCHANGE_SQLMARK_FAILED, "Exchange sql mark failed: %s [FILE:%s, LINE:%d]", str_error.c_str(), __FILE__, __LINE__);
 	}
 }
 
