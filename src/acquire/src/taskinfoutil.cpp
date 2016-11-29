@@ -330,25 +330,3 @@ std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_
 	return etl_sql;
 }
 
-bool TaskInfoUtil::GetSQLMark(const std::string& src_sql, std::string& mark, size_t& m_beg)
-{
-	size_t pos_mark_beg = src_sql.find("$(");
-	if ( pos_mark_beg != std::string::npos )
-	{
-		size_t pos_mark_end = src_sql.find(")", pos_mark_beg+2);
-		// Not find a pair "$(...)"
-		if ( std::string::npos == pos_mark_end )
-		{
-			return false;
-		}
-
-		m_beg = pos_mark_beg;
-		mark  = src_sql.substr(pos_mark_beg+2, pos_mark_end-pos_mark_beg-2);
-		return true;
-	}
-	else	// Not find "$("
-	{
-		return false;
-	}
-}
-
