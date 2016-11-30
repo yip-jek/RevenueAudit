@@ -8,6 +8,7 @@
 #include "cacqdb2.h"
 #include "cacqhive.h"
 #include "taskinfoutil.h"
+#include "sqltranslator.h"
 
 
 Acquire::Acquire()
@@ -29,7 +30,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 3.0002.20161129 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 3.0002.20161130 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)

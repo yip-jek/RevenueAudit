@@ -136,11 +136,14 @@ public:
 	// 采集条件类型
 	enum EtlConditionType
 	{
-		ETLCTYPE_UNKNOWN				= 0,		// 未知类型
-		ETLCTYPE_NONE					= 1,		// 不带条件
-		ETLCTYPE_STRAIGHT				= 2,		// 直接条件
-		ETLCTYPE_OUTER_JOIN				= 3,		// 外连条件
-		ETLCTYPE_OUTER_JOIN_WITH_COND	= 4,		// 外连加条件
+		ETLCTYPE_UNKNOWN              = 0,			// 未知类型
+		ETLCTYPE_NONE                 = 1,			// 不带条件
+		ETLCTYPE_STRAIGHT             = 2,			// 直接条件
+		ETLCTYPE_OUTER_JOIN           = 3,			// 外连条件
+		ETLCTYPE_OUTER_JOIN_WITH_COND = 4,			// 外连加条件
+
+		// 话单稽核
+		ETLCTYPE_HDJH_HIVE_SQLS = 101,				// 话单稽核的采集条件类型
 	};
 
 	// 数据源类型

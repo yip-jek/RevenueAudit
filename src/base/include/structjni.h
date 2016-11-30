@@ -16,6 +16,8 @@ private:    // noncopyable
 public:
 	StructJNI();
 
+	static const int S_JVM_OPTIONS = 3;			// JVM option 个数
+
 public:
 	// 转换：jstring -> std::string
 	// 谨慎调用：JNIEnv* p_jni_env 需先初始化完成
@@ -23,7 +25,7 @@ public:
 
 public:
 	JavaVMInitArgs	jvm_args;
-	JavaVMOption	jvm_option[1];
+	JavaVMOption	jvm_option[S_JVM_OPTIONS];
 	JavaVM*			p_jvm;
 	JNIEnv*			p_jni_env;
 

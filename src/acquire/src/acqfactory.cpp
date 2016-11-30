@@ -2,12 +2,14 @@
 #include "pubstr.h"
 #include "acquire.h"
 #include "acquire_yc.h"
+#include "acquire_hd.h"
 
 
 AcqFactory gAcqFty;
 
 const char* const AcqFactory::S_MODE_YDJH = "ETL_YDJH";				// 一点稽核
 const char* const AcqFactory::S_MODE_YCRA = "ETL_YCRA";				// 业财稽核
+const char* const AcqFactory::S_MODE_HDJH = "ETL_HDJH";				// 话单稽核
 
 AcqFactory::AcqFactory()
 {
@@ -31,11 +33,15 @@ base::BaseFrameApp* AcqFactory::CreateApp(const std::string& mode, std::string* 
 	{
 		pApp = new Acquire_YC();
 	}
+	else if ( S_MODE_HDJH == ACQ_MODE )
+	{
+		pApp = new Acquire_HD();
+	}
 	else
 	{
 		if ( pError != NULL )
 		{
-			base::PubStr::SetFormatString(*pError, "[ACQ_FACTORY] Create app failed - unsupport mode: %s\nOnly support mode: %s %s [FILE:%s, LINE:%d]", mode.c_str(), S_MODE_YDJH, S_MODE_YCRA, __FILE__, __LINE__);
+			base::PubStr::SetFormatString(*pError, "[ACQ_FACTORY] Create app failed - unsupport mode: %s\nOnly support mode: %s %s %s [FILE:%s, LINE:%d]", mode.c_str(), S_MODE_YDJH, S_MODE_YCRA, S_MODE_HDJH, __FILE__, __LINE__);
 		}
 
 		return NULL;

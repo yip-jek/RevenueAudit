@@ -4,6 +4,7 @@
 #include "simpletime.h"
 #include "cacqdb2.h"
 
+const char* const Acquire_YC::S_YC_ETLRULE_TYPE = "YCRA";			// 业财稽核-采集规则类型
 
 Acquire_YC::Acquire_YC()
 :m_ycSeqID(0)
@@ -92,9 +93,9 @@ void Acquire_YC::CheckTaskInfo() throw(base::Exception)
 	Acquire::CheckTaskInfo();
 
 	const std::string ETL_TYPE = base::PubStr::TrimUpperB(m_taskInfo.EtlRuleType);
-	if ( ETL_TYPE != "YCRA" )
+	if ( ETL_TYPE != S_YC_ETLRULE_TYPE )
 	{
-		throw base::Exception(ACQERR_TASKINFO_INVALID, "未知的采集处理类型: %s [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", ETL_TYPE.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_TASKINFO_INVALID, "不支持的业财稽核采集处理类型: %s [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", ETL_TYPE.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 }
 

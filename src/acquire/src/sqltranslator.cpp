@@ -191,11 +191,11 @@ bool SQLTranslator::TransMark(const std::string& mark, std::string& val, std::st
 	}
 	else if ( T_MARK == S_SYS_DAY )
 	{
-		val = base::SimpleTime::DayTime8();
+		val = base::SimpleTime::Now().DayTime8();
 	}
 	else if ( T_MARK == S_SYS_MON )
 	{
-		val = base::SimpleTime::MonTime6();
+		val = base::SimpleTime::Now().MonTime6();
 	}
 	else
 	{

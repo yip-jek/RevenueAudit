@@ -344,14 +344,20 @@ void BaseJHive::CreateJVM(const std::string& load_jar_path) throw(Exception)
 	{
 		throw Exception(BJH_CREATE_JVM_FAILED, "[BASE HIVE] new char[] failed: Allocate memory failed ! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
-
 	strcpy(pstr_op, str_option.c_str());
+
+	char pstr_xms[] = "-Xms256m";
+	char pstr_xmx[] = "-Xmx2048m";
 	m_pJNI->jvm_option[0].optionString = pstr_op;
+	m_pJNI->jvm_option[1].optionString = pstr_xms;
+	m_pJNI->jvm_option[2].optionString = pstr_xmx;
 	m_pJNI->jvm_args.options = m_pJNI->jvm_option;
 
 	m_pLog->Output("[BASE HIVE] JavaVMInitArgs.version            = JNI_VERSION_1_6");
-	m_pLog->Output("[BASE HIVE] JavaVMInitArgs.nOptions           = 1");
-	m_pLog->Output("[BASE HIVE] JavaVMInitArgs.options            = %s", pstr_op);
+	m_pLog->Output("[BASE HIVE] JavaVMInitArgs.nOptions           = %d", StructJNI::S_JVM_OPTIONS);
+	m_pLog->Output("[BASE HIVE] JavaVMInitArgs.jvm_option[0]      = %s", pstr_op);
+	m_pLog->Output("[BASE HIVE] JavaVMInitArgs.jvm_option[1]      = %s", pstr_xms);
+	m_pLog->Output("[BASE HIVE] JavaVMInitArgs.jvm_option[2]      = %s", pstr_xmx);
 	m_pLog->Output("[BASE HIVE] JavaVMInitArgs.ignoreUnrecognized = JNI_TRUE");
 
 	jint res = JNI_CreateJavaVM(&(m_pJNI->p_jvm), (void**)&(m_pJNI->p_jni_env), &(m_pJNI->jvm_args));

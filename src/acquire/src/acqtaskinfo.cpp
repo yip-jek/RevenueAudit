@@ -135,6 +135,10 @@ bool AcqTaskInfo::SetConditionType(const std::string& type)
 	{
 		EtlCondType = ETLCTYPE_OUTER_JOIN_WITH_COND;
 	}
+	else if ( "HDJH_HIVE_SQLS" == c_type )
+	{
+		EtlCondType = ETLCTYPE_HDJH_HIVE_SQLS;
+	}
 	else	// ERROR: 未知条件
 	{
 		EtlCondType = ETLCTYPE_UNKNOWN;

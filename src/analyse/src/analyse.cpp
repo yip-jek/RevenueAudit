@@ -29,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 3.0001.20161128 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 3.0002.20161130 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -810,7 +810,7 @@ void Analyse::GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) thr
 	v_hive_sql.push_back(hive_sql);
 
 	// 3) 明细：左有右无的Hive SQL语句
-	hive_sql = "select " + TaskInfoUtil::GetCompareFields(first_one, second_one);
+	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
 	hive_sql += ", '" + m_taskInfo.vecComResDesc[2] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
 	hive_sql += " from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
@@ -820,7 +820,7 @@ void Analyse::GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) thr
 	v_hive_sql.push_back(hive_sql);
 
 	// 4) 明细：左无右有的Hive SQL语句
-	hive_sql = "select " + TaskInfoUtil::GetCompareFields(second_one, first_one, true);
+	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(second_one, first_one, vec_col, true);
 	hive_sql += ", '" + m_taskInfo.vecComResDesc[3] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
 	hive_sql += " from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
 	hive_sql += " a on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);

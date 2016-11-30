@@ -9,6 +9,8 @@ public:
 	Acquire_YC();
 	virtual ~Acquire_YC();
 
+	static const char* const S_YC_ETLRULE_TYPE;			// 业财稽核-采集规则类型
+
 public:
 	// 载入参数配置信息
 	virtual void LoadConfig() throw(base::Exception);
