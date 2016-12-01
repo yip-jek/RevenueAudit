@@ -30,7 +30,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 3.0002.20161130 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 3.0003.20161201 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -377,44 +377,75 @@ void Acquire::CheckSourceTable(bool hive) throw(base::Exception)
 {
 	m_pLog->Output("[Acquire] Check source table whether exist or not ...");
 
-	std::string trans_src_tab;
-	int datasrc_size = m_taskInfo.vecEtlRuleDataSrc.size();
-
 	bool all_src_tab_not_exist = true;			// 假定：所有源表都不存在
-	const std::string TYPE_IDENT = (hive ? "[HIVE]" : "[DB2]");
-	for ( int i = 0; i < datasrc_size; ++i )
+	std::string trans_src_tab;
+	const int SRC_TAB_SIZE = m_taskInfo.vecEtlRuleDataSrc.size();
+
+	if ( hive )		// HIVE
 	{
-		trans_src_tab = TransSourceDate(m_taskInfo.vecEtlRuleDataSrc[i].srcTabName);
-
-		// 检查源表是否存在？
-		if ( (hive && !m_pAcqHive->CheckTableExisted(trans_src_tab)) 		// HIVE：表不存在
-			|| (!hive && !m_pAcqDB2->CheckTableExisted(trans_src_tab)) )	// DB2：表不存在
+		for ( int i = 0; i < SRC_TAB_SIZE; ++i )
 		{
-			m_pLog->Output("<WARNING> [Acquire] %s Source table do not exist: %s [IGNORED]", TYPE_IDENT.c_str(), trans_src_tab.c_str());
+			trans_src_tab = TransSourceDate(m_taskInfo.vecEtlRuleDataSrc[i].srcTabName);
 
-			// 表不存在：置为无效
-			m_taskInfo.vecEtlRuleDataSrc[i].isValid = false;
-			m_taskInfo.vecEtlRuleDim[i].isValid = false;
-			m_taskInfo.vecEtlRuleVal[i].isValid = false;
-		}
-		else	// 表存在
-		{
-			// 有存在的表
-			if ( all_src_tab_not_exist )
+			// 检查源表是否存在？
+			if ( !m_pAcqHive->CheckTableExisted(trans_src_tab) )	// 表不存在
 			{
-				all_src_tab_not_exist = false;
-			}
+				m_pLog->Output("<WARNING> [Acquire] [HIVE] Source table do not exist: %s [IGNORED]", trans_src_tab.c_str());
 
-			m_taskInfo.vecEtlRuleDataSrc[i].isValid = true;
-			m_taskInfo.vecEtlRuleDim[i].isValid = true;
-			m_taskInfo.vecEtlRuleVal[i].isValid = true;
+				// 表不存在：置为无效
+				m_taskInfo.vecEtlRuleDataSrc[i].isValid = false;
+				m_taskInfo.vecEtlRuleDim[i].isValid = false;
+				m_taskInfo.vecEtlRuleVal[i].isValid = false;
+			}
+			else	// 表存在
+			{
+				// 有存在的表
+				if ( all_src_tab_not_exist )
+				{
+					all_src_tab_not_exist = false;
+				}
+
+				m_taskInfo.vecEtlRuleDataSrc[i].isValid = true;
+				m_taskInfo.vecEtlRuleDim[i].isValid = true;
+				m_taskInfo.vecEtlRuleVal[i].isValid = true;
+			}
+		}
+	}
+	else	// DB2
+	{
+		for ( int i = 0; i < SRC_TAB_SIZE; ++i )
+		{
+			trans_src_tab = TransSourceDate(m_taskInfo.vecEtlRuleDataSrc[i].srcTabName);
+
+			// 检查源表是否存在？
+			if ( !m_pAcqDB2->CheckTableExisted(trans_src_tab) )		// 表不存在
+			{
+				m_pLog->Output("<WARNING> [Acquire] [DB2] Source table do not exist: %s [IGNORED]", trans_src_tab.c_str());
+
+				// 表不存在：置为无效
+				m_taskInfo.vecEtlRuleDataSrc[i].isValid = false;
+				m_taskInfo.vecEtlRuleDim[i].isValid = false;
+				m_taskInfo.vecEtlRuleVal[i].isValid = false;
+			}
+			else	// 表存在
+			{
+				// 有存在的表
+				if ( all_src_tab_not_exist )
+				{
+					all_src_tab_not_exist = false;
+				}
+
+				m_taskInfo.vecEtlRuleDataSrc[i].isValid = true;
+				m_taskInfo.vecEtlRuleDim[i].isValid = true;
+				m_taskInfo.vecEtlRuleVal[i].isValid = true;
+			}
 		}
 	}
 
 	// 是否所有源表都不存在？
 	if ( all_src_tab_not_exist )
 	{
-		throw base::Exception(ACQERR_CHECK_SRC_TAB_FAILED, "%s All source tables do not exist ! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", TYPE_IDENT.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_CHECK_SRC_TAB_FAILED, "[%s] All source tables do not exist ! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", (hive ? "HIVE":"DB2"), m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[Acquire] Check source table OK.");

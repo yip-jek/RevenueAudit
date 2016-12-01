@@ -30,8 +30,9 @@ public:
 
 	// 获取指定列的采集规则A和B的字段SQL (外部保证正确性)
 	// 若没有指定列集（即参数 vec_col 为空），则默认所有列
+	// single为true时，表示数据只有单边有的情况
 	// inverse为true时，表示A和B的所属表反转
-	static std::string GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& rule_B, std::vector<int>& vec_col, bool inverse = false);
+	static std::string GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& rule_B, std::vector<int>& vec_col, bool single, bool inverse = false);
 
 	// 获取采集规则A和B的单独显示维度字段SQL (外部保证正确性)
 	static std::string GetBothSingleDims(OneEtlRule& rule_A, OneEtlRule& rule_B);

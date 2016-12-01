@@ -150,25 +150,22 @@ std::string TaskInfoUtil::GetCompareUnequalVals(OneEtlRule& rule_A, OneEtlRule& 
 	return vals_sql;
 }
 
-std::string TaskInfoUtil::GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& rule_B, std::vector<int>& vec_col, bool inverse /*= false*/)
+std::string TaskInfoUtil::GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& rule_B, std::vector<int>& vec_col, bool single, bool inverse /*= false*/)
 {
 	std::string fields_sql;
 
-	std::string tab_prefix_1;
-	std::string tab_prefix_2;
+	std::string tab_prefix;
 	if ( inverse )		// 反转
 	{
-		tab_prefix_1 = "b.";
-		tab_prefix_2 = "a.";
+		tab_prefix = "b.";
 	}
 	else		// 不反转
 	{
-		tab_prefix_1 = "a.";
-		tab_prefix_2 = "b.";
+		tab_prefix = "a.";
 	}
 
 	// 采集规则A的维度
-	fields_sql += GetOneDim(rule_A.vecEtlDim, tab_prefix_1);
+	fields_sql += GetOneDim(rule_A.vecEtlDim, tab_prefix);
 
 	// 采集规则A和B的值，以及它们的差值
 	std::string v_sql_A;
@@ -183,10 +180,17 @@ std::string TaskInfoUtil::GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& 
 			OneEtlVal& val_A = rule_A.vecEtlVal[i];
 			OneEtlVal& val_B = rule_B.vecEtlVal[i];
 
-			v_sql_A += ", " + tab_prefix_1 + val_A.EtlValName;
-			v_sql_B += ", " + tab_prefix_2 + val_B.EtlValName;
+			v_sql_A += ", a." + val_A.EtlValName;
+			v_sql_B += ", b." + val_B.EtlValName;
 
-			v_sql_diff += ", abs(" + tab_prefix_1 + val_A.EtlValName + "-" + tab_prefix_2 + val_B.EtlValName + ")";
+			if ( single )	// 单边有的情况
+			{
+				v_sql_diff += ", " + tab_prefix + val_A.EtlValName;
+			}
+			else
+			{
+				v_sql_diff += ", abs(a." + val_A.EtlValName + "-b." + val_B.EtlValName + ")";
+			}
 		}
 	}
 	else	// 指定列集
@@ -198,10 +202,17 @@ std::string TaskInfoUtil::GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& 
 			OneEtlVal& val_A = rule_A.vecEtlVal[col_index];
 			OneEtlVal& val_B = rule_B.vecEtlVal[col_index];
 
-			v_sql_A += ", " + tab_prefix_1 + val_A.EtlValName;
-			v_sql_B += ", " + tab_prefix_2 + val_B.EtlValName;
+			v_sql_A += ", a." + val_A.EtlValName;
+			v_sql_B += ", b." + val_B.EtlValName;
 
-			v_sql_diff += ", abs(" + tab_prefix_1 + val_A.EtlValName + "-" + tab_prefix_2 + val_B.EtlValName + ")";
+			if ( single )	// 单边有的情况
+			{
+				v_sql_diff += ", " + tab_prefix + val_A.EtlValName;
+			}
+			else
+			{
+				v_sql_diff += ", abs(a." + val_A.EtlValName + "-b." + val_B.EtlValName + ")";
+			}
 		}
 	}
 

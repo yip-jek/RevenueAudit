@@ -29,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 3.0002.20161130 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 3.0002.20161201 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -714,7 +714,7 @@ void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) th
 	//const std::string ADD_CONDITION = TaskInfoUtil::GetStraightAnaCondition(m_taskInfo.AnaRule.AnaCondType, m_taskInfo.AnaRule.AnaCondition, true);
 
 	// 1) 汇总：对平的Hive SQL语句
-	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
+	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col, false);
 	hive_sql += ", '" + m_taskInfo.vecComResDesc[0] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
 	hive_sql += " from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
@@ -724,7 +724,7 @@ void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) th
 	v_hive_sql.push_back(hive_sql);
 
 	// 2) 汇总：有差异的Hive SQL语句
-	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
+	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col, false);
 	hive_sql += ", '" + m_taskInfo.vecComResDesc[1] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
 	hive_sql += " from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
@@ -790,7 +790,7 @@ void Analyse::GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) thr
 	//const std::string ADD_CONDITION = TaskInfoUtil::GetStraightAnaCondition(m_taskInfo.AnaRule.AnaCondType, m_taskInfo.AnaRule.AnaCondition, true);
 
 	// 1) 明细：对平的Hive SQL语句
-	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
+	std::string hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col, false);
 	hive_sql += ", '" + m_taskInfo.vecComResDesc[0] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
 	hive_sql += " from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
@@ -800,7 +800,7 @@ void Analyse::GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) thr
 	v_hive_sql.push_back(hive_sql);
 
 	// 2) 明细：有差异的Hive SQL语句
-	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
+	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col, false);
 	hive_sql += ", '" + m_taskInfo.vecComResDesc[1] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
 	hive_sql += " from " + first_one.TargetPatch + " a join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
@@ -810,7 +810,7 @@ void Analyse::GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) thr
 	v_hive_sql.push_back(hive_sql);
 
 	// 3) 明细：左有右无的Hive SQL语句
-	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col);
+	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col, true);
 	hive_sql += ", '" + m_taskInfo.vecComResDesc[2] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
 	hive_sql += " from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
 	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
@@ -820,7 +820,7 @@ void Analyse::GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) thr
 	v_hive_sql.push_back(hive_sql);
 
 	// 4) 明细：左无右有的Hive SQL语句
-	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(second_one, first_one, vec_col, true);
+	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(second_one, first_one, vec_col, true, true);
 	hive_sql += ", '" + m_taskInfo.vecComResDesc[3] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
 	hive_sql += " from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
 	hive_sql += " a on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);

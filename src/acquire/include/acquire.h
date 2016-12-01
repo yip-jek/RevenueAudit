@@ -76,7 +76,7 @@ protected:
 	virtual void CheckTaskInfo() throw(base::Exception);
 
 	// 进行数据采集
-	void DoDataAcquisition() throw(base::Exception);
+	virtual void DoDataAcquisition() throw(base::Exception);
 
 	// 生成采集时间
 	void GenerateEtlDate(const std::string& date_fmt) throw(base::Exception);
@@ -88,7 +88,7 @@ protected:
 	void DB2DataAcquisition() throw(base::Exception);
 
 	// 检查源表是否存在
-	void CheckSourceTable(bool hive) throw(base::Exception);
+	virtual void CheckSourceTable(bool hive) throw(base::Exception);
 
 	// 载入HDFS配置
 	void LoadHdfsConfig() throw(base::Exception);
@@ -105,7 +105,7 @@ protected:
 
 	// 重建Hive目标表
 	// 返回：目标表的字段数
-	int RebuildHiveTable() throw(base::Exception);
+	virtual int RebuildHiveTable() throw(base::Exception);
 
 	// 分析采集规则，生成目标表字段
 	void TaskInfo2TargetFields(std::vector<std::string>& vec_field) throw(base::Exception);
