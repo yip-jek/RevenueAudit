@@ -11,6 +11,10 @@ public:
 
 	static const char* const S_HD_ETLRULE_TYPE;				// 话单稽核-采集规则类型
 
+public:
+	// 获取日志文件名称前缀
+	virtual std::string GetLogFilePrefix();
+
 protected:
 	// 检查采集任务信息
 	virtual void CheckTaskInfo() throw(base::Exception);

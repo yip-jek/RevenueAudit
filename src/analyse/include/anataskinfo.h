@@ -440,9 +440,11 @@ public:
 
 		// 可执行的HIVE SQL语句
 		// 分析规则表达式即是可执行的HIVE SQL语句
-		ANATYPE_HIVE_SQL	= 99,
+		ANATYPE_HIVE_SQL  = 99,
 
-		ANATYPE_YC_STAT		= 1001,					// 业财稽核统计类型
+		ANATYPE_YC_STAT   = 1001,				// 业财稽核统计类型
+
+		ANATYPE_HDJH_STAT = 2001,				// 话单稽核统计类型
 	};
 
 	//// 分析条件类型
@@ -511,6 +513,10 @@ public:
 		else if ( "STATISTICS_YC" == TYPE )		// 业财稽核统计类型
 		{
 			AnaType = ANATYPE_YC_STAT;
+		}
+		else if ( "STATISTICS_HDJH" == TYPE )	// 话单稽核统计类型
+		{
+			AnaType = ANATYPE_HDJH_STAT;
 		}
 		else		// 未知类型
 		{

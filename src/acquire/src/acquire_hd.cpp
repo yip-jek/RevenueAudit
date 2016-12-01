@@ -1,6 +1,8 @@
 #include "acquire_hd.h"
 #include "log.h"
 #include "pubstr.h"
+#include "cacqdb2.h"
+#include "cacqhive.h"
 
 const char* const Acquire_HD::S_HD_ETLRULE_TYPE = "HDJH";			// 话单稽核-采集规则类型
 
@@ -11,6 +13,11 @@ Acquire_HD::Acquire_HD()
 
 Acquire_HD::~Acquire_HD()
 {
+}
+
+std::string Acquire_HD::GetLogFilePrefix()
+{
+	return std::string("Acquire_HD");
 }
 
 void Acquire_HD::CheckTaskInfo() throw(base::Exception)
@@ -118,7 +125,7 @@ void Acquire_HD::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) thro
 	base::PubStr::Str2StrVector(m_taskInfo.EtlCondition, ";", vec_cond_sql);
 
 	int vec_sql_size = vec_cond_sql.size();
-	for ( int i = 0; i < VEC_SQL_SIZE; ++i )
+	for ( int i = 0; i < vec_sql_size; ++i )
 	{
 		std::string& ref_str = vec_cond_sql[i];
 		if ( ref_str.empty() )		// 去除空 SQL 语句

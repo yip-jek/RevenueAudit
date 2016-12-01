@@ -27,6 +27,11 @@ void Acquire_YC::LoadConfig() throw(base::Exception)
 	m_pLog->Output("[Acquire_YC] Load configuration OK.");
 }
 
+std::string Acquire_YC::GetLogFilePrefix()
+{
+	return std::string("Acquire_YC");
+}
+
 void Acquire_YC::Init() throw(base::Exception)
 {
 	Acquire::Init();

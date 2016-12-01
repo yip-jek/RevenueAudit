@@ -2,12 +2,14 @@
 #include "pubstr.h"
 #include "analyse.h"
 #include "analyse_yc.h"
+#include "analyse_hd.h"
 
 
 AnaFactory gAnaFty;
 
 const char* const AnaFactory::S_MODE_YDJH = "ANA_YDJH";				// 一点稽核
 const char* const AnaFactory::S_MODE_YCRA = "ANA_YCRA";				// 业财稽核
+const char* const AnaFactory::S_MODE_HDJH = "ANA_HDJH";				// 话单稽核
 
 AnaFactory::AnaFactory()
 {
@@ -31,11 +33,15 @@ base::BaseFrameApp* AnaFactory::CreateApp(const std::string& mode, std::string* 
 	{
 		pApp = new Analyse_YC();
 	}
+	else if ( S_MODE_HDJH == ANA_MODE )
+	{
+		pApp = new Analyse_HD();
+	}
 	else
 	{
 		if ( pError != NULL )
 		{
-			base::PubStr::SetFormatString(*pError, "[ANA_FACTORY] Create app failed - unsupport mode: %s\nOnly support mode: %s %s [FILE:%s, LINE:%d]", mode.c_str(), S_MODE_YDJH, S_MODE_YCRA, __FILE__, __LINE__);
+			base::PubStr::SetFormatString(*pError, "[ANA_FACTORY] Create app failed - unsupport mode: %s\nOnly support mode: %s %s %s [FILE:%s, LINE:%d]", mode.c_str(), S_MODE_YDJH, S_MODE_YCRA, S_MODE_HDJH, __FILE__, __LINE__);
 		}
 
 		return NULL;

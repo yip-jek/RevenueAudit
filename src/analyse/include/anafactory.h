@@ -19,6 +19,7 @@ public:
 
 	static const char* const S_MODE_YDJH;				// 一点稽核
 	static const char* const S_MODE_YCRA;				// 业财稽核
+	static const char* const S_MODE_HDJH;				// 话单稽核
 
 protected:
 	// 创建对象

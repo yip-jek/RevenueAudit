@@ -3,6 +3,7 @@
 #include <map>
 #include "analyse.h"
 
+// 业财稽核-分析模块
 class Analyse_YC : public Analyse
 {
 public:
@@ -12,6 +13,9 @@ public:
 public:
 	// 载入参数配置信息
 	virtual void LoadConfig() throw(base::Exception);
+
+	// 获取日志文件名称前缀
+	virtual std::string GetLogFilePrefix();
 
 	// 初始化
 	virtual void Init() throw(base::Exception);
