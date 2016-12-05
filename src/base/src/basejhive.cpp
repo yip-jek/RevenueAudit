@@ -14,6 +14,9 @@ namespace base
 const char* const BaseJHive::S_DEBUG_HIVE_JAVA_CLASS_NAME   = "HiveAgentTest";		// HIVE代理Java类名称（测试版本）
 const char* const BaseJHive::S_RELEASE_HIVE_JAVA_CLASS_NAME = "HiveAgent";			// HIVE代理Java类名称（发布版本）
 
+unsigned int BaseJHive::s_jvm_init_mem_size = 256;			// Java 虚拟机初始化内存大小（单位：MB）
+unsigned int BaseJHive::s_jvm_max_mem_size  = 2048;			// Java 虚拟机最大内存大小（单位：MB）
+
 BaseJHive::BaseJHive(const std::string& hive_jclassname)
 :m_pLog(Log::Instance())
 ,m_pJNI(NULL)
@@ -32,6 +35,28 @@ BaseJHive::~BaseJHive()
 	}
 
 	Log::Release();
+}
+
+bool BaseJHive::SetJVMInitMemSize(unsigned int mem_size)
+{
+	if ( mem_size > 0 )
+	{
+		s_jvm_init_mem_size = mem_size;
+		return true;
+	}
+
+	return false;
+}
+
+bool BaseJHive::SetJVMMaxMemSize(unsigned int mem_size)
+{
+	if ( mem_size > 0 )
+	{
+		s_jvm_max_mem_size = mem_size;
+		return true;
+	}
+
+	return false;
 }
 
 bool BaseJHive::SetZooKeeperQuorum(const std::string& zk_quorum)
@@ -346,8 +371,12 @@ void BaseJHive::CreateJVM(const std::string& load_jar_path) throw(Exception)
 	}
 	strcpy(pstr_op, str_option.c_str());
 
-	char pstr_xms[] = "-Xms256m";
-	char pstr_xmx[] = "-Xmx2048m";
+	const int STR_MAX_SIZE = 64;
+	char pstr_xms[STR_MAX_SIZE] = "";
+	char pstr_xmx[STR_MAX_SIZE] = "";
+	snprintf(pstr_xms, STR_MAX_SIZE, "-Xms%um", s_jvm_init_mem_size);
+	snprintf(pstr_xmx, STR_MAX_SIZE, "-Xmx%um", s_jvm_max_mem_size);
+
 	m_pJNI->jvm_option[0].optionString = pstr_op;
 	m_pJNI->jvm_option[1].optionString = pstr_xms;
 	m_pJNI->jvm_option[2].optionString = pstr_xmx;

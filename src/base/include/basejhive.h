@@ -21,6 +21,12 @@ public:
 	static const char* const S_DEBUG_HIVE_JAVA_CLASS_NAME;				// HIVE代理Java类名称（测试版本）
 	static const char* const S_RELEASE_HIVE_JAVA_CLASS_NAME;			// HIVE代理Java类名称（发布版本）
 
+	// 设置 Java 虚拟机初始化内存大小（单位：MB）
+	static bool SetJVMInitMemSize(unsigned int mem_size);
+
+	// 设置 Java 虚拟机最大内存大小（单位：MB）
+	static bool SetJVMMaxMemSize(unsigned int mem_size);
+
 public:
 	// 设置
 	virtual bool SetZooKeeperQuorum(const std::string& zk_quorum);
@@ -68,6 +74,10 @@ protected:
 
 	// 初始化 (Java) HiveAgent
 	virtual void InitHiveAgent() throw(Exception);
+
+protected:
+	static unsigned int s_jvm_init_mem_size;			// Java 虚拟机初始化内存大小（单位：MB）
+	static unsigned int s_jvm_max_mem_size;				// Java 虚拟机最大内存大小（单位：MB）
 
 protected:
 	Log*       m_pLog;				// 日志

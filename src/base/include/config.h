@@ -48,6 +48,7 @@ public:
 	std::string GetCfgValue(const std::string& segment, const std::string& name) throw(Exception);
 	double GetCfgDoubleVal(const std::string& segment, const std::string& name) throw(Exception);
 	long long GetCfgLongVal(const std::string& segment, const std::string& name) throw(Exception);
+	unsigned int GetCfgUIntVal(const std::string& segment, const std::string& name) throw(Exception);
 	bool GetCfgBoolVal(const std::string& segment, const std::string& name);
 
 private:

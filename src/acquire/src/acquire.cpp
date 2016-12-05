@@ -30,13 +30,15 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 3.0003.20161201 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 3.0003.20161205 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
 {
 	m_cfg.SetCfgFile(GetConfigFile());
 
+	m_cfg.RegisterItem("SYS", "JVM_INIT_MEM_SIZE");
+	m_cfg.RegisterItem("SYS", "JVM_MAX_MEM_SIZE");
 	m_cfg.RegisterItem("SYS", "RETAIN_RESULT");
 	m_cfg.RegisterItem("SYS", "OVER_WRITE");
 	m_cfg.RegisterItem("DATABASE", "DB_NAME");
@@ -62,6 +64,11 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_SRC");
 
 	m_cfg.ReadConfig();
+
+	// 设置 Java 虚拟机初始化内存大小 (MB)
+	base::BaseJHive::SetJVMInitMemSize(m_cfg.GetCfgUIntVal("SYS", "JVM_INIT_MEM_SIZE"));
+	// 设置 Java 虚拟机最大内存大小 (MB)
+	base::BaseJHive::SetJVMMaxMemSize(m_cfg.GetCfgUIntVal("SYS", "JVM_MAX_MEM_SIZE"));
 
 	// 是否保留结果数据
 	m_bRetainResult = m_cfg.GetCfgBoolVal("SYS", "RETAIN_RESULT");
