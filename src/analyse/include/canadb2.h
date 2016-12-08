@@ -105,6 +105,11 @@ public:
 	// 删除已经存在的报表统计数据
 	void DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::Exception);
 
+	// 删除某个时间（段）的已存在的统计数据
+	// 若 end_time <= 0，则表示某个指定时间（beg_time）
+	// 否则，表示某个时间段：[beg_time, end_time]
+	void DeleteTimeResultData(AnaDBInfo& db_info, int beg_time, int end_time) throw(base::Exception);
+
 	// 插入报表统计数据
 	void InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_reportdata) throw(base::Exception);
 

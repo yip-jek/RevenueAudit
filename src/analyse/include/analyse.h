@@ -7,6 +7,7 @@
 
 class CAnaDB2;
 class CAnaHive;
+class SQLTranslator;
 class AlarmEvent;
 
 // 分析模块
@@ -44,6 +45,9 @@ public:
 		ANAERR_TRANS_YCFACTOR_FAILED  = -3000021,			// 业财稽核统计因子转换失败
 		ANAERR_GENERATE_YCDATA_FAILED = -3000022,			// 生成业财稽核数据失败
 		ANAERR_CAL_YCCMPLX_FAILED     = -3000023,			// 计算业财稽核组合因子失败
+		ANAERR_GET_EXP_HIVESQL_FAILED = -3000024,			// 从分析表达式中生成HIVE SQL失败
+		ANAERR_EXCHG_SQLMARK_FAILED   = -3000025,			// 标志转换失败
+		ANAERR_GENE_DELTIME_FAILED    = -3000026,			// 生成数据删除的时间失败
 	};
 
 public:
@@ -66,6 +70,9 @@ public:
 	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(base::Exception);
 
 protected:
+	// 释放 SQLTranslator 资源
+	void ReleaseSQLTranslator();
+
 	// 获取参数任务信息
 	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
 
@@ -120,6 +127,9 @@ protected:
 	// 生成数据库信息
 	void GetAnaDBInfo() throw(base::Exception);
 
+	// 标志转换
+	virtual void ExchangeSQLMark(std::string& sql) throw(base::Exception);
+
 	// 获取Hive源数据
 	void FetchHiveSource(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
@@ -142,7 +152,7 @@ protected:
 	void StoreResult() throw(base::Exception);
 
 	// 删除旧数据
-	void RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception);
+	virtual void RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception);
 
 	// 告警判断: 如果达到告警阀值，则生成告警
 	virtual void AlarmJudgement() throw(base::Exception);
@@ -200,6 +210,7 @@ protected:
 	AnaTaskInfo         m_taskInfo;				// 指标任务信息
 	DimValDiffer        m_DVDiffer;				// 用于维度取值范围的比较
 	UniformCodeTransfer m_UniCodeTransfer;		// 统一编码转换
+	SQLTranslator*      m_pSQLTranslator;		// 标志转换
 
 protected:
 	AnaDBInfo                                            m_dbinfo;				// 库表信息

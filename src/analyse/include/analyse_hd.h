@@ -17,10 +17,23 @@ protected:
 	// 解析分析规则，生成Hive取数逻辑
 	virtual void AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
+	// 从分析表达式中生成Hive取数逻辑
+	void GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception);
+
+	// 生成数据删除的时间（段）
+	void GenerateDeleteTime(const std::string time_fmt) throw(base::Exception);
+
+	// 删除旧数据
+	virtual void RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception);
+
 	// 告警判断: 如果达到告警阀值，则生成告警
 	virtual void AlarmJudgement() throw(base::Exception);
 
 	// 更新维度取值范围
 	virtual void UpdateDimValue();
+
+protected:
+	int m_begintime;				// 开始时间（包含）
+	int m_endtime;					// 结束时间（包含）
 };
 

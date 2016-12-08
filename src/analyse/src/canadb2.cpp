@@ -610,6 +610,47 @@ void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::
 	}
 }
 
+void CAnaDB2::DeleteTimeResultData(AnaDBInfo& db_info, int beg_time, int end_time) throw(base::Exception)
+{
+	// 时间条件：时间（账期）字段在尾部
+	const size_t BILL_TIME_INDEX = db_info.vec_fields.size() - (db_info.day_now ? 2 : 1);
+	std::string dt_condition;
+	if ( end_time <= 0 )
+	{
+		base::PubStr::SetFormatString(dt_condition, "%s = '%d'", db_info.vec_fields[BILL_TIME_INDEX].field_name.c_str(), beg_time);
+	}
+	else
+	{
+		base::PubStr::SetFormatString(dt_condition, "%s >= '%d' and %s <= '%d'", db_info.vec_fields[BILL_TIME_INDEX].field_name.c_str(), beg_time, end_time);
+	}
+
+	size_t result_data_size = SelectResultData(db_info.target_table, dt_condition);
+	if ( result_data_size > 0 )
+	{
+		m_pLog->Output("[DB2] Delete result data from result table: [%s] (BEG_TIME:%d, END_TIME:%d)", db_info.target_table.c_str(), beg_time, end_time);
+		DeleteFromTable(db_info.target_table, dt_condition);
+	}
+	else
+	{
+		m_pLog->Output("[DB2] NO result data in result table: [%s] (BEG_TIME:%d, END_TIME:%d)", db_info.target_table.c_str(), beg_time, end_time);
+	}
+
+	// 若存在备份表，则将备份表数据一并清除
+	if ( !db_info.backup_table.empty() )
+	{
+		result_data_size = SelectResultData(db_info.backup_table, dt_condition);
+		if ( result_data_size > 0 )
+		{
+			m_pLog->Output("[DB2] Delete result data from backup table: [%s] (BEG_TIME:%d, END_TIME:%d)", db_info.target_table.c_str(), beg_time, end_time);
+			DeleteFromTable(db_info.backup_table, dt_condition);
+		}
+		else
+		{
+			m_pLog->Output("[DB2] NO result data in backup table: [%s] (BEG_TIME:%d, END_TIME:%d)", db_info.target_table.c_str(), beg_time, end_time);
+		}
+	}
+}
+
 void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_reportdata) throw(base::Exception)
 {
 	if ( db_info.db2_sql.empty() )

@@ -5,11 +5,11 @@
 #include "log.h"
 #include "autodisconnect.h"
 #include "pubstr.h"
-#include "pubtime.h"
 #include "simpletime.h"
 #include "canadb2.h"
 #include "canahive.h"
 #include "taskinfoutil.h"
+#include "sqltranslator.h"
 #include "alarmevent.h"
 #include "alarmfluctuate.h"
 #include "alarmratio.h"
@@ -20,16 +20,18 @@ Analyse::Analyse()
 :m_sType("一点稽核")
 ,m_pAnaDB2(NULL)
 ,m_pAnaHive(NULL)
+,m_pSQLTranslator(NULL)
 {
 }
 
 Analyse::~Analyse()
 {
+	ReleaseSQLTranslator();
 }
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 3.0003.20161205 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 3.0004.20161208 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -170,6 +172,15 @@ void Analyse::End(int err_code, const std::string& err_msg /*= std::string()*/) 
 	if ( m_pAnaDB2 != NULL )
 	{
 		m_pAnaDB2->Disconnect();
+	}
+}
+
+void Analyse::ReleaseSQLTranslator()
+{
+	if ( m_pSQLTranslator != NULL )
+	{
+		delete m_pSQLTranslator;
+		m_pSQLTranslator = NULL;
 	}
 }
 
@@ -339,6 +350,20 @@ void Analyse::GetAnaDBInfo() throw(base::Exception)
 	m_dbinfo.db2_sql += ") values(" + str_val_holder + ")";
 
 	v_fields.swap(m_dbinfo.vec_fields);
+}
+
+void Analyse::ExchangeSQLMark(std::string& sql) throw(base::Exception)
+{
+	if ( NULL == m_pSQLTranslator )
+	{
+		throw base::Exception(ANAERR_EXCHG_SQLMARK_FAILED, "Exchange sql mark failed: NO SQL Translator! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	std::string str_error;
+	if ( !m_pSQLTranslator->Translate(sql, &str_error) )
+	{
+		throw base::Exception(ANAERR_EXCHG_SQLMARK_FAILED, "Exchange sql mark failed: %s [FILE:%s, LINE:%d]", str_error.c_str(), __FILE__, __LINE__);
+	}
 }
 
 void Analyse::FetchHiveSource(std::vector<std::string>& vec_hivesql) throw(base::Exception)
@@ -1042,15 +1067,20 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 	// 取第一个采集规则的采集时间
 	std::string& ref_etltime = m_taskInfo.vecEtlRule[0].EtlTime;
 
-	base::PubTime::DATE_TYPE d_type;
-	if ( !base::PubTime::DateApartFromNow(ref_etltime, d_type, m_dbinfo.date_time) )
+	if ( !base::PubTime::DateApartFromNow(ref_etltime, m_dbinfo.date_type, m_dbinfo.date_time) )
 	{
 		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_etltime.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[Analyse] 完成采集时间转换：[%s] -> [%s]", ref_etltime.c_str(), m_dbinfo.date_time.c_str());
 
-	std::string tab_name = base::PubStr::TrimB(m_taskInfo.TableName);
+	ReleaseSQLTranslator();
+	m_pSQLTranslator = new SQLTranslator(m_dbinfo.date_type, m_dbinfo.date_time);
+	if ( NULL == m_pSQLTranslator )
+	{
+		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "new SQLTranslator failed: 无法申请到内存空间! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
 
+	std::string tab_name = base::PubStr::TrimB(m_taskInfo.TableName);
 	switch ( type )
 	{
 	case AnaTaskInfo::TABTYPE_COMMON:		// 普通表
@@ -1058,9 +1088,9 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 		m_pLog->Output("[Analyse] 结果表类型：普通表");
 		break;
 	case AnaTaskInfo::TABTYPE_DAY:			// 天表
-		if ( d_type > base::PubTime::DT_DAY )
+		if ( m_dbinfo.date_type > base::PubTime::DT_DAY )
 		{
-			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：DAY_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", base::PubTime::DateType2String(d_type).c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：DAY_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", base::PubTime::DateType2String(m_dbinfo.date_type).c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 		else
 		{
@@ -1069,9 +1099,9 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 		m_pLog->Output("[Analyse] 结果表类型：天表");
 		break;
 	case AnaTaskInfo::TABTYPE_MONTH:		// 月表
-		if ( d_type > base::PubTime::DT_MONTH )
+		if ( m_dbinfo.date_type > base::PubTime::DT_MONTH )
 		{
-			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：MONTH_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", base::PubTime::DateType2String(d_type).c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：MONTH_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", base::PubTime::DateType2String(m_dbinfo.date_type).c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 		else
 		{
