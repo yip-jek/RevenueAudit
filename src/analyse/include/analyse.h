@@ -149,7 +149,7 @@ protected:
 	void CollectDimVal();
 
 	// 结果数据入库 [DB2]
-	void StoreResult() throw(base::Exception);
+	virtual void StoreResult() throw(base::Exception);
 
 	// 删除旧数据
 	virtual void RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception);
