@@ -1,7 +1,6 @@
 #include "canadb2.h"
 #include "log.h"
 #include "pubstr.h"
-#include "simpletime.h"
 #include "anadbinfo.h"
 #include "uniformcodetransfer.h"
 #include "alarmevent.h"
@@ -511,7 +510,7 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 	}
 
 	m_pLog->Output("[DB2] Insert result data to table: [%s]", db_info.target_table.c_str());
-	ResultDataInsert(db_info, vec2_data);
+	ResultDataInsert(db_info.db2_sql, vec2_data);
 	m_pLog->Output("[DB2] Insert result data successfully, size: %llu", vec2_data.size());
 }
 
@@ -570,18 +569,19 @@ void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::
 	else	// 删除指定数据
 	{
 		// 时间条件
-		std::string dt_condition = db_info.vec_fields[db_info.tf_etlday.index].field_name + " = '";
-		dt_condition += db_info.date_time + "'";
+		std::string dt_condition = db_info.GetEtlDayFieldName() + " = '";
+		std::string etl_datetime = db_info.GetEtlDay();
+		dt_condition += etl_datetime + "'";
 
 		size_t result_data_size = SelectResultData(db_info.target_table, dt_condition);
 		if ( result_data_size > 0 )
 		{
-			m_pLog->Output("[DB2] Delete result data from result table: [%s] (DATE_TIME: %s)", db_info.target_table.c_str(), db_info.date_time.c_str());
+			m_pLog->Output("[DB2] Delete result data from result table: [%s] (DATE_TIME: %s)", db_info.target_table.c_str(), etl_datetime.c_str());
 			DeleteFromTable(db_info.target_table, dt_condition);
 		}
 		else
 		{
-			m_pLog->Output("[DB2] NO result data in result table: [%s] (DATE_TIME: %s)", db_info.target_table.c_str(), db_info.date_time.c_str());
+			m_pLog->Output("[DB2] NO result data in result table: [%s] (DATE_TIME: %s)", db_info.target_table.c_str(), etl_datetime.c_str());
 		}
 
 		// 若存在备份表，则将备份表数据一并清除
@@ -590,12 +590,12 @@ void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::
 			result_data_size = SelectResultData(db_info.backup_table, dt_condition);
 			if ( result_data_size > 0 )
 			{
-				m_pLog->Output("[DB2] Delete result data from backup table: [%s] (DATE_TIME: %s)", db_info.backup_table.c_str(), db_info.date_time.c_str());
+				m_pLog->Output("[DB2] Delete result data from backup table: [%s] (DATE_TIME: %s)", db_info.backup_table.c_str(), etl_datetime.c_str());
 				DeleteFromTable(db_info.backup_table, dt_condition);
 			}
 			else
 			{
-				m_pLog->Output("[DB2] NO result data in backup table: [%s] (DATE_TIME: %s)", db_info.backup_table.c_str(), db_info.date_time.c_str());
+				m_pLog->Output("[DB2] NO result data in backup table: [%s] (DATE_TIME: %s)", db_info.backup_table.c_str(), etl_datetime.c_str());
 			}
 		}
 	}
@@ -603,16 +603,15 @@ void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::
 
 void CAnaDB2::DeleteTimeResultData(AnaDBInfo& db_info, int beg_time, int end_time) throw(base::Exception)
 {
-	// 时间条件：时间（账期）字段在尾部
-	const size_t BILL_TIME_INDEX = db_info.vec_fields.size() - (db_info.day_now ? 2 : 1);
+	// 时间条件
 	std::string dt_condition;
 	if ( end_time <= 0 )
 	{
-		base::PubStr::SetFormatString(dt_condition, "%s = '%d'", db_info.vec_fields[BILL_TIME_INDEX].field_name.c_str(), beg_time);
+		base::PubStr::SetFormatString(dt_condition, "%s = '%d'", db_info.GetEtlDayFieldName().c_str(), beg_time);
 	}
 	else
 	{
-		base::PubStr::SetFormatString(dt_condition, "%s >= '%d' and %s <= '%d'", db_info.vec_fields[BILL_TIME_INDEX].field_name.c_str(), beg_time, end_time);
+		base::PubStr::SetFormatString(dt_condition, "%s >= '%d' and %s <= '%d'", db_info.GetEtlDayFieldName().c_str(), beg_time, end_time);
 	}
 
 	size_t result_data_size = SelectResultData(db_info.target_table, dt_condition);
@@ -651,15 +650,16 @@ void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<s
 
 	// 入库报表结果表
 	m_pLog->Output("[DB2] Insert report statistics data to result table: [%s]", db_info.target_table.c_str());
-	ResultDataInsert(db_info, vec2_reportdata);
+	ResultDataInsert(db_info.db2_sql, vec2_reportdata);
 
 	// 报表备份表替换报表结果表
 	const size_t TARGET_TAB_POS = db_info.db2_sql.find(db_info.target_table);
-	db_info.db2_sql.replace(TARGET_TAB_POS, db_info.target_table.size(), db_info.backup_table);
+	std::string ins_backup_sql = db_info.db2_sql;
+	ins_backup_sql.replace(TARGET_TAB_POS, db_info.target_table.size(), db_info.backup_table);
 
 	// 入库报表结果备份表
 	m_pLog->Output("[DB2] Insert report statistics data to backup table: [%s]", db_info.backup_table.c_str());
-	ResultDataInsert(db_info, vec2_reportdata);
+	ResultDataInsert(ins_backup_sql, vec2_reportdata);
 	m_pLog->Output("[DB2] Insert report statistics data successfully, size: %llu", vec2_reportdata.size());
 }
 
@@ -670,24 +670,24 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 
 	// 组织查询 SQL 语句
 	std::string sql = "select ";
-	const int FIELD_SIZE = db_info.vec_fields.size();
+	const int FIELD_SIZE = db_info.GetFieldSize();
 	for ( int i = 0; i < FIELD_SIZE; ++i )
 	{
 		if ( i != 0 )
 		{
-			sql += ", " + db_info.vec_fields[i].field_name;
+			sql += ", " + db_info.GetAnaField(i).field_name;
 		}
 		else
 		{
-			sql += db_info.vec_fields[i].field_name;
+			sql += db_info.GetAnaField(i).field_name;
 		}
 	}
 	sql += " from " + db_info.target_table;
 
 	// 是否带采集时间
-	if ( db_info.tf_etlday.valid )
+	if ( db_info.IsEtlDayValid() )
 	{
-		sql += " where " + db_info.vec_fields[db_info.tf_etlday.index].field_name + " = ?";
+		sql += " where " + db_info.GetEtlDayFieldName() + " = ?";
 	}
 	m_pLog->Output("[DB2] Select targat table [%s], SQL: %s", db_info.target_table.c_str(), sql.c_str());
 
@@ -699,7 +699,7 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		// 是否带时间条件
-		if ( db_info.tf_etlday.valid )
+		if ( db_info.IsEtlDayValid() )
 		{
 			rs.Parameter(1) = date.c_str();
 		}
@@ -1294,31 +1294,15 @@ void CAnaDB2::DeleteFromTable(const std::string& tab_name, const std::string& co
 	}
 }
 
-void CAnaDB2::ResultDataInsert(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
+void CAnaDB2::ResultDataInsert(const std::string& db_sql, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	// 采集时间索引位置
-	int index_etlday = -1;			// 默认无效
-	if ( db_info.tf_etlday.valid )
-	{
-		index_etlday = db_info.tf_etlday.index;
-	}
-	// 当前时间索引位置
-	int index_nowday = -1;			// 默认无效
-	if ( db_info.tf_nowday.valid )
-	{
-		index_nowday = db_info.tf_nowday.index;
-	}
-
-	// 当前时间（天）
-	std::string str_nowday = base::SimpleTime::Now().DayTime8();
-
 	try
 	{
-		rs.Prepare(db_info.db2_sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		m_pLog->Output("[DB2] Execute result-data insert SQL: %s", db_info.db2_sql.c_str());
+		rs.Prepare(db_sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		m_pLog->Output("[DB2] Execute result-data insert SQL: %s", db_sql.c_str());
 
 		Begin();
 
@@ -1328,20 +1312,9 @@ void CAnaDB2::ResultDataInsert(AnaDBInfo& db_info, std::vector<std::vector<std::
 			std::vector<std::string>& ref_vec_data = vec2_data[i];
 
 			const int REF_DATA_SIZE = ref_vec_data.size();
-			for ( int j = 0, x = 0; j < REF_DATA_SIZE; ++x )
+			for ( int j = 0; j < REF_DATA_SIZE; ++j )
 			{
-				if ( x == index_etlday )	// 采集时间
-				{
-					rs.Parameter(x+1) = db_info.date_time.c_str();
-				}
-				else if ( x == index_nowday )	// 当前时间
-				{
-					rs.Parameter(x+1) = str_nowday.c_str();
-				}
-				else
-				{
-					rs.Parameter(x+1) = ref_vec_data[j++].c_str();
-				}
+				rs.Parameter(j+1) = ref_vec_data[j].c_str();
 			}
 
 			rs.Execute();

@@ -145,6 +145,9 @@ protected:
 	//// 生成对比结果数据
 	//void CompareResultData() throw(base::Exception);
 
+	// 数据时间补全
+	void SupplementDataTime();
+
 	// 收集维度取值
 	void CollectDimVal();
 

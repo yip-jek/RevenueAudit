@@ -77,6 +77,22 @@ void Analyse_YC::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(
 	m_pLog->Output("[Analyse_YC] 业财稽核任务流水号：%d", m_ycSeqID);
 }
 
+void Analyse_YC::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception)
+{
+	if ( m_taskInfo.AnaRule.AnaType != AnalyseRule::ANATYPE_YC_STAT )	// 业财稽核统计类型
+	{
+		throw base::Exception(ANAERR_ANA_RULE_FAILED, "不支持的业财稽核分析规则类型: %d (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.AnaRule.AnaType, m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+	}
+
+	const std::string ANA_EXP = base::PubStr::TrimB(m_taskInfo.AnaRule.AnaExpress);
+	m_pLog->Output("[Analyse_YC] 分析规则类型：业财稽核统计 (KPI_ID:%s, ANA_ID:%s)", m_sKpiID.c_str(), m_sAnaID.c_str());
+	m_pLog->Output("[Analyse_YC] 分析规则表达式：%s", ANA_EXP.c_str());
+	GetStatisticsHiveSQL(vec_hivesql);
+
+	// 生成数据库[DB2]信息
+	GetAnaDBInfo();
+}
+
 void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 {
 	Analyse::FetchTaskInfo();
@@ -94,7 +110,7 @@ void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 
 void Analyse_YC::AnalyseSourceData() throw(base::Exception)
 {
-	Analyse::AnalyseSourceData();
+	//Analyse::AnalyseSourceData();
 
 	// 业财稽核统计
 	if ( m_vecYCSInfo.empty() )
@@ -106,6 +122,9 @@ void Analyse_YC::AnalyseSourceData() throw(base::Exception)
 	TransYCStatFactor(map_src);
 
 	GenerateYCResultData(map_src);
+
+	// 生成了业财稽核的统计数据，再进行时间数据补全
+	SupplementDataTime();
 }
 
 void Analyse_YC::TransYCStatFactor(std::map<std::string, double>& map_factor) throw(base::Exception)
@@ -288,22 +307,6 @@ double Analyse_YC::CalcYCComplexFactor(std::map<std::string, double>& map_factor
 	}
 
 	return cmplx_factr_result;
-}
-
-void Analyse_YC::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception)
-{
-	if ( m_taskInfo.AnaRule.AnaType != AnalyseRule::ANATYPE_YC_STAT )	// 业财稽核统计类型
-	{
-		throw base::Exception(ANAERR_ANA_RULE_FAILED, "不支持的业财稽核分析规则类型: %d (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.AnaRule.AnaType, m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-	}
-
-	const std::string ANA_EXP = base::PubStr::TrimB(m_taskInfo.AnaRule.AnaExpress);
-	m_pLog->Output("[Analyse_YC] 分析规则类型：业财稽核统计 (KPI_ID:%s, ANA_ID:%s)", m_sKpiID.c_str(), m_sAnaID.c_str());
-	m_pLog->Output("[Analyse_YC] 分析规则表达式：%s", ANA_EXP.c_str());
-	GetStatisticsHiveSQL(vec_hivesql);
-
-	// 生成数据库[DB2]信息
-	GetAnaDBInfo();
 }
 
 void Analyse_YC::AlarmJudgement() throw(base::Exception)

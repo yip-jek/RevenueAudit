@@ -8,7 +8,10 @@
 struct TimeField
 {
 public:
-	TimeField(): valid(false), index(-1)
+	static const int TF_INVALID_INDEX = -1;
+
+public:
+	TimeField(): valid(false), index(TF_INVALID_INDEX)
 	{}
 
 public:
@@ -24,51 +27,61 @@ struct AnaField
 };
 
 // 数据库信息 [DB2]
-struct AnaDBInfo
+class AnaDBInfo
 {
 public:
-	AnaDBInfo(): date_type(base::PubTime::DT_UNKNOWN), val_beg_pos(0)
-	{}
+	AnaDBInfo();
+	~AnaDBInfo();
 
-	AnaDBInfo(const AnaDBInfo& info)
-	:target_table(info.target_table)
-	,backup_table(info.backup_table)
-	,db2_sql(info.db2_sql)
-	,tf_etlday(info.tf_etlday)
-	,tf_nowday(info.tf_nowday)
-	,date_type(info.date_type)
-	,date_time(info.date_time)
-	,vec_fields(info.vec_fields)
-	,val_beg_pos(info.val_beg_pos)
-	{}
+public:
+	// 生成采集时间
+	bool GenerateEtlDay(const std::string& etl_time, int index);
 
-	const AnaDBInfo& operator = (const AnaDBInfo& info)
-	{
-		if ( this != &info )
-		{
-			this->target_table = info.target_table;
-			this->backup_table = info.backup_table;
-			this->db2_sql      = info.db2_sql;
-			this->tf_etlday    = info.tf_etlday;
-			this->tf_nowday    = info.tf_nowday;
-			this->date_type    = info.date_type;
-			this->date_time    = info.date_time;
-			this->vec_fields   = info.vec_fields;
-			this->val_beg_pos  = info.val_beg_pos;
-		}
+	// 生成当前时间
+	void GenerateNowDay(bool is_valid, int index);
 
-		return *this;
-	}
+	// 获取采集时间类型
+	base::PubTime::DATE_TYPE GetEtlDateType() const;
+
+	// 采集时间是否有效
+	bool IsEtlDayValid() const;
+
+	// 当前时间是否有效
+	bool IsNowDayValid() const;
+
+	// 获取采集时间所在位置索引
+	int GetEtlDayIndex() const;
+
+	// 获取当前时间所在位置索引
+	int GetNowDayIndex() const;
+
+	// 获取采集时间
+	std::string GetEtlDay() const;
+
+	// 获取当前时间
+	std::string GetNowDay() const;
+
+	// 设置目标表字段信息
+	void SetAnaFields(std::vector<AnaField>& v_fields);
+
+	// 获取目标字段数
+	int GetFieldSize() const;
+
+	// 获取目标字段信息
+	AnaField GetAnaField(int index) const;
+
+	// 获取采集时间字段名
+	std::string GetEtlDayFieldName() const;
 
 public:
 	std::string              target_table;				// 最终目标表名
 	std::string              backup_table;				// 目标表的备份表（仅用于报表统计）
 	std::string              db2_sql;					// 数据库SQL语句
+
+private:
+	base::PubTime::DATE_TYPE date_type;					// 采集时间类型
 	TimeField                tf_etlday;					// 采集时间字段
 	TimeField                tf_nowday;					// 当前时间字段（格式：YYYYMMDD）
-	base::PubTime::DATE_TYPE date_type;					// 时间类型
-	std::string              date_time;					// 时间戳
 	std::vector<AnaField>    vec_fields;				// 目标表字段信息
-	int                      val_beg_pos;				// 值的开始序号
 };
 

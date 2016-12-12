@@ -5,7 +5,6 @@
 #include "log.h"
 #include "autodisconnect.h"
 #include "pubstr.h"
-#include "simpletime.h"
 #include "canadb2.h"
 #include "canahive.h"
 #include "taskinfoutil.h"
@@ -31,7 +30,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 3.0005.20161209 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 3.0006.20161212 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -219,17 +218,11 @@ void Analyse::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(bas
 
 void Analyse::GetAnaDBInfo() throw(base::Exception)
 {
-	int index_dn = 0;
-	int index_ts = 0;
-
 	AnaField ana_field;
 	std::vector<AnaField> v_fields;
 
-	m_dbinfo.tf_etlday.valid = false;
-	m_dbinfo.tf_nowday.valid = false;
-
-	// 值的开始序号与维度的size相同
-	m_dbinfo.val_beg_pos = m_taskInfo.vecKpiDimCol.size();
+	m_dbinfo.GenerateEtlDay("", TimeField::TF_INVALID_INDEX);
+	m_dbinfo.GenerateNowDay(false, TimeField::TF_INVALID_INDEX);
 
 	// 指标维度字段
 	int v_size = m_taskInfo.vecKpiDimCol.size();
@@ -249,23 +242,21 @@ void Analyse::GetAnaDBInfo() throw(base::Exception)
 
 		if ( KpiColumn::EWTYPE_ETLDAY == ref_col.ExpWay )
 		{
-			m_dbinfo.tf_etlday.valid = true;
-			m_dbinfo.tf_etlday.index = i;
-
-			// 存在采集时间，（源数据）值开始序号前移一位
-			--m_dbinfo.val_beg_pos;
+			// 取第一个采集规则的采集时间
+			std::string& ref_etltime = m_taskInfo.vecEtlRule[0].EtlTime;
+			if ( !m_dbinfo.GenerateEtlDay(ref_etltime, i) )
+			{
+				throw base::Exception(ANAERR_GET_DBINFO_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_etltime.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			}
+			m_pLog->Output("[Analyse] 完成采集时间转换：[%s] -> [%s]", ref_etltime.c_str(), m_dbinfo.GetEtlDay().c_str());
 		}
 		else if ( KpiColumn::EWTYPE_NOWDAY == ref_col.ExpWay )
 		{
-			m_dbinfo.tf_nowday.valid = true;
-			m_dbinfo.tf_nowday.index = i;
-
-			// 存在当前时间，（源数据）值开始序号前移一位
-			--m_dbinfo.val_beg_pos;
+			m_dbinfo.GenerateNowDay(true, i);
 		}
 
-		ana_field.field_name = col.DBName;
-		ana_field.CN_name    = col.CNName;
+		ana_field.field_name = ref_col.DBName;
+		ana_field.CN_name    = ref_col.CNName;
 		v_fields.push_back(ana_field);
 	}
 
@@ -313,8 +304,7 @@ void Analyse::GetAnaDBInfo() throw(base::Exception)
 	}
 
 	m_dbinfo.db2_sql += ") values(" + str_val_holder + ")";
-
-	v_fields.swap(m_dbinfo.vec_fields);
+	m_dbinfo.SetAnaFields(v_fields);
 }
 
 void Analyse::ExchangeSQLMark(std::string& sql) throw(base::Exception)
@@ -1051,24 +1041,18 @@ void Analyse::DetermineDataGroup(const std::string& exp, int& first, int& second
 
 void Analyse::GenerateTableNameByType() throw(base::Exception)
 {
-	AnaTaskInfo::ResultTableType& type = m_taskInfo.ResultType;
-
-	// 取第一个采集规则的采集时间
-	std::string& ref_etltime = m_taskInfo.vecEtlRule[0].EtlTime;
-
-	if ( !base::PubTime::DateApartFromNow(ref_etltime, m_dbinfo.date_type, m_dbinfo.date_time) )
-	{
-		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_etltime.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-	}
-	m_pLog->Output("[Analyse] 完成采集时间转换：[%s] -> [%s]", ref_etltime.c_str(), m_dbinfo.date_time.c_str());
+	const base::PubTime::DATE_TYPE DT = m_dbinfo.GetEtlDateType();
+	const std::string DT_DESC         = base::PubTime::DateType2String(DT);
+	const std::string ETL_DAY         = m_dbinfo.GetEtlDay();
 
 	ReleaseSQLTranslator();
-	m_pSQLTranslator = new SQLTranslator(m_dbinfo.date_type, m_dbinfo.date_time);
+	m_pSQLTranslator = new SQLTranslator(DT, ETL_DAY);
 	if ( NULL == m_pSQLTranslator )
 	{
 		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "new SQLTranslator failed: 无法申请到内存空间! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
+	AnaTaskInfo::ResultTableType& type = m_taskInfo.ResultType;
 	std::string tab_name = base::PubStr::TrimB(m_taskInfo.TableName);
 	switch ( type )
 	{
@@ -1077,29 +1061,29 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 		m_pLog->Output("[Analyse] 结果表类型：普通表");
 		break;
 	case AnaTaskInfo::TABTYPE_DAY:			// 天表
-		if ( m_dbinfo.date_type > base::PubTime::DT_DAY )
+		if ( DT > base::PubTime::DT_DAY )
 		{
-			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：DAY_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", base::PubTime::DateType2String(m_dbinfo.date_type).c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：DAY_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", DT_DESC.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 		else
 		{
-			tab_name = tab_name + "_" + m_dbinfo.date_time;
+			tab_name = tab_name + "_" + ETL_DAY;
 		}
 		m_pLog->Output("[Analyse] 结果表类型：天表");
 		break;
 	case AnaTaskInfo::TABTYPE_MONTH:		// 月表
-		if ( m_dbinfo.date_type > base::PubTime::DT_MONTH )
+		if ( DT > base::PubTime::DT_MONTH )
 		{
-			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：MONTH_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", base::PubTime::DateType2String(m_dbinfo.date_type).c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "采集时间类型与结果表类型无法匹配！采集时间类型为：%s，结果表类型为：MONTH_TABLE (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", DT_DESC.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 		else
 		{
-			tab_name = tab_name + "_" + m_dbinfo.date_time.substr(0, 6);
+			tab_name = tab_name + "_" + ETL_DAY.substr(0, 6);
 		}
 		m_pLog->Output("[Analyse] 结果表类型：月表");
 		break;
 	case AnaTaskInfo::TABTYPE_YEAR:			// 年表
-		tab_name = tab_name + "_" + m_dbinfo.date_time.substr(0, 4);
+		tab_name = tab_name + "_" + ETL_DAY.substr(0, 4);
 		m_pLog->Output("[Analyse] 结果表类型：年表");
 		break;
 	case AnaTaskInfo::TABTYPE_UNKNOWN:		// 未知类型
@@ -1127,7 +1111,8 @@ void Analyse::AnalyseSourceData() throw(base::Exception)
 {
 	SrcDataUnifiedCoding();
 
-	const int END_POS = m_dbinfo.val_beg_pos + m_taskInfo.vecKpiValCol.size();
+	const int BEG_POS = m_taskInfo.vecKpiDimCol.size();
+	const int END_POS = BEG_POS + m_taskInfo.vecKpiValCol.size();
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == m_taskInfo.AnaRule.AnaType )		// 报表统计
 	{
 		m_pLog->Output("[Analyse] 报表统计类型数据转换 ...");
@@ -1136,19 +1121,25 @@ void Analyse::AnalyseSourceData() throw(base::Exception)
 		TransSrcDataToReportStatData();
 		m_pLog->Output("[Analyse] 转换后, 数据大小为: %llu", m_v2ReportStatData.size());
 
+		// 报表统计数据转换完成后，才进行时间数据补全
+		SupplementDataTime();
+
 		// 将源数据中的空值字符串("NULL")转换为("0")
 		base::PubStr::ReplaceInStrVector2(m_v2ReportStatData, "NULL", "0", false, true);
 
 		// 将数组中的带 'E' 的精度字符串转换为长精度字符串表示
-		base::PubStr::TransVecDouStrWithE2LongDouStr(m_v2ReportStatData, m_dbinfo.val_beg_pos, END_POS);
+		base::PubStr::TransVecDouStrWithE2LongDouStr(m_v2ReportStatData, BEG_POS, END_POS);
 
 		// 去除尾部的"."和其后的"0"
-		base::PubStr::TrimTail0StrVec2(m_v2ReportStatData, m_dbinfo.val_beg_pos, END_POS);
+		base::PubStr::TrimTail0StrVec2(m_v2ReportStatData, BEG_POS, END_POS);
 	}
 	else	// 非报表统计
 	{
 		//// 生成明细结果数据
 		//CompareResultData();
+
+		// 先进行时间数据补全
+		SupplementDataTime();
 
 		const int VEC3_SIZE = m_v3HiveSrcData.size();
 		for ( int i = 0; i < VEC3_SIZE; ++i )
@@ -1159,10 +1150,10 @@ void Analyse::AnalyseSourceData() throw(base::Exception)
 			base::PubStr::ReplaceInStrVector2(ref_vec2, "NULL", "0", false, true);
 
 			// 将数组中的带 'E' 的精度字符串转换为长精度字符串表示
-			base::PubStr::TransVecDouStrWithE2LongDouStr(ref_vec2, m_dbinfo.val_beg_pos, END_POS);
+			base::PubStr::TransVecDouStrWithE2LongDouStr(ref_vec2, BEG_POS, END_POS);
 
 			// 去除尾部的"."和其后的"0"
-			base::PubStr::TrimTail0StrVec2(ref_vec2, m_dbinfo.val_beg_pos, END_POS);
+			base::PubStr::TrimTail0StrVec2(ref_vec2, BEG_POS, END_POS);
 		}
 	}
 
@@ -1171,8 +1162,8 @@ void Analyse::AnalyseSourceData() throw(base::Exception)
 
 void Analyse::SrcDataUnifiedCoding() throw(base::Exception)
 {
-	const int DIM_REGION_INDEX  = m_taskInfo.GetDimRegionIndex();
-	const int DIM_CHANNEL_INDEX = m_taskInfo.GetDimChannelIndex();
+	const int DIM_REGION_INDEX  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_REGION);
+	const int DIM_CHANNEL_INDEX = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_CHANNEL);
 
 	std::set<std::string> set_not_exist_region;			// 未成功转换的地市别名
 	std::set<std::string> set_not_exist_channel;		// 未成功转换的渠道别名
@@ -1338,7 +1329,7 @@ void Analyse::TransSrcDataToReportStatData()
 //		}
 //
 //		// 维度个数与值的开始序号一致
-//		const int DIM_SIZE = m_dbinfo.val_beg_pos;
+//		const int DIM_SIZE = ;
 //		const int VAL_SIZE = m_taskInfo.vecEtlRule[0].vecEtlVal.size();
 //
 //		const int LEFT_SINGLE_DIM_SIZE  = m_taskInfo.vecLeftKpiCol.size();
@@ -1371,6 +1362,81 @@ void Analyse::TransSrcDataToReportStatData()
 //	}
 //}
 
+void Analyse::SupplementDataTime()
+{
+	// 没有需要补全的时间字段
+	if ( !m_dbinfo.IsEtlDayValid() && !m_dbinfo.IsNowDayValid() )
+	{
+		m_pLog->Output("[Analyse] 无需进行时间数据补全！");
+		return;
+	}
+	m_pLog->Output("[Analyse] 进行时间数据补全 ...");
+
+	int first_index  = 0;
+	int second_index = 0;
+	std::string first_time;
+	std::string second_time;
+	if ( m_dbinfo.GetEtlDayIndex() < m_dbinfo.GetNowDayIndex() )
+	{
+		first_index  = m_dbinfo.GetEtlDayIndex();
+		second_index = m_dbinfo.GetNowDayIndex();
+		first_time   = m_dbinfo.GetEtlDay();
+		second_time  = m_dbinfo.GetNowDay();
+	}
+	else
+	{
+		first_index  = m_dbinfo.GetNowDayIndex();
+		second_index = m_dbinfo.GetEtlDayIndex();
+		first_time   = m_dbinfo.GetNowDay();
+		second_time  = m_dbinfo.GetEtlDay();
+	}
+
+	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == m_taskInfo.AnaRule.AnaType )		// 报表统计
+	{
+		const size_t VEC2_REPORT_SIZE = m_v2ReportStatData.size();
+		for ( size_t i = 0; i < VEC2_REPORT_SIZE; ++i )
+		{
+			std::vector<std::string>& ref_vec = m_v2ReportStatData[i];
+
+			if ( first_index != TimeField::TF_INVALID_INDEX )
+			{
+				ref_vec.insert(ref_vec.begin()+first_index, first_time);
+			}
+
+			if ( second_index != TimeField::TF_INVALID_INDEX )
+			{
+				ref_vec.insert(ref_vec.begin()+second_index, second_time);
+			}
+		}
+	}
+	else	// 非报表统计
+	{
+		const int VEC3_SIZE = m_v3HiveSrcData.size();
+		for ( int i = 0; i < VEC3_SIZE; ++i )
+		{
+			std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
+
+			const size_t VEC2_SIZE = ref_vec2.size();
+			for ( size_t s = 0; s < VEC2_SIZE; ++s )
+			{
+				std::vector<std::string>& ref_vec = ref_vec2[s];
+
+				if ( first_index != TimeField::TF_INVALID_INDEX )
+				{
+					ref_vec.insert(ref_vec.begin()+first_index, first_time);
+				}
+
+				if ( second_index != TimeField::TF_INVALID_INDEX )
+				{
+					ref_vec.insert(ref_vec.begin()+second_index, second_time);
+				}
+			}
+		}
+	}
+
+	m_pLog->Output("[Analyse] 时间数据补全完成！");
+}
+
 void Analyse::CollectDimVal()
 {
 	m_pLog->Output("[Analyse] 收集源数据的所有维度取值 ...");
@@ -1379,21 +1445,7 @@ void Analyse::CollectDimVal()
 	dv.KpiID = m_sKpiID;
 
 	std::vector<KpiColumn>& v_dimcol = m_taskInfo.vecKpiDimCol;
-	int vec_size = v_dimcol.size();
-
-	// 收集有效维度 index
-	std::vector<int> vec_dim_index;
-	for ( int i = 0; i < vec_size; ++i )
-	{
-		// 特殊维度，不存在于源数据中
-		if ( v_dimcol[i].ColSeq < 0 )
-		{
-			continue;
-		}
-
-		vec_dim_index.push_back(i);
-	}
-	vec_size = vec_dim_index.size();
+	const int VEC_SIZE = v_dimcol.size();
 
 	const int VEC3_SIZE = m_v3HiveSrcData.size();
 	for ( int i = 0; i < VEC3_SIZE; ++i )
@@ -1405,10 +1457,9 @@ void Analyse::CollectDimVal()
 		{
 			std::vector<std::string>& ref_vec1 = ref_vec2[j];
 
-			for ( int k = 0; k < vec_size; ++k )
+			for ( int k = 0; k < VEC_SIZE; ++k )
 			{
-				int& index = vec_dim_index[k];
-				KpiColumn& ref_col = v_dimcol[index];
+				KpiColumn& ref_col = v_dimcol[k];
 
 				// 只收集列表显示类型
 				if ( KpiColumn::DTYPE_LIST == ref_col.DisType )
@@ -1453,7 +1504,7 @@ void Analyse::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype
 {
 	// 是否带时间戳
 	// 只有带时间戳才可以按采集时间删除结果数据
-	if ( m_dbinfo.tf_etlday.valid )
+	if ( m_dbinfo.IsEtlDayValid() )
 	{
 		// 结果表类型是否为天表？
 		if ( AnaTaskInfo::TABTYPE_DAY == result_tabtype )

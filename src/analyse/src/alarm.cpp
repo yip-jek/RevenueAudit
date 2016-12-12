@@ -85,12 +85,12 @@ void Alarm::SetTaskDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info)
 	m_pTaskInfo = &t_info;
 	m_pDBInfo   = &db_info;
 
-	m_kpiDimSize = m_pDBInfo->val_beg_pos;
+	m_kpiDimSize = m_pTaskInfo->vecKpiDimCol.size();
 	m_kpiValSize = m_pTaskInfo->vecKpiValCol.size();
 
 	// 设置地市和渠道维度字段的位置索引
-	m_dimRegionIndex  = m_pTaskInfo->GetDimRegionIndex();
-	m_dimChannelIndex = m_pTaskInfo->GetDimChannelIndex();
+	m_dimRegionIndex  = m_pTaskInfo->GetDimEWTypeIndex(KpiColumn::EWTYPE_REGION);
+	m_dimChannelIndex = m_pTaskInfo->GetDimEWTypeIndex(KpiColumn::EWTYPE_CHANNEL);
 }
 
 void Alarm::SetAlarmRule(AlarmRule& alarm_rule)

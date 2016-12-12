@@ -27,6 +27,9 @@ protected:
 	// 获取后续参数任务信息
 	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
 
+	// 解析分析规则，生成Hive取数逻辑
+	virtual void AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception);
+
 	// 获取任务信息
 	virtual void FetchTaskInfo() throw(base::Exception);
 
@@ -41,9 +44,6 @@ protected:
 
 	// 计算组合因子的维度值
 	double CalcYCComplexFactor(std::map<std::string, double>& map_factor, const std::string& cmplx_factr_fmt) throw(base::Exception);
-
-	// 解析分析规则，生成Hive取数逻辑
-	virtual void AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 告警判断: 如果达到告警阀值，则生成告警
 	virtual void AlarmJudgement() throw(base::Exception);

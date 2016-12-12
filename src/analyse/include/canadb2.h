@@ -167,7 +167,7 @@ private:
 	void DeleteFromTable(const std::string& tab_name, const std::string& condition) throw(base::Exception);
 
 	// 结果数据入库
-	void ResultDataInsert(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
+	void ResultDataInsert(const std::string& db_sql, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
 
 private:
 	// 数据库表名
