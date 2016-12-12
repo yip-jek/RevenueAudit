@@ -127,58 +127,11 @@ void Analyse_HD::GenerateDeleteTime(const std::string time_fmt) throw(base::Exce
 	}
 }
 
-void Analyse_HD::StoreResult() throw(base::Exception)
-{
-	// 删除旧的数据
-	RemoveOldResult(m_taskInfo.ResultType);
-
-	// 组织入库 SQL 语句
-	std::string str_sql = "insert into " + m_dbinfo.target_table + "(";
-
-	std::string str_holder;
-	int t_size = m_taskInfo.vecKpiDimCol.size();
-	for ( int i = 0; i < t_size; ++i )
-	{
-		KpiColumn& ref_dim = m_taskInfo.vecKpiDimCol[i];
-
-		if ( i > 0 )
-		{
-			str_sql    += (", " + ref_dim.DBName);
-			str_holder += ", ?";
-		}
-		else
-		{
-			str_sql    += ref_dim.DBName;
-			str_holder += "?";
-		}
-	}
-
-	t_size = m_taskInfo.vecKpiValCol.size();
-	for ( int j = 0; j < t_size; ++j )
-	{
-		KpiColumn& ref_val = m_taskInfo.vecKpiValCol[j];
-		str_sql    += (", " + ref_val.DBName);
-		str_holder += ", ?";
-	}
-
-	str_sql += ") values(" + str_holder + ")";
-
-	// 入库话单稽核结果数据
-	t_size = m_v3HiveSrcData.size();
-	for ( int k = 0; k < t_size; ++k )
-	{
-		m_pLog->Output("[Analyse_HD] 准备入库第 %d 组结果数据 ...", (k+1));
-		m_pAnaDB2->ResultDataInsert(str_sql, "", false, m_v3HiveSrcData[k]);
-	}
-
-	m_pLog->Output("[Analyse_HD] 结果数据存储完毕!");
-}
-
 void Analyse_HD::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception)
 {
 	// 是否带时间戳
 	// 只有带时间戳才可以按采集时间删除结果数据
-	if ( m_dbinfo.time_stamp )
+	if ( m_dbinfo.tf_etlday.valid )
 	{
 		// 结果表类型是否为天表？
 		if ( AnaTaskInfo::TABTYPE_DAY == result_tabtype )

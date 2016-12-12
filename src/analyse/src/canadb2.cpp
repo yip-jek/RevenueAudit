@@ -509,17 +509,9 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 	{
 		throw base::Exception(ADBERR_INS_RESULT_DATA, "[DB2] Insert result data failed: NO sql to be executed ! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
+
 	m_pLog->Output("[DB2] Insert result data to table: [%s]", db_info.target_table.c_str());
-
-	if ( db_info.time_stamp )		// 带时间戳
-	{
-		ResultDataInsert(db_info.db2_sql, db_info.date_time, db_info.day_now, vec2_data);
-	}
-	else	// 不带时间戳
-	{
-		ResultDataInsert(db_info.db2_sql, "", db_info.day_now, vec2_data);
-	}
-
+	ResultDataInsert(db_info, vec2_data);
 	m_pLog->Output("[DB2] Insert result data successfully, size: %llu", vec2_data.size());
 }
 
@@ -577,9 +569,8 @@ void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::
 	}
 	else	// 删除指定数据
 	{
-		// 时间条件：时间（账期）字段在尾部
-		const size_t BILL_TIME_INDEX = db_info.vec_fields.size() - (db_info.day_now ? 2 : 1);
-		std::string dt_condition = db_info.vec_fields[BILL_TIME_INDEX].field_name + " = '";
+		// 时间条件
+		std::string dt_condition = db_info.vec_fields[db_info.tf_etlday.index].field_name + " = '";
 		dt_condition += db_info.date_time + "'";
 
 		size_t result_data_size = SelectResultData(db_info.target_table, dt_condition);
@@ -660,17 +651,15 @@ void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<s
 
 	// 入库报表结果表
 	m_pLog->Output("[DB2] Insert report statistics data to result table: [%s]", db_info.target_table.c_str());
-	ResultDataInsert(db_info.db2_sql, db_info.date_time, db_info.day_now, vec2_reportdata);
+	ResultDataInsert(db_info, vec2_reportdata);
 
 	// 报表备份表替换报表结果表
 	const size_t TARGET_TAB_POS = db_info.db2_sql.find(db_info.target_table);
-	std::string ins_backup_sql = db_info.db2_sql;
-	ins_backup_sql.replace(TARGET_TAB_POS, db_info.target_table.size(), db_info.backup_table);
+	db_info.db2_sql.replace(TARGET_TAB_POS, db_info.target_table.size(), db_info.backup_table);
 
 	// 入库报表结果备份表
 	m_pLog->Output("[DB2] Insert report statistics data to backup table: [%s]", db_info.backup_table.c_str());
-	ResultDataInsert(ins_backup_sql, db_info.date_time, db_info.day_now, vec2_reportdata);
-
+	ResultDataInsert(db_info, vec2_reportdata);
 	m_pLog->Output("[DB2] Insert report statistics data successfully, size: %llu", vec2_reportdata.size());
 }
 
@@ -695,11 +684,10 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 	}
 	sql += " from " + db_info.target_table;
 
-	// 是否带时间戳
-	if ( db_info.time_stamp )
+	// 是否带采集时间
+	if ( db_info.tf_etlday.valid )
 	{
-		const int TS_INDEX = FIELD_SIZE - (db_info.day_now ? 2 : 1);
-		sql += " where " + db_info.vec_fields[TS_INDEX].field_name + " = ?";
+		sql += " where " + db_info.vec_fields[db_info.tf_etlday.index].field_name + " = ?";
 	}
 	m_pLog->Output("[DB2] Select targat table [%s], SQL: %s", db_info.target_table.c_str(), sql.c_str());
 
@@ -711,7 +699,7 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		// 是否带时间条件
-		if ( db_info.time_stamp )
+		if ( db_info.tf_etlday.valid )
 		{
 			rs.Parameter(1) = date.c_str();
 		}
@@ -1306,83 +1294,62 @@ void CAnaDB2::DeleteFromTable(const std::string& tab_name, const std::string& co
 	}
 }
 
-void CAnaDB2::ResultDataInsert(const std::string& ins_sql, const std::string& date_time, bool now_day, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
+void CAnaDB2::ResultDataInsert(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	// 当前时间（天）
-	std::string str_day_now;
-	if ( now_day )
+	// 采集时间索引位置
+	int index_etlday = -1;			// 默认无效
+	if ( db_info.tf_etlday.valid )
 	{
-		str_day_now = base::SimpleTime::Now().DayTime8();
+		index_etlday = db_info.tf_etlday.index;
 	}
+	// 当前时间索引位置
+	int index_nowday = -1;			// 默认无效
+	if ( db_info.tf_nowday.valid )
+	{
+		index_nowday = db_info.tf_nowday.index;
+	}
+
+	// 当前时间（天）
+	std::string str_nowday = base::SimpleTime::Now().DayTime8();
 
 	try
 	{
-		rs.Prepare(ins_sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		m_pLog->Output("[DB2] Execute result-data insert SQL: %s", ins_sql.c_str());
+		rs.Prepare(db_info.db2_sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		m_pLog->Output("[DB2] Execute result-data insert SQL: %s", db_info.db2_sql.c_str());
 
 		Begin();
 
 		const size_t V2_DATA_SIZE = vec2_data.size();
-		if ( date_time.empty() )	// 不带时间戳
+		for ( size_t i = 0; i < V2_DATA_SIZE; ++i )
 		{
-			for ( size_t i = 0; i < V2_DATA_SIZE; ++i )
+			std::vector<std::string>& ref_vec_data = vec2_data[i];
+
+			const int REF_DATA_SIZE = ref_vec_data.size();
+			for ( int j = 0, x = 0; j < REF_DATA_SIZE; ++x )
 			{
-				std::vector<std::string>& ref_vec_data = vec2_data[i];
-
-				const int REF_DATA_SIZE = ref_vec_data.size();
-				for ( int j = 0; j < REF_DATA_SIZE; ++j )
+				if ( x == index_etlday )	// 采集时间
 				{
-					std::string& ref_str = ref_vec_data[j];
-					rs.Parameter(j+1) = ref_str.c_str();
+					rs.Parameter(x+1) = db_info.date_time.c_str();
 				}
-
-				// 入库当前时间（天）
-				if ( now_day )
+				else if ( x == index_nowday )	// 当前时间
 				{
-					rs.Parameter(REF_DATA_SIZE+1) = str_day_now.c_str();
+					rs.Parameter(x+1) = str_nowday.c_str();
 				}
-
-				rs.Execute();
-
-				// 每达到最大值提交一次
-				if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
+				else
 				{
-					Commit();
+					rs.Parameter(x+1) = ref_vec_data[j++].c_str();
 				}
 			}
-		}
-		else	// 带时间戳
-		{
-			for ( size_t i = 0; i < V2_DATA_SIZE; ++i )
+
+			rs.Execute();
+
+			// 每达到最大值提交一次
+			if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
 			{
-				std::vector<std::string>& ref_vec_data = vec2_data[i];
-
-				const int REF_DATA_SIZE = ref_vec_data.size();
-				for ( int j = 0; j < REF_DATA_SIZE; ++j )
-				{
-					std::string& ref_str = ref_vec_data[j];
-					rs.Parameter(j+1) = ref_str.c_str();
-				}
-
-				// 绑定时间戳
-				rs.Parameter(REF_DATA_SIZE+1) = date_time.c_str();
-
-				// 入库当前时间（天）
-				if ( now_day )
-				{
-					rs.Parameter(REF_DATA_SIZE+2) = str_day_now.c_str();
-				}
-
-				rs.Execute();
-
-				// 每达到最大值提交一次
-				if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
-				{
-					Commit();
-				}
+				Commit();
 			}
 		}
 

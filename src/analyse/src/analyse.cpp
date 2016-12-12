@@ -219,62 +219,54 @@ void Analyse::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(bas
 
 void Analyse::GetAnaDBInfo() throw(base::Exception)
 {
-	m_dbinfo.day_now    = false;
-	m_dbinfo.time_stamp = false;
 	int index_dn = 0;
 	int index_ts = 0;
 
 	AnaField ana_field;
 	std::vector<AnaField> v_fields;
 
+	m_dbinfo.tf_etlday.valid = false;
+	m_dbinfo.tf_nowday.valid = false;
+
+	// 值的开始序号与维度的size相同
+	m_dbinfo.val_beg_pos = m_taskInfo.vecKpiDimCol.size();
+
 	// 指标维度字段
 	int v_size = m_taskInfo.vecKpiDimCol.size();
 	for ( int i = 0; i < v_size; ++i )
 	{
-		KpiColumn& col = m_taskInfo.vecKpiDimCol[i];
+		KpiColumn& ref_col = m_taskInfo.vecKpiDimCol[i];
 
-		if ( col.DBName.empty() )
+		if ( ref_col.DBName.empty() )
 		{
-			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "维度字段名为空! 无效! (KPI_ID=%s, COL_TYPE=CTYPE_DIM, COL_SEQ=%d) [FILE:%s, LINE:%d]", col.KpiID.c_str(), col.ColSeq, __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "维度字段名为空! 无效! (KPI_ID=%s, COL_TYPE=CTYPE_DIM, COL_SEQ=%d) [FILE:%s, LINE:%d]", ref_col.KpiID.c_str(), ref_col.ColSeq, __FILE__, __LINE__);
 		}
 
-		if ( col.ColSeq < 0 )
+		if ( ref_col.ColSeq < 0 )
 		{
-			if ( -1 == col.ColSeq )		// ColType为CTYPE_DIM时, col.ColSeq=-1 表示时间戳
-			{
-				if ( !m_dbinfo.time_stamp )
-				{
-					m_dbinfo.time_stamp = true;
-					index_ts = i;
-				}
-				else
-				{
-					throw base::Exception(ANAERR_GET_DBINFO_FAILED, "时间戳维度字段重复设置: KPI_ID=%s, COL_TYPE=CTYPE_DIM, COL_SEQ=%d, DB_NAME=%s [FILE:%s, LINE:%d]", col.KpiID.c_str(), col.ColSeq, col.DBName.c_str(), __FILE__, __LINE__);
-				}
-			}
-			else if ( -2 == col.ColSeq )	// ColType为CTYPE_DIM时, col.ColSeq=-2 表示当前时间（天）
-			{
-				if ( !m_dbinfo.day_now )
-				{
-					m_dbinfo.day_now = true;
-					index_dn = i;
-				}
-				else
-				{
-					throw base::Exception(ANAERR_GET_DBINFO_FAILED, "当前时间（天）维度字段重复设置: KPI_ID=%s, COL_TYPE=CTYPE_DIM, COL_SEQ=%d, DB_NAME=%s [FILE:%s, LINE:%d]", col.KpiID.c_str(), col.ColSeq, col.DBName.c_str(), __FILE__, __LINE__);
-				}
-			}
-			else
-			{
-				throw base::Exception(ANAERR_GET_DBINFO_FAILED, "无法识别的维度字段序号: %d (KPI_ID=%s, COL_TYPE=CTYPE_DIM, DB_NAME=%s) [FILE:%s, LINE:%d]", col.ColSeq, col.KpiID.c_str(), col.DBName.c_str(), __FILE__, __LINE__);
-			}
+			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "无法识别的维度字段序号: %d (KPI_ID=%s, COL_TYPE=CTYPE_DIM, DB_NAME=%s) [FILE:%s, LINE:%d]", ref_col.ColSeq, ref_col.KpiID.c_str(), ref_col.DBName.c_str(), __FILE__, __LINE__);
 		}
-		else
+
+		if ( KpiColumn::EWTYPE_ETLDAY == ref_col.ExpWay )
 		{
-			ana_field.field_name = col.DBName;
-			ana_field.CN_name    = col.CNName;
-			v_fields.push_back(ana_field);
+			m_dbinfo.tf_etlday.valid = true;
+			m_dbinfo.tf_etlday.index = i;
+
+			// 存在采集时间，（源数据）值开始序号前移一位
+			--m_dbinfo.val_beg_pos;
 		}
+		else if ( KpiColumn::EWTYPE_NOWDAY == ref_col.ExpWay )
+		{
+			m_dbinfo.tf_nowday.valid = true;
+			m_dbinfo.tf_nowday.index = i;
+
+			// 存在当前时间，（源数据）值开始序号前移一位
+			--m_dbinfo.val_beg_pos;
+		}
+
+		ana_field.field_name = col.DBName;
+		ana_field.CN_name    = col.CNName;
+		v_fields.push_back(ana_field);
 	}
 
 	// 指标值字段
@@ -283,9 +275,6 @@ void Analyse::GetAnaDBInfo() throw(base::Exception)
 	{
 		throw base::Exception(ANAERR_GET_DBINFO_FAILED, "指标值：%s [FILE:%s, LINE:%d]", error_msg.c_str(), __FILE__, __LINE__);
 	}
-
-	// 值的开始序号与维度的size相同
-	m_dbinfo.val_beg_pos = m_taskInfo.vecKpiDimCol.size();
 
 	// 指标单独显示的维度字段
 	// 左侧
@@ -297,30 +286,6 @@ void Analyse::GetAnaDBInfo() throw(base::Exception)
 	if ( !TaskInfoUtil::KpiColumnPushBackAnaFields(v_fields, m_taskInfo.vecRightKpiCol, error_msg) )
 	{
 		throw base::Exception(ANAERR_GET_DBINFO_FAILED, "右侧单独显示的指标维度：%s [FILE:%s, LINE:%d]", error_msg.c_str(), __FILE__, __LINE__);
-	}
-
-	// 加时间戳
-	if ( m_dbinfo.time_stamp )
-	{
-		KpiColumn& ref_col = m_taskInfo.vecKpiDimCol[index_ts];
-		ana_field.field_name = ref_col.DBName;
-		ana_field.CN_name    = ref_col.CNName;
-		v_fields.push_back(ana_field);
-
-		// 时间戳维度在最后，值开始序号前移
-		--(m_dbinfo.val_beg_pos);
-	}
-
-	// 加当前时间（天）
-	if ( m_dbinfo.day_now )
-	{
-		KpiColumn& ref_col = m_taskInfo.vecKpiDimCol[index_dn];
-		ana_field.field_name = ref_col.DBName;
-		ana_field.CN_name    = ref_col.CNName;
-		v_fields.push_back(ana_field);
-
-		// 当前时间维度在最后，值开始序号前移
-		--(m_dbinfo.val_beg_pos);
 	}
 
 	// 按表的类型生成最终目标表名
@@ -503,6 +468,8 @@ void Analyse::CheckAnaTaskInfo() throw(base::Exception)
 void Analyse::CheckExpWayType() throw(base::Exception)
 {
 	// 检查维度：是否存在重复的 '地市' 和 '渠道' 表示类型
+	bool etlday_existed  = false;
+	bool nowday_existed  = false;
 	bool region_existed  = false;
 	bool channel_existed = false;
 	int vec_size = m_taskInfo.vecKpiDimCol.size();
@@ -510,7 +477,29 @@ void Analyse::CheckExpWayType() throw(base::Exception)
 	{
 		KpiColumn& ref_kpi_dim = m_taskInfo.vecKpiDimCol[i];
 
-		if ( KpiColumn::EWTYPE_REGION == ref_kpi_dim.ExpWay )	// 地市
+		if ( KpiColumn::EWTYPE_ETLDAY == ref_kpi_dim.ExpWay )	// 采集时间
+		{
+			if ( etlday_existed )	// 采集时间已经存在
+			{
+				throw base::Exception(ANAERR_TASKINFO_INVALID, "采集时间维度字段重复配置！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			}
+			else
+			{
+				etlday_existed = true;
+			}
+		}
+		else if ( KpiColumn::EWTYPE_NOWDAY == ref_kpi_dim.ExpWay )	// 当前时间
+		{
+			if ( nowday_existed )	// 当前时间已经存在
+			{
+				throw base::Exception(ANAERR_TASKINFO_INVALID, "当前时间维度字段重复配置！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			}
+			else
+			{
+				nowday_existed = true;
+			}
+		}
+		else if ( KpiColumn::EWTYPE_REGION == ref_kpi_dim.ExpWay )	// 地市
 		{
 			if ( region_existed )	// 地市已经存在
 			{
@@ -1464,7 +1453,7 @@ void Analyse::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype
 {
 	// 是否带时间戳
 	// 只有带时间戳才可以按采集时间删除结果数据
-	if ( m_dbinfo.time_stamp )
+	if ( m_dbinfo.tf_etlday.valid )
 	{
 		// 结果表类型是否为天表？
 		if ( AnaTaskInfo::TABTYPE_DAY == result_tabtype )

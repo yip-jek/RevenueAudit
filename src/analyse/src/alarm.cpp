@@ -85,18 +85,8 @@ void Alarm::SetTaskDBInfo(AnaTaskInfo& t_info, AnaDBInfo& db_info)
 	m_pTaskInfo = &t_info;
 	m_pDBInfo   = &db_info;
 
-	m_kpiDimSize = m_pTaskInfo->vecKpiDimCol.size();
+	m_kpiDimSize = m_pDBInfo->val_beg_pos;
 	m_kpiValSize = m_pTaskInfo->vecKpiValCol.size();
-
-	// 去除时间列
-	if ( m_pDBInfo->day_now )
-	{
-		m_kpiDimSize -= 1;
-	}
-	if ( m_pDBInfo->time_stamp )
-	{
-		m_kpiDimSize -= 1;
-	}
 
 	// 设置地市和渠道维度字段的位置索引
 	m_dimRegionIndex  = m_pTaskInfo->GetDimRegionIndex();

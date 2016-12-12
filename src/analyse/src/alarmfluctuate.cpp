@@ -159,7 +159,7 @@ void AlarmFluctuate::AnalyseFluctExp(const std::string& exp_fluct) throw(base::E
 	{
 		m_pDBInfo->target_table = base::PubStr::TrimB(m_pTaskInfo->TableName) + "_" + m_strAlarmDate;
 	}
-	else if ( !m_pDBInfo->time_stamp )		// 普通表且没有时间字段
+	else if ( !m_pDBInfo->tf_etlday.valid )		// 普通表且没有时间字段
 	{
 		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 目标表的时间字段缺失，无法进行波动告警！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}

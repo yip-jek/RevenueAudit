@@ -257,7 +257,7 @@ public:
 	{
 		EWTYPE_UNKNOWN        = 0,				// 未知表示方式
 		EWTYPE_NORMAL         = 1,				// 一般表示方式
-		EWTYPE_ETLDAY         = 2,				// 采集时间（天）
+		EWTYPE_ETLDAY         = 2,				// 采集时间
 		EWTYPE_NOWDAY         = 3,				// 当前时间（天）
 		EWTYPE_REGION         = 4,				// 表示地市 (唯一)
 		EWTYPE_CHANNEL        = 5,				// 表示渠道 (唯一)
@@ -354,7 +354,7 @@ public:
 		{
 			ExpWay = EWTYPE_NORMAL;
 		}
-		else if ( "ETL_DAY" == TYPE )			// 采集时间（天）
+		else if ( "ETL_DAY" == TYPE )			// 采集时间
 		{
 			ExpWay = EWTYPE_ETLDAY;
 		}
