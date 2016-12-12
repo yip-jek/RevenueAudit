@@ -23,6 +23,9 @@ protected:
 	// 生成数据删除的时间（段）
 	void GenerateDeleteTime(const std::string time_fmt) throw(base::Exception);
 
+	// 结果数据入库 [DB2]
+	virtual void StoreResult() throw(base::Exception);
+
 	// 删除旧数据
 	virtual void RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception);
 
@@ -35,5 +38,8 @@ protected:
 protected:
 	int m_begintime;				// 开始时间（包含）
 	int m_endtime;					// 结束时间（包含）
+
+protected:
+	std::vector<std::string> m_vecExecSql;
 };
 

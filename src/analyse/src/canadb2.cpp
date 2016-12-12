@@ -1302,27 +1302,34 @@ void CAnaDB2::ResultDataInsert(const std::string& db_sql, std::vector<std::vecto
 	try
 	{
 		rs.Prepare(db_sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		m_pLog->Output("[DB2] Execute result-data insert SQL: %s", db_sql.c_str());
+		m_pLog->Output("[DB2] Execute insert result data SQL: %s", db_sql.c_str());
 
 		Begin();
 
-		const size_t V2_DATA_SIZE = vec2_data.size();
-		for ( size_t i = 0; i < V2_DATA_SIZE; ++i )
+		if ( vec2_data.empty() )	// 没有数据，只执行一次SQL
 		{
-			std::vector<std::string>& ref_vec_data = vec2_data[i];
-
-			const int REF_DATA_SIZE = ref_vec_data.size();
-			for ( int j = 0; j < REF_DATA_SIZE; ++j )
-			{
-				rs.Parameter(j+1) = ref_vec_data[j].c_str();
-			}
-
 			rs.Execute();
-
-			// 每达到最大值提交一次
-			if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
+		}
+		else
+		{
+			const size_t V2_DATA_SIZE = vec2_data.size();
+			for ( size_t i = 0; i < V2_DATA_SIZE; ++i )
 			{
-				Commit();
+				std::vector<std::string>& ref_vec_data = vec2_data[i];
+
+				const int REF_DATA_SIZE = ref_vec_data.size();
+				for ( int j = 0; j < REF_DATA_SIZE; ++j )
+				{
+					rs.Parameter(j+1) = ref_vec_data[j].c_str();
+				}
+
+				rs.Execute();
+
+				// 每达到最大值提交一次
+				if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
+				{
+					Commit();
+				}
 			}
 		}
 
