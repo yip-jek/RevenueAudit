@@ -18,10 +18,13 @@ protected:
 	virtual void AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 从分析表达式中生成Hive取数逻辑
-	void GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void MakeExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
 	// 生成数据删除的时间（段）
 	void GenerateDeleteTime(const std::string time_fmt) throw(base::Exception);
+
+	// 按类型生成目标表名称
+	virtual void GenerateTableNameByType() throw(base::Exception);
 
 	// 结果数据入库 [DB2]
 	virtual void StoreResult() throw(base::Exception);
@@ -40,6 +43,7 @@ protected:
 	int m_endtime;					// 结束时间（包含）
 
 protected:
-	std::vector<std::string> m_vecExecSql;
+	std::string              m_tabTarget;				// 目标表名
+	std::vector<std::string> m_vecExecSql;				// 执行SQL队列
 };
 

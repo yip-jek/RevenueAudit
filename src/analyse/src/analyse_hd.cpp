@@ -2,6 +2,7 @@
 #include "log.h"
 #include "pubstr.h"
 #include "canadb2.h"
+#include "sqltranslator.h"
 
 Analyse_HD::Analyse_HD()
 :m_begintime(0)
@@ -28,14 +29,11 @@ void Analyse_HD::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base:
 
 	m_pLog->Output("[Analyse_HD] 分析规则类型：话单稽核统计 (KPI_ID:%s, ANA_ID:%s)", m_sKpiID.c_str(), m_sAnaID.c_str());
 
-	// 生成数据库[DB2]信息
-	GetAnaDBInfo();
-
 	// 从分析表达式中获得取数逻辑
-	GetExpressHiveSQL(vec_hivesql);
+	MakeExpressHiveSQL(vec_hivesql);
 }
 
-void Analyse_HD::GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse_HD::MakeExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception)
 {
 	std::string& ref_exp = m_taskInfo.AnaRule.AnaExpress;
 	m_pLog->Output("[Analyse_HD] 分析规则表达式：%s", ref_exp.c_str());
@@ -47,7 +45,7 @@ void Analyse_HD::GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(
 	std::vector<std::string> vec_str;
 	base::PubStr::Str2StrVector(ref_exp, ";", vec_str);
 
-	// 去除空SQL语句，并进行标志转换
+	// 去除空SQL语句
 	int tmp_size = vec_str.size();
 	for ( int i = 0; i < tmp_size; ++i )
 	{
@@ -58,65 +56,57 @@ void Analyse_HD::GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(
 			--i;
 			--tmp_size;
 		}
-		else	// 标志转换
-		{
-			ExchangeSQLMark(ref_str);
-		}
 	}
 
 	std::vector<std::string> vec_sql;
 	tmp_size = vec_str.size();
-	if ( 0 == tmp_size )
+	if ( tmp_size < 2 )
 	{
-		throw base::Exception(ANAERR_GET_EXP_HIVESQL_FAILED, "[HDJH] NO effective hive sql in analyse express! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_MK_EXP_HIVESQL_FAILED, "[HDJH] NO effective hive sql in analyse express: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_exp.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
-	else if ( 1 == tmp_size )
+	else
 	{
-		std::string sel_sql = base::PubStr::UpperB(vec_str[0]);
-		if ( sel_sql.substr(0, 7) != "SELECT " )
+		// 设置目标表
+		m_tabTarget = vec_str[0];
+
+		// 生成数据库[DB2]信息
+		GetAnaDBInfo();
+
+		// 统一进行标志转换
+		for ( int j = 1; j < tmp_size; ++j )
 		{
-			throw base::Exception(ANAERR_GET_EXP_HIVESQL_FAILED, "[HDJH] Not support hive sql in analyse express: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_exp.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			ExchangeSQLMark(vec_str[j]);
 		}
 
-		vec_sql.push_back(vec_str[0]);
-	}
-	else if ( 2 == tmp_size )
-	{
-		std::string sel_sql = base::PubStr::UpperB(vec_str[0]);
-		if ( sel_sql.substr(0, 7) == "SELECT " )
+		const std::string HEAD_SEL_SQL = base::PubStr::UpperB(vec_str[1]).substr(0, 7);
+		if ( 2 == tmp_size )
 		{
-			vec_sql.push_back(vec_str[0]);
-			m_vecExecSql.push_back(vec_str[1]);
-		}
-		else
-		{
-			GenerateDeleteTime(vec_str[0]);
+			if ( HEAD_SEL_SQL != "SELECT " )
+			{
+				throw base::Exception(ANAERR_MK_EXP_HIVESQL_FAILED, "[HDJH] Not support hive sql in analyse express: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_exp.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			}
 
 			vec_sql.push_back(vec_str[1]);
 		}
-	}
-	else	// 3 或以上
-	{
-		int i = 0;
-		std::string sel_sql = base::PubStr::TrimUpperB(vec_str[0]);
-		if ( sel_sql.substr(0, 7) == "SELECT " )
+		else	// tmp_size = 3或以上
 		{
-			vec_sql.push_back(vec_str[0]);
+			int index = 0;
+			if ( HEAD_SEL_SQL == "SELECT " )
+			{
+				vec_sql.push_back(vec_str[1]);
+				index = 2;
+			}
+			else
+			{
+				GenerateDeleteTime(vec_str[1]);
+				vec_sql.push_back(vec_str[2]);
+				index = 3;
+			}
 
-			i = 1;
-		}
-		else
-		{
-			GenerateDeleteTime(vec_str[0]);
-
-			vec_sql.push_back(vec_str[1]);
-
-			i = 2;
-		}
-
-		while ( i < tmp_size )
-		{
-			m_vecExecSql.push_back(vec_str[i++]);
+			while ( index < tmp_size )
+			{
+				m_vecExecSql.push_back(vec_str[index++]);
+			}
 		}
 	}
 
@@ -160,6 +150,26 @@ void Analyse_HD::GenerateDeleteTime(const std::string time_fmt) throw(base::Exce
 	{
 		throw base::Exception(ANAERR_GENE_DELTIME_FAILED, "[HDJH] 无法识别的时间标志: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", time_fmt.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
+}
+
+void Analyse_HD::GenerateTableNameByType() throw(base::Exception)
+{
+	const base::PubTime::DATE_TYPE DT = m_dbinfo.GetEtlDateType();
+	const std::string ETL_DAY         = m_dbinfo.GetEtlDay();
+
+	ReleaseSQLTranslator();
+	m_pSQLTranslator = new SQLTranslator(DT, ETL_DAY);
+	if ( NULL == m_pSQLTranslator )
+	{
+		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "new SQLTranslator failed: 无法申请到内存空间! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	// 最终目标表以分析规则设定的为准！
+	m_dbinfo.target_table = m_tabTarget;
+	m_pLog->Output("[Analyse_HD] 最终目标表名：%s", m_tabTarget.c_str());
+
+	// 置空：非报表统计没有备份表
+	m_dbinfo.backup_table.clear();
 }
 
 void Analyse_HD::StoreResult() throw(base::Exception)
