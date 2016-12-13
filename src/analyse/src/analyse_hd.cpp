@@ -37,32 +37,18 @@ void Analyse_HD::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base:
 
 void Analyse_HD::GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception)
 {
-	// 去除结尾的可能存在的分号（';'）
-	std::string hive_sql = base::PubStr::TrimB(m_taskInfo.AnaRule.AnaExpress);
-	int tmp_size = hive_sql.size();
-	while ( tmp_size > 0 )
-	{
-		if ( ';' == hive_sql[tmp_size-1] )
-		{
-			hive_sql.erase(tmp_size-1);
-			tmp_size = hive_sql.size();
-		}
-		else
-		{
-			break;
-		}
-	}
-	m_pLog->Output("[Analyse_HD] 分析规则表达式：%s", hive_sql.c_str());
+	std::string& ref_exp = m_taskInfo.AnaRule.AnaExpress;
+	m_pLog->Output("[Analyse_HD] 分析规则表达式：%s", ref_exp.c_str());
 
 	// HIVE SQL 语句就在分析表达式中
 	// 格式一: [hive sql];[insert sql];[insert sql];...
 	// 格式二: [时间标志];[hive sql];[insert sql];[insert sql];... (指定数据删除的时间)
 	// 格式三: [开始时间标志, 结束时间标志];[hive sql];[insert sql];[insert sql];... (指定数据删除的时间段)
 	std::vector<std::string> vec_str;
-	base::PubStr::Str2StrVector(hive_sql, ";", vec_str);
+	base::PubStr::Str2StrVector(ref_exp, ";", vec_str);
 
 	// 去除空SQL语句，并进行标志转换
-	tmp_size = vec_str.size();
+	int tmp_size = vec_str.size();
 	for ( int i = 0; i < tmp_size; ++i )
 	{
 		std::string& ref_str = vec_str[i];
@@ -89,7 +75,7 @@ void Analyse_HD::GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(
 		std::string sel_sql = base::PubStr::UpperB(vec_str[0]);
 		if ( sel_sql.substr(0, 7) != "SELECT " )
 		{
-			throw base::Exception(ANAERR_GET_EXP_HIVESQL_FAILED, "[HDJH] Not support hive sql in analyse express: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", hive_sql.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GET_EXP_HIVESQL_FAILED, "[HDJH] Not support hive sql in analyse express: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_exp.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 
 		vec_sql.push_back(vec_str[0]);
@@ -104,7 +90,7 @@ void Analyse_HD::GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(
 		}
 		else
 		{
-			GenerateDeleteTime(vec_str[0])
+			GenerateDeleteTime(vec_str[0]);
 
 			vec_sql.push_back(vec_str[1]);
 		}

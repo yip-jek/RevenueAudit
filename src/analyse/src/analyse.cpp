@@ -1109,6 +1109,9 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 
 void Analyse::AnalyseSourceData() throw(base::Exception)
 {
+	// 先进行时间数据补全
+	SupplementDataTime();
+
 	SrcDataUnifiedCoding();
 
 	const int BEG_POS = m_taskInfo.vecKpiDimCol.size();
@@ -1120,9 +1123,6 @@ void Analyse::AnalyseSourceData() throw(base::Exception)
 		m_pLog->Output("[Analyse] 转换前, 数据大小为: %llu", base::PubStr::CalcVVVectorStr(m_v3HiveSrcData));
 		TransSrcDataToReportStatData();
 		m_pLog->Output("[Analyse] 转换后, 数据大小为: %llu", m_v2ReportStatData.size());
-
-		// 报表统计数据转换完成后，才进行时间数据补全
-		SupplementDataTime();
 
 		// 将源数据中的空值字符串("NULL")转换为("0")
 		base::PubStr::ReplaceInStrVector2(m_v2ReportStatData, "NULL", "0", false, true);
@@ -1137,9 +1137,6 @@ void Analyse::AnalyseSourceData() throw(base::Exception)
 	{
 		//// 生成明细结果数据
 		//CompareResultData();
-
-		// 先进行时间数据补全
-		SupplementDataTime();
 
 		const int VEC3_SIZE = m_v3HiveSrcData.size();
 		for ( int i = 0; i < VEC3_SIZE; ++i )
@@ -1391,12 +1388,15 @@ void Analyse::SupplementDataTime()
 		second_time  = m_dbinfo.GetEtlDay();
 	}
 
-	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == m_taskInfo.AnaRule.AnaType )		// 报表统计
+	const int VEC3_SIZE = m_v3HiveSrcData.size();
+	for ( int i = 0; i < VEC3_SIZE; ++i )
 	{
-		const size_t VEC2_REPORT_SIZE = m_v2ReportStatData.size();
-		for ( size_t i = 0; i < VEC2_REPORT_SIZE; ++i )
+		std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
+
+		const size_t VEC2_SIZE = ref_vec2.size();
+		for ( size_t s = 0; s < VEC2_SIZE; ++s )
 		{
-			std::vector<std::string>& ref_vec = m_v2ReportStatData[i];
+			std::vector<std::string>& ref_vec = ref_vec2[s];
 
 			if ( first_index != TimeField::TF_INVALID_INDEX )
 			{
@@ -1406,30 +1406,6 @@ void Analyse::SupplementDataTime()
 			if ( second_index != TimeField::TF_INVALID_INDEX )
 			{
 				ref_vec.insert(ref_vec.begin()+second_index, second_time);
-			}
-		}
-	}
-	else	// 非报表统计
-	{
-		const int VEC3_SIZE = m_v3HiveSrcData.size();
-		for ( int i = 0; i < VEC3_SIZE; ++i )
-		{
-			std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
-
-			const size_t VEC2_SIZE = ref_vec2.size();
-			for ( size_t s = 0; s < VEC2_SIZE; ++s )
-			{
-				std::vector<std::string>& ref_vec = ref_vec2[s];
-
-				if ( first_index != TimeField::TF_INVALID_INDEX )
-				{
-					ref_vec.insert(ref_vec.begin()+first_index, first_time);
-				}
-
-				if ( second_index != TimeField::TF_INVALID_INDEX )
-				{
-					ref_vec.insert(ref_vec.begin()+second_index, second_time);
-				}
 			}
 		}
 	}
