@@ -2,6 +2,18 @@
 
 #include "analyse.h"
 
+// 序列
+struct SeqNode
+{
+public:
+	SeqNode(): index(-1)
+	{}
+
+public:
+	int         index;					// 序列位置索引
+	std::string seq_name;				// 序列名
+};
+
 // 话单稽核-分析模块
 class Analyse_HD : public Analyse
 {
@@ -53,6 +65,7 @@ protected:
 	int m_endtime;					// 结束时间（包含）
 
 protected:
+	std::vector<SeqNode>     m_vecSeq;
 	std::vector<std::string> m_vecExecSql;				// 执行SQL队列
 };
 

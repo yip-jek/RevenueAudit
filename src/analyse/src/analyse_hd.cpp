@@ -81,6 +81,90 @@ void Analyse_HD::GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(
 
 bool Analyse_HD::GetSequenceInHiveSQL(std::string& hive_sql)
 {
+	std::string tmp_sql = base::PubStr::UpperB(hive_sql);
+
+	const std::string SELECT = "SELECT ";
+	const std::string FROM   = " FROM ";
+	const size_t POS_BEG     = SELECT.size();
+	const size_t POS_END     = tmp_sql.find(FROM);
+
+	if ( tmp_sql.substr(0, POS_BEG) != SELECT		// 非 'select' HIVE SQL 语句
+		|| POS_END == std::string::npos				// 没有找到'from'
+		|| POS_END <= POS_BEG )						// 中间无内容
+	{
+		return false;
+	}
+
+	tmp_sql = tmp_sql.substr(POS_BEG, POS_END-POS_BEG);
+
+	const std::string TAIL_SEQ = ".NEXTVAL";
+	const int TS_SIZE = TAIL_SEQ.size();
+
+	int off_size    = POS_BEG * (-1);
+	int idx_current = 0;
+	int tmp_size    = 0;
+	size_t pos_last = 0;
+	size_t pos_curr = 0;
+	std::string field;
+	SeqNode sn;
+
+	while ( true )
+	{
+		pos_curr = tmp_sql.find(',', pos_last);
+		if ( pos_curr != std::string::npos )		// 找到逗号分隔符
+		{
+			field = base::PubStr::TrimB(tmp_sql.substr(pos_last, pos_curr-pos_last));
+			tmp_size = field.size();
+			if ( tmp_size > TS_SIZE && field.substr(tmp_size-TS_SIZE) == TAIL_SEQ )
+			{
+				sn.index    = idx_current;
+				sn.seq_name = field.substr(0, tmp_size-TS_SIZE);
+				m_vecSeq.push_back(sn);
+
+				// 从 HIVE SQL 中删除
+				tmp_size = tmp_sql.substr(pos_last, pos_curr-pos_last).size() + 1;
+				hive_sql.erase(pos_last-off_size, tmp_size);
+				off_size += tmp_size;
+			}
+
+			pos_last  = pos_curr + 1;
+		}
+		else	// 找不到
+		{
+			field = base::PubStr::TrimB(tmp_sql.substr(pos_last));
+			tmp_size = field.size();
+			if ( tmp_size > TS_SIZE && field.substr(tmp_size-TS_SIZE) == TAIL_SEQ )
+			{
+				sn.index    = idx_current;
+				sn.seq_name = field.substr(0, tmp_size-TS_SIZE);
+				m_vecSeq.push_back(sn);
+
+				// 从 HIVE SQL 中删除
+				tmp_size = tmp_sql.substr(pos_last).size() + 1;
+				hive_sql.erase(pos_last-1-off_size, tmp_size);
+			}
+			break;
+		}
+
+		++idx_current;
+	}
+
+	if ( m_vecSeq.empty() )
+	{
+		m_pLog->Output("[Analyse_HD] 在 HIVE SQL 中没有提取到序列 SEQUENCE !");
+	}
+	else
+	{
+		tmp_size = m_vecSeq.size();
+		for ( int i = 0; i < tmp_size; ++i )
+		{
+			SeqNode& ref_sn = m_vecSeq[i];
+			m_pLog->Output("[Analyse_HD] 提取到的序列 SEQUENCE [%d]: INDEX=%d, NAME=%s", (i+1), ref_sn.index, ref_sn.seq_name.c_str());
+		}
+		m_pLog->Output("[Analyse_HD] 提取序列 SEQUENCE 后的 HIVE SQL: %s", hive_sql.c_str());
+	}
+
+	return true;
 }
 
 void Analyse_HD::GenerateDeleteTime() throw(base::Exception)
@@ -95,7 +179,6 @@ void Analyse_HD::GenerateDeleteTime() throw(base::Exception)
 
 	std::vector<std::string> vec_str;
 	base::PubStr::Str2StrVector(DEL_TIME_FMT, ",", vec_str);
-
 	const int VEC_SIZE = vec_str.size();
 	if ( 1 == VEC_SIZE )
 	{
