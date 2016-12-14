@@ -30,7 +30,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 3.0006.20161214 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 3.0007.20161214 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -1109,8 +1109,8 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 
 void Analyse::AnalyseSourceData() throw(base::Exception)
 {
-	// 先进行时间数据补全
-	SupplementDataTime();
+	// 先进行数据补全
+	DataSupplement();
 
 	SrcDataUnifiedCoding();
 
@@ -1359,12 +1359,12 @@ void Analyse::TransSrcDataToReportStatData()
 //	}
 //}
 
-void Analyse::SupplementDataTime()
+void Analyse::DataSupplement()
 {
 	// 没有需要补全的时间字段
 	if ( !m_dbinfo.IsEtlDayValid() && !m_dbinfo.IsNowDayValid() )
 	{
-		m_pLog->Output("[Analyse] 无需进行时间数据补全！");
+		m_pLog->Output("[Analyse] 无需进行数据补全！");
 		return;
 	}
 	m_pLog->Output("[Analyse] 进行时间数据补全 ...");

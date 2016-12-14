@@ -123,8 +123,8 @@ void Analyse_YC::AnalyseSourceData() throw(base::Exception)
 
 	GenerateYCResultData(map_src);
 
-	// 生成了业财稽核的统计数据，再进行时间数据补全
-	SupplementDataTime();
+	// 生成了业财稽核的统计数据，再进行数据补全
+	DataSupplement();
 }
 
 void Analyse_YC::TransYCStatFactor(std::map<std::string, double>& map_factor) throw(base::Exception)

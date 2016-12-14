@@ -567,6 +567,11 @@ public:
 	std::string          AnaExpress;			// 分析规则表达式
 	//AnalyseConditionType AnaCondType;			// 分析条件类型
 	//std::string          AnaCondition;		// 分析条件表达式
+	std::string          Remark_1;				// 备注1
+	std::string          Remark_2;				// 备注2
+	std::string          Remark_3;				// 备注3
+	std::string          Remark_4;				// 备注4
+	std::string          Remark_5;				// 备注5
 };
 
 // 告警规则

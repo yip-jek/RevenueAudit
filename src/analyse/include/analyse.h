@@ -45,7 +45,7 @@ public:
 		ANAERR_TRANS_YCFACTOR_FAILED  = -3000021,			// 业财稽核统计因子转换失败
 		ANAERR_GENERATE_YCDATA_FAILED = -3000022,			// 生成业财稽核数据失败
 		ANAERR_CAL_YCCMPLX_FAILED     = -3000023,			// 计算业财稽核组合因子失败
-		ANAERR_MK_EXP_HIVESQL_FAILED  = -3000024,			// 从分析表达式中生成HIVE SQL失败
+		ANAERR_GET_EXP_HIVESQL_FAILED = -3000024,			// 从分析表达式中生成HIVE SQL失败
 		ANAERR_EXCHG_SQLMARK_FAILED   = -3000025,			// 标志转换失败
 		ANAERR_GENE_DELTIME_FAILED    = -3000026,			// 生成数据删除的时间失败
 	};
@@ -145,8 +145,8 @@ protected:
 	//// 生成对比结果数据
 	//void CompareResultData() throw(base::Exception);
 
-	// 数据时间补全
-	void SupplementDataTime();
+	// 数据补全
+	virtual void DataSupplement();
 
 	// 收集维度取值
 	void CollectDimVal();

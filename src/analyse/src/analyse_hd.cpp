@@ -28,95 +28,73 @@ void Analyse_HD::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base:
 	}
 
 	m_pLog->Output("[Analyse_HD] 分析规则类型：话单稽核统计 (KPI_ID:%s, ANA_ID:%s)", m_sKpiID.c_str(), m_sAnaID.c_str());
+	m_pLog->Output("[Analyse_HD] 分析规则表达式：%s", m_taskInfo.AnaRule.AnaExpress.c_str());
+
+	// 生成数据库[DB2]信息
+	GetAnaDBInfo();
+
+	// 生成数据删除的时间(段)
+	GenerateDeleteTime();
 
 	// 从分析表达式中获得取数逻辑
-	MakeExpressHiveSQL(vec_hivesql);
+	GetExpressHiveSQL(vec_hivesql);
+
+	// 生成执行SQL队列
+	GetExecuteSQL();
 }
 
-void Analyse_HD::MakeExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse_HD::GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception)
 {
-	std::string& ref_exp = m_taskInfo.AnaRule.AnaExpress;
-	m_pLog->Output("[Analyse_HD] 分析规则表达式：%s", ref_exp.c_str());
-
 	// HIVE SQL 语句就在分析表达式中
-	// 格式一: [hive sql];[insert sql];[insert sql];...
-	// 格式二: [时间标志];[hive sql];[insert sql];[insert sql];... (指定数据删除的时间)
-	// 格式三: [开始时间标志, 结束时间标志];[hive sql];[insert sql];[insert sql];... (指定数据删除的时间段)
-	std::vector<std::string> vec_str;
-	base::PubStr::Str2StrVector(ref_exp, ";", vec_str);
-
-	// 去除空SQL语句
-	int tmp_size = vec_str.size();
-	for ( int i = 0; i < tmp_size; ++i )
+	std::string hive_sql = base::PubStr::TrimB(m_taskInfo.AnaRule.AnaExpress);
+	// 去除末尾可能存在的分号(';')
+	int sql_size = hive_sql.size();
+	while ( sql_size > 0 )
 	{
-		std::string& ref_str = vec_str[i];
-		if ( ref_str.empty() )
+		if ( ';' == hive_sql[sql_size-1] )
 		{
-			vec_str.erase(vec_str.begin()+i);
-			--i;
-			--tmp_size;
+			hive_sql.erase(sql_size-1);
+			sql_size = hive_sql.size();
+		}
+		else
+		{
+			break;
 		}
 	}
 
-	std::vector<std::string> vec_sql;
-	tmp_size = vec_str.size();
-	if ( tmp_size < 2 )
+	if ( hive_sql.empty() )
 	{
-		throw base::Exception(ANAERR_MK_EXP_HIVESQL_FAILED, "[HDJH] NO effective hive sql in analyse express: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_exp.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-	}
-	else
-	{
-		// 设置目标表
-		m_tabTarget = vec_str[0];
-
-		// 生成数据库[DB2]信息
-		GetAnaDBInfo();
-
-		// 统一进行标志转换
-		for ( int j = 1; j < tmp_size; ++j )
-		{
-			ExchangeSQLMark(vec_str[j]);
-		}
-
-		const std::string HEAD_SEL_SQL = base::PubStr::UpperB(vec_str[1]).substr(0, 7);
-		if ( 2 == tmp_size )
-		{
-			if ( HEAD_SEL_SQL != "SELECT " )
-			{
-				throw base::Exception(ANAERR_MK_EXP_HIVESQL_FAILED, "[HDJH] Not support hive sql in analyse express: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_exp.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-			}
-
-			vec_sql.push_back(vec_str[1]);
-		}
-		else	// tmp_size = 3或以上
-		{
-			int index = 0;
-			if ( HEAD_SEL_SQL == "SELECT " )
-			{
-				vec_sql.push_back(vec_str[1]);
-				index = 2;
-			}
-			else
-			{
-				GenerateDeleteTime(vec_str[1]);
-				vec_sql.push_back(vec_str[2]);
-				index = 3;
-			}
-
-			while ( index < tmp_size )
-			{
-				m_vecExecSql.push_back(vec_str[index++]);
-			}
-		}
+		throw base::Exception(ANAERR_GET_EXP_HIVESQL_FAILED, "[HDJH] NO effective hive sql in analyse express! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
-	vec_sql.swap(vec_hivesql);
+	ExchangeSQLMark(hive_sql);
+	m_pLog->Output("[Analyse_HD] HIVE SQL: %s", hive_sql.c_str());
+
+	if ( !GetSequenceInHiveSQL(hive_sql) )
+	{
+		throw base::Exception(ANAERR_GET_EXP_HIVESQL_FAILED, "[HDJH] Illegal hive sql: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", hive_sql.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+	}
+
+	std::vector<std::string>().swap(vec_hivesql);
+	vec_hivesql.push_back(hive_sql);
 }
 
-void Analyse_HD::GenerateDeleteTime(const std::string time_fmt) throw(base::Exception)
+bool Analyse_HD::GetSequenceInHiveSQL(std::string& hive_sql)
 {
+}
+
+void Analyse_HD::GenerateDeleteTime() throw(base::Exception)
+{
+	// 没有设置时间标志
+	// 删除时间(段)在分析规则的备注2字段
+	const std::string DEL_TIME_FMT = base::PubStr::TrimB(m_taskInfo.AnaRule.Remark_2);
+	if ( DEL_TIME_FMT.empty() )
+	{
+		return;
+	}
+
 	std::vector<std::string> vec_str;
-	base::PubStr::Str2StrVector(time_fmt, ",", vec_str);
+	base::PubStr::Str2StrVector(DEL_TIME_FMT, ",", vec_str);
 
 	const int VEC_SIZE = vec_str.size();
 	if ( 1 == VEC_SIZE )
@@ -126,7 +104,7 @@ void Analyse_HD::GenerateDeleteTime(const std::string time_fmt) throw(base::Exce
 
 		if ( !base::PubStr::Str2Int(ref_str, m_begintime) )
 		{
-			throw base::Exception(ANAERR_GENE_DELTIME_FAILED, "[HDJH] 无法识别的时间标志: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", time_fmt.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GENE_DELTIME_FAILED, "[HDJH] 无法识别的时间标志: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", DEL_TIME_FMT.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 	}
 	else if ( 2 == VEC_SIZE )
@@ -138,17 +116,41 @@ void Analyse_HD::GenerateDeleteTime(const std::string time_fmt) throw(base::Exce
 
 		if ( !base::PubStr::Str2Int(ref_str_b, m_begintime) )
 		{
-			throw base::Exception(ANAERR_GENE_DELTIME_FAILED, "[HDJH] 无法识别的时间标志: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", time_fmt.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GENE_DELTIME_FAILED, "[HDJH] 无法识别的时间标志: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", DEL_TIME_FMT.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 
 		if ( !base::PubStr::Str2Int(ref_str_e, m_endtime) )
 		{
-			throw base::Exception(ANAERR_GENE_DELTIME_FAILED, "[HDJH] 无法识别的时间标志: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", time_fmt.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GENE_DELTIME_FAILED, "[HDJH] 无法识别的时间标志: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", DEL_TIME_FMT.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 	}
 	else
 	{
-		throw base::Exception(ANAERR_GENE_DELTIME_FAILED, "[HDJH] 无法识别的时间标志: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", time_fmt.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_GENE_DELTIME_FAILED, "[HDJH] 无法识别的时间标志: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", DEL_TIME_FMT.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+	}
+}
+
+void Analyse_HD::GetExecuteSQL()
+{
+	// 格式: [insert sql];[insert sql];...
+	// 执行SQL语句在分析规则的备注3字段
+	base::PubStr::Str2StrVector(m_taskInfo.AnaRule.Remark_3, ";", m_vecExecSql);
+
+	// 去除空SQL语句，并进行标志转换
+	int vec_size = m_vecExecSql.size();
+	for ( int i = 0; i < vec_size; ++i )
+	{
+		std::string& ref_str = m_vecExecSql[i];
+		if ( ref_str.empty() )
+		{
+			m_vecExecSql.erase(m_vecExecSql.begin()+i);
+			--i;
+			--vec_size;
+		}
+		else
+		{
+			ExchangeSQLMark(ref_str);
+		}
 	}
 }
 
@@ -164,12 +166,22 @@ void Analyse_HD::GenerateTableNameByType() throw(base::Exception)
 		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "new SQLTranslator failed: 无法申请到内存空间! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	// 最终目标表以分析规则设定的为准！
-	m_dbinfo.target_table = m_tabTarget;
-	m_pLog->Output("[Analyse_HD] 最终目标表名：%s", m_tabTarget.c_str());
+	// 最终目标表在分析规则的备注1字段
+	const std::string TAB_TARGET = base::PubStr::TrimB(m_taskInfo.AnaRule.Remark_1);
+	if ( TAB_TARGET.empty() )
+	{
+		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "目标表名没有设置！(分析规则表的备注1字段) [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	m_dbinfo.target_table = TAB_TARGET;
+	m_pLog->Output("[Analyse_HD] 最终目标表名：%s", TAB_TARGET.c_str());
 
 	// 置空：非报表统计没有备份表
 	m_dbinfo.backup_table.clear();
+}
+
+void Analyse_HD::DataSupplement()
+{
 }
 
 void Analyse_HD::StoreResult() throw(base::Exception)

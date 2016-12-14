@@ -1038,11 +1038,10 @@ void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
 	try
 	{
 		//std::string sql = "select ANALYSIS_NAME, ANALYSIS_TYPE, ANALYSIS_EXPRESSION, ANALYSIS_CONDITION_TYPE, ANALYSIS_CONDITION from ";
-		std::string sql = "select ANALYSIS_NAME, ANALYSIS_TYPE, ANALYSIS_EXPRESSION from ";
-		sql += m_tabAnaRule + " where ANALYSIS_ID = ?";
+		std::string sql = "select ANALYSIS_NAME, ANALYSIS_TYPE, ANALYSIS_EXPRESSION, REMARK_1, REMARK_2, REMARK_3, REMARK_4, REMARK_5 from ";
+		sql += (m_tabAnaRule + " where ANALYSIS_ID = '" + ana.AnaID + "'");
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(1) = ana.AnaID.c_str();
 		rs.Execute();
 
 		while ( !rs.IsEOF() )
@@ -1056,6 +1055,11 @@ void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
 			ana.AnaExpress   = (const char*)rs[index++];
 			//cond_type        = (const char*)rs[index++];
 			//ana.AnaCondition = (const char*)rs[index++];
+			ana.Remark_1     = (const char*)rs[index++];
+			ana.Remark_2     = (const char*)rs[index++];
+			ana.Remark_3     = (const char*)rs[index++];
+			ana.Remark_4     = (const char*)rs[index++];
+			ana.Remark_5     = (const char*)rs[index++];
 
 			if ( !ana.SetAnalyseType(ana_type) )
 			{
