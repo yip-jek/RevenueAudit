@@ -39,6 +39,7 @@ public:
 		ADBERR_INS_RESULT_DATA   = -3002018,			// 插入结果数据出错
 		ADBERR_SEL_YC_STATRULE   = -3002019,			// 查询业财稽核因子规则信息出错
 		ADBERR_UPD_YC_TASK_REQ   = -3002020,			// 更新任务请求表出错
+		ADBERR_SEL_SEQUENCE      = -3002021,			// 获取数据库序列出错
 	};
 
 public:
@@ -132,6 +133,9 @@ public:
 
 	// 更新任务请求表
 	void UpdateYCTaskReq(int seq, const std::string& state, const std::string& state_desc, const std::string& task_desc) throw(base::Exception);
+
+	// 获取数据库序列值 (NEXTVAL)
+	void SelectSequence(const std::string& seq_name, size_t size, std::vector<std::string>& vec_seq) throw(base::Exception);
 
 private:
 	// 查询指标规则信息

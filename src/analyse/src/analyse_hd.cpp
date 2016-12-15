@@ -81,39 +81,45 @@ void Analyse_HD::GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(
 
 bool Analyse_HD::GetSequenceInHiveSQL(std::string& hive_sql)
 {
-	std::string tmp_sql = base::PubStr::UpperB(hive_sql);
+	const std::string UPPER_SQL = base::PubStr::UpperB(hive_sql);
 
 	const std::string SELECT = "SELECT ";
 	const std::string FROM   = " FROM ";
 	const size_t POS_BEG     = SELECT.size();
-	const size_t POS_END     = tmp_sql.find(FROM);
+	const size_t POS_END     = UPPER_SQL.find(FROM);
 
-	if ( tmp_sql.substr(0, POS_BEG) != SELECT		// 非 'select' HIVE SQL 语句
+	if ( UPPER_SQL.substr(0, POS_BEG) != SELECT		// 非 'select' HIVE SQL 语句
 		|| POS_END == std::string::npos				// 没有找到'from'
 		|| POS_END <= POS_BEG )						// 中间无内容
 	{
 		return false;
 	}
 
-	tmp_sql = tmp_sql.substr(POS_BEG, POS_END-POS_BEG);
-
 	const std::string TAIL_SEQ = ".NEXTVAL";
 	const int TS_SIZE = TAIL_SEQ.size();
 
-	int off_size    = POS_BEG * (-1);
-	int idx_current = 0;
+	int backet_off  = 0;
 	int tmp_size    = 0;
-	size_t pos_last = 0;
-	size_t pos_curr = 0;
+	int idx_current = 0;
+	int off_size    = 0;
+	size_t pos_last = POS_BEG;
 	std::string field;
 	SeqNode sn;
 
-	while ( true )
+	for ( size_t i = POS_BEG; i < POS_END; ++i )
 	{
-		pos_curr = tmp_sql.find(',', pos_last);
-		if ( pos_curr != std::string::npos )		// 找到逗号分隔符
+		const char CH = UPPER_SQL[i];
+		if ( CH == '(' )	// 左括号
 		{
-			field = base::PubStr::TrimB(tmp_sql.substr(pos_last, pos_curr-pos_last));
+			++backet_off;
+		}
+		else if ( CH == ')' )	// 右括号
+		{
+			--backet_off;
+		}
+		else if ( CH == ',' && 0 == backet_off )	// 在括号外的逗号
+		{
+			field = base::PubStr::TrimB(UPPER_SQL.substr(pos_last, i-pos_last));
 			tmp_size = field.size();
 			if ( tmp_size > TS_SIZE && field.substr(tmp_size-TS_SIZE) == TAIL_SEQ )
 			{
@@ -121,17 +127,18 @@ bool Analyse_HD::GetSequenceInHiveSQL(std::string& hive_sql)
 				sn.seq_name = field.substr(0, tmp_size-TS_SIZE);
 				m_vecSeq.push_back(sn);
 
-				// 从 HIVE SQL 中删除
-				tmp_size = tmp_sql.substr(pos_last, pos_curr-pos_last).size() + 1;
+				// 从 HIVE SQL 中删除，连逗号一起删除
+				tmp_size = UPPER_SQL.substr(pos_last, i-pos_last+1).size();
 				hive_sql.erase(pos_last-off_size, tmp_size);
 				off_size += tmp_size;
 			}
 
-			pos_last  = pos_curr + 1;
+			++idx_current;
+			pos_last = i + 1;
 		}
-		else	// 找不到
+		else if ( POS_END-1 == i )	// 末尾
 		{
-			field = base::PubStr::TrimB(tmp_sql.substr(pos_last));
+			field = base::PubStr::TrimB(UPPER_SQL.substr(pos_last, i+1-pos_last));
 			tmp_size = field.size();
 			if ( tmp_size > TS_SIZE && field.substr(tmp_size-TS_SIZE) == TAIL_SEQ )
 			{
@@ -139,14 +146,11 @@ bool Analyse_HD::GetSequenceInHiveSQL(std::string& hive_sql)
 				sn.seq_name = field.substr(0, tmp_size-TS_SIZE);
 				m_vecSeq.push_back(sn);
 
-				// 从 HIVE SQL 中删除
-				tmp_size = tmp_sql.substr(pos_last).size() + 1;
-				hive_sql.erase(pos_last-1-off_size, tmp_size);
+				// 从 HIVE SQL 中删除，连逗号一起删除
+				tmp_size = UPPER_SQL.substr(pos_last, i-pos_last+1).size();
+				hive_sql.erase(pos_last-off_size, tmp_size);
 			}
-			break;
 		}
-
-		++idx_current;
 	}
 
 	if ( m_vecSeq.empty() )

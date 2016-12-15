@@ -109,6 +109,43 @@ void CAnaDB2::UpdateYCTaskReq(int seq, const std::string& state, const std::stri
 	}
 }
 
+void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vector<std::string>& vec_seq) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "select " + seq_name + ".NEXTVAL from sysibm.sysdummy1";
+	m_pLog->Output("[DB2] Select sequence: %s (size: %llu)", sql.c_str(), size);
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		std::vector<std::string> v_seq;
+		while ( size-- > 0 )
+		{
+			rs.Execute();
+
+			if ( rs.IsEOF() )
+			{
+				throw base::Exception
+			}
+			else
+			{
+				v_seq.push_back((const char*)rs[1]);
+			}
+		}
+
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_SEQUENCE, "[DB2] Select sequence '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", seq_name.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	v_seq.swap(vec_seq);
+}
+
 void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 {
 	// 获取指标规则数据
