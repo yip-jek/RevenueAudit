@@ -10,8 +10,9 @@ public:
 	{}
 
 public:
-	int         index;					// 序列位置索引
-	std::string seq_name;				// 序列名
+	int                      index;					// 序列位置索引
+	std::string              seq_name;				// 序列名
+	std::vector<std::string> vec_seq_val;			// 序列的值队列
 };
 
 // 话单稽核-分析模块

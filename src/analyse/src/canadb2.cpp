@@ -117,18 +117,18 @@ void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vect
 	std::string sql = "select " + seq_name + ".NEXTVAL from sysibm.sysdummy1";
 	m_pLog->Output("[DB2] Select sequence: %s (size: %llu)", sql.c_str(), size);
 
+	std::vector<std::string> v_seq;
 	try
 	{
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
-		std::vector<std::string> v_seq;
 		while ( size-- > 0 )
 		{
 			rs.Execute();
 
 			if ( rs.IsEOF() )
 			{
-				throw base::Exception
+				throw base::Exception(ADBERR_SEL_SEQUENCE, "[DB2] Select sequence '%s' failed! NO result! [FILE:%s, LINE:%d]", seq_name.c_str(), __FILE__, __LINE__);
 			}
 			else
 			{

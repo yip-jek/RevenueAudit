@@ -269,6 +269,27 @@ void Analyse_HD::GenerateTableNameByType() throw(base::Exception)
 
 void Analyse_HD::DataSupplement()
 {
+	m_pLog->Output("[Analyse_HD] 进行序列数据补全 ...");
+
+	// 只有一组源数据
+	const size_t SRC_DATA_SIZE = m_v3HiveSrcData[0].size();
+
+	// 获取序列的值，并补全到源数据中
+	const int VEC_SEQ_SIZE = m_vecSeq.size();
+	for ( int i = 0; i < VEC_SEQ_SIZE; ++i )
+	{
+		SeqNode& ref_sn = m_vecSeq[i];
+		m_pAnaDB2->SelectSequence(ref_sn.seq_name, SRC_DATA_SIZE, ref_sn.vec_seq_val);
+
+		// 序列补全
+		for ( size_t s = 0; s < SRC_DATA_SIZE; ++s )
+		{
+			std::vector<std::string>& ref_vec = m_v3HiveSrcData[0][s];
+			ref_vec.insert(ref_vec.begin()+ref_sn.index, ref_sn.vec_seq_val[s]);
+		}
+	}
+
+	m_pLog->Output("[Analyse_HD] 序列数据补全完成！");
 }
 
 void Analyse_HD::StoreResult() throw(base::Exception)
