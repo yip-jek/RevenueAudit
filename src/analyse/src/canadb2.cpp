@@ -120,10 +120,9 @@ void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vect
 	std::vector<std::string> v_seq;
 	try
 	{
-		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-
 		while ( size-- > 0 )
 		{
+			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 			rs.Execute();
 
 			while ( !rs.IsEOF() )
@@ -132,13 +131,14 @@ void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vect
 
 				rs.MoveNext();
 			}
-		}
 
-		rs.Close();
+			rs.Close();
+		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		m_pLog->Output("[DB2] Select sequence '%s' size: %llu", seq_name.c_str(), v_seq.size());
+		m_pLog->Output("[DB2] Before CDBException, select sequence '%s' size: %llu", seq_name.c_str(), v_seq.size());
+
 		throw base::Exception(ADBERR_SEL_SEQUENCE, "[DB2] Select sequence '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", seq_name.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
@@ -641,15 +641,17 @@ void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::
 
 void CAnaDB2::DeleteTimeResultData(AnaDBInfo& db_info, int beg_time, int end_time) throw(base::Exception)
 {
+	const std::string ETLDAY_FIELD_NAME = db_info.GetEtlDayFieldName();
+
 	// 时间条件
 	std::string dt_condition;
 	if ( end_time <= 0 )
 	{
-		base::PubStr::SetFormatString(dt_condition, "%s = '%d'", db_info.GetEtlDayFieldName().c_str(), beg_time);
+		base::PubStr::SetFormatString(dt_condition, "%s = '%d'", ETLDAY_FIELD_NAME.c_str(), beg_time);
 	}
 	else
 	{
-		base::PubStr::SetFormatString(dt_condition, "%s >= '%d' and %s <= '%d'", db_info.GetEtlDayFieldName().c_str(), beg_time, end_time);
+		base::PubStr::SetFormatString(dt_condition, "%s >= '%d' and %s <= '%d'", ETLDAY_FIELD_NAME.c_str(), beg_time, ETLDAY_FIELD_NAME.c_str(), end_time);
 	}
 
 	size_t result_data_size = SelectResultData(db_info.target_table, dt_condition);
@@ -669,12 +671,12 @@ void CAnaDB2::DeleteTimeResultData(AnaDBInfo& db_info, int beg_time, int end_tim
 		result_data_size = SelectResultData(db_info.backup_table, dt_condition);
 		if ( result_data_size > 0 )
 		{
-			m_pLog->Output("[DB2] Delete result data from backup table: [%s] (BEG_TIME:%d, END_TIME:%d)", db_info.target_table.c_str(), beg_time, end_time);
+			m_pLog->Output("[DB2] Delete result data from backup table: [%s] (BEG_TIME:%d, END_TIME:%d)", db_info.backup_table.c_str(), beg_time, end_time);
 			DeleteFromTable(db_info.backup_table, dt_condition);
 		}
 		else
 		{
-			m_pLog->Output("[DB2] NO result data in backup table: [%s] (BEG_TIME:%d, END_TIME:%d)", db_info.target_table.c_str(), beg_time, end_time);
+			m_pLog->Output("[DB2] NO result data in backup table: [%s] (BEG_TIME:%d, END_TIME:%d)", db_info.backup_table.c_str(), beg_time, end_time);
 		}
 	}
 }

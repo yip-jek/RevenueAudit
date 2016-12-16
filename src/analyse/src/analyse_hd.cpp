@@ -215,6 +215,8 @@ void Analyse_HD::GenerateDeleteTime() throw(base::Exception)
 	{
 		throw base::Exception(ANAERR_GENE_DELTIME_FAILED, "[HDJH] 无法识别的时间标志: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", DEL_TIME_FMT.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
+
+	m_pLog->Output("[Analyse_HD] GENERATE: BEGIN_TIME=%d, END_TIME=%d", m_begintime, m_endtime);
 }
 
 void Analyse_HD::GetExecuteSQL()
@@ -237,6 +239,7 @@ void Analyse_HD::GetExecuteSQL()
 		else
 		{
 			ExchangeSQLMark(ref_str);
+			m_pLog->Output("[Analyse_HD] 获取执行 SQL [%d]: %s", (i+1), ref_str.c_str());
 		}
 	}
 }
