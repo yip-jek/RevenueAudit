@@ -126,13 +126,11 @@ void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vect
 		{
 			rs.Execute();
 
-			if ( rs.IsEOF() )
-			{
-				throw base::Exception(ADBERR_SEL_SEQUENCE, "[DB2] Select sequence '%s' failed! NO result! [FILE:%s, LINE:%d]", seq_name.c_str(), __FILE__, __LINE__);
-			}
-			else
+			while ( !rs.IsEOF() )
 			{
 				v_seq.push_back((const char*)rs[1]);
+
+				rs.MoveNext();
 			}
 		}
 
@@ -140,10 +138,13 @@ void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vect
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
+		m_pLog->Output("[DB2] Select sequence '%s' size: %llu", seq_name.c_str(), v_seq.size());
 		throw base::Exception(ADBERR_SEL_SEQUENCE, "[DB2] Select sequence '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", seq_name.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	v_seq.swap(vec_seq);
+
+	m_pLog->Output("[DB2] Select sequence '%s' size: %llu", seq_name.c_str(), vec_seq.size());
 }
 
 void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
