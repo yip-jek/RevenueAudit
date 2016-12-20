@@ -21,8 +21,16 @@ void Acquire_YC::LoadConfig() throw(base::Exception)
 	Acquire::LoadConfig();
 
 	m_cfg.RegisterItem("TABLE", "TAB_YC_TASK_REQ");
+	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
+	m_cfg.RegisterItem("FIELD", "SRC_FIELD_CITY");
+	m_cfg.RegisterItem("FIELD", "SRC_FIELD_BATCH");
+
 	m_cfg.ReadConfig();
+
 	m_tabYCTaskReq = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
+	m_tabStatRule  = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
+	m_fieldCity    = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_CITY");
+	m_fieldBatch   = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_BATCH");
 
 	m_pLog->Output("[Acquire_YC] Load configuration OK.");
 }
@@ -37,9 +45,14 @@ void Acquire_YC::Init() throw(base::Exception)
 	Acquire::Init();
 
 	m_pAcqDB2->SetTabYCTaskReq(m_tabYCTaskReq);
+	m_pAcqDB2->SetTabYCStatRule(m_tabStatRule);
 
 	// 更新任务状态为；"11"（正在采集）
 	m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "11", "正在采集", "采集开始时间："+base::SimpleTime::Now().TimeStamp());
+
+	// 获取任务地市信息
+	m_pAcqDB2->SelectYCTaskReqCity(m_ycSeqID, m_taskCity);
+	base::PubStr::Trim(m_taskCity);
 
 	m_pLog->Output("[Acquire_YC] Init OK.");
 }
@@ -83,13 +96,6 @@ void Acquire_YC::FetchTaskInfo() throw(base::Exception)
 	Acquire::FetchTaskInfo();
 
 	m_pLog->Output("[Acquire_YC] 获取业财稽核因子规则信息 ...");
-
-	// 载入配置
-	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
-	m_cfg.ReadConfig();
-	std::string tab_rule = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
-
-	m_pAcqDB2->SetTabYCStatRule(tab_rule);
 	m_pAcqDB2->SelectYCStatRule(m_taskInfo.KpiID, m_vecYCInfo);
 }
 
@@ -148,9 +154,15 @@ void Acquire_YC::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) thro
 		yc_sql.insert(0, prefix_sql);
 
 		ExchangeSQLMark(yc_sql);
+		AddCityBatch(yc_sql);
 		v_yc_sql.push_back(yc_sql);
 	}
 
 	v_yc_sql.swap(vec_sql);
+}
+
+void Acquire_YC::AddCityBatch(std::string& sql)
+{
+	// TO DO ...
 }
 

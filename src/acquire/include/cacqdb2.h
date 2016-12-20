@@ -11,14 +11,15 @@ public:
 
 	enum ADB_ERROR
 	{
-		ADBERR_SEL_ETL_RULE     = -2002001,			// 查询采集规则出错
-		ADBERR_SEL_ETL_DIM      = -2002002,			// 查询采集维度规则出错
-		ADBERR_SEL_ETL_VAL      = -2002003,			// 查询采集值规则出错
-		ADBERR_FETCH_ETL_DATA   = -2002004,			// 执行数据采集出错
-		ADBERR_CHECK_SRC_TAB    = -2002005,			// 检查表是否存在出错
-		ADBERR_SEL_ETL_SRC      = -2002006,			// 查询采集数据源出错
-		ADBERR_SEL_YC_STATRULE  = -2002007,			// 查询业财稽核因子规则信息出错
-		ADBERR_UPD_YC_TASK_REQ  = -2002008,			// （业财）更新任务请求表出错
+		ADBERR_SEL_ETL_RULE       = -2002001,			// 查询采集规则出错
+		ADBERR_SEL_ETL_DIM        = -2002002,			// 查询采集维度规则出错
+		ADBERR_SEL_ETL_VAL        = -2002003,			// 查询采集值规则出错
+		ADBERR_FETCH_ETL_DATA     = -2002004,			// 执行数据采集出错
+		ADBERR_CHECK_SRC_TAB      = -2002005,			// 检查表是否存在出错
+		ADBERR_SEL_ETL_SRC        = -2002006,			// 查询采集数据源出错
+		ADBERR_SEL_YC_STATRULE    = -2002007,			// 查询业财稽核因子规则信息出错
+		ADBERR_SEL_YCTASKREQ_CITY = -2002008,			// 查询任务请求表的地市信息出错
+		ADBERR_UPD_YC_TASK_REQ    = -2002009,			// （业财）更新任务请求表出错
 	};
 
 public:
@@ -56,6 +57,9 @@ public:
 // 业财稽核-任务调度
 	// 设置任务请求表
 	void SetTabYCTaskReq(const std::string& t_yc_taskreq);
+
+	// 查询任务请求表的地市信息
+	void SelectYCTaskReqCity(int seq, std::string& city) throw(base::Exception);
 
 	// 更新任务请求表
 	void UpdateYCTaskReq(int seq, const std::string& state, const std::string& state_desc, const std::string& task_desc) throw(base::Exception);

@@ -38,9 +38,18 @@ protected:
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
 	virtual void TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
 
+	// 增加地市和批次
+	void AddCityBatch(std::string& sql);
+
+protected:
+	std::string         m_tabYCTaskReq;				// （业财）任务请求表
+	std::string         m_tabStatRule;				// （业财）统计因子规则表
+	std::string         m_fieldCity;				// 源表地市字段名
+	std::string         m_fieldBatch;				// 源表批次字段名
+
 protected:
 	int                 m_ycSeqID;					// 任务流水号
-	std::string         m_tabYCTaskReq;				// （业财）任务请求表
+	std::string         m_taskCity;					// 任务地市
 	std::vector<YCInfo> m_vecYCInfo;				// 业财稽核因子规则信息
 };
 
