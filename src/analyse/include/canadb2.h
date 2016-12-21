@@ -3,6 +3,7 @@
 #include <map>
 #include "basedb2.h"
 #include "dimvaldiffer.h"
+#include "ycinfo.h"
 
 struct AnaDBInfo;
 struct ChannelUniformCode;
@@ -41,7 +42,7 @@ public:
 		ADBERR_UPD_YC_TASK_REQ   = -3002020,			// 更新任务请求表出错
 		ADBERR_SEL_SEQUENCE      = -3002021,			// 获取数据库序列出错
 		ADBERR_SEL_YC_TASK_CITY  = -3002022,			// 获取任务请求的地市信息出错
-		ADBERR_SEL_SR_MAX_BATCH  = -3002023
+		ADBERR_SEL_SR_MAX_BATCH  = -3002023,			// 获取统计结果表的最新批次出错
 	};
 
 public:
@@ -136,10 +137,10 @@ public:
 	void SelectYCTaskReqCity(int seq, std::string& city) throw(base::Exception);
 
 	// 更新任务请求表
-	void UpdateYCTaskReq(int seq, const std::string& state, const std::string& state_desc, const std::string& task_desc) throw(base::Exception);
+	void UpdateYCTaskReq(const YCTaskReq& t_req) throw(base::Exception);
 
 	// 获取业财稽核统计结果表的最新批次
-	void SelectStatResultMaxBatch(const std::string& tab_result, const YCStatInfo& stat_info, const std::string& city, int& batch) throw(base::Exception);
+	void SelectStatResultMaxBatch(const std::string& tab_result, YCStatBatch& st_batch) throw(base::Exception);
 
 	// 获取数据库序列值 (NEXTVAL)
 	void SelectSequence(const std::string& seq_name, size_t size, std::vector<std::string>& vec_seq) throw(base::Exception);

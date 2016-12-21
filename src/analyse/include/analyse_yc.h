@@ -2,6 +2,7 @@
 
 #include <map>
 #include "analyse.h"
+#include "ycinfo.h"
 
 // 业财稽核-分析模块
 class Analyse_YC : public Analyse
@@ -35,6 +36,9 @@ protected:
 
 	// 分析业财稽核源数据，生成结果数据
 	virtual void AnalyseSourceData() throw(base::Exception);
+
+	// 生成最新的批次
+	void GenerateNewBatch();
 
 	// 统计因子转换
 	void TransYCStatFactor(std::map<std::string, double>& map_factor) throw(base::Exception);

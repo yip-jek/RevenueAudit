@@ -44,7 +44,13 @@ void Analyse_YC::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabYCStatRule(m_tabStatRule);
 
 	// 更新任务状态为；"21"（正在分析）
-	m_pAnaDB2->UpdateYCTaskReq(m_ycSeqID, "21", "正在分析", "分析开始时间："+base::SimpleTime::Now().TimeStamp());
+	YCTaskReq task_req;
+	task_req.seq        = m_ycSeqID;
+	task_req.state      = "21";
+	task_req.state_desc = "正在分析";
+	task_req.task_batch = -1;
+	task_req.task_desc  = "分析开始时间：" + base::SimpleTime::Now().TimeStamp();
+	m_pAnaDB2->UpdateYCTaskReq(task_req);
 
 	m_pLog->Output("[Analyse_YC] Init OK.");
 }
@@ -52,19 +58,25 @@ void Analyse_YC::Init() throw(base::Exception)
 void Analyse_YC::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
 {
 	// 更新任务状态
-	std::string task_desc;
+	YCTaskReq task_req;
+	task_req.seq        = m_ycSeqID;
 	if ( 0 == err_code )	// 正常退出
 	{
 		// 更新任务状态为；"22"（分析完成）
-		task_desc = "分析结束时间：" + base::SimpleTime::Now().TimeStamp();
-		m_pAnaDB2->UpdateYCTaskReq(m_ycSeqID, "22", "分析完成", task_desc);
+		task_req.state      = "22";
+		task_req.state_desc = "分析完成";
+		task_req.task_batch = m_statBatch;
+		task_req.task_desc  = "分析结束时间：" + base::SimpleTime::Now().TimeStamp();
 	}
 	else	// 异常退出
 	{
 		// 更新任务状态为；"23"（分析失败）
-		base::PubStr::SetFormatString(task_desc, "[ERROR] %s, ERROR_CODE: %d", err_msg.c_str(), err_code);
-		m_pAnaDB2->UpdateYCTaskReq(m_ycSeqID, "23", "分析失败", task_desc);
+		task_req.state      = "23";
+		task_req.state_desc = "分析失败";
+		task_req.task_batch = -1;
+		base::PubStr::SetFormatString(task_req.task_desc, "[ERROR] %s, ERROR_CODE: %d", err_msg.c_str(), err_code);
 	}
+	m_pAnaDB2->UpdateYCTaskReq(task_req);
 
 	Analyse::End(err_code, err_msg);
 }
@@ -110,8 +122,6 @@ void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 
 	m_pLog->Output("[Analyse_YC] 获取业财稽核因子规则信息 ...");
 	m_pAnaDB2->SelectYCStatRule(m_sKpiID, m_vecYCSInfo);
-
-	// 查询统计结果表已存在的最新批次
 }
 
 void Analyse_YC::AnalyseSourceData() throw(base::Exception)
@@ -124,6 +134,8 @@ void Analyse_YC::AnalyseSourceData() throw(base::Exception)
 		throw base::Exception(ANAERR_ANA_YCRA_DATA_FAILED, "没有业财稽核因子规则信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
+	GenerateNewBatch();
+
 	std::map<std::string, double> map_src;
 	TransYCStatFactor(map_src);
 
@@ -131,6 +143,23 @@ void Analyse_YC::AnalyseSourceData() throw(base::Exception)
 
 	// 生成了业财稽核的统计数据，再进行数据补全
 	DataSupplement();
+}
+
+void Analyse_YC::GenerateNewBatch()
+{
+	// 查询统计结果表已存在的最新批次
+	YCStatBatch st_batch;
+	st_batch.stat_report = m_vecYCSInfo[0].stat_report;
+	st_batch.stat_id     = m_vecYCSInfo[0].stat_id;
+	st_batch.stat_date   = m_dbinfo.GetEtlDay();
+	st_batch.stat_city   = m_taskCity;
+	st_batch.stat_batch  = 0;
+	m_pAnaDB2->SelectStatResultMaxBatch(m_dbinfo.target_table, st_batch);
+	m_pLog->Output("[Analyse_YC] 统计结果表的最新批次: %d", st_batch.stat_batch);
+
+	// 生成当前统计结果的批次
+	m_statBatch = st_batch.stat_batch + 1;
+	m_pLog->Output("[Analyse_YC] 因此，当前统计结果的批次为: %d", m_statBatch);
 }
 
 void Analyse_YC::TransYCStatFactor(std::map<std::string, double>& map_factor) throw(base::Exception)
@@ -180,7 +209,11 @@ void Analyse_YC::TransYCStatFactor(std::map<std::string, double>& map_factor) th
 
 void Analyse_YC::GenerateYCResultData(std::map<std::string, double>& map_factor) throw(base::Exception)
 {
+	// 统计结果增加地市与批次
 	YCStatResult yc_sr;
+	yc_sr.stat_city  = m_taskCity;
+	yc_sr.stat_batch = m_statBatch;
+
 	std::vector<std::string> v_dat;
 	std::vector<std::vector<std::string> > vec_yc_data;
 	std::map<std::string, double>::iterator m_it;

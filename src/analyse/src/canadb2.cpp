@@ -116,23 +116,37 @@ void CAnaDB2::SelectYCTaskReqCity(int seq, std::string& city) throw(base::Except
 	}
 }
 
-void CAnaDB2::UpdateYCTaskReq(int seq, const std::string& state, const std::string& state_desc, const std::string& task_desc) throw(base::Exception)
+void CAnaDB2::UpdateYCTaskReq(const YCTaskReq& t_req) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "UPDATE " + m_tabYCTaskReq + " SET TASK_STATUS = ?, STATUS_DESC = ?, TASK_DESC = ? WHERE SEQ_ID = ?";
-	m_pLog->Output("[DB2] Update task request: STATE=%s, STATE_DESC=%s (SEQ:%d)", state.c_str(), state_desc.c_str(), seq);
+	std::string sql = "UPDATE " + m_tabYCTaskReq + " SET TASK_STATUS = ?, STATUS_DESC = ?, TASK_DESC = ?";
+	if ( t_req.task_batch < 0 )		// 批次无效
+	{
+		sql += ", TASK_NUM = NULL WHERE SEQ_ID = ?";
+	}
+	else	// 批次有效
+	{
+		sql += ", TASK_NUM = ? WHERE SEQ_ID = ?";
+	}
+	m_pLog->Output("[DB2] Update task request: STATE=%s, STATE_DESC=%s, TASK_BATCH=%d (SEQ:%d)", t_req.state.c_str(), t_req.state_desc.c_str(), t_req.task_batch, t_req.seq);
 
 	try
 	{
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		int index = 1;
-		rs.Parameter(index++) = state.c_str();
-		rs.Parameter(index++) = state_desc.c_str();
-		rs.Parameter(index++) = task_desc.c_str();
-		rs.Parameter(index++) = seq;
+		rs.Parameter(index++) = t_req.state.c_str();
+		rs.Parameter(index++) = t_req.state_desc.c_str();
+		rs.Parameter(index++) = t_req.task_desc.c_str();
+
+		if ( t_req.task_batch >= 0 )	// 批次有效
+		{
+			rs.Parameter(index++) = t_req.task_batch;
+		}
+
+		rs.Parameter(index++) = t_req.seq;
 		rs.Execute();
 
 		Commit();
@@ -141,24 +155,50 @@ void CAnaDB2::UpdateYCTaskReq(int seq, const std::string& state, const std::stri
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), t_req.seq, ex.what(), __FILE__, __LINE__);
 	}
 }
 
-void CAnaDB2::SelectStatResultMaxBatch(const std::string& tab_result, const YCStatInfo& stat_info, const std::string& city, int& batch) throw(base::Exception)
+void CAnaDB2::SelectStatResultMaxBatch(const std::string& tab_result, YCStatBatch& st_batch) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
 	std::string sql = "SELECT NVL(MAX(STAT_NUM), 0) FROM " + tab_result;
 	sql += " WHERE STAT_REPORT = ? AND STAT_ID = ? AND STAT_DATE = ? AND STAT_CITY = ?";
+	m_pLog->Output("[DB2] Select max batch from result table: %s [REPORT:%s, STAT_ID:%s, DATE:%s, CITY:%s]", tab_result.c_str(), st_batch.stat_report.c_str(), st_batch.stat_id.c_str(), st_batch.stat_date.c_str(), st_batch.stat_city.c_str());
 
 	try
 	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		int index = 1;
+		rs.Parameter(index++) = st_batch.stat_report.c_str();
+		rs.Parameter(index++) = st_batch.stat_id.c_str();
+		rs.Parameter(index++) = st_batch.stat_date.c_str();
+		rs.Parameter(index++) = st_batch.stat_city.c_str();
+
+		rs.Execute();
+
+		int counter = 0;
+		while ( !rs.IsEOF() )
+		{
+			++counter;
+			st_batch.stat_batch = (int)rs[1];
+
+			rs.MoveNext();
+		}
+
+		rs.Close();
+
+		if ( 0 == counter )
+		{
+			throw base::Exception(ADBERR_SEL_SR_MAX_BATCH, "[DB2] Select max batch from result table '%s' failed! NO Record! [FILE:%s, LINE:%d]", tab_result.c_str(), __FILE__, __LINE__);
+		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_SR_MAX_BATCH, "[DB2] Select max batch from result table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_result.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
