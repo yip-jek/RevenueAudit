@@ -112,7 +112,6 @@ void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 	m_pAnaDB2->SelectYCStatRule(m_sKpiID, m_vecYCSInfo);
 
 	// 查询统计结果表已存在的最新批次
-	to do
 }
 
 void Analyse_YC::AnalyseSourceData() throw(base::Exception)

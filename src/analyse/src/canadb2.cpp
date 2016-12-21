@@ -145,6 +145,23 @@ void CAnaDB2::UpdateYCTaskReq(int seq, const std::string& state, const std::stri
 	}
 }
 
+void CAnaDB2::SelectStatResultMaxBatch(const std::string& tab_result, const YCStatInfo& stat_info, const std::string& city, int& batch) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "SELECT NVL(MAX(STAT_NUM), 0) FROM " + tab_result;
+	sql += " WHERE STAT_REPORT = ? AND STAT_ID = ? AND STAT_DATE = ? AND STAT_CITY = ?";
+
+	try
+	{
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, ex.what(), __FILE__, __LINE__);
+	}
+}
+
 void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vector<std::string>& vec_seq) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
