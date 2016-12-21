@@ -39,7 +39,7 @@ protected:
 	virtual void TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
 
 	// 增加地市和批次
-	void AddCityBatch(std::string& sql);
+	void AddCityBatch(std::string& sql) throw(base::Exception);
 
 protected:
 	std::string         m_tabYCTaskReq;				// （业财）任务请求表

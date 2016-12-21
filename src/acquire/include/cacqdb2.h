@@ -54,7 +54,6 @@ public:
 	// 查询业财稽核因子规则信息
 	void SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& vec_ycinfo) throw(base::Exception);
 
-// 业财稽核-任务调度
 	// 设置任务请求表
 	void SetTabYCTaskReq(const std::string& t_yc_taskreq);
 
@@ -84,9 +83,8 @@ private:
 	std::string m_tabEtlDim;			// 采集维度规则表
 	std::string m_tabEtlVal;			// 采集值规则表
 	std::string m_tabEtlSrc;			// 采集数据源表
-	std::string m_tabYCStatRule;		// 统计因子规则表（业财稽核）
 
-// 业财稽核-任务调度
 	std::string m_tabYCTaskReq;			// （业财）任务请求表
+	std::string m_tabYCStatRule;		// （业财）统计因子规则表
 };
 

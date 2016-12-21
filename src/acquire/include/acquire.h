@@ -35,6 +35,7 @@ public:
 		ACQERR_GEN_ETL_DATE_FAILED     = -2000014,			// 生成采集时间失败
 		ACQERR_EXCHANGE_SQLMARK_FAILED = -2000015,			// 标记转换失败
 		ACQERR_YC_STATRULE_SQL_FAILED  = -2000016,			// 生成业财稽核SQL失败
+		ACQERR_ADD_CITY_BATCH_FAILED   = -2000017,			// 增加地市和批次失败
 	};
 
 public:

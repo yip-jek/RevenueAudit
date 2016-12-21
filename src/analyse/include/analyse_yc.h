@@ -52,8 +52,13 @@ protected:
 	virtual void UpdateDimValue();
 
 protected:
-	int                     m_ycSeqID;				// 任务流水号
 	std::string             m_tabYCTaskReq;			// （业财）任务请求表
+	std::string             m_tabStatRule;			// （业财）统计因子规则表
+
+protected:
+	int                     m_ycSeqID;				// 任务流水号
+	int                     m_statBatch;			// 统计结果的批次
+	std::string             m_taskCity;				// 任务地市
 	std::vector<YCStatInfo> m_vecYCSInfo;			// 业财稽核因子规则信息
 };
 

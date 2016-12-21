@@ -7,6 +7,7 @@
 
 Analyse_YC::Analyse_YC()
 :m_ycSeqID(0)
+,m_statBatch(0)
 {
 	m_sType = "业财稽核";
 }
@@ -20,8 +21,12 @@ void Analyse_YC::LoadConfig() throw(base::Exception)
 	Analyse::LoadConfig();
 
 	m_cfg.RegisterItem("TABLE", "TAB_YC_TASK_REQ");
+	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
+
 	m_cfg.ReadConfig();
+
 	m_tabYCTaskReq = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
+	m_tabStatRule  = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
 
 	m_pLog->Output("[Analyse_YC] Load configuration OK.");
 }
@@ -36,6 +41,7 @@ void Analyse_YC::Init() throw(base::Exception)
 	Analyse::Init();
 
 	m_pAnaDB2->SetTabYCTaskReq(m_tabYCTaskReq);
+	m_pAnaDB2->SetTabYCStatRule(m_tabStatRule);
 
 	// 更新任务状态为；"21"（正在分析）
 	m_pAnaDB2->UpdateYCTaskReq(m_ycSeqID, "21", "正在分析", "分析开始时间："+base::SimpleTime::Now().TimeStamp());
@@ -97,15 +103,16 @@ void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 {
 	Analyse::FetchTaskInfo();
 
+	// 获取任务地市信息
+	m_pAnaDB2->SelectYCTaskReqCity(m_ycSeqID, m_taskCity);
+	base::PubStr::Trim(m_taskCity);
+	m_pLog->Output("[Analyse_YC] Get task request city: [%s]", m_taskCity.c_str());
+
 	m_pLog->Output("[Analyse_YC] 获取业财稽核因子规则信息 ...");
-
-	// 载入配置
-	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
-	m_cfg.ReadConfig();
-	std::string tab_rule = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
-
-	m_pAnaDB2->SetTabYCStatRule(tab_rule);
 	m_pAnaDB2->SelectYCStatRule(m_sKpiID, m_vecYCSInfo);
+
+	// 查询统计结果表已存在的最新批次
+	to do
 }
 
 void Analyse_YC::AnalyseSourceData() throw(base::Exception)

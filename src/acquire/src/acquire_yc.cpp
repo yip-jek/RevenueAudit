@@ -50,10 +50,6 @@ void Acquire_YC::Init() throw(base::Exception)
 	// 更新任务状态为；"11"（正在采集）
 	m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "11", "正在采集", "采集开始时间："+base::SimpleTime::Now().TimeStamp());
 
-	// 获取任务地市信息
-	m_pAcqDB2->SelectYCTaskReqCity(m_ycSeqID, m_taskCity);
-	base::PubStr::Trim(m_taskCity);
-
 	m_pLog->Output("[Acquire_YC] Init OK.");
 }
 
@@ -95,6 +91,11 @@ void Acquire_YC::FetchTaskInfo() throw(base::Exception)
 {
 	Acquire::FetchTaskInfo();
 
+	// 获取任务地市信息
+	m_pAcqDB2->SelectYCTaskReqCity(m_ycSeqID, m_taskCity);
+	base::PubStr::Trim(m_taskCity);
+	m_pLog->Output("[Acquire_YC] Get task request city: [%s]", m_taskCity.c_str());
+
 	m_pLog->Output("[Acquire_YC] 获取业财稽核因子规则信息 ...");
 	m_pAcqDB2->SelectYCStatRule(m_taskInfo.KpiID, m_vecYCInfo);
 }
@@ -133,6 +134,7 @@ void Acquire_YC::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) thro
 	for ( int i = 0; i < VEC_YCINFO_SIZE; ++i )
 	{
 		YCInfo& ref_ycinf = m_vecYCInfo[i];
+		m_pLog->Output("[Acquire_YC] 业财统计因子SQL [%d]: %s", (i+1), ref_ycinf.stat_sql.c_str());
 
 		yc_dimid = base::PubStr::TrimUpperB(ref_ycinf.stat_dimid);
 		if ( yc_dimid.empty() )
@@ -155,14 +157,56 @@ void Acquire_YC::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) thro
 
 		ExchangeSQLMark(yc_sql);
 		AddCityBatch(yc_sql);
+
+		m_pLog->Output("[Acquire_YC] (转换后) 统计因子SQL [%d]: %s", (i+1), yc_sql.c_str());
 		v_yc_sql.push_back(yc_sql);
 	}
 
 	v_yc_sql.swap(vec_sql);
 }
 
-void Acquire_YC::AddCityBatch(std::string& sql)
+void Acquire_YC::AddCityBatch(std::string& sql) throw(base::Exception)
 {
-	// TO DO ...
+	const std::string PREFIX_CITY_BATCH;
+	base::PubStr::SetFormatString(const_cast<std::string&>(PREFIX_CITY_BATCH), "%s = '%s' and %s in (select max(%s) from ", m_fieldCity.c_str(), m_taskCity.c_str(), m_fieldBatch.c_str(), m_fieldBatch.c_str());
+
+	const std::string MARK_FROM  = " FROM ";
+	const std::string MARK_WHERE = " WHERE ";
+	const size_t M_FROM_SIZE     = MARK_FROM.size();
+	const size_t M_WHERE_SIZE    = MARK_WHERE.size();
+	const std::string C_SQL = base::PubStr::UpperB(sql);
+
+	size_t f_pos = 0;
+	size_t w_pos = 0;
+	size_t off   = 0;
+	std::string tab_src;
+	std::string str_add;
+
+	while ( (f_pos = C_SQL.find(MARK_FROM, f_pos)) != std::string::npos )
+	{
+		f_pos += M_FROM_SIZE;
+		w_pos = C_SQL.find(MARK_WHERE, f_pos);
+		if ( std::string::npos == w_pos )
+		{
+			throw base::Exception(ACQERR_ADD_CITY_BATCH_FAILED, "业财稽核统计因子SQL无法添加地市和批次：NO where! [pos:%llu] (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", f_pos, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+		}
+
+		tab_src = base::PubStr::TrimB(C_SQL.substr(f_pos, w_pos-f_pos));
+		if ( '(' == tab_src[0] )	// Skip: 非表名
+		{
+			continue;
+		}
+
+		if ( tab_src.find('\x20') != std::string::npos )
+		{
+			throw base::Exception(ACQERR_ADD_CITY_BATCH_FAILED, "业财稽核统计因子SQL无法添加地市和批次：Invalid table name! [pos:%llu-%llu] (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", f_pos, w_pos, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+		}
+
+		w_pos += M_WHERE_SIZE;
+		str_add = PREFIX_CITY_BATCH + tab_src + ") and ";
+		sql.insert(w_pos+off, str_add);
+		off += str_add.size();
+		f_pos = w_pos;
+	}
 }
 

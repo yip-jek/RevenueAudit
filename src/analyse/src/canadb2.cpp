@@ -80,6 +80,42 @@ void CAnaDB2::SetTabYCTaskReq(const std::string& t_yc_taskreq)
 	m_tabYCTaskReq = t_yc_taskreq;
 }
 
+void CAnaDB2::SelectYCTaskReqCity(int seq, std::string& city) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "SELECT TASK_CITY FROM " + m_tabYCTaskReq + " WHERE SEQ_ID = ?";
+	m_pLog->Output("[DB2] Select city from YC task request table: %s (SEQ:%d)", m_tabYCTaskReq.c_str(), seq);
+
+	int counter = 0;
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = seq;
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			++counter;
+
+			city = (const char*)rs[1];
+			rs.MoveNext();
+		}
+
+		rs.Close();
+
+		if ( 0 == counter )
+		{
+			throw base::Exception(ADBERR_SEL_YC_TASK_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d] NO Record! [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, __FILE__, __LINE__);
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_YC_TASK_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d, REC:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, counter, ex.what(), __FILE__, __LINE__);
+	}
+}
+
 void CAnaDB2::UpdateYCTaskReq(int seq, const std::string& state, const std::string& state_desc, const std::string& task_desc) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
