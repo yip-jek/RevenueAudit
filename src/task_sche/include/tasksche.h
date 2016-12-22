@@ -15,9 +15,6 @@ class TaskDB2;
 // 任务调度
 class TaskSche
 {
-	// 无任务日志打印的时间间隔（单位：秒）
-	static const int NO_TASK_MAX_TIME = 300;
-
 public:
 	// 任务错误代码
 	enum TASK_ERROR
@@ -27,6 +24,7 @@ public:
 		TERROR_ETLTIME_TRANSFORM = -10000003,					// 采集时间转换失败
 		TERROR_UPD_TASK_REQ      = -10000004,					// 更新任务请求失败
 		TERROR_HDL_ETL_TASK      = -10000005,					// 处理采集任务失败
+		TERROR_IS_PROC_EXIST     = -10000006,					// 查看进程是否存在失败
 	};
 
 	// 任务状态
@@ -73,11 +71,17 @@ private:
 	// 获取新任务
 	void GetNewTask();
 
+	// 输出任务当前状态
+	void ShowTask();
+
 	// 执行任务
 	void ExecuteTask();
 
 	// 更新任务请求
 	void TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) throw(base::Exception);
+
+	// 查看进程是否存在
+	bool IsProcessAlive(long long proc_task_id) throw(base::Exception);
 
 	// 处理采集任务
 	void HandleEtlTask();
@@ -111,7 +115,9 @@ private:
 	base::Config* m_pCfg;					// 配置文件
 	base::Log*    m_pLog;					// 日志输出
 	long          m_waitSeconds;			// 处理时间间隔（单位：秒）
-	int           m_noTaskTime;
+	long          m_showMaxTime;			// 任务日志输出的时间间隔（单位：秒）
+	time_t        m_taskShowTime;			// 任务日志输出的计时（单位：秒）
+	int           m_TIDAccumulator;			// 任务ID的累加值
 
 private:
 	DBInfo   m_dbInfo;				// 数据库信息
@@ -119,12 +125,20 @@ private:
 
 private:
 	std::string m_hiveAgentPath;			// Hive代理的路径
+	std::string m_binVer;					// 程序版本：DEBUG or RELEASE
 	std::string m_binAcquire;				// 采集程序（带路径）
+	std::string m_modeAcquire;				// 采集程序模式
 	std::string m_cfgAcquire;				// 采集配置文件（带路径）
 	std::string m_binAnalyse;				// 分析程序（带路径）
+	std::string m_modeAnalyse;				// 分析程序模式
 	std::string m_cfgAnalyse;				// 分析配置文件（带路径）
 
 private:
+	std::string m_stateTaskBeg;				// 任务开始
+	std::string m_stateEtlException;		// 任务采集异常
+	std::string m_stateAnaBeg;				// 任务开始分析
+	std::string m_stateAnaException;		// 任务分析异常
+	std::string m_stateTaskEnd;				// 任务完成
 	std::string m_etlStateEnd;				// 采集完成状态
 	std::string m_etlStateError;			// 采集异常状态
 	std::string m_anaStateEnd;				// 分析完成状态

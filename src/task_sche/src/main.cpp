@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 		std::cerr << "[ERROR] Unknown log ID: '" << argv[2] << "'" << std::endl;
 		return -1;
 	}
-	if ( !base::Log::SetCCMID(log_id) )
+	if ( !base::Log::SetLogID(log_id) )
 	{
 		std::cerr << "[ERROR] Invalid log ID: " << log_id << std::endl;
 		return -1;

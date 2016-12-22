@@ -14,7 +14,9 @@ TaskSche::TaskSche(base::Config& cfg)
 :m_pCfg(&cfg)
 ,m_pLog(base::Log::Instance())
 ,m_waitSeconds(0)
-,m_noTaskTime(0)
+,m_showMaxTime(0)
+,m_taskShowTime(0)
+,m_TIDAccumulator(0)
 ,m_pTaskDB(NULL)
 {
 }
@@ -28,7 +30,7 @@ TaskSche::~TaskSche()
 
 const char* TaskSche::Version()
 {
-	return ("TaskSche: Version 1.0003 released. Compiled at "__TIME__" on "__DATE__);
+	return ("TaskSche: Version 1.0005 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void TaskSche::Do() throw(base::Exception)
@@ -49,9 +51,6 @@ void TaskSche::ReleaseDB()
 
 void TaskSche::Init() throw(base::Exception)
 {
-	// 随机数种子
-	srand(time(0));
-
 	LoadConfig();
 
 	InitConnect();
@@ -65,17 +64,26 @@ void TaskSche::LoadConfig() throw(base::Exception)
 {
 	// 读取任务配置
 	m_pCfg->RegisterItem("SYS", "TIME_SECONDS");
+	m_pCfg->RegisterItem("SYS", "TASK_SHOW_SECONDS");
 
 	m_pCfg->RegisterItem("DATABASE", "DB_NAME");
 	m_pCfg->RegisterItem("DATABASE", "USER_NAME");
 	m_pCfg->RegisterItem("DATABASE", "PASSWORD");
 
 	m_pCfg->RegisterItem("COMMON", "HIVE_AGENT_PATH");
+	m_pCfg->RegisterItem("COMMON", "BIN_VER");
 	m_pCfg->RegisterItem("COMMON", "ACQUIRE_BIN");
+	m_pCfg->RegisterItem("COMMON", "ACQUIRE_MODE");
 	m_pCfg->RegisterItem("COMMON", "ACQUIRE_CONFIG");
 	m_pCfg->RegisterItem("COMMON", "ANALYSE_BIN");
+	m_pCfg->RegisterItem("COMMON", "ANALYSE_MODE");
 	m_pCfg->RegisterItem("COMMON", "ANALYSE_CONFIG");
 
+	m_pCfg->RegisterItem("STATE", "STATE_TASK_BEG");
+	m_pCfg->RegisterItem("STATE", "STATE_TASK_ETL_EXP");
+	m_pCfg->RegisterItem("STATE", "STATE_TASK_ANA_BEG");
+	m_pCfg->RegisterItem("STATE", "STATE_TASK_ANA_EXP");
+	m_pCfg->RegisterItem("STATE", "STATE_TASK_END");
 	m_pCfg->RegisterItem("STATE", "ETL_END_STATE");
 	m_pCfg->RegisterItem("STATE", "ETL_ERROR_STATE");
 	m_pCfg->RegisterItem("STATE", "ANA_END_STATE");
@@ -87,22 +95,31 @@ void TaskSche::LoadConfig() throw(base::Exception)
 
 	m_pCfg->ReadConfig();
 
-	m_waitSeconds = (long)m_pCfg->GetCfgLongVal("SYS", "TIME_SECONDS");
+	m_waitSeconds = m_pCfg->GetCfgLongVal("SYS", "TIME_SECONDS");
+	m_showMaxTime = m_pCfg->GetCfgLongVal("SYS", "TASK_SHOW_SECONDS");
 
 	m_dbInfo.db_inst = m_pCfg->GetCfgValue("DATABASE", "DB_NAME");
 	m_dbInfo.db_user = m_pCfg->GetCfgValue("DATABASE", "USER_NAME");
 	m_dbInfo.db_pwd  = m_pCfg->GetCfgValue("DATABASE", "PASSWORD");
 
 	m_hiveAgentPath = m_pCfg->GetCfgValue("COMMON", "HIVE_AGENT_PATH");
+	m_binVer        = m_pCfg->GetCfgValue("COMMON", "BIN_VER");
 	m_binAcquire    = m_pCfg->GetCfgValue("COMMON", "ACQUIRE_BIN");
+	m_modeAcquire   = m_pCfg->GetCfgValue("COMMON", "ACQUIRE_MODE");
 	m_cfgAcquire    = m_pCfg->GetCfgValue("COMMON", "ACQUIRE_CONFIG");
 	m_binAnalyse    = m_pCfg->GetCfgValue("COMMON", "ANALYSE_BIN");
+	m_modeAnalyse   = m_pCfg->GetCfgValue("COMMON", "ANALYSE_MODE");
 	m_cfgAnalyse    = m_pCfg->GetCfgValue("COMMON", "ANALYSE_CONFIG");
 
-	m_etlStateEnd   = m_pCfg->GetCfgValue("STATE", "ETL_END_STATE");
-	m_etlStateError = m_pCfg->GetCfgValue("STATE", "ETL_ERROR_STATE");
-	m_anaStateEnd   = m_pCfg->GetCfgValue("STATE", "ANA_END_STATE");
-	m_anaStateError = m_pCfg->GetCfgValue("STATE", "ANA_ERROR_STATE");
+	m_stateTaskBeg      = m_pCfg->GetCfgValue("STATE", "STATE_TASK_BEG");
+	m_stateEtlException = m_pCfg->GetCfgValue("STATE", "STATE_TASK_ETL_EXP");
+	m_stateAnaBeg       = m_pCfg->GetCfgValue("STATE", "STATE_TASK_ANA_BEG");
+	m_stateAnaException = m_pCfg->GetCfgValue("STATE", "STATE_TASK_ANA_EXP");
+	m_stateTaskEnd      = m_pCfg->GetCfgValue("STATE", "STATE_TASK_END");
+	m_etlStateEnd       = m_pCfg->GetCfgValue("STATE", "ETL_END_STATE");
+	m_etlStateError     = m_pCfg->GetCfgValue("STATE", "ETL_ERROR_STATE");
+	m_anaStateEnd       = m_pCfg->GetCfgValue("STATE", "ANA_END_STATE");
+	m_anaStateError     = m_pCfg->GetCfgValue("STATE", "ANA_ERROR_STATE");
 
 	m_tabTaskReq = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_REQUEST");
 	m_tabKpiRule = m_pCfg->GetCfgValue("TABLE", "TAB_KPI_RULE");
@@ -156,9 +173,13 @@ void TaskSche::Check() throw(base::Exception)
 
 void TaskSche::DealTasks() throw(base::Exception)
 {
+	m_taskShowTime = time(NULL);
+
 	while ( true )
 	{
 		GetNewTask();
+
+		ShowTask();
 
 		ExecuteTask();
 
@@ -170,42 +191,32 @@ void TaskSche::GetNewTask()
 {
 	m_pTaskDB->SelectNewTaskRequest(m_vecNewTask);
 
-	if ( m_vecNewTask.empty() )
+	if ( !m_vecNewTask.empty() )
 	{
-		// 达到 NO_TASK_MAX_TIME（秒）都无新任务，则日志输出
-		if ( m_noTaskTime > 0 )
-		{
-			if ( (time(NULL) - m_noTaskTime) >= NO_TASK_MAX_TIME )
-			{
-				m_noTaskTime = time(NULL);
-
-				if ( m_mTaskReqInfo.empty() )
-				{
-					m_pLog->Output("[TASK] NO task.");
-				}
-				else
-				{
-					m_pLog->Output("[TASK] Running task size: %lu", m_mTaskReqInfo.size());
-				}
-			}
-		}
-		else
-		{
-			m_noTaskTime = time(NULL);
-		}
-	}
-	else
-	{
-		m_noTaskTime = 0;
-
 		// 更新任务状态
 		const int VEC_NEW_TASK_SIZE = m_vecNewTask.size();
+		m_pLog->Output("[TASK] Get the new task size: %d", VEC_NEW_TASK_SIZE);
+
 		for ( int i = 0; i < VEC_NEW_TASK_SIZE; ++i )
 		{
 			TaskRequestUpdate(TSTS_Start, m_vecNewTask[i]);
 		}
+	}
+}
 
-		m_pLog->Output("[TASK] Get the new task size: %d", VEC_NEW_TASK_SIZE);
+void TaskSche::ShowTask()
+{
+	time_t t_now = time(NULL);
+	if ( (t_now - m_taskShowTime) >= m_showMaxTime )
+	{
+		m_taskShowTime = t_now;
+
+		m_pLog->Output("指标规则数: %llu", m_mKpiRuleInfo.size());
+		m_pLog->Output("新建任务数: %llu", m_vecNewTask.size());
+		m_pLog->Output("执行任务数: %llu", m_mTaskReqInfo.size());
+		m_pLog->Output("采集任务数: %llu", m_vecEtlTaskInfo.size());
+		m_pLog->Output("分析任务数: %llu", m_vecAnaTaskInfo.size());
+		m_pLog->Output("完成任务数: %llu", m_vecEndTask.size());
 	}
 }
 
@@ -223,29 +234,29 @@ void TaskSche::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) t
 	switch ( ts )
 	{
 	case TSTS_Start:							// 任务开始
-		task_req_info.status      = "10";
+		task_req_info.status      = m_stateTaskBeg;
 		task_req_info.status_desc = "准备采集";
 		task_req_info.desc        = "接收到任务，准备开始采集";
 		task_req_info.finishtime.clear();
 		break;
 	case TSTS_EtlException:						// 采集异常
-		task_req_info.status      = "02";
+		task_req_info.status      = m_stateEtlException;
 		task_req_info.status_desc = "采集异常";
 		task_req_info.finishtime  = base::SimpleTime::Now().Time14();
 		break;
 	case TSTS_AnalyseBegin:						// 开始分析
-		task_req_info.status      = "20";
+		task_req_info.status      = m_stateAnaBeg;
 		task_req_info.status_desc = "准备分析";
 		task_req_info.desc        = "采集成功，准备开始分析";
 		task_req_info.finishtime.clear();
 		break;
 	case TSTS_AnalyseException:					// 分析异常
-		task_req_info.status      = "03";
+		task_req_info.status      = m_stateAnaException;
 		task_req_info.status_desc = "分析异常";
 		task_req_info.finishtime  = base::SimpleTime::Now().Time14();
 		break;
 	case TSTS_End:								// 任务完成
-		task_req_info.status      = "01";
+		task_req_info.status      = m_stateTaskEnd;
 		task_req_info.status_desc = "稽核完成";
 		task_req_info.desc        = "任务结束";
 		task_req_info.finishtime  = base::SimpleTime::Now().Time14();
@@ -257,6 +268,24 @@ void TaskSche::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) t
 
 	m_pLog->Output("[TASK] Updating task request : %s (%s)", task_req_info.status.c_str(), task_req_info.status_desc.c_str());
 	m_pTaskDB->UpdateTaskRequest(task_req_info);
+}
+
+bool TaskSche::IsProcessAlive(long long proc_task_id) throw(base::Exception)
+{
+	std::string str_cmd;
+	base::PubStr::SetFormatString(str_cmd, "ps -ef | grep -w %lld | grep -v grep", proc_task_id);
+
+	FILE* fp_pipe = popen(str_cmd.c_str(), "r");
+	if ( NULL == fp_pipe )
+	{
+		throw base::Exception(TERROR_IS_PROC_EXIST, "Popen() failed: (%d) %s [FILE:%s, LINE:%d]", errno, strerror(errno), __FILE__, __LINE__);
+	}
+
+	char buffer[512] = "";
+	fgets(buffer, 512, fp_pipe);
+
+	pclose(fp_pipe);
+	return (strlen(buffer) > 1);
 }
 
 void TaskSche::HandleEtlTask()
@@ -314,7 +343,24 @@ void TaskSche::HandleEtlTask()
 		}
 		else		// 其他状态
 		{
-			vEtlTaskInfo.push_back(ref_ti);
+			// 检查采集进程是否异常退出
+			if ( IsProcessAlive(ref_ti.task_id) )		// 进程是活动的
+			{
+				vEtlTaskInfo.push_back(ref_ti);
+			}
+			else	// 进程异常退出
+			{
+				m_pLog->Output("[TASK] Acquire exited unexpectedly: TASK_ID=%lld, KPI_ID=%s, ETL_ID=%s, ETL_TIME=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_ti.etl_time.c_str());
+
+				TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
+				ref_tri.desc = "Process exited unexpectedly!";
+
+				TaskRequestUpdate(TSTS_EtlException, ref_tri);
+				m_pLog->Output("[TASK] Error task: SEQ=[%d], KPI=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
+
+				// 任务删除
+				m_mTaskReqInfo.erase(t_state.seq_id);
+			}
 		}
 	}
 
@@ -340,7 +386,7 @@ void TaskSche::HandleAnaTask()
 
 		if ( m_anaStateEnd == t_state.state )			// 分析完成
 		{
-			m_pLog->Output("[TASK] Analyse finished: TASK_ID=%lld, KPI_ID=%s, ETL_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
+			m_pLog->Output("[TASK] Analyse finished: TASK_ID=%lld, KPI_ID=%s, ANA_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
 
 			// 移到已完成的任务列表
 			TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
@@ -349,7 +395,7 @@ void TaskSche::HandleAnaTask()
 		}
 		else if ( m_anaStateError == t_state.state )	// 分析异常
 		{
-			m_pLog->Output("[TASK] Analyse failed: TASK_ID=%lld, KPI_ID=%s, ETL_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
+			m_pLog->Output("[TASK] Analyse failed: TASK_ID=%lld, KPI_ID=%s, ANA_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
 
 			TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
 			ref_tri.desc = t_state.task_desc;
@@ -361,9 +407,26 @@ void TaskSche::HandleAnaTask()
 			// 任务删除
 			m_mTaskReqInfo.erase(t_state.seq_id);
 		}
-		else		// 其他状态
+		else	// 其他状态
 		{
-			vAnaTaskInfo.push_back(ref_ti);
+			// 检查分析进程是否异常退出
+			if ( IsProcessAlive(ref_ti.task_id) )		// 进程是活动的
+			{
+				vAnaTaskInfo.push_back(ref_ti);
+			}
+			else	// 进程异常退出
+			{
+				m_pLog->Output("[TASK] Analyse exited unexpectedly: TASK_ID=%lld, KPI_ID=%s, ANA_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
+
+				TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
+				ref_tri.desc = "Process exited unexpectedly!";
+
+				TaskRequestUpdate(TSTS_AnalyseException, ref_tri);
+				m_pLog->Output("[TASK] Error task: SEQ=[%d], KPI=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
+
+				// 任务删除
+				m_mTaskReqInfo.erase(t_state.seq_id);
+			}
 		}
 	}
 
@@ -379,12 +442,12 @@ void TaskSche::CreateTask(const TaskInfo& t_info) throw(base::Exception)
 		m_pTaskDB->UpdateEtlTime(t_info.sub_id, t_info.etl_time);
 
 		// 采集程序：守护进程
-		base::PubStr::SetFormatString(command, "%s 1 %lld %s 00001:%s:%s:%d:", m_binAcquire.c_str(), t_info.task_id, m_cfgAcquire.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str(), t_info.seq_id);
+		base::PubStr::SetFormatString(command, "%s 1 %lld %s %s %s 00001:%s:%s:%d:", m_binAcquire.c_str(), t_info.task_id, m_modeAcquire.c_str(), m_binVer.c_str(), m_cfgAcquire.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str(), t_info.seq_id);
 	}
 	else if ( TaskInfo::TT_Analyse == t_info.t_type )	// 分析
 	{
 		// 分析程序：守护进程
-		base::PubStr::SetFormatString(command, "%s 1 %lld %s 00001:%s:%s:%d:", m_binAnalyse.c_str(), t_info.task_id, m_cfgAnalyse.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str(), t_info.seq_id);
+		base::PubStr::SetFormatString(command, "%s 1 %lld %s %s %s 00001:%s:%s:%d:", m_binAnalyse.c_str(), t_info.task_id, m_modeAnalyse.c_str(), m_binVer.c_str(), m_cfgAnalyse.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str(), t_info.seq_id);
 	}
 	else	// 未知
 	{
@@ -478,9 +541,16 @@ long long TaskSche::GenerateTaskID()
 	long long new_taskid = 0;
 	base::PubStr::Str2LLong(time_str, new_taskid);
 
-	// 加上随机数
+	// 加上累加值
 	new_taskid *= 1000;
-	new_taskid += (rand() % 1000);
+	new_taskid += (m_TIDAccumulator++);
+
+	// 累加值复位
+	if ( m_TIDAccumulator >= 1000 )
+	{
+		m_TIDAccumulator = 0;
+	}
+
 	return new_taskid;
 }
 
