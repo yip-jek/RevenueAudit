@@ -3,6 +3,7 @@
 #include "log.h"
 #include "simpletime.h"
 #include "cacqdb2.h"
+#include "cacqhive.h"
 
 const char* const Acquire_YC::S_YC_ETLRULE_TYPE = "YCRA";			// 业财稽核-采集规则类型
 
@@ -111,6 +112,50 @@ void Acquire_YC::CheckTaskInfo() throw(base::Exception)
 	}
 }
 
+void Acquire_YC::CheckSourceTable(bool hive) throw(base::Exception)
+{
+	m_pLog->Output("[Acquire_YC] Check source table whether exists or not ?");
+
+	if ( m_taskInfo.vecEtlRuleDataSrc.empty() )		// 无配置源表
+	{
+		m_pLog->Output("[Acquire_YC] NO source table to be checked !");
+	}
+	else
+	{
+		const int SRC_TAB_SIZE = m_taskInfo.vecEtlRuleDataSrc.size();
+
+		std::string trans_tab;
+		if ( hive )		// HIVE
+		{
+			for ( int i = 0; i < SRC_TAB_SIZE; ++i )
+			{
+				trans_tab = TransSourceDate(m_taskInfo.vecEtlRuleDataSrc[i].srcTabName);
+
+				// 检查源表是否存在？
+				if ( !m_pAcqHive->CheckTableExisted(trans_tab) ) 	// 表不存在
+				{
+					throw base::Exception(ACQERR_CHECK_SRC_TAB_FAILED, "[HIVE] Source table do not exist: %s (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", trans_tab.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+				}
+			}
+		}
+		else	// DB2
+		{
+			for ( int i = 0; i < SRC_TAB_SIZE; ++i )
+			{
+				trans_tab = TransSourceDate(m_taskInfo.vecEtlRuleDataSrc[i].srcTabName);
+
+				// 检查源表是否存在？
+				if ( !m_pAcqDB2->CheckTableExisted(trans_tab) )		// 表不存在
+				{
+					throw base::Exception(ACQERR_CHECK_SRC_TAB_FAILED, "[DB2] Source table do not exist: %s (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", trans_tab.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+				}
+			}
+		}
+
+		m_pLog->Output("[Acquire_YC] Check source table OK.");
+	}
+}
+
 void Acquire_YC::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception)
 {
 	const int VEC_YCINFO_SIZE = m_vecYCInfo.size();
@@ -171,7 +216,7 @@ void Acquire_YC::AddCityBatch(std::string& sql) throw(base::Exception)
 	base::PubStr::SetFormatString(const_cast<std::string&>(PREFIX_CITY_BATCH), "%s = '%s' and %s in (select max(%s) from ", m_fieldCity.c_str(), m_taskCity.c_str(), m_fieldBatch.c_str(), m_fieldBatch.c_str());
 
 	const std::string MARK_FROM  = " FROM ";
-	const std::string MARK_WHERE = " WHERE ";
+	const std::string MARK_WHERE = "WHERE ";
 	const size_t M_FROM_SIZE     = MARK_FROM.size();
 	const size_t M_WHERE_SIZE    = MARK_WHERE.size();
 	const std::string C_SQL = base::PubStr::UpperB(sql);
@@ -185,28 +230,53 @@ void Acquire_YC::AddCityBatch(std::string& sql) throw(base::Exception)
 	while ( (f_pos = C_SQL.find(MARK_FROM, f_pos)) != std::string::npos )
 	{
 		f_pos += M_FROM_SIZE;
-		w_pos = C_SQL.find(MARK_WHERE, f_pos);
-		if ( std::string::npos == w_pos )
+
+		// Skip spaces, find the beginning of table name
+		f_pos = C_SQL.find_first_not_of('\x20', f_pos);
+		if ( std::string::npos == f_pos )	// All spaces
 		{
-			throw base::Exception(ACQERR_ADD_CITY_BATCH_FAILED, "业财稽核统计因子SQL无法添加地市和批次：NO where! [pos:%llu] (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", f_pos, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ACQERR_ADD_CITY_BATCH_FAILED, "业财稽核统计因子SQL无法添加地市和批次：NO table name! [pos:%llu] (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", f_pos, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 		}
 
-		tab_src = base::PubStr::TrimB(C_SQL.substr(f_pos, w_pos-f_pos));
-		if ( '(' == tab_src[0] )	// Skip: 非表名
+		// Find the end of table name
+		w_pos = C_SQL.find_first_of('\x20', f_pos);
+		if ( std::string::npos == w_pos )	// No space
 		{
-			continue;
+			tab_src = C_SQL.substr(f_pos);
+			base::PubStr::SetFormatString(str_add, " where %s %s where %s = '%s')", PREFIX_CITY_BATCH.c_str(), tab_src.c_str(), m_fieldCity.c_str(), m_taskCity.c_str());
+			sql += str_add;
+			break;
 		}
-
-		if ( tab_src.find('\x20') != std::string::npos )
+		else
 		{
-			throw base::Exception(ACQERR_ADD_CITY_BATCH_FAILED, "业财稽核统计因子SQL无法添加地市和批次：Invalid table name! [pos:%llu-%llu] (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", f_pos, w_pos, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
-		}
+			tab_src = C_SQL.substr(f_pos, w_pos-f_pos);
+			if ( '(' == tab_src[0] )	// Skip: 非表名
+			{
+				f_pos = w_pos;
+				continue;
+			}
 
-		w_pos += M_WHERE_SIZE;
-		str_add = PREFIX_CITY_BATCH + tab_src + ") and ";
-		sql.insert(w_pos+off, str_add);
-		off += str_add.size();
-		f_pos = w_pos;
+			w_pos = C_SQL.find_first_not_of('\x20', w_pos);
+			if ( std::string::npos == w_pos )	// All spaces
+			{
+				base::PubStr::SetFormatString(str_add, " where %s %s where %s = '%s')", PREFIX_CITY_BATCH.c_str(), tab_src.c_str(), m_fieldCity.c_str(), m_taskCity.c_str());
+				sql += str_add;
+				break;
+			}
+			else if ( C_SQL.substr(w_pos, M_WHERE_SIZE) == MARK_WHERE )	// 表名后带"WHERE"
+			{
+				base::PubStr::SetFormatString(str_add, "%s %s where %s = '%s') and ", PREFIX_CITY_BATCH.c_str(), tab_src.c_str(), m_fieldCity.c_str(), m_taskCity.c_str());
+				w_pos += M_WHERE_SIZE;
+			}
+			else	// 表名后不带"WHERE"
+			{
+				base::PubStr::SetFormatString(str_add, " where %s %s where %s = '%s') ", PREFIX_CITY_BATCH.c_str(), tab_src.c_str(), m_fieldCity.c_str(), m_taskCity.c_str());
+			}
+
+			sql.insert(w_pos+off, str_add);
+			off += str_add.size();
+			f_pos = w_pos;
+		}
 	}
 }
 

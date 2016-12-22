@@ -192,6 +192,7 @@ public:
 	:EtlRuleID(one.EtlRuleID)
 	,KpiID(one.KpiID)
 	,EtlTime(one.EtlTime)
+	,DataSource(one.DataSource)
 	,TargetPatch(one.TargetPatch)
 	,DimID(one.DimID)
 	,ValID(one.ValID)
@@ -207,6 +208,7 @@ public:
 			this->EtlRuleID       = one.EtlRuleID;
 			this->KpiID           = one.KpiID;
 			this->EtlTime         = one.EtlTime;
+			this->DataSource      = one.DataSource;
 			this->TargetPatch     = one.TargetPatch;
 			this->DimID           = one.DimID;
 			this->ValID           = one.ValID;
@@ -222,6 +224,7 @@ public:
 	std::string EtlRuleID;			// 采集规则ID
 	std::string KpiID;				// 指标ID
 	std::string EtlTime;			// 采集时间表达式
+	std::string DataSource;			// 采集数据源表
 	std::string TargetPatch;		// 采集目标数据表
 	std::string DimID;				// 采集维度规则ID
 	std::string ValID;				// 采集值规则ID

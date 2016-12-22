@@ -75,6 +75,11 @@ void CAnaDB2::SetTabYCStatRule(const std::string& t_statrule)
 	m_tabYCStatRule = t_statrule;
 }
 
+void CAnaDB2::SetTabYCStatLog(const std::string& t_statlog)
+{
+	m_tabStatLog = t_statlog;
+}
+
 void CAnaDB2::SetTabYCTaskReq(const std::string& t_yc_taskreq)
 {
 	m_tabYCTaskReq = t_yc_taskreq;
@@ -193,12 +198,12 @@ void CAnaDB2::SelectStatResultMaxBatch(const std::string& tab_result, YCStatBatc
 
 		if ( 0 == counter )
 		{
-			throw base::Exception(ADBERR_SEL_SR_MAX_BATCH, "[DB2] Select max batch from result table '%s' failed! NO Record! [FILE:%s, LINE:%d]", tab_result.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ADBERR_SEL_RS_MAX_BATCH, "[DB2] Select max batch from result table '%s' failed! NO Record! [FILE:%s, LINE:%d]", tab_result.c_str(), __FILE__, __LINE__);
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_SR_MAX_BATCH, "[DB2] Select max batch from result table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_result.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_RS_MAX_BATCH, "[DB2] Select max batch from result table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_result.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -238,6 +243,74 @@ void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vect
 	v_seq.swap(vec_seq);
 
 	m_pLog->Output("[DB2] Select sequence '%s' size: %llu", seq_name.c_str(), vec_seq.size());
+}
+
+void CAnaDB2::SelectYCSrcMaxBatch(const std::string& tab_src, const std::string& f_city, const std::string& v_city, const std::string& f_batch, int& src_batch) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql;
+	base::PubStr::SetFormatString(sql, "select max(%s) from %s where %s = '%s'", f_batch.c_str(), tab_src.c_str(), f_city.c_str(), v_city.c_str());
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		int counter = 0;
+		while ( !rs.IsEOF() )
+		{
+			++counter;
+			src_batch = (int)rs[1];
+
+			rs.MoveNext();
+		}
+
+		rs.Close();
+
+		if ( 0 == counter )
+		{
+			throw base::Exception(ADBERR_SEL_SRC_MAX_BATCH, "[DB2] Select YC source max batch from table '%s' failed! NO Record! [FILE:%s, LINE:%d]", tab_src.c_str(), __FILE__, __LINE__);
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_SEL_SRC_MAX_BATCH, "[DB2] Select YC source max batch from table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_src.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void CAnaDB2::InsertYCStatLog(const YCStatLog& stat_log) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "insert into " + m_tabStatLog + "(STAT_REPORT, STAT_NUM, STAT_DATASOURCE";
+	sql += ", STAT_CITY, STAT_CYCLE, STAT_TIME) values(?, ?, ?, ?, ?, ?)";
+	m_pLog->Output("[DB2] Insert statistics log to table: [%s]", m_tabStatLog.c_str());
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		Begin();
+
+		int index = 1;
+		rs.Parameter(index++) = stat_log.stat_report.c_str();
+		rs.Parameter(index++) = stat_log.stat_batch;
+		rs.Parameter(index++) = stat_log.stat_datasource.c_str();
+		rs.Parameter(index++) = stat_log.stat_city.c_str();
+		rs.Parameter(index++) = stat_log.stat_cycle.c_str();
+		rs.Parameter(index++) = stat_log.stat_time.c_str();
+		rs.Execute();
+
+		Commit();
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_INS_YC_STAT_LOG, "[DB2] Insert YC stat log to table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabStatLog.c_str(), ex.what(), __FILE__, __LINE__);
+	}
 }
 
 void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
@@ -972,7 +1045,7 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 	int counter = 0;
 	try
 	{
-		std::string sql = "select ETLRULE_TIME, ETLRULE_TARGET, ETLDIM_ID, ETLVAL_ID from " + m_tabEtlRule;
+		std::string sql = "select ETLRULE_TIME, ETLRULE_DATASOURCE, ETLRULE_TARGET, ETLDIM_ID, ETLVAL_ID from " + m_tabEtlRule;
 		sql += " where KPI_ID = ? and ETLRULE_ID = ?";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -985,8 +1058,8 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 			++counter;
 
 			int index = 1;
-
 			one.EtlTime     = (const char*)rs[index++];
+			one.DataSource  = (const char*)rs[index++];
 			one.TargetPatch = (const char*)rs[index++];
 			one.DimID       = (const char*)rs[index++];
 			one.ValID       = (const char*)rs[index++];

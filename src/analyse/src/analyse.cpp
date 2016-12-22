@@ -30,7 +30,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 3.0009.20161221 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 3.0010.20161223 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -1468,7 +1468,7 @@ void Analyse::StoreResult() throw(base::Exception)
 		const int VEC3_SIZE = m_v3HiveSrcData.size();
 		for ( int i = 0; i < VEC3_SIZE; ++i )
 		{
-			m_pLog->Output("[Analyse] 准备入库第 %d 组结果数据 ...", i+1);
+			m_pLog->Output("[Analyse] 准备入库第 %d 组结果数据 ...", (i+1));
 			m_pAnaDB2->InsertResultData(m_dbinfo, m_v3HiveSrcData[i]);
 		}
 	}

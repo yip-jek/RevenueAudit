@@ -42,7 +42,9 @@ public:
 		ADBERR_UPD_YC_TASK_REQ   = -3002020,			// 更新任务请求表出错
 		ADBERR_SEL_SEQUENCE      = -3002021,			// 获取数据库序列出错
 		ADBERR_SEL_YC_TASK_CITY  = -3002022,			// 获取任务请求的地市信息出错
-		ADBERR_SEL_SR_MAX_BATCH  = -3002023,			// 获取统计结果表的最新批次出错
+		ADBERR_SEL_RS_MAX_BATCH  = -3002023,			// 获取统计结果表的最新批次出错
+		ADBERR_INS_YC_STAT_LOG   = -3002024,			// 入库业财稽核记录日志出错
+		ADBERR_SEL_SRC_MAX_BATCH = -3002025,			// 获取业财数据源表最新批次出错
 	};
 
 public:
@@ -81,6 +83,9 @@ public:
 
 	// 设置统计因子规则表
 	void SetTabYCStatRule(const std::string& t_statrule);
+
+	// 设置稽核记录日志表
+	void SetTabYCStatLog(const std::string& t_statlog);
 
 	// 查询分析规则任务信息
 	void SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
@@ -145,6 +150,12 @@ public:
 	// 获取数据库序列值 (NEXTVAL)
 	void SelectSequence(const std::string& seq_name, size_t size, std::vector<std::string>& vec_seq) throw(base::Exception);
 
+	// 获取业财稽核数据源表的最新批次
+	void SelectYCSrcMaxBatch(const std::string& tab_src, const std::string& f_city, const std::string& v_city, const std::string& f_batch, int& src_batch) throw(base::Exception);
+
+	// 入库业财稽核记录日志
+	void InsertYCStatLog(const YCStatLog& stat_log) throw(base::Exception);
+
 private:
 	// 查询指标规则信息
 	void SelectKpiRule(AnaTaskInfo& info) throw(base::Exception);
@@ -194,7 +205,8 @@ private:
 	std::string m_tabAlarmEvent;		// 告警事件表
 	std::string m_tabDictChannel;		// 渠道统一编码表
 	std::string m_tabDictCity;			// 地市统一编码表
-	std::string m_tabYCStatRule;		// 统计因子规则表（业财稽核）
+	std::string m_tabYCStatRule;		// （业财）统计因子规则表
+	std::string m_tabStatLog;			// （业财）稽核记录日志表
 
 // 业财稽核-任务调度
 	std::string m_tabYCTaskReq;			// （业财）任务请求表

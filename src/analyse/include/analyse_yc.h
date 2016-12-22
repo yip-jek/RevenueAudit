@@ -49,6 +49,12 @@ protected:
 	// 计算组合因子的维度值
 	double CalcYCComplexFactor(std::map<std::string, double>& map_factor, const std::string& cmplx_factr_fmt) throw(base::Exception);
 
+	// 结果数据入库 [DB2]
+	virtual void StoreResult() throw(base::Exception);
+
+	// 登记稽核记录日志
+	void RecordStatisticsLog();
+
 	// 告警判断: 如果达到告警阀值，则生成告警
 	virtual void AlarmJudgement() throw(base::Exception);
 
@@ -58,6 +64,9 @@ protected:
 protected:
 	std::string             m_tabYCTaskReq;			// （业财）任务请求表
 	std::string             m_tabStatRule;			// （业财）统计因子规则表
+	std::string             m_tabStatLog;			// （业财）稽核记录日志表
+	std::string             m_fieldCity;			// 地市字段名
+	std::string             m_fieldBatch;			// 批次字段名
 
 protected:
 	int                     m_ycSeqID;				// 任务流水号

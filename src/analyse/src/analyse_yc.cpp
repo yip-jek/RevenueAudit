@@ -22,11 +22,17 @@ void Analyse_YC::LoadConfig() throw(base::Exception)
 
 	m_cfg.RegisterItem("TABLE", "TAB_YC_TASK_REQ");
 	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
+	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATLOG");
+	m_cfg.RegisterItem("FIELD", "SRC_FIELD_CITY");
+	m_cfg.RegisterItem("FIELD", "SRC_FIELD_BATCH");
 
 	m_cfg.ReadConfig();
 
 	m_tabYCTaskReq = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
 	m_tabStatRule  = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
+	m_tabStatLog   = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATLOG");
+	m_fieldCity    = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_CITY");
+	m_fieldBatch   = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_BATCH");
 
 	m_pLog->Output("[Analyse_YC] Load configuration OK.");
 }
@@ -42,6 +48,7 @@ void Analyse_YC::Init() throw(base::Exception)
 
 	m_pAnaDB2->SetTabYCTaskReq(m_tabYCTaskReq);
 	m_pAnaDB2->SetTabYCStatRule(m_tabStatRule);
+	m_pAnaDB2->SetTabYCStatLog(m_tabStatLog);
 
 	// 更新任务状态为；"21"（正在分析）
 	YCTaskReq task_req;
@@ -346,6 +353,56 @@ double Analyse_YC::CalcYCComplexFactor(std::map<std::string, double>& map_factor
 	}
 
 	return cmplx_factr_result;
+}
+
+void Analyse_YC::StoreResult() throw(base::Exception)
+{
+	// 保留旧的数据，所以不执行删除操作！
+
+	const int VEC3_SIZE = m_v3HiveSrcData.size();
+	for ( int i = 0; i < VEC3_SIZE; ++i )
+	{
+		m_pLog->Output("[Analyse_YC] 准备入库第 %d 组业财稽核结果数据 ...", (i+1));
+		m_pAnaDB2->InsertResultData(m_dbinfo, m_v3HiveSrcData[i]);
+	}
+
+	// 记录业财稽核日志
+	RecordStatisticsLog();
+}
+
+void Analyse_YC::RecordStatisticsLog()
+{
+	YCStatLog yc_log;
+	yc_log.stat_report     = m_vecYCSInfo[0].stat_report;
+	yc_log.stat_batch      = m_statBatch;
+	yc_log.stat_city       = m_taskCity;
+	yc_log.stat_cycle      = m_dbinfo.GetEtlDay();
+	yc_log.stat_time       = base::SimpleTime::Now().Time14();	// 当前时间
+
+	std::vector<std::string> vec_datasrc;
+	base::PubStr::Str2StrVector(m_taskInfo.vecEtlRule[0].DataSource, ",", vec_datasrc);
+
+	// 稽核源数据及批次
+	int src_batch = 0;
+	const int VEC_SIZE = vec_datasrc.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		std::string& ref_src = vec_datasrc[i];
+		m_pAnaDB2->SelectYCSrcMaxBatch(ref_src, m_fieldCity, m_taskCity, m_fieldBatch, src_batch);
+		m_pLog->Output("[Analyse_YC] 取得数据源表(%d): %s, 地市: %s, 最新批次: %d", (i+1), ref_src.c_str(), m_taskCity.c_str(), src_batch);
+
+		if ( i != 0 )	// Not first
+		{
+			yc_log.stat_datasource += ("|" + ref_src + "," + base::PubStr::Int2Str(src_batch));
+		}
+		else	// First one
+		{
+			yc_log.stat_datasource = ref_src + "," + base::PubStr::Int2Str(src_batch);
+		}
+	}
+
+	m_pLog->Output("[Analyse_YC] 更新业财稽核记录日志表");
+	m_pAnaDB2->InsertYCStatLog(yc_log);
 }
 
 void Analyse_YC::AlarmJudgement() throw(base::Exception)

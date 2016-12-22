@@ -84,7 +84,7 @@ public:
 struct YCStatResult
 {
 public:
-	YCStatResult(): stat_value(0.0), stat_batch(0)
+	YCStatResult(): stat_batch(0), stat_value(0.0)
 	{}
 
 public:
@@ -96,9 +96,9 @@ public:
 		v_str.push_back(stat_id);
 		v_str.push_back(stat_name);
 		v_str.push_back(statdim_id);
-		v_str.push_back(base::PubStr::Double2Str(stat_value));
 		v_str.push_back(stat_city);
 		v_str.push_back(base::PubStr::Int2Str(stat_batch));
+		v_str.push_back(base::PubStr::Double2Str(stat_value));
 
 		v_str.swap(vec_str);
 	}
@@ -108,8 +108,23 @@ public:
 	std::string stat_id;					// 统计指标ID
 	std::string stat_name;					// 统计指标名称
 	std::string statdim_id;					// 统计维度ID
-	double      stat_value;					// 统计维度值
 	std::string stat_city;					// 地市
 	int         stat_batch;					// 批次
+	double      stat_value;					// 统计维度值
+};
+
+// 业财稽核日志信息
+struct YCStatLog
+{
+public:
+	YCStatLog(): stat_batch(0) {}
+
+public:
+	std::string stat_report;				// 业财报表
+	int         stat_batch;					// 稽核批次
+	std::string stat_datasource;			// 稽核数据源及批次
+	std::string stat_city;					// 稽核地市
+	std::string stat_cycle;					// 稽核账期
+	std::string stat_time;					// 稽核时间
 };
 

@@ -211,12 +211,14 @@ void TaskSche::ShowTask()
 	{
 		m_taskShowTime = t_now;
 
-		m_pLog->Output("指标规则数: %llu", m_mKpiRuleInfo.size());
-		m_pLog->Output("新建任务数: %llu", m_vecNewTask.size());
-		m_pLog->Output("执行任务数: %llu", m_mTaskReqInfo.size());
-		m_pLog->Output("采集任务数: %llu", m_vecEtlTaskInfo.size());
-		m_pLog->Output("分析任务数: %llu", m_vecAnaTaskInfo.size());
-		m_pLog->Output("完成任务数: %llu", m_vecEndTask.size());
+		m_pLog->Output(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+		m_pLog->Output("[TASK] 指标规则数: %llu", m_mKpiRuleInfo.size());
+		m_pLog->Output("[TASK] 新建任务数: %llu", m_vecNewTask.size());
+		m_pLog->Output("[TASK] 执行任务数: %llu", m_mTaskReqInfo.size());
+		m_pLog->Output("[TASK] 采集任务数: %llu", m_vecEtlTaskInfo.size());
+		m_pLog->Output("[TASK] 分析任务数: %llu", m_vecAnaTaskInfo.size());
+		m_pLog->Output("[TASK] 完成任务数: %llu", m_vecEndTask.size());
+		m_pLog->Output("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 	}
 }
 
