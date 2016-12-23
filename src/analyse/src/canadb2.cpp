@@ -245,13 +245,13 @@ void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vect
 	m_pLog->Output("[DB2] Select sequence '%s' size: %llu", seq_name.c_str(), vec_seq.size());
 }
 
-void CAnaDB2::SelectYCSrcMaxBatch(const std::string& tab_src, const std::string& f_city, const std::string& v_city, const std::string& f_batch, int& src_batch) throw(base::Exception)
+void CAnaDB2::SelectYCSrcMaxBatch(YCSrcInfo& yc_info) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
 	std::string sql;
-	base::PubStr::SetFormatString(sql, "select max(%s) from %s where %s = '%s'", f_batch.c_str(), tab_src.c_str(), f_city.c_str(), v_city.c_str());
+	base::PubStr::SetFormatString(sql, "select max(%s) from %s where %s = '%s' and %s = '%s'", yc_info.field_batch.c_str(), yc_info.src_tab.c_str(), yc_info.field_period.c_str(), yc_info.period.c_str(), yc_info.field_city.c_str(), yc_info.city.c_str());
 
 	try
 	{
@@ -262,7 +262,7 @@ void CAnaDB2::SelectYCSrcMaxBatch(const std::string& tab_src, const std::string&
 		while ( !rs.IsEOF() )
 		{
 			++counter;
-			src_batch = (int)rs[1];
+			yc_info.batch = (int)rs[1];
 
 			rs.MoveNext();
 		}
@@ -271,12 +271,12 @@ void CAnaDB2::SelectYCSrcMaxBatch(const std::string& tab_src, const std::string&
 
 		if ( 0 == counter )
 		{
-			throw base::Exception(ADBERR_SEL_SRC_MAX_BATCH, "[DB2] Select YC source max batch from table '%s' failed! NO Record! [FILE:%s, LINE:%d]", tab_src.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ADBERR_SEL_SRC_MAX_BATCH, "[DB2] Select YC source max batch from table '%s' failed! NO Record! [FILE:%s, LINE:%d]", yc_info.src_tab.c_str(), __FILE__, __LINE__);
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_SRC_MAX_BATCH, "[DB2] Select YC source max batch from table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_src.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ADBERR_SEL_SRC_MAX_BATCH, "[DB2] Select YC source max batch from table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", yc_info.src_tab.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 

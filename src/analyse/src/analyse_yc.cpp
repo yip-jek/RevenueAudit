@@ -23,6 +23,7 @@ void Analyse_YC::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_YC_TASK_REQ");
 	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
 	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATLOG");
+	m_cfg.RegisterItem("FIELD", "SRC_FIELD_PERIOD");
 	m_cfg.RegisterItem("FIELD", "SRC_FIELD_CITY");
 	m_cfg.RegisterItem("FIELD", "SRC_FIELD_BATCH");
 
@@ -31,6 +32,7 @@ void Analyse_YC::LoadConfig() throw(base::Exception)
 	m_tabYCTaskReq = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
 	m_tabStatRule  = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
 	m_tabStatLog   = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATLOG");
+	m_fieldPeriod  = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_PERIOD");
 	m_fieldCity    = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_CITY");
 	m_fieldBatch   = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_BATCH");
 
@@ -382,22 +384,31 @@ void Analyse_YC::RecordStatisticsLog()
 	std::vector<std::string> vec_datasrc;
 	base::PubStr::Str2StrVector(m_taskInfo.vecEtlRule[0].DataSource, ",", vec_datasrc);
 
+	YCSrcInfo yc_srcinfo;
+	yc_srcinfo.field_period = m_fieldPeriod;
+	yc_srcinfo.period       = yc_log.stat_cycle;
+	yc_srcinfo.field_city   = m_fieldCity;
+	yc_srcinfo.city         = m_taskCity;
+	yc_srcinfo.field_batch  = m_fieldBatch;
+	yc_srcinfo.batch        = 0;
+
 	// 稽核源数据及批次
-	int src_batch = 0;
 	const int VEC_SIZE = vec_datasrc.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
 		std::string& ref_src = vec_datasrc[i];
-		m_pAnaDB2->SelectYCSrcMaxBatch(ref_src, m_fieldCity, m_taskCity, m_fieldBatch, src_batch);
-		m_pLog->Output("[Analyse_YC] 取得数据源表(%d): %s, 地市: %s, 最新批次: %d", (i+1), ref_src.c_str(), m_taskCity.c_str(), src_batch);
+		yc_srcinfo.src_tab = ref_src;
+
+		m_pAnaDB2->SelectYCSrcMaxBatch(yc_srcinfo);
+		m_pLog->Output("[Analyse_YC] 取得数据源表(%d): %s, 地市: %s, 最新批次: %d", (i+1), ref_src.c_str(), m_taskCity.c_str(), yc_srcinfo.batch);
 
 		if ( i != 0 )	// Not first
 		{
-			yc_log.stat_datasource += ("|" + ref_src + "," + base::PubStr::Int2Str(src_batch));
+			yc_log.stat_datasource += ("|" + ref_src + "," + base::PubStr::Int2Str(yc_srcinfo.batch));
 		}
 		else	// First one
 		{
-			yc_log.stat_datasource = ref_src + "," + base::PubStr::Int2Str(src_batch);
+			yc_log.stat_datasource = ref_src + "," + base::PubStr::Int2Str(yc_srcinfo.batch);
 		}
 	}
 

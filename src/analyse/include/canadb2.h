@@ -151,7 +151,7 @@ public:
 	void SelectSequence(const std::string& seq_name, size_t size, std::vector<std::string>& vec_seq) throw(base::Exception);
 
 	// 获取业财稽核数据源表的最新批次
-	void SelectYCSrcMaxBatch(const std::string& tab_src, const std::string& f_city, const std::string& v_city, const std::string& f_batch, int& src_batch) throw(base::Exception);
+	void SelectYCSrcMaxBatch(YCSrcInfo& yc_info) throw(base::Exception);
 
 	// 入库业财稽核记录日志
 	void InsertYCStatLog(const YCStatLog& stat_log) throw(base::Exception);

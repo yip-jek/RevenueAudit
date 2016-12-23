@@ -128,3 +128,19 @@ public:
 	std::string stat_time;					// 稽核时间
 };
 
+// 业财稽核数据源信息
+struct YCSrcInfo
+{
+public:
+	YCSrcInfo(): batch(0) {}
+
+public:
+	std::string src_tab;				// 数据源表名
+	std::string field_period;			// 账期字段名
+	std::string period;					// 账期
+	std::string field_city;				// 地市字段名
+	std::string city;					// 地市
+	std::string field_batch;			// 批次字段名
+	int         batch;					// 批次
+};
+

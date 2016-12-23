@@ -23,6 +23,7 @@ void Acquire_YC::LoadConfig() throw(base::Exception)
 
 	m_cfg.RegisterItem("TABLE", "TAB_YC_TASK_REQ");
 	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
+	m_cfg.RegisterItem("FIELD", "SRC_FIELD_PERIOD");
 	m_cfg.RegisterItem("FIELD", "SRC_FIELD_CITY");
 	m_cfg.RegisterItem("FIELD", "SRC_FIELD_BATCH");
 
@@ -30,6 +31,7 @@ void Acquire_YC::LoadConfig() throw(base::Exception)
 
 	m_tabYCTaskReq = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
 	m_tabStatRule  = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
+	m_fieldPeriod  = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_PERIOD");
 	m_fieldCity    = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_CITY");
 	m_fieldBatch   = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_BATCH");
 
@@ -201,7 +203,7 @@ void Acquire_YC::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) thro
 		yc_sql.insert(0, prefix_sql);
 
 		ExchangeSQLMark(yc_sql);
-		AddCityBatch(yc_sql);
+		ExtendSQLCondition(yc_sql);
 
 		m_pLog->Output("[Acquire_YC] (转换后) 统计因子SQL [%d]: %s", (i+1), yc_sql.c_str());
 		v_yc_sql.push_back(yc_sql);
@@ -210,10 +212,12 @@ void Acquire_YC::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) thro
 	v_yc_sql.swap(vec_sql);
 }
 
-void Acquire_YC::AddCityBatch(std::string& sql) throw(base::Exception)
+void Acquire_YC::ExtendSQLCondition(std::string& sql) throw(base::Exception)
 {
-	const std::string PREFIX_CITY_BATCH;
-	base::PubStr::SetFormatString(const_cast<std::string&>(PREFIX_CITY_BATCH), "%s = '%s' and %s in (select max(%s) from ", m_fieldCity.c_str(), m_taskCity.c_str(), m_fieldBatch.c_str(), m_fieldBatch.c_str());
+	const std::string EX_SUB_COND;
+	const std::string EXTEND_SQL_COND;
+	base::PubStr::SetFormatString(const_cast<std::string&>(EX_SUB_COND), "%s = '%s' and %s = '%s'", m_fieldPeriod.c_str(), m_acqDate.c_str(), m_fieldCity.c_str(), m_taskCity.c_str());
+	base::PubStr::SetFormatString(const_cast<std::string&>(EXTEND_SQL_COND), "%s and %s in (select max(%s) from ", EX_SUB_COND.c_str(), m_fieldBatch.c_str(), m_fieldBatch.c_str());
 
 	const std::string MARK_FROM  = " FROM ";
 	const std::string MARK_WHERE = "WHERE ";
@@ -243,7 +247,7 @@ void Acquire_YC::AddCityBatch(std::string& sql) throw(base::Exception)
 		if ( std::string::npos == w_pos )	// No space
 		{
 			tab_src = C_SQL.substr(f_pos);
-			base::PubStr::SetFormatString(str_add, " where %s %s where %s = '%s')", PREFIX_CITY_BATCH.c_str(), tab_src.c_str(), m_fieldCity.c_str(), m_taskCity.c_str());
+			base::PubStr::SetFormatString(str_add, " where %s %s where %s)", EXTEND_SQL_COND.c_str(), tab_src.c_str(), EX_SUB_COND.c_str());
 			sql += str_add;
 			break;
 		}
@@ -255,22 +259,23 @@ void Acquire_YC::AddCityBatch(std::string& sql) throw(base::Exception)
 				f_pos = w_pos;
 				continue;
 			}
+			base::PubStr::SetFormatString(str_add, "%s %s where %s)", EXTEND_SQL_COND.c_str(), tab_src.c_str(), EX_SUB_COND.c_str());
 
 			w_pos = C_SQL.find_first_not_of('\x20', w_pos);
 			if ( std::string::npos == w_pos )	// All spaces
 			{
-				base::PubStr::SetFormatString(str_add, " where %s %s where %s = '%s')", PREFIX_CITY_BATCH.c_str(), tab_src.c_str(), m_fieldCity.c_str(), m_taskCity.c_str());
+				str_add = " where " + str_add;
 				sql += str_add;
 				break;
 			}
 			else if ( C_SQL.substr(w_pos, M_WHERE_SIZE) == MARK_WHERE )	// 表名后带"WHERE"
 			{
-				base::PubStr::SetFormatString(str_add, "%s %s where %s = '%s') and ", PREFIX_CITY_BATCH.c_str(), tab_src.c_str(), m_fieldCity.c_str(), m_taskCity.c_str());
+				str_add += (" and ");
 				w_pos += M_WHERE_SIZE;
 			}
 			else	// 表名后不带"WHERE"
 			{
-				base::PubStr::SetFormatString(str_add, " where %s %s where %s = '%s') ", PREFIX_CITY_BATCH.c_str(), tab_src.c_str(), m_fieldCity.c_str(), m_taskCity.c_str());
+				str_add = " where " + str_add + " ";
 			}
 
 			sql.insert(w_pos+off, str_add);
