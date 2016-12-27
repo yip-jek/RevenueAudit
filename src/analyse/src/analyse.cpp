@@ -30,7 +30,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 3.0010.20161223 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 3.0010.20161227 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -1046,7 +1046,7 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 	const std::string ETL_DAY         = m_dbinfo.GetEtlDay();
 
 	ReleaseSQLTranslator();
-	m_pSQLTranslator = new SQLTranslator(DT, ETL_DAY);
+	m_pSQLTranslator = new base::SQLTranslator(DT, ETL_DAY);
 	if ( NULL == m_pSQLTranslator )
 	{
 		throw base::Exception(ANAERR_GENERATE_TAB_FAILED, "new SQLTranslator failed: 无法申请到内存空间! [FILE:%s, LINE:%d]", __FILE__, __LINE__);

@@ -30,7 +30,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 3.0005.20161223 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 3.0005.20161227 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -324,7 +324,7 @@ void Acquire::GenerateEtlDate(const std::string& date_fmt) throw(base::Exception
 	}
 
 	SQLTransRelease();
-	m_pSQLTrans = new SQLTranslator(m_acqDateType, m_acqDate);
+	m_pSQLTrans = new base::SQLTranslator(m_acqDateType, m_acqDate);
 	if ( NULL == m_pSQLTrans )
 	{
 		throw base::Exception(ACQERR_GEN_ETL_DATE_FAILED, "new SQLTranslator failed: 无法申请到内存空间! [FILE:%s, LINE:%d]", __FILE__, __LINE__);

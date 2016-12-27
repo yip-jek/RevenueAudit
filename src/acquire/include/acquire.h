@@ -5,9 +5,15 @@
 #include "hdfsconnector.h"
 #include "pubtime.h"
 
+namespace base
+{
+
+class SQLTranslator;
+
+}
+
 class CAcqDB2;
 class CAcqHive;
-class SQLTranslator;
 
 // 采集模块
 class Acquire : public base::BaseFrameApp
@@ -166,7 +172,7 @@ protected:
 	AcqTaskInfo              m_taskInfo;			// 采集任务信息
 	base::PubTime::DATE_TYPE m_acqDateType;			// 采集时间类型
 	std::string              m_acqDate;				// 采集时间
-	SQLTranslator*           m_pSQLTrans;			// SQL语句转换
+	base::SQLTranslator*     m_pSQLTrans;			// SQL语句转换
 
 protected:
 	// 数据库表名

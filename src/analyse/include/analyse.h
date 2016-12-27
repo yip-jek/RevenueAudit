@@ -5,9 +5,15 @@
 #include "dimvaldiffer.h"
 #include "uniformcodetransfer.h"
 
+namespace base
+{
+
+class SQLTranslator;
+
+}
+
 class CAnaDB2;
 class CAnaHive;
-class SQLTranslator;
 class AlarmEvent;
 
 // 分析模块
@@ -210,10 +216,10 @@ protected:
 	std::string m_tabDictCity;			// 地市统一编码表
 
 protected:
-	AnaTaskInfo         m_taskInfo;				// 指标任务信息
-	DimValDiffer        m_DVDiffer;				// 用于维度取值范围的比较
-	UniformCodeTransfer m_UniCodeTransfer;		// 统一编码转换
-	SQLTranslator*      m_pSQLTranslator;		// 标志转换
+	AnaTaskInfo          m_taskInfo;				// 指标任务信息
+	DimValDiffer         m_DVDiffer;				// 用于维度取值范围的比较
+	UniformCodeTransfer  m_UniCodeTransfer;			// 统一编码转换
+	base::SQLTranslator* m_pSQLTranslator;			// 标志转换
 
 protected:
 	AnaDBInfo                                            m_dbinfo;				// 库表信息

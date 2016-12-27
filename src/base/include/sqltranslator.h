@@ -2,11 +2,14 @@
 
 #include "pubtime.h"
 
+namespace base
+{
+
 // SQL 语句转换
 class SQLTranslator
 {
 public:
-	SQLTranslator(base::PubTime::DATE_TYPE dt, const std::string& etl_date);
+	SQLTranslator(PubTime::DATE_TYPE dt, const std::string& etl_date);
 	~SQLTranslator();
 
 public:
@@ -15,6 +18,9 @@ public:
 	static const char* const S_ETL_MON;				// 采集时间：month
 	static const char* const S_SYS_DAY;				// 系统（当前）时间：day
 	static const char* const S_SYS_MON;				// 系统（当前）时间：month
+
+	static const char* const S_FIRST_DAY_THIS_PM;		// 本账期月1日
+	static const char* const S_LAST_DAY_LAST_PM;		// 上个账期月最后一天
 
 public:
 	// 转换
@@ -31,7 +37,9 @@ private:
 	bool TransMark(const std::string& mark, std::string& val, std::string* pError);
 
 private:
-	base::PubTime::DATE_TYPE m_dEtlType;			// 时间类型
-	std::string              m_sEtlDate;			// 采集时间（账期时间）
+	PubTime::DATE_TYPE m_dEtlType;			// 时间类型
+	std::string        m_sEtlDate;			// 采集时间（账期时间）
 };
+
+}	// namespace base
 
