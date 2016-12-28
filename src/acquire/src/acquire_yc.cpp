@@ -5,7 +5,9 @@
 #include "cacqdb2.h"
 #include "cacqhive.h"
 
-const char* const Acquire_YC::S_YC_ETLRULE_TYPE = "YCRA";			// 业财稽核-采集规则类型
+const char* const Acquire_YC::S_YC_ETLRULE_TYPE = "YCRA";				// 业财稽核-采集规则类型
+const char* const Acquire_YC::S_NO_NEED_EXTEND  = "[NO_NEED_EXTEND]";	// 不需要进行扩展SQL语句的条件的标记
+const char* const Acquire_YC::S_CITY_MARK       = "[CITY_MARK]";		// 地市标记
 
 Acquire_YC::Acquire_YC()
 :m_ycSeqID(0)
@@ -214,6 +216,16 @@ void Acquire_YC::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) thro
 
 void Acquire_YC::ExtendSQLCondition(std::string& sql) throw(base::Exception)
 {
+	// 不需要进行扩展SQL语句的条件？
+	if ( NoNeedExtendSQL(sql) )
+	{
+		// 删除标记
+		sql.erase(0, sql.find(']')+1);
+		// 地市标记转换
+		CityMarkExchange(sql);
+		return;
+	}
+
 	const std::string EX_SUB_COND;
 	const std::string EXTEND_SQL_COND;
 	base::PubStr::SetFormatString(const_cast<std::string&>(EX_SUB_COND), "%s = '%s' and %s = '%s'", m_fieldPeriod.c_str(), m_acqDate.c_str(), m_fieldCity.c_str(), m_taskCity.c_str());
@@ -282,6 +294,30 @@ void Acquire_YC::ExtendSQLCondition(std::string& sql) throw(base::Exception)
 			off += str_add.size();
 			f_pos = w_pos;
 		}
+	}
+}
+
+bool Acquire_YC::NoNeedExtendSQL(const std::string& sql)
+{
+	const std::string F_NO_NEED_EX = S_NO_NEED_EXTEND;
+	const size_t F_NNEX_SIZE       = F_NO_NEED_EX.size();
+	const std::string C_SQL        = base::PubStr::TrimUpperB(sql);
+
+	// 是否以'[NO_NEED_EXTEND]'开头？
+	return (C_SQL.size() >= F_NNEX_SIZE && C_SQL.substr(0, F_NNEX_SIZE) == F_NO_NEED_EX);
+}
+
+void Acquire_YC::CityMarkExchange(std::string& sql)
+{
+	const std::string F_CITY_MARK = S_CITY_MARK;
+	const size_t F_CTMK_SIZE      = F_CITY_MARK.size();
+	std::string up_sql            = base::PubStr::UpperB(sql);
+
+	size_t pos = 0;
+	while ( (pos = up_sql.find(F_CITY_MARK)) != std::string::npos )
+	{
+		sql.replace(pos, F_CTMK_SIZE, m_taskCity);
+		up_sql = base::PubStr::UpperB(sql);
 	}
 }
 

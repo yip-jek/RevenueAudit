@@ -31,11 +31,11 @@ public:
 
 // 类型转换
 public:
-	// string -> int
+	// (十进制) string -> int
 	static bool Str2Int(const std::string& str, int& i);
-	// string -> unsigned int
+	// (十进制) string -> unsigned int
 	static bool Str2UInt(const std::string& str, unsigned int& u);
-	// string -> long long
+	// (十进制) string -> long long
 	static bool Str2LLong(const std::string& str, long long& ll);
 	// string -> double
 	static bool Str2Double(const std::string& str, double& d);

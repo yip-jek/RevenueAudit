@@ -75,36 +75,99 @@ void PubStr::SetFormatString(std::string& str, const char* fmt, ...)
 
 bool PubStr::Str2Int(const std::string& str, int& i)
 {
+	std::string t_str = TrimB(str);
+	if ( t_str.empty() )
+	{
+		return false;
+	}
+
+	// 去除数字之前的'0'
+	size_t pos = t_str.find_first_not_of('0');
+	if ( std::string::npos == pos )		// 全为'0'
+	{
+		t_str = "0";
+	}
+	else
+	{
+		t_str.erase(0, pos);
+	}
+
 	char* end_ptr = NULL;
-	i = strtol(str.c_str(), &end_ptr, 0);
+	i = strtol(t_str.c_str(), &end_ptr, 0);
 	return (*end_ptr == '\0');
 }
 
 bool PubStr::Str2UInt(const std::string& str, unsigned int& u)
 {
+	std::string t_str = TrimB(str);
+	if ( t_str.empty() )
+	{
+		return false;
+	}
+
+	// 去除数字之前的'0'
+	size_t pos = t_str.find_first_not_of('0');
+	if ( std::string::npos == pos )		// 全为'0'
+	{
+		t_str = "0";
+	}
+	else
+	{
+		t_str.erase(0, pos);
+	}
+
 	char* end_ptr = NULL;
-	u = strtoul(str.c_str(), &end_ptr, 0);
+	u = strtoul(t_str.c_str(), &end_ptr, 0);
 	return (*end_ptr == '\0');
 }
 
 bool PubStr::Str2LLong(const std::string& str, long long& ll)
 {
+	std::string t_str = TrimB(str);
+	if ( t_str.empty() )
+	{
+		return false;
+	}
+
+	// 去除数字之前的'0'
+	size_t pos = t_str.find_first_not_of('0');
+	if ( std::string::npos == pos )		// 全为'0'
+	{
+		t_str = "0";
+	}
+	else
+	{
+		t_str.erase(0, pos);
+	}
+
 	char* end_ptr = NULL;
-	ll = strtoq(str.c_str(), &end_ptr, 0);
+	ll = strtoq(t_str.c_str(), &end_ptr, 0);
 	return (*end_ptr == '\0');
 }
 
 bool PubStr::Str2Double(const std::string& str, double& d)
 {
+	std::string t_str = TrimB(str);
+	if ( t_str.empty() )
+	{
+		return false;
+	}
+
 	char* end_ptr = NULL;
-	d = strtod(str.c_str(), &end_ptr);
+	d = strtod(t_str.c_str(), &end_ptr);
 	return (*end_ptr == '\0');
 }
 
 bool PubStr::Str2LDouble(const std::string& str, long double& ld)
 {
+	std::string t_str = TrimB(str);
+	if ( t_str.empty() )
+	{
+		return false;
+	}
+
 	char* end_ptr = NULL;
-	ld = strtold(str.c_str(), &end_ptr);
+	ld = strtold(t_str.c_str(), &end_ptr);
 	return (*end_ptr == '\0');
 }
 

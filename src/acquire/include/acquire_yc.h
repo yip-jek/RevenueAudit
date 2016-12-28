@@ -10,6 +10,8 @@ public:
 	virtual ~Acquire_YC();
 
 	static const char* const S_YC_ETLRULE_TYPE;			// 业财稽核-采集规则类型
+	static const char* const S_NO_NEED_EXTEND;			// 不需要进行扩展SQL语句的条件的标记
+	static const char* const S_CITY_MARK;				// 地市标记
 
 public:
 	// 载入参数配置信息
@@ -41,8 +43,14 @@ protected:
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
 	virtual void TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
 
-	// 扩展采集 SQL 语句的条件：增加账期、地市和批次
+	// 扩展采集SQL语句的条件：增加账期、地市和批次
 	void ExtendSQLCondition(std::string& sql) throw(base::Exception);
+
+	// 是否不需要进行扩展SQL语句的条件
+	bool NoNeedExtendSQL(const std::string& sql);
+
+	// 地市标记转换
+	void CityMarkExchange(std::string& sql);
 
 protected:
 	std::string         m_tabYCTaskReq;				// （业财）任务请求表
