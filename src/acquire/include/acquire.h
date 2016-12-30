@@ -86,7 +86,7 @@ protected:
 	virtual void DoDataAcquisition() throw(base::Exception);
 
 	// 生成采集时间
-	void GenerateEtlDate(const std::string& date_fmt) throw(base::Exception);
+	virtual void GenerateEtlDate(const std::string& date_fmt) throw(base::Exception);
 
 	// HIVE数据采集
 	void HiveDataAcquisition() throw(base::Exception);

@@ -14,10 +14,14 @@ public:
 	enum HT_ERROR
 	{
 		HTERR_FETCH_SRCDATA_FAILED = -3001001,			// 获取源数据失败
+		HTERR_EXECUTE_SQL_FAILED   = -3001002,			// 执行HIVE SQL失败
 	};
 
 public:
 	// 获取源数据
 	void FetchSourceData(const std::string& hive_sql, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception);
+
+	// 执行分析 HIVE SQL
+	void ExecuteAnaSQL(const std::string& hive_sql) throw(base::Exception);
 };
 

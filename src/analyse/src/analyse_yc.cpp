@@ -3,6 +3,7 @@
 #include "pubstr.h"
 #include "simpletime.h"
 #include "canadb2.h"
+#include "canahive.h"
 
 
 Analyse_YC::Analyse_YC()
@@ -114,10 +115,17 @@ void Analyse_YC::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base:
 	const std::string ANA_EXP = base::PubStr::TrimB(m_taskInfo.AnaRule.AnaExpress);
 	m_pLog->Output("[Analyse_YC] 分析规则类型：业财稽核统计 (KPI_ID:%s, ANA_ID:%s)", m_sKpiID.c_str(), m_sAnaID.c_str());
 	m_pLog->Output("[Analyse_YC] 分析规则表达式：%s", ANA_EXP.c_str());
-	GetStatisticsHiveSQL(vec_hivesql);
 
 	// 生成数据库[DB2]信息
 	GetAnaDBInfo();
+
+	// 业财稽核只有一个采集与一个分析
+	// 重设采集 (HIVE) 目标表名：加上地市与账期
+	std::string& ref_target = m_taskInfo.vecEtlRule[0].TargetPatch;
+	base::PubStr::SetFormatString(ref_target, "%s_%s_%s", ref_target.c_str(), m_taskCity.c_str(), m_dbinfo.GetEtlDay().c_str());
+	m_pLog->Output("[Analyse_YC] 重设采集 (HIVE) 目标表名为: %s", ref_target.c_str());
+
+	GetStatisticsHiveSQL(vec_hivesql);
 }
 
 void Analyse_YC::FetchTaskInfo() throw(base::Exception)
@@ -360,6 +368,7 @@ double Analyse_YC::CalcYCComplexFactor(std::map<std::string, double>& map_factor
 void Analyse_YC::StoreResult() throw(base::Exception)
 {
 	// 保留旧的数据，所以不执行删除操作！
+	// ----RemoveOldResult(m_taskInfo.ResultType);
 
 	const int VEC3_SIZE = m_v3HiveSrcData.size();
 	for ( int i = 0; i < VEC3_SIZE; ++i )
@@ -370,6 +379,9 @@ void Analyse_YC::StoreResult() throw(base::Exception)
 
 	// 记录业财稽核日志
 	RecordStatisticsLog();
+
+	// 删除采集 (HIVE) 目标表
+	DropEtlTargetTable();
 }
 
 void Analyse_YC::RecordStatisticsLog()
@@ -414,6 +426,15 @@ void Analyse_YC::RecordStatisticsLog()
 
 	m_pLog->Output("[Analyse_YC] 更新业财稽核记录日志表");
 	m_pAnaDB2->InsertYCStatLog(yc_log);
+}
+
+void Analyse_YC::DropEtlTargetTable()
+{
+	std::string& ref_target = m_taskInfo.vecEtlRule[0].TargetPatch;
+	m_pLog->Output("[Analyse_YC] 删除采集 (HIVE) 目标表: %s", ref_target.c_str());
+
+	std::string drop_sql = "DROP TABLE IF EXISTS " + ref_target;
+	m_pAnaHive->ExecuteAnaSQL(drop_sql);
 }
 
 void Analyse_YC::AlarmJudgement() throw(base::Exception)

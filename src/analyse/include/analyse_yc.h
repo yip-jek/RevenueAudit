@@ -55,6 +55,9 @@ protected:
 	// 登记稽核记录日志
 	void RecordStatisticsLog();
 
+	// 删除采集目标表
+	void DropEtlTargetTable();
+
 	// 告警判断: 如果达到告警阀值，则生成告警
 	virtual void AlarmJudgement() throw(base::Exception);
 

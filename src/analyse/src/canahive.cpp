@@ -31,3 +31,20 @@ void CAnaHive::FetchSourceData(const std::string& hive_sql, std::vector<std::vec
 	}
 }
 
+void CAnaHive::ExecuteAnaSQL(const std::string& hive_sql) throw(base::Exception)
+{
+	if ( hive_sql.empty() )
+	{
+		throw base::Exception(HTERR_EXECUTE_SQL_FAILED, "[HIVE] Execute SQL failed: no sql to be executed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	try
+	{
+		ExecuteSQL(hive_sql);
+	}
+	catch ( const base::Exception& ex )
+	{
+		throw base::Exception(HTERR_EXECUTE_SQL_FAILED, "[HIVE] Execute SQL failed! %s [FILE:%s, LINE:%d]", ex.What().c_str(), __FILE__, __LINE__);
+	}
+}
+

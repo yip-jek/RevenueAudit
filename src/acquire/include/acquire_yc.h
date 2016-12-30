@@ -39,6 +39,9 @@ protected:
 	// 检查源表是否存在
 	virtual void CheckSourceTable(bool hive) throw(base::Exception);
 
+	// 生成采集时间
+	virtual void GenerateEtlDate(const std::string& date_fmt) throw(base::Exception);
+
 	// 分析统计因子规则，生成业财稽核SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
 	virtual void TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);

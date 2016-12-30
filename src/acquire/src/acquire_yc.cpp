@@ -160,6 +160,15 @@ void Acquire_YC::CheckSourceTable(bool hive) throw(base::Exception)
 	}
 }
 
+void Acquire_YC::GenerateEtlDate(const std::string& date_fmt) throw(base::Exception)
+{
+	Acquire::GenerateEtlDate(date_fmt);
+
+	// 重设采集 (HIVE) 目标表名：加上地市与账期
+	base::PubStr::SetFormatString(m_taskInfo.EtlRuleTarget, "%s_%s_%s", m_taskInfo.EtlRuleTarget.c_str(), m_taskCity.c_str(), m_acqDate.c_str());
+	m_pLog->Output("[Acquire_YC] 重设采集 (HIVE) 目标表名为: %s", m_taskInfo.EtlRuleTarget.c_str());
+}
+
 void Acquire_YC::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception)
 {
 	const int VEC_YCINFO_SIZE = m_vecYCInfo.size();
