@@ -1,6 +1,6 @@
 #include "anafactory.h"
 #include "pubstr.h"
-#include "analyse.h"
+#include "analyse_yd.h"
 #include "analyse_yc.h"
 #include "analyse_hd.h"
 
@@ -27,7 +27,7 @@ base::BaseFrameApp* AnaFactory::CreateApp(const std::string& mode, std::string* 
 	const std::string ANA_MODE = base::PubStr::TrimUpperB(mode);
 	if ( S_MODE_YDJH == ANA_MODE )
 	{
-		pApp = new Analyse();
+		pApp = new Analyse_YD();
 	}
 	else if ( S_MODE_YCRA == ANA_MODE )
 	{

@@ -9,8 +9,6 @@ class BaseFrameApp;
 
 }
 
-class Acquire;
-
 class AcqFactory : public base::Factory
 {
 public:

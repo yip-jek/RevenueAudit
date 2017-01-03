@@ -64,7 +64,7 @@ public:
 	virtual void LoadConfig() throw(base::Exception);
 
 	// 获取日志文件名称前缀
-	virtual std::string GetLogFilePrefix();
+	virtual std::string GetLogFilePrefix() = 0;
 
 	// 初始化
 	virtual void Init() throw(base::Exception);

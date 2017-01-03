@@ -16,8 +16,7 @@
 
 
 Analyse::Analyse()
-:m_sType("一点稽核")
-,m_pAnaDB2(NULL)
+:m_pAnaDB2(NULL)
 ,m_pAnaHive(NULL)
 ,m_pSQLTranslator(NULL)
 {
@@ -30,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 3.0011.20161230 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 4.0000.20170103 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -95,11 +94,6 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_tabDictCity    = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
 
 	m_pLog->Output("[Analyse] Load configuration OK.");
-}
-
-std::string Analyse::GetLogFilePrefix()
-{
-	return std::string("Analyse");
 }
 
 void Analyse::Init() throw(base::Exception)

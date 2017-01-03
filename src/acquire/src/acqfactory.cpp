@@ -1,6 +1,6 @@
 #include "acqfactory.h"
 #include "pubstr.h"
-#include "acquire.h"
+#include "acquire_yd.h"
 #include "acquire_yc.h"
 #include "acquire_hd.h"
 
@@ -27,7 +27,7 @@ base::BaseFrameApp* AcqFactory::CreateApp(const std::string& mode, std::string* 
 	const std::string ACQ_MODE = base::PubStr::TrimUpperB(mode);
 	if ( S_MODE_YDJH == ACQ_MODE )
 	{
-		pApp = new Acquire();
+		pApp = new Acquire_YD();
 	}
 	else if ( S_MODE_YCRA == ACQ_MODE )
 	{

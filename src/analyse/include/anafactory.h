@@ -9,8 +9,6 @@ class BaseFrameApp;
 
 }
 
-class Analyse;
-
 class AnaFactory : public base::Factory
 {
 public:

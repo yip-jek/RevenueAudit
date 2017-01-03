@@ -13,7 +13,6 @@
 
 Acquire::Acquire()
 :m_bRetainResult(false)
-,m_sType("一点稽核")
 ,m_nHdfsPort(0)
 ,m_seqHdfsFile(0)
 ,m_pAcqDB2(NULL)
@@ -30,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 3.0007.20161230 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 4.0000.20170103 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -103,11 +102,6 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_tabEtlSrc  = m_cfg.GetCfgValue("TABLE", "TAB_ETL_SRC");
 
 	m_pLog->Output("[Acquire] Load configuration OK.");
-}
-
-std::string Acquire::GetLogFilePrefix()
-{
-	return std::string("Acquire");
 }
 
 void Acquire::Init() throw(base::Exception)
