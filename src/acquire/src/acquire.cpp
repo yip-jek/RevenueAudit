@@ -29,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 4.0000.20170103 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 4.0001.20170110 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -1008,11 +1008,13 @@ std::string Acquire::TransSourceDate(const std::string& src_tabname) throw(base:
 	}
 
 	// 找到时间标记才进行替换
-	std::string tab_name = base::PubStr::TrimUpperB(src_tabname);
-	const size_t T_POS = tab_name.find(date_mark);
-	if ( T_POS != std::string::npos )
+	const std::string C_TAB = base::PubStr::UpperB(src_tabname);
+	std::string tab_name = src_tabname;
+	size_t pos = 0;
+	while ( (pos = C_TAB.find(date_mark, pos)) != std::string::npos )	// 循环替换
 	{
-		tab_name.replace(T_POS, date_mark.size(), m_acqDate);
+		tab_name.replace(pos, date_mark.size(), m_acqDate);
+		pos += date_mark.size();
 	}
 
 	return tab_name;
