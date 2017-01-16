@@ -1,8 +1,8 @@
 #pragma once
 
 #include <map>
-#include "exception.h"
 #include "struct.h"
+#include "task.h"
 
 namespace base
 {
@@ -13,20 +13,11 @@ class Log;
 class TaskDB2;
 
 // 任务调度
-class TaskSche
+class YCTask : public Task
 {
-public:
-	// 任务错误代码
-	enum TASK_ERROR
-	{
-		TERROR_CHECK             = -10000001,					// 检查失败
-		TERROR_CREATE_TASK       = -10000002,					// 下发任务失败
-		TERROR_ETLTIME_TRANSFORM = -10000003,					// 采集时间转换失败
-		TERROR_UPD_TASK_REQ      = -10000004,					// 更新任务请求失败
-		TERROR_HDL_ETL_TASK      = -10000005,					// 处理采集任务失败
-		TERROR_IS_PROC_EXIST     = -10000006,					// 查看进程是否存在失败
-	};
+	friend class TaskFactory;
 
+public:
 	// 任务状态
 	enum TS_TASK_STATE
 	{
@@ -38,23 +29,42 @@ public:
 		TSTS_End              = 5,				// 任务完成
 	};
 
-public:
-	TaskSche(base::Config& cfg);
-	virtual ~TaskSche();
+protected:
+	explicit YCTask(base::Config& cfg);
+	virtual ~YCTask();
 
 public:
 	// 版本号
-	const char* Version();
+	virtual std::string Version();
 
-	// 执行
-	void Do() throw(base::Exception);
+protected:
+	// 初始化
+	virtual void Init() throw(base::Exception);
+
+	// 处理任务
+	virtual void DealTasks() throw(base::Exception);
+
+	// 获取新任务
+	virtual void GetNewTask() throw(base::Exception);
+
+	// 输出任务当前状态
+	virtual void ShowTask() throw(base::Exception);
+
+	// 处理分析任务
+	virtual void HandleAnaTask() throw(base::Exception);
+
+	// 处理采集任务
+	virtual void HandleEtlTask() throw(base::Exception);
+
+	// 创建新任务
+	virtual void BuildNewTask() throw(base::Exception) = 0;
+
+	// 任务完成
+	virtual void FinishTask() throw(base::Exception) = 0;
 
 private:
 	// 释放数据库连接
 	void ReleaseDB();
-
-	// 初始化
-	void Init() throw(base::Exception);
 
 	// 载入配置
 	void LoadConfig() throw(base::Exception);
@@ -65,59 +75,22 @@ private:
 	// 检查
 	void Check() throw(base::Exception);
 
-	// 处理任务
-	void DealTasks() throw(base::Exception);
-
-	// 获取新任务
-	void GetNewTask();
-
-	// 输出任务当前状态
-	void ShowTask();
-
-	// 执行任务
-	void ExecuteTask();
-
 	// 更新任务请求
 	void TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) throw(base::Exception);
-
-	// 查看进程是否存在
-	bool IsProcessAlive(long long proc_task_id) throw(base::Exception);
-
-	// 处理采集任务
-	void HandleEtlTask();
-
-	// 处理分析任务
-	void HandleAnaTask();
 
 	// 下发任务
 	void CreateTask(const TaskInfo& t_info) throw(base::Exception);
 
-	// 创建新任务
-	void BuildNewTask();
-
 	// 删除已存在的旧任务
 	void RemoveOldTask(int task_seq);
-
-	// 生成新的任务ID
-	long long GenerateTaskID();
 
 	// 获取子规则ID
 	// 成功返回true，失败返回false
 	bool GetSubRuleID(const std::string& kpi_id, TaskInfo::TASK_TYPE t_type, std::string& sub_id);
 
-	// 采集时间转换
-	std::string EtlTimeTransform(const std::string& cycle) throw(base::Exception);
-
-	// 任务完成
-	void FinishTask();
-
 private:
-	base::Config* m_pCfg;					// 配置文件
-	base::Log*    m_pLog;					// 日志输出
-	long          m_waitSeconds;			// 处理时间间隔（单位：秒）
 	long          m_showMaxTime;			// 任务日志输出的时间间隔（单位：秒）
 	time_t        m_taskShowTime;			// 任务日志输出的计时（单位：秒）
-	int           m_TIDAccumulator;			// 任务ID的累加值
 
 private:
 	DBInfo   m_dbInfo;				// 数据库信息

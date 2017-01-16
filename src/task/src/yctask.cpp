@@ -1,4 +1,4 @@
-#include "tasksche.h"
+#include "yctask.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,37 +10,25 @@
 #include "taskdb2.h"
 
 
-TaskSche::TaskSche(base::Config& cfg)
-:m_pCfg(&cfg)
-,m_pLog(base::Log::Instance())
-,m_waitSeconds(0)
+YCTask::YCTask(base::Config& cfg)
+:Task(cfg)
 ,m_showMaxTime(0)
 ,m_taskShowTime(0)
-,m_TIDAccumulator(0)
 ,m_pTaskDB(NULL)
 {
 }
 
-TaskSche::~TaskSche()
+YCTask::~YCTask()
 {
 	ReleaseDB();
-
-	base::Log::Release();
 }
 
-const char* TaskSche::Version()
+std::string YCTask::Version()
 {
-	return ("TaskSche: Version 1.0005 released. Compiled at "__TIME__" on "__DATE__);
+	return ("YCTask: "+Task::Version());
 }
 
-void TaskSche::Do() throw(base::Exception)
-{
-	Init();
-
-	DealTasks();
-}
-
-void TaskSche::ReleaseDB()
+void YCTask::ReleaseDB()
 {
 	if ( m_pTaskDB != NULL )
 	{
@@ -49,7 +37,7 @@ void TaskSche::ReleaseDB()
 	}
 }
 
-void TaskSche::Init() throw(base::Exception)
+void YCTask::Init() throw(base::Exception)
 {
 	LoadConfig();
 
@@ -57,10 +45,10 @@ void TaskSche::Init() throw(base::Exception)
 
 	Check();
 
-	m_pLog->Output("[TASK] Init OK.");
+	m_pLog->Output("[YC_TASK] Init OK.");
 }
 
-void TaskSche::LoadConfig() throw(base::Exception)
+void YCTask::LoadConfig() throw(base::Exception)
 {
 	// 读取任务配置
 	m_pCfg->RegisterItem("SYS", "TIME_SECONDS");
@@ -126,7 +114,7 @@ void TaskSche::LoadConfig() throw(base::Exception)
 	m_tabEtlRule = m_pCfg->GetCfgValue("TABLE", "TAB_ETL_RULE");
 }
 
-void TaskSche::InitConnect() throw(base::Exception)
+void YCTask::InitConnect() throw(base::Exception)
 {
 	ReleaseDB();
 
@@ -137,57 +125,48 @@ void TaskSche::InitConnect() throw(base::Exception)
 	m_pTaskDB->Connect();
 }
 
-void TaskSche::Check() throw(base::Exception)
+void YCTask::Check() throw(base::Exception)
 {
 	if ( m_waitSeconds <= 0 )
 	{
 		throw base::Exception(TERROR_CHECK, "Invalid time seconds: %ld [FILE:%s, LINE:%d]", m_waitSeconds, __FILE__, __LINE__);
 	}
-	m_pLog->Output("[TASK] Check time seconds OK. [Wait seconds: %ld]", m_waitSeconds);
+	m_pLog->Output("[YC_TASK] Check time seconds OK. [Wait seconds: %ld]", m_waitSeconds);
 
 	// 指定工作目录为Hive代理的路径
 	if ( chdir(m_hiveAgentPath.c_str()) < 0 )
 	{
 		throw base::Exception(TERROR_CHECK, "Change work dir to '%s' failed! %s [FILE:%s, LINE:%d]", m_hiveAgentPath.c_str(), strerror(errno), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[TASK] Change work dir to '%s' OK.", m_hiveAgentPath.c_str());
+	m_pLog->Output("[YC_TASK] Change work dir to '%s' OK.", m_hiveAgentPath.c_str());
 
 	if ( !m_pTaskDB->IsTableExists(m_tabTaskReq) )
 	{
 		throw base::Exception(TERROR_CHECK, "The task request table is not existed: %s [FILE:%s, LINE:%d]", m_tabTaskReq.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[TASK] Check the task request table OK.");
+	m_pLog->Output("[YC_TASK] Check the task request table OK.");
 
 	if ( !m_pTaskDB->IsTableExists(m_tabKpiRule) )
 	{
 		throw base::Exception(TERROR_CHECK, "The kpi rule table is not existed: %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[TASK] Check the kpi rule table OK.");
+	m_pLog->Output("[YC_TASK] Check the kpi rule table OK.");
 
 	if ( !m_pTaskDB->IsTableExists(m_tabEtlRule) )
 	{
 		throw base::Exception(TERROR_CHECK, "The etl rule table is not existed: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[TASK] Check the etl rule table OK.");
+	m_pLog->Output("[YC_TASK] Check the etl rule table OK.");
 }
 
-void TaskSche::DealTasks() throw(base::Exception)
+void YCTask::DealTasks() throw(base::Exception)
 {
 	m_taskShowTime = time(NULL);
 
-	while ( true )
-	{
-		GetNewTask();
-
-		ShowTask();
-
-		ExecuteTask();
-
-		FinishTask();
-	}
+	Task::DealTasks();
 }
 
-void TaskSche::GetNewTask()
+void YCTask::GetNewTask() throw(base::Exception)
 {
 	m_pTaskDB->SelectNewTaskRequest(m_vecNewTask);
 
@@ -195,7 +174,7 @@ void TaskSche::GetNewTask()
 	{
 		// 更新任务状态
 		const int VEC_NEW_TASK_SIZE = m_vecNewTask.size();
-		m_pLog->Output("[TASK] Get the new task size: %d", VEC_NEW_TASK_SIZE);
+		m_pLog->Output("[YC_TASK] Get the new task size: %d", VEC_NEW_TASK_SIZE);
 
 		for ( int i = 0; i < VEC_NEW_TASK_SIZE; ++i )
 		{
@@ -204,7 +183,7 @@ void TaskSche::GetNewTask()
 	}
 }
 
-void TaskSche::ShowTask()
+void YCTask::ShowTask() throw(base::Exception)
 {
 	time_t t_now = time(NULL);
 	if ( (t_now - m_taskShowTime) >= m_showMaxTime )
@@ -212,26 +191,17 @@ void TaskSche::ShowTask()
 		m_taskShowTime = t_now;
 
 		m_pLog->Output(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-		m_pLog->Output("[TASK] 指标规则数: %llu", m_mKpiRuleInfo.size());
-		m_pLog->Output("[TASK] 新建任务数: %llu", m_vecNewTask.size());
-		m_pLog->Output("[TASK] 执行任务数: %llu", m_mTaskReqInfo.size());
-		m_pLog->Output("[TASK] 采集任务数: %llu", m_vecEtlTaskInfo.size());
-		m_pLog->Output("[TASK] 分析任务数: %llu", m_vecAnaTaskInfo.size());
-		m_pLog->Output("[TASK] 完成任务数: %llu", m_vecEndTask.size());
+		m_pLog->Output("[YC_TASK] 指标规则数: %llu", m_mKpiRuleInfo.size());
+		m_pLog->Output("[YC_TASK] 新建任务数: %llu", m_vecNewTask.size());
+		m_pLog->Output("[YC_TASK] 执行任务数: %llu", m_mTaskReqInfo.size());
+		m_pLog->Output("[YC_TASK] 采集任务数: %llu", m_vecEtlTaskInfo.size());
+		m_pLog->Output("[YC_TASK] 分析任务数: %llu", m_vecAnaTaskInfo.size());
+		m_pLog->Output("[YC_TASK] 完成任务数: %llu", m_vecEndTask.size());
 		m_pLog->Output("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 	}
 }
 
-void TaskSche::ExecuteTask()
-{
-	HandleAnaTask();
-
-	HandleEtlTask();
-
-	BuildNewTask();
-}
-
-void TaskSche::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) throw(base::Exception)
+void YCTask::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) throw(base::Exception)
 {
 	switch ( ts )
 	{
@@ -268,29 +238,11 @@ void TaskSche::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) t
 		throw base::Exception(TERROR_UPD_TASK_REQ, "Unknown tasksche task state: %d [FILE:%s, LINE:%d]", ts, __FILE__, __LINE__);
 	}
 
-	m_pLog->Output("[TASK] Updating task request : %s (%s)", task_req_info.status.c_str(), task_req_info.status_desc.c_str());
+	m_pLog->Output("[YC_TASK] Updating task request : %s (%s)", task_req_info.status.c_str(), task_req_info.status_desc.c_str());
 	m_pTaskDB->UpdateTaskRequest(task_req_info);
 }
 
-bool TaskSche::IsProcessAlive(long long proc_task_id) throw(base::Exception)
-{
-	std::string str_cmd;
-	base::PubStr::SetFormatString(str_cmd, "ps -ef | grep -w %lld | grep -v grep", proc_task_id);
-
-	FILE* fp_pipe = popen(str_cmd.c_str(), "r");
-	if ( NULL == fp_pipe )
-	{
-		throw base::Exception(TERROR_IS_PROC_EXIST, "Popen() failed: (%d) %s [FILE:%s, LINE:%d]", errno, strerror(errno), __FILE__, __LINE__);
-	}
-
-	char buffer[512] = "";
-	fgets(buffer, 512, fp_pipe);
-
-	pclose(fp_pipe);
-	return (strlen(buffer) > 1);
-}
-
-void TaskSche::HandleEtlTask()
+void YCTask::HandleEtlTask() throw(base::Exception)
 {
 	if ( m_vecEtlTaskInfo.empty() )
 	{
@@ -309,7 +261,7 @@ void TaskSche::HandleEtlTask()
 
 		if ( m_etlStateEnd == t_state.state )			// 采集完成
 		{
-			m_pLog->Output("[TASK] Acquire finished: TASK_ID=%lld, KPI_ID=%s, ETL_ID=%s, ETL_TIME=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_ti.etl_time.c_str());
+			m_pLog->Output("[YC_TASK] Acquire finished: TASK_ID=%lld, KPI_ID=%s, ETL_ID=%s, ETL_TIME=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_ti.etl_time.c_str());
 
 			TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
 			TaskRequestUpdate(TSTS_AnalyseBegin, ref_tri);
@@ -322,7 +274,7 @@ void TaskSche::HandleEtlTask()
 			{
 				throw base::Exception(TERROR_HDL_ETL_TASK, "Can not find the analyse rule ID! (KPI_ID:%s) [FILE:%s, LINE:%d]", ref_tri.kpi_id.c_str(), __FILE__, __LINE__);
 			}
-			m_pLog->Output("[TASK] Analyse: TASK_ID=%ld, KPI_ID=%s, ANA_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
+			m_pLog->Output("[YC_TASK] Analyse: TASK_ID=%ld, KPI_ID=%s, ANA_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
 
 			// 开始分析任务
 			CreateTask(ref_ti);
@@ -331,14 +283,14 @@ void TaskSche::HandleEtlTask()
 		}
 		else if ( m_etlStateError == t_state.state )	// 采集异常
 		{
-			m_pLog->Output("[TASK] Acquire failed: TASK_ID=%lld, KPI_ID=%s, ETL_ID=%s, ETL_TIME=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_ti.etl_time.c_str());
+			m_pLog->Output("[YC_TASK] Acquire failed: TASK_ID=%lld, KPI_ID=%s, ETL_ID=%s, ETL_TIME=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_ti.etl_time.c_str());
 
 			TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
 			ref_tri.desc = t_state.task_desc;
-			m_pLog->Output("[TASK] Acquire exception: %s", ref_tri.desc.c_str());
+			m_pLog->Output("[YC_TASK] Acquire exception: %s", ref_tri.desc.c_str());
 
 			TaskRequestUpdate(TSTS_EtlException, ref_tri);
-			m_pLog->Output("[TASK] Error task: SEQ=[%d], KPI=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
+			m_pLog->Output("[YC_TASK] Error task: SEQ=[%d], KPI=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
 
 			// 任务删除
 			m_mTaskReqInfo.erase(t_state.seq_id);
@@ -352,13 +304,13 @@ void TaskSche::HandleEtlTask()
 			}
 			else	// 进程异常退出
 			{
-				m_pLog->Output("[TASK] Acquire exited unexpectedly: TASK_ID=%lld, KPI_ID=%s, ETL_ID=%s, ETL_TIME=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_ti.etl_time.c_str());
+				m_pLog->Output("[YC_TASK] Acquire exited unexpectedly: TASK_ID=%lld, KPI_ID=%s, ETL_ID=%s, ETL_TIME=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_ti.etl_time.c_str());
 
 				TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
 				ref_tri.desc = "Process exited unexpectedly!";
 
 				TaskRequestUpdate(TSTS_EtlException, ref_tri);
-				m_pLog->Output("[TASK] Error task: SEQ=[%d], KPI=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
+				m_pLog->Output("[YC_TASK] Error task: SEQ=[%d], KPI=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
 
 				// 任务删除
 				m_mTaskReqInfo.erase(t_state.seq_id);
@@ -369,7 +321,7 @@ void TaskSche::HandleEtlTask()
 	vEtlTaskInfo.swap(m_vecEtlTaskInfo);
 }
 
-void TaskSche::HandleAnaTask()
+void YCTask::HandleAnaTask() throw(base::Exception)
 {
 	if ( m_vecAnaTaskInfo.empty() )
 	{
@@ -388,7 +340,7 @@ void TaskSche::HandleAnaTask()
 
 		if ( m_anaStateEnd == t_state.state )			// 分析完成
 		{
-			m_pLog->Output("[TASK] Analyse finished: TASK_ID=%lld, KPI_ID=%s, ANA_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
+			m_pLog->Output("[YC_TASK] Analyse finished: TASK_ID=%lld, KPI_ID=%s, ANA_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
 
 			// 移到已完成的任务列表
 			TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
@@ -397,14 +349,14 @@ void TaskSche::HandleAnaTask()
 		}
 		else if ( m_anaStateError == t_state.state )	// 分析异常
 		{
-			m_pLog->Output("[TASK] Analyse failed: TASK_ID=%lld, KPI_ID=%s, ANA_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
+			m_pLog->Output("[YC_TASK] Analyse failed: TASK_ID=%lld, KPI_ID=%s, ANA_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
 
 			TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
 			ref_tri.desc = t_state.task_desc;
-			m_pLog->Output("[TASK] Analyse exception: %s", ref_tri.desc.c_str());
+			m_pLog->Output("[YC_TASK] Analyse exception: %s", ref_tri.desc.c_str());
 
 			TaskRequestUpdate(TSTS_AnalyseException, ref_tri);
-			m_pLog->Output("[TASK] Error task: SEQ=[%d], KPI=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
+			m_pLog->Output("[YC_TASK] Error task: SEQ=[%d], KPI=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
 
 			// 任务删除
 			m_mTaskReqInfo.erase(t_state.seq_id);
@@ -418,13 +370,13 @@ void TaskSche::HandleAnaTask()
 			}
 			else	// 进程异常退出
 			{
-				m_pLog->Output("[TASK] Analyse exited unexpectedly: TASK_ID=%lld, KPI_ID=%s, ANA_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
+				m_pLog->Output("[YC_TASK] Analyse exited unexpectedly: TASK_ID=%lld, KPI_ID=%s, ANA_ID=%s", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str());
 
 				TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
 				ref_tri.desc = "Process exited unexpectedly!";
 
 				TaskRequestUpdate(TSTS_AnalyseException, ref_tri);
-				m_pLog->Output("[TASK] Error task: SEQ=[%d], KPI=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
+				m_pLog->Output("[YC_TASK] Error task: SEQ=[%d], KPI=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
 
 				// 任务删除
 				m_mTaskReqInfo.erase(t_state.seq_id);
@@ -435,7 +387,7 @@ void TaskSche::HandleAnaTask()
 	vAnaTaskInfo.swap(m_vecAnaTaskInfo);
 }
 
-void TaskSche::CreateTask(const TaskInfo& t_info) throw(base::Exception)
+void YCTask::CreateTask(const TaskInfo& t_info) throw(base::Exception)
 {
 	std::string command;
 	if ( TaskInfo::TT_Acquire == t_info.t_type )		// 采集
@@ -457,11 +409,11 @@ void TaskSche::CreateTask(const TaskInfo& t_info) throw(base::Exception)
 	}
 
 	// 拉起进程
-	m_pLog->Output("[TASK] Execute: %s", command.c_str());
+	m_pLog->Output("[YC_TASK] Execute: %s", command.c_str());
 	system(command.c_str());
 }
 
-void TaskSche::BuildNewTask()
+void YCTask::BuildNewTask() throw(base::Exception)
 {
 	TaskInfo task_info;
 
@@ -470,13 +422,13 @@ void TaskSche::BuildNewTask()
 	for ( int i = 0; i < VEC_NEW_TASK_SIZE; ++i )
 	{
 		TaskReqInfo& ref_tri = m_vecNewTask[i];
-		m_pLog->Output("[TASK] Get task %d: SEQ=[%d], KPI=[%s], CYCLE=[%s]", (i+1), ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str());
+		m_pLog->Output("[YC_TASK] Get task %d: SEQ=[%d], KPI=[%s], CYCLE=[%s]", (i+1), ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str());
 
 		// 同一流水号的任务重复下发，则认为是重跑数据。
 		// 所以摒弃旧任务，重新开始新任务
 		if ( m_mTaskReqInfo.find(ref_tri.seq_id) != m_mTaskReqInfo.end() )
 		{
-			m_pLog->Output("<WARNING> [TASK] The task (SEQ:%d) already exists ! So drop the OLD one !", ref_tri.seq_id);
+			m_pLog->Output("<WARNING> [YC_TASK] The task (SEQ:%d) already exists ! So drop the OLD one !", ref_tri.seq_id);
 			RemoveOldTask(ref_tri.seq_id);
 		}
 
@@ -486,7 +438,7 @@ void TaskSche::BuildNewTask()
 		task_info.kpi_id   = ref_tri.kpi_id;
 		task_info.etl_time = EtlTimeTransform(ref_tri.stat_cycle);
 		GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Acquire, task_info.sub_id);
-		m_pLog->Output("[TASK] Acquire: TASK_ID=%ld, KPI_ID=%s, ETL_ID=%s, ETL_TIME=%s", task_info.task_id, task_info.kpi_id.c_str(), task_info.sub_id.c_str(), task_info.etl_time.c_str());
+		m_pLog->Output("[YC_TASK] Acquire: TASK_ID=%ld, KPI_ID=%s, ETL_ID=%s, ETL_TIME=%s", task_info.task_id, task_info.kpi_id.c_str(), task_info.sub_id.c_str(), task_info.etl_time.c_str());
 
 		// 开始采集任务
 		CreateTask(task_info);
@@ -496,7 +448,7 @@ void TaskSche::BuildNewTask()
 	}
 }
 
-void TaskSche::RemoveOldTask(int task_seq)
+void YCTask::RemoveOldTask(int task_seq)
 {
 	// 从正在执行的任务列表删除旧任务
 	m_mTaskReqInfo.erase(task_seq);
@@ -535,28 +487,7 @@ void TaskSche::RemoveOldTask(int task_seq)
 	}
 }
 
-long long TaskSche::GenerateTaskID()
-{
-	// 取14位时间（格式：YYYYMMDDHHMISS）的后12位
-	std::string time_str = base::SimpleTime::Now().Time14().substr(2);
-
-	long long new_taskid = 0;
-	base::PubStr::Str2LLong(time_str, new_taskid);
-
-	// 加上累加值
-	new_taskid *= 1000;
-	new_taskid += (m_TIDAccumulator++);
-
-	// 累加值复位
-	if ( m_TIDAccumulator >= 1000 )
-	{
-		m_TIDAccumulator = 0;
-	}
-
-	return new_taskid;
-}
-
-bool TaskSche::GetSubRuleID(const std::string& kpi_id, TaskInfo::TASK_TYPE t_type, std::string& sub_id)
+bool YCTask::GetSubRuleID(const std::string& kpi_id, TaskInfo::TASK_TYPE t_type, std::string& sub_id)
 {
 	if ( TaskInfo::TT_Acquire == t_type )		// 采集
 	{
@@ -587,45 +518,7 @@ bool TaskSche::GetSubRuleID(const std::string& kpi_id, TaskInfo::TASK_TYPE t_typ
 	}
 }
 
-std::string TaskSche::EtlTimeTransform(const std::string& cycle) throw(base::Exception)
-{
-	if ( cycle.size() != 8U )
-	{
-		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle size is less than 8: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
-	}
-
-	int year = 0;
-	int mon  = 0;
-	int day  = 0;
-
-	if ( !base::PubStr::Str2Int(cycle.substr(0, 4), year) || year < 1970 )
-	{
-		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
-	}
-
-	if ( !base::PubStr::Str2Int(cycle.substr(4, 2), mon) || mon < 1 || mon > 12 )
-	{
-		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
-	}
-
-	if ( !base::PubStr::Str2Int(cycle.substr(6, 2), day) || day < 1 || day > base::SimpleTime::LastDayOfTheMon(year, mon) )
-	{
-		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
-	}
-
-	long day_apart = base::PubTime::DayApartFromToday(year, mon, day);
-	if ( day_apart < 0 )
-	{
-		std::string today = base::SimpleTime::Now().DayTime8();
-		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle is greater than today (%s): %s [FILE:%s, LINE:%d]", today.c_str(), cycle.c_str(), __FILE__, __LINE__);
-	}
-
-	std::string etlrule_time;
-	base::PubStr::SetFormatString(etlrule_time, "day-%ld", day_apart);
-	return etlrule_time;
-}
-
-void TaskSche::FinishTask()
+void YCTask::FinishTask() throw(base::Exception)
 {
 	const int VEC_END_TASK_SIZE = m_vecEndTask.size();
 	for ( int i = 0; i < VEC_END_TASK_SIZE; ++i )
@@ -633,7 +526,7 @@ void TaskSche::FinishTask()
 		TaskReqInfo& ref_tri = m_vecEndTask[i];
 
 		TaskRequestUpdate(TSTS_End, ref_tri);
-		m_pLog->Output("[TASK] Finish task: SEQ=[%d], KPI=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
+		m_pLog->Output("[YC_TASK] Finish task: SEQ=[%d], KPI=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
 	}
 
 	// 清空已完成任务列表
