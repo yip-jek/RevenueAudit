@@ -2,6 +2,12 @@
 
 #include "exception.h"
 
+namespace base
+{
+class Config;
+class Log;
+}
+
 class TaskFactory;
 
 class Task
@@ -36,6 +42,9 @@ public:
 	void Run() throw(base::Exception);
 
 protected:
+	// 载入配置
+	virtual void LoadConfig() throw(base::Exception);
+
 	// 初始化
 	virtual void Init() throw(base::Exception) = 0;
 
@@ -45,8 +54,11 @@ protected:
 	// 获取新任务
 	virtual void GetNewTask() throw(base::Exception) = 0;
 
-	// 输出任务当前状态
-	virtual void ShowTask() throw(base::Exception) = 0;
+	// 定时输出任务当前状态
+	virtual void ShowTask();
+
+	// 输出任务信息
+	virtual void ShowTasksInfo() = 0;
 
 	// 执行任务
 	virtual void ExecuteTask() throw(base::Exception);
@@ -77,5 +89,7 @@ protected:
 	base::Log*    m_pLog;					// 日志输出
 	int           m_TIDAccumulator;			// 任务ID的累加值
 	long          m_waitSeconds;			// 处理时间间隔（单位：秒）
+	long          m_showMaxTime;			// 任务日志输出的时间间隔（单位：秒）
+	time_t        m_taskShowTime;			// 任务日志输出的计时（单位：秒）
 };
 

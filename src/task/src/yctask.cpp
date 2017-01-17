@@ -12,10 +12,10 @@
 
 YCTask::YCTask(base::Config& cfg)
 :Task(cfg)
-,m_showMaxTime(0)
-,m_taskShowTime(0)
 ,m_pTaskDB(NULL)
 {
+	// 日志文件前缀
+	base::Log::SetLogFilePrefix("YCTask");
 }
 
 YCTask::~YCTask()
@@ -39,8 +39,6 @@ void YCTask::ReleaseDB()
 
 void YCTask::Init() throw(base::Exception)
 {
-	LoadConfig();
-
 	InitConnect();
 
 	Check();
@@ -50,10 +48,9 @@ void YCTask::Init() throw(base::Exception)
 
 void YCTask::LoadConfig() throw(base::Exception)
 {
-	// 读取任务配置
-	m_pCfg->RegisterItem("SYS", "TIME_SECONDS");
-	m_pCfg->RegisterItem("SYS", "TASK_SHOW_SECONDS");
+	Task::LoadConfig();
 
+	// 读取任务配置
 	m_pCfg->RegisterItem("DATABASE", "DB_NAME");
 	m_pCfg->RegisterItem("DATABASE", "USER_NAME");
 	m_pCfg->RegisterItem("DATABASE", "PASSWORD");
@@ -83,8 +80,6 @@ void YCTask::LoadConfig() throw(base::Exception)
 
 	m_pCfg->ReadConfig();
 
-	m_waitSeconds = m_pCfg->GetCfgLongVal("SYS", "TIME_SECONDS");
-	m_showMaxTime = m_pCfg->GetCfgLongVal("SYS", "TASK_SHOW_SECONDS");
 
 	m_dbInfo.db_inst = m_pCfg->GetCfgValue("DATABASE", "DB_NAME");
 	m_dbInfo.db_user = m_pCfg->GetCfgValue("DATABASE", "USER_NAME");
@@ -127,12 +122,6 @@ void YCTask::InitConnect() throw(base::Exception)
 
 void YCTask::Check() throw(base::Exception)
 {
-	if ( m_waitSeconds <= 0 )
-	{
-		throw base::Exception(TERROR_CHECK, "Invalid time seconds: %ld [FILE:%s, LINE:%d]", m_waitSeconds, __FILE__, __LINE__);
-	}
-	m_pLog->Output("[YC_TASK] Check time seconds OK. [Wait seconds: %ld]", m_waitSeconds);
-
 	// 指定工作目录为Hive代理的路径
 	if ( chdir(m_hiveAgentPath.c_str()) < 0 )
 	{
@@ -159,13 +148,6 @@ void YCTask::Check() throw(base::Exception)
 	m_pLog->Output("[YC_TASK] Check the etl rule table OK.");
 }
 
-void YCTask::DealTasks() throw(base::Exception)
-{
-	m_taskShowTime = time(NULL);
-
-	Task::DealTasks();
-}
-
 void YCTask::GetNewTask() throw(base::Exception)
 {
 	m_pTaskDB->SelectNewTaskRequest(m_vecNewTask);
@@ -183,22 +165,16 @@ void YCTask::GetNewTask() throw(base::Exception)
 	}
 }
 
-void YCTask::ShowTask() throw(base::Exception)
+void YCTask::ShowTasksInfo()
 {
-	time_t t_now = time(NULL);
-	if ( (t_now - m_taskShowTime) >= m_showMaxTime )
-	{
-		m_taskShowTime = t_now;
-
-		m_pLog->Output(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-		m_pLog->Output("[YC_TASK] 指标规则数: %llu", m_mKpiRuleInfo.size());
-		m_pLog->Output("[YC_TASK] 新建任务数: %llu", m_vecNewTask.size());
-		m_pLog->Output("[YC_TASK] 执行任务数: %llu", m_mTaskReqInfo.size());
-		m_pLog->Output("[YC_TASK] 采集任务数: %llu", m_vecEtlTaskInfo.size());
-		m_pLog->Output("[YC_TASK] 分析任务数: %llu", m_vecAnaTaskInfo.size());
-		m_pLog->Output("[YC_TASK] 完成任务数: %llu", m_vecEndTask.size());
-		m_pLog->Output("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
-	}
+	m_pLog->Output(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+	m_pLog->Output("[YC_TASK] 指标规则数: %llu", m_mKpiRuleInfo.size());
+	m_pLog->Output("[YC_TASK] 新建任务数: %llu", m_vecNewTask.size());
+	m_pLog->Output("[YC_TASK] 执行任务数: %llu", m_mTaskReqInfo.size());
+	m_pLog->Output("[YC_TASK] 采集任务数: %llu", m_vecEtlTaskInfo.size());
+	m_pLog->Output("[YC_TASK] 分析任务数: %llu", m_vecAnaTaskInfo.size());
+	m_pLog->Output("[YC_TASK] 完成任务数: %llu", m_vecEndTask.size());
+	m_pLog->Output("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 }
 
 void YCTask::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) throw(base::Exception)
@@ -531,8 +507,5 @@ void YCTask::FinishTask() throw(base::Exception)
 
 	// 清空已完成任务列表
 	std::vector<TaskReqInfo>().swap(m_vecEndTask);
-
-	// 等待下一次的任务执行
-	sleep(m_waitSeconds);
 }
 

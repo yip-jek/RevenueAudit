@@ -1,6 +1,10 @@
 #include "task.h"
 #include <errno.h>
+#include <string.h>
+#include "log.h"
+#include "config.h"
 #include "pubstr.h"
+#include "pubtime.h"
 #include "simpletime.h"
 
 Task::Task(base::Config& cfg)
@@ -8,6 +12,8 @@ Task::Task(base::Config& cfg)
 ,m_pLog(base::Log::Instance())
 ,m_TIDAccumulator(0)
 ,m_waitSeconds(0)
+,m_showMaxTime(0)
+,m_taskShowTime(0)
 {
 }
 
@@ -23,13 +29,38 @@ std::string Task::Version()
 
 void Task::Run() throw(base::Exception)
 {
+	LoadConfig();
+
 	Init();
 
 	DealTasks();
 }
 
+void Task::LoadConfig() throw(base::Exception)
+{
+	m_pCfg->RegisterItem("SYS", "TIME_SECONDS");
+	m_pCfg->RegisterItem("SYS", "TASK_SHOW_SECONDS");
+	m_pCfg->ReadConfig();
+
+	m_waitSeconds = m_pCfg->GetCfgLongVal("SYS", "TIME_SECONDS");
+	if ( m_waitSeconds <= 0 )
+	{
+		throw base::Exception(TERROR_CHECK, "Invalid wait time seconds: %ld [FILE:%s, LINE:%d]", m_waitSeconds, __FILE__, __LINE__);
+	}
+	m_pLog->Output("[TASK] Check wait time seconds OK. [TIME SECONDS: %ld]", m_waitSeconds);
+
+	m_showMaxTime = m_pCfg->GetCfgLongVal("SYS", "TASK_SHOW_SECONDS");
+	if ( m_showMaxTime <= 0 )
+	{
+		throw base::Exception(TERROR_CHECK, "Invalid task show seconds: %ld [FILE:%s, LINE:%d]", m_showMaxTime, __FILE__, __LINE__);
+	}
+	m_pLog->Output("[TASK] Check task show seconds OK. [SHOW SECONDS: %ld]", m_showMaxTime);
+}
+
 void Task::DealTasks() throw(base::Exception)
 {
+	m_taskShowTime = time(NULL);
+
 	while ( true )
 	{
 		GetNewTask();
@@ -39,10 +70,24 @@ void Task::DealTasks() throw(base::Exception)
 		ExecuteTask();
 
 		FinishTask();
+
+		// 等待下一次的任务执行
+		sleep(m_waitSeconds);
 	}
 }
 
-void Task::ExecuteTask()
+void Task::ShowTask()
+{
+	time_t t_now = time(NULL);
+	if ( (t_now - m_taskShowTime) >= m_showMaxTime )
+	{
+		m_taskShowTime = t_now;
+
+		ShowTasksInfo();
+	}
+}
+
+void Task::ExecuteTask() throw(base::Exception)
 {
 	HandleAnaTask();
 

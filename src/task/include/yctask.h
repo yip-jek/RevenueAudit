@@ -4,15 +4,15 @@
 #include "struct.h"
 #include "task.h"
 
-namespace base
-{
-class Config;
-class Log;
-}
+//namespace base
+//{
+//class Config;
+//class Log;
+//}
 
 class TaskDB2;
 
-// 任务调度
+// 业财稽核-任务调度
 class YCTask : public Task
 {
 	friend class TaskFactory;
@@ -38,17 +38,17 @@ public:
 	virtual std::string Version();
 
 protected:
+	// 载入配置
+	virtual void LoadConfig() throw(base::Exception);
+
 	// 初始化
 	virtual void Init() throw(base::Exception);
-
-	// 处理任务
-	virtual void DealTasks() throw(base::Exception);
 
 	// 获取新任务
 	virtual void GetNewTask() throw(base::Exception);
 
-	// 输出任务当前状态
-	virtual void ShowTask() throw(base::Exception);
+	// 输出任务信息
+	virtual void ShowTasksInfo();
 
 	// 处理分析任务
 	virtual void HandleAnaTask() throw(base::Exception);
@@ -57,17 +57,14 @@ protected:
 	virtual void HandleEtlTask() throw(base::Exception);
 
 	// 创建新任务
-	virtual void BuildNewTask() throw(base::Exception) = 0;
+	virtual void BuildNewTask() throw(base::Exception);
 
 	// 任务完成
-	virtual void FinishTask() throw(base::Exception) = 0;
+	virtual void FinishTask() throw(base::Exception);
 
 private:
 	// 释放数据库连接
 	void ReleaseDB();
-
-	// 载入配置
-	void LoadConfig() throw(base::Exception);
 
 	// 初始化数据库连接
 	void InitConnect() throw(base::Exception);
@@ -87,10 +84,6 @@ private:
 	// 获取子规则ID
 	// 成功返回true，失败返回false
 	bool GetSubRuleID(const std::string& kpi_id, TaskInfo::TASK_TYPE t_type, std::string& sub_id);
-
-private:
-	long          m_showMaxTime;			// 任务日志输出的时间间隔（单位：秒）
-	time_t        m_taskShowTime;			// 任务日志输出的计时（单位：秒）
 
 private:
 	DBInfo   m_dbInfo;				// 数据库信息

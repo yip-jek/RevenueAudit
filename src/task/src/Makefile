@@ -7,7 +7,7 @@ srcs = $(wildcard *.cpp)
 objs = $(srcs:.cpp=.o)
 
 baselib = $(LIB_DIR)/libbase.a
-bin     = $(BIN_DIR)/TaskSche
+bin     = $(BIN_DIR)/Task
 
 .PHONY: all clean
 all: $(bin)

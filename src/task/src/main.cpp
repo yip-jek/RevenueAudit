@@ -4,17 +4,19 @@
 #include "pubstr.h"
 #include "log.h"
 #include "config.h"
-#include "tasksche.h"
+#include "task.h"
+#include "taskfactory.h"
 
 
 int main(int argc, char* argv[])
 {
 	// DAEMON_FLAG: 守护进程标志位（'1'-有效）
 	// LOG_ID     ：日志 ID
+	// MODE       : 模式
 	// CFG_FILE   ：配置文件
-	if ( argc != 4 )
+	if ( argc != 5 )
 	{
-		std::cerr << "[usage]" << argv[0] << " DAEMON_FLAG LOG_ID CFG_FILE" << std::endl;
+		std::cerr << "[usage]" << argv[0] << " DAEMON_FLAG LOG_ID MODE CFG_FILE" << std::endl;
 		return -1;
 	}
 
@@ -49,9 +51,6 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	// 日志文件前缀
-	base::Log::SetLogFilePrefix("TaskSche");
-
 	base::AutoLogger aLog;
 	base::Log* pLog = aLog.Get();
 
@@ -59,21 +58,30 @@ int main(int argc, char* argv[])
 	{
 		// 读取配置
 		base::Config cfg;
-		cfg.SetCfgFile(argv[3]);
+		cfg.SetCfgFile(argv[4]);
 		cfg.RegisterItem("SYS", "LOG_PATH");
 		cfg.ReadConfig();
+
+		TaskFactory t_factory(cfg);
+		std::string str_error;
+		Task* pTask = t_factory.Create(argv[3], &str_error);
 
 		pLog->SetPath(cfg.GetCfgValue("SYS", "LOG_PATH"));
 		pLog->Init();
 		pLog->Output("%s: PID=[%d]", (is_daemon?"守护进程":"一般进程"), getpid());
 
-		TaskSche ts(cfg);
+		// 任务调整程序是否创建成功？
+		if ( NULL == pTask )
+		{
+			pLog->Output("[ERROR] Create task failed: %s", str_error.c_str());
+			return -1;
+		}
 
 		// 输出版本号
-		std::cout << ts.Version() << std::endl;
-		pLog->Output(ts.Version());
+		std::cout << pTask->Version() << std::endl;
+		pLog->Output(pTask->Version().c_str());
 
-		ts.Do();
+		pTask->Run();
 	}
 	catch ( base::Exception& ex )
 	{

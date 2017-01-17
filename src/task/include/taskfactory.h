@@ -3,12 +3,17 @@
 #include <string>
 #include <vector>
 
+namespace base
+{
+class Config;
+}
+
 class Task;
 
 class TaskFactory
 {
 public:
-	TaskFactory();
+	TaskFactory(base::Config& cfg);
 	virtual ~TaskFactory();
 
 	static const char* const S_MODE_YC;			// 业财稽核
@@ -16,7 +21,7 @@ public:
 
 public:
 	// 创建
-	Task* Create(const std::string& mode, std::string* pError);
+	Task* Create(const std::string& mode, std::string* pError = NULL);
 
 	// 销毁
 	bool Destroy(Task*& pTask);
@@ -26,6 +31,7 @@ private:
 	void DestroyAll();
 
 private:
+	base::Config*      m_pCfg;					// 配置文件
 	std::vector<Task*> m_vecTask;
 };
 
