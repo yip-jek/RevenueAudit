@@ -22,6 +22,9 @@ protected:
 	// 初始化
 	virtual void Init() throw(base::Exception);
 
+	// 确认退出？
+	virtual bool ConfirmQuit();
+
 	// 获取新任务
 	virtual void GetNewTask() throw(base::Exception);
 

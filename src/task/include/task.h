@@ -23,15 +23,25 @@ protected:
 	virtual ~Task();
 
 public:
+	// 任务运行状态
+	enum TASK_STATE
+	{
+		TS_BEGIN   = 0,				// 状态：开始
+		TS_RUNNING = 1,				// 状态：运行中
+		TS_END     = 2,				// 状态：结束（收到退出信号）
+		TS_QUIT    = 3,				// 状态：退出
+	};
+
 	// 任务错误代码
 	enum TASK_ERROR
 	{
 		TERROR_CHECK             = -10000001,					// 检查失败
-		TERROR_CREATE_TASK       = -10000002,					// 下发任务失败
-		TERROR_ETLTIME_TRANSFORM = -10000003,					// 采集时间转换失败
-		TERROR_UPD_TASK_REQ      = -10000004,					// 更新任务请求失败
-		TERROR_HDL_ETL_TASK      = -10000005,					// 处理采集任务失败
-		TERROR_IS_PROC_EXIST     = -10000006,					// 查看进程是否存在失败
+		TERROR_DEAL_TASKS        = -10000002,					// 处理任务失败
+		TERROR_CREATE_TASK       = -10000003,					// 下发任务失败
+		TERROR_ETLTIME_TRANSFORM = -10000004,					// 采集时间转换失败
+		TERROR_UPD_TASK_REQ      = -10000005,					// 更新任务请求失败
+		TERROR_HDL_ETL_TASK      = -10000006,					// 处理采集任务失败
+		TERROR_IS_PROC_EXIST     = -10000007,					// 查看进程是否存在失败
 	};
 
 public:
@@ -42,11 +52,20 @@ public:
 	void Run() throw(base::Exception);
 
 protected:
+	// 初始化基础任务配置
+	virtual void InitBaseConfig() throw(base::Exception);
+
 	// 载入配置
-	virtual void LoadConfig() throw(base::Exception);
+	virtual void LoadConfig() throw(base::Exception) = 0;
 
 	// 初始化
 	virtual void Init() throw(base::Exception) = 0;
+
+	// 是否继续运行
+	virtual bool Running();
+
+	// 确认退出？
+	virtual bool ConfirmQuit() = 0;
 
 	// 处理任务
 	virtual void DealTasks() throw(base::Exception);
@@ -87,6 +106,7 @@ protected:
 protected:
 	base::Config* m_pCfg;					// 配置文件
 	base::Log*    m_pLog;					// 日志输出
+	TASK_STATE    m_state;					// 任务状态
 	int           m_TIDAccumulator;			// 任务ID的累加值
 	long          m_waitSeconds;			// 处理时间间隔（单位：秒）
 	long          m_showMaxTime;			// 任务日志输出的时间间隔（单位：秒）

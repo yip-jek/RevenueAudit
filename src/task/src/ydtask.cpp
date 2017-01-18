@@ -19,11 +19,17 @@ std::string YDTask::Version()
 
 void YDTask::LoadConfig() throw(base::Exception)
 {
-	Task::LoadConfig();
 }
 
 void YDTask::Init() throw(base::Exception)
 {
+}
+
+bool YDTask::ConfirmQuit()
+{
+	m_pLog->Output("Ready to confirm to quit ...... Sleep 10 seconds ...");
+	sleep(10);
+	return true;
 }
 
 void YDTask::GetNewTask() throw(base::Exception)

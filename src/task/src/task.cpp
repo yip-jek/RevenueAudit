@@ -3,6 +3,7 @@
 #include <string.h>
 #include "log.h"
 #include "config.h"
+#include "gsignal.h"
 #include "pubstr.h"
 #include "pubtime.h"
 #include "simpletime.h"
@@ -10,6 +11,7 @@
 Task::Task(base::Config& cfg)
 :m_pCfg(&cfg)
 ,m_pLog(base::Log::Instance())
+,m_state(TS_BEGIN)
 ,m_TIDAccumulator(0)
 ,m_waitSeconds(0)
 ,m_showMaxTime(0)
@@ -24,11 +26,13 @@ Task::~Task()
 
 std::string Task::Version()
 {
-	return ("Version 2.0000 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Version 3.0000 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Task::Run() throw(base::Exception)
 {
+	InitBaseConfig();
+
 	LoadConfig();
 
 	Init();
@@ -36,7 +40,7 @@ void Task::Run() throw(base::Exception)
 	DealTasks();
 }
 
-void Task::LoadConfig() throw(base::Exception)
+void Task::InitBaseConfig() throw(base::Exception)
 {
 	m_pCfg->RegisterItem("SYS", "TIME_SECONDS");
 	m_pCfg->RegisterItem("SYS", "TASK_SHOW_SECONDS");
@@ -57,11 +61,48 @@ void Task::LoadConfig() throw(base::Exception)
 	m_pLog->Output("[TASK] Check task show seconds OK. [SHOW SECONDS: %ld]", m_showMaxTime);
 }
 
+bool Task::Running()
+{
+	switch ( m_state )
+	{
+	case TS_BEGIN:			// 状态：开始
+		// 改变状态为运行中
+		m_state = TS_RUNNING;
+		break;
+	case TS_RUNNING:		// 状态：运行中
+		// 收到退出信号？
+		if ( !GSignal::IsRunning() )
+		{
+			m_state = TS_END;
+		}
+		break;
+	case TS_END:			// 状态：结束（收到退出信号）
+		// 确认退出？
+		if ( ConfirmQuit() )
+		{
+			m_state = TS_QUIT;
+		}
+		break;
+	case TS_QUIT:			// 状态：退出
+	default:				// 状态：未知
+		// Do nothing !
+		break;
+	}
+
+	return (TS_QUIT != m_state);
+}
+
 void Task::DealTasks() throw(base::Exception)
 {
+	// 设置退出信号捕获
+	if ( !GSignal::Init(m_pLog) )
+	{
+		throw base::Exception(TERROR_DEAL_TASKS, "Init setting signal failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
 	m_taskShowTime = time(NULL);
 
-	while ( true )
+	while ( Running() )
 	{
 		GetNewTask();
 

@@ -48,8 +48,6 @@ void YCTask::Init() throw(base::Exception)
 
 void YCTask::LoadConfig() throw(base::Exception)
 {
-	Task::LoadConfig();
-
 	// 读取任务配置
 	m_pCfg->RegisterItem("DATABASE", "DB_NAME");
 	m_pCfg->RegisterItem("DATABASE", "USER_NAME");
@@ -146,6 +144,20 @@ void YCTask::Check() throw(base::Exception)
 		throw base::Exception(TERROR_CHECK, "The etl rule table is not existed: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[YC_TASK] Check the etl rule table OK.");
+}
+
+bool YCTask::ConfirmQuit()
+{
+	if ( m_vecNewTask.empty()
+		&& m_vecEndTask.empty()
+		&& m_mTaskReqInfo.empty()
+		&& m_vecEtlTaskInfo.empty()
+		&& m_vecAnaTaskInfo.empty() )
+	{
+		return true;
+	}
+
+	return false;
 }
 
 void YCTask::GetNewTask() throw(base::Exception)
