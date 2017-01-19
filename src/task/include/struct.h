@@ -21,6 +21,7 @@ public:
 public:
 	int         seq_id;					// 流水号
 	std::string kpi_id;					// 指标规则ID
+	std::string stat_city;				// 稽核地市
 	std::string stat_cycle;				// 稽核账期
 	std::string status;					// 任务状态
 	std::string status_desc;			// 任务状态说明

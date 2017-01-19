@@ -72,7 +72,7 @@ void TaskDB2::SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(b
 	TaskReqInfo tr_info;
 	std::vector<TaskReqInfo> v_tri;
 
-	std::string sql = "SELECT SEQ_ID, KPI_ID, STAT_CYCLE FROM " + m_tabTaskReq + " WHERE TASK_STATUS = '00'";
+	std::string sql = "SELECT SEQ_ID, KPI_ID, TASK_CITY, STAT_CYCLE FROM " + m_tabTaskReq + " WHERE TASK_STATUS = '00'";
 	//m_pLog->Output("[DB2] Select new task request: %s", sql.c_str());
 
 	try
@@ -84,9 +84,10 @@ void TaskDB2::SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(b
 		{
 			int index = 1;
 
-			tr_info.seq_id      = (int)rs[index++];
-			tr_info.kpi_id      = (const char*)rs[index++];
-			tr_info.stat_cycle  = (const char*)rs[index++];
+			tr_info.seq_id     = (int)rs[index++];
+			tr_info.kpi_id     = (const char*)rs[index++];
+			tr_info.stat_city  = (const char*)rs[index++];
+			tr_info.stat_cycle = (const char*)rs[index++];
 
 			tr_info.status.clear();
 			tr_info.status_desc.clear();
