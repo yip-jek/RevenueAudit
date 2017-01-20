@@ -125,7 +125,7 @@ bool Log::Output(const char* format, ...)
 	vsnprintf(buf, sizeof(buf), format, arg_ptr);
 	va_end(arg_ptr);
 
-	std::string str_out = SimpleTime::Now().TimeStamp() + std::string("\x20\x20\x20\x20") + buf;
+	std::string str_out = SimpleTime::Now().LLTimeStamp() + std::string("\x20\x20") + buf;
 	m_bfLogger.Write(str_out);
 
 	// Maximum file size

@@ -2,23 +2,24 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
+#include <sys/time.h>
 
 namespace base
 {
 
 SimpleTime::SimpleTime()
-:year(0), mon(0), day(0), hour(0), min(0), sec(0)
+:year(0), mon(0), day(0), hour(0), min(0), sec(0), usec(0)
 {
 }
 
-SimpleTime::SimpleTime(int y, int m, int d, int h, int mi, int s)
-:year(0), mon(0), day(0), hour(0), min(0), sec(0)
+SimpleTime::SimpleTime(int y, int m, int d, int h, int mi, int s, int us /*= 0*/)
+:year(0), mon(0), day(0), hour(0), min(0), sec(0), usec(0)
 {
-	Init(y, m, d, h, mi, s);
+	Init(y, m, d, h, mi, s, us);
 }
 
 SimpleTime::SimpleTime(const SimpleTime& st)
-:year(st.year), mon(st.mon), day(st.day), hour(st.hour), min(st.min), sec(st.sec)
+:year(st.year), mon(st.mon), day(st.day), hour(st.hour), min(st.min), sec(st.sec), usec(st.usec)
 {
 }
 
@@ -36,6 +37,7 @@ const SimpleTime& SimpleTime::operator = (const SimpleTime& st)
 		this->hour = st.hour;
 		this->min  = st.min ;
 		this->sec  = st.sec ;
+		this->usec = st.usec;
 	}
 
 	return *this;
@@ -43,10 +45,11 @@ const SimpleTime& SimpleTime::operator = (const SimpleTime& st)
 
 SimpleTime SimpleTime::Now()
 {
-	time_t t = time(NULL);
-	tm* pt = localtime(&t);
+	struct timeval tv_now;
+	gettimeofday(&tv_now, NULL);
+	tm* pt = localtime(&tv_now.tv_sec);
 
-	return SimpleTime(pt->tm_year+1900, pt->tm_mon+1, pt->tm_mday, pt->tm_hour, pt->tm_min, pt->tm_sec);
+	return SimpleTime(pt->tm_year+1900, pt->tm_mon+1, pt->tm_mday, pt->tm_hour, pt->tm_min, pt->tm_sec, tv_now.tv_usec);
 }
 
 bool SimpleTime::IsLeapYear(int year)
@@ -91,44 +94,34 @@ int SimpleTime::LastDayOfTheMon(int year, int mon)
 	}
 }
 
-int SimpleTime::GetYear() const
-{
-	return year;
-}
-
-int SimpleTime::GetMon() const
-{
-	return mon;
-}
-
-int SimpleTime::GetDay() const
-{
-	return day;
-}
-
-int SimpleTime::GetHour() const
-{
-	return hour;
-}
-
-int SimpleTime::GetMin() const
-{
-	return min;
-}
-
-int SimpleTime::GetSec() const
-{
-	return sec;
-}
-
 std::string SimpleTime::TimeStamp()
 {
 	return TimeFormat("%04d-%02d-%02d %02d:%02d:%02d", year, mon, day, hour, min, sec);
 }
 
+std::string SimpleTime::LTimeStamp()
+{
+	return TimeFormat("%04d-%02d-%02d %02d:%02d:%02d.%03d", year, mon, day, hour, min, sec, (usec/1000));
+}
+
+std::string SimpleTime::LLTimeStamp()
+{
+	return TimeFormat("%04d-%02d-%02d %02d:%02d:%02d.%06d", year, mon, day, hour, min, sec, usec);
+}
+
 std::string SimpleTime::Time14()
 {
 	return TimeFormat("%04d%02d%02d%02d%02d%02d", year, mon, day, hour, min, sec);
+}
+
+std::string SimpleTime::Time17()
+{
+	return TimeFormat("%04d%02d%02d%02d%02d%02d%03d", year, mon, day, hour, min, sec, (usec/1000));
+}
+
+std::string SimpleTime::Time20()
+{
+	return TimeFormat("%04d%02d%02d%02d%02d%02d%06d", year, mon, day, hour, min, sec, usec);
 }
 
 std::string SimpleTime::DayTime8()
@@ -156,7 +149,7 @@ std::string SimpleTime::YearTime()
 	return TimeFormat("%04d", year);
 }
 
-bool SimpleTime::Init(int y, int m, int d, int h, int mi, int s)
+bool SimpleTime::Init(int y, int m, int d, int h, int mi, int s, int us)
 {
 	int s_y  = 0;
 	int s_m  = 0;
@@ -164,6 +157,7 @@ bool SimpleTime::Init(int y, int m, int d, int h, int mi, int s)
 	int s_h  = 0;
 	int s_mi = 0;
 	int s_s  = 0;
+	int s_us = 0;
 
 	if ( y <= 0 )	// 无效年份
 	{
@@ -201,12 +195,19 @@ bool SimpleTime::Init(int y, int m, int d, int h, int mi, int s)
 	}
 	s_s = s;
 
+	if ( us < 0 || us > 999999 )
+	{
+		return false;
+	}
+	s_us = us;
+
 	year = s_y ;
 	mon  = s_m ;
 	day  = s_d ;
 	hour = s_h ;
 	min  = s_mi;
 	sec  = s_s ;
+	usec = s_us;
 	return true;
 }
 

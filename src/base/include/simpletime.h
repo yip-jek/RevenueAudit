@@ -10,7 +10,7 @@ class SimpleTime
 {
 public:
 	SimpleTime();
-	SimpleTime(int y, int m, int d, int h, int mi, int s);
+	SimpleTime(int y, int m, int d, int h, int mi, int s, int us = 0);
 	SimpleTime(const SimpleTime& st);
 	virtual ~SimpleTime();
 
@@ -28,18 +28,31 @@ public:
 	static int LastDayOfTheMon(int year, int mon);
 
 public:
-	int GetYear() const;
-	int GetMon() const;
-	int GetDay() const;
-	int GetHour() const;
-	int GetMin() const;
-	int GetSec() const;
+	int GetYear() const { return year; }
+	int GetMon()  const { return mon ; }
+	int GetDay()  const { return day ; }
+	int GetHour() const { return hour; }
+	int GetMin()  const { return min ; }
+	int GetSec()  const { return sec ; }
+	int GetUSec() const { return usec; }
 
 	// 时间戳
 	std::string TimeStamp();
 
+	// 长时间戳
+	std::string LTimeStamp();
+
+	// 超长时间戳
+	std::string LLTimeStamp();
+
 	// 时间格式：YYYYMMDDHHMISS
 	std::string Time14();
+
+	// 时间格式：YYYYMMDDHHMISSUS3
+	std::string Time17();
+
+	// 时间格式：YYYYMMDDHHMISSUS6
+	std::string Time20();
 
 	// 日时间，格式：YYYYMMDD
 	std::string DayTime8();
@@ -58,7 +71,7 @@ public:
 
 private:
 	// 初始化时间
-	bool Init(int y, int m, int d, int h, int mi, int s);
+	bool Init(int y, int m, int d, int h, int mi, int s, int us);
 
 	// 格式化时间字符串
 	std::string TimeFormat(const char* format, ...);
@@ -70,6 +83,7 @@ private:
 	int hour;
 	int min;
 	int sec;
+	int usec;
 };
 
 }	// namespace base
