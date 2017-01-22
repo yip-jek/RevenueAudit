@@ -1,33 +1,33 @@
-#include "taskdb2.h"
+#include "yctaskdb2.h"
 #include "log.h"
 
 
-TaskDB2::TaskDB2(const DBInfo& db_info)
+YCTaskDB2::YCTaskDB2(const DBInfo& db_info)
 :base::BaseDB2(db_info.db_inst, db_info.db_user, db_info.db_pwd)
 {
 }
 
-TaskDB2::~TaskDB2()
+YCTaskDB2::~YCTaskDB2()
 {
-	//Disconnect();
+	Disconnect();
 }
 
-void TaskDB2::SetTabTaskRequest(const std::string& tab_taskreq)
+void YCTaskDB2::SetTabTaskRequest(const std::string& tab_taskreq)
 {
 	m_tabTaskReq = tab_taskreq;
 }
 
-void TaskDB2::SetTabKpiRule(const std::string& tab_kpirule)
+void YCTaskDB2::SetTabKpiRule(const std::string& tab_kpirule)
 {
 	m_tabKpiRule = tab_kpirule;
 }
 
-void TaskDB2::SetTabEtlRule(const std::string& tab_etlrule)
+void YCTaskDB2::SetTabEtlRule(const std::string& tab_etlrule)
 {
 	m_tabEtlRule = tab_etlrule;
 }
 
-bool TaskDB2::IsTableExists(const std::string& tab_name) throw(base::Exception)
+bool YCTaskDB2::IsTableExists(const std::string& tab_name) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -64,7 +64,7 @@ bool TaskDB2::IsTableExists(const std::string& tab_name) throw(base::Exception)
 	}
 }
 
-void TaskDB2::SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(base::Exception)
+void YCTaskDB2::SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -108,7 +108,7 @@ void TaskDB2::SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(b
 	v_tri.swap(vec_trinfo);
 }
 
-void TaskDB2::SelectTaskState(TaskState& t_state) throw(base::Exception)
+void YCTaskDB2::SelectTaskState(TaskState& t_state) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -147,7 +147,7 @@ void TaskDB2::SelectTaskState(TaskState& t_state) throw(base::Exception)
 	}
 }
 
-void TaskDB2::UpdateTaskRequest(TaskReqInfo& task_req) throw(base::Exception)
+void YCTaskDB2::UpdateTaskRequest(TaskReqInfo& task_req) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -178,7 +178,7 @@ void TaskDB2::UpdateTaskRequest(TaskReqInfo& task_req) throw(base::Exception)
 	}
 }
 
-void TaskDB2::SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info) throw(base::Exception)
+void YCTaskDB2::SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -215,7 +215,7 @@ void TaskDB2::SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info) throw
 	}
 }
 
-void TaskDB2::UpdateEtlTime(const std::string& etl_id, const std::string& etl_time) throw(base::Exception)
+void YCTaskDB2::UpdateEtlTime(const std::string& etl_id, const std::string& etl_time) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);

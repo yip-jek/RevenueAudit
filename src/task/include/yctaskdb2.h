@@ -1,13 +1,13 @@
 #pragma once
 
 #include "basedb2.h"
-#include "struct.h"
+#include "ycstruct.h"
 
-class TaskDB2 : public base::BaseDB2
+class YCTaskDB2 : public base::BaseDB2
 {
 public:
 	// 数据库错误代码
-	enum TASK_DB_ERROR
+	enum YCTASK_DB_ERROR
 	{
 		TDB_ERR_TAB_EXISTS     = -20000001,				// 检查表存在性失败
 		TDB_ERR_SEL_NEW_TREQ   = -20000002,				// 查询新的任务请求失败
@@ -18,8 +18,8 @@ public:
 	};
 
 public:
-	TaskDB2(const DBInfo& db_info);
-	virtual ~TaskDB2();
+	YCTaskDB2(const DBInfo& db_info);
+	virtual ~YCTaskDB2();
 
 public:
 	// 设置任务请求表

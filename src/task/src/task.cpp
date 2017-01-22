@@ -14,8 +14,8 @@ Task::Task(base::Config& cfg)
 ,m_state(TS_BEGIN)
 ,m_TIDAccumulator(0)
 ,m_waitSeconds(0)
-,m_showMaxTime(0)
-,m_taskShowTime(0)
+,m_showSeconds(0)
+,m_showTimer(0)
 {
 }
 
@@ -26,7 +26,7 @@ Task::~Task()
 
 std::string Task::Version()
 {
-	return ("Version 3.0001 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Version 3.0002 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Task::Run() throw(base::Exception)
@@ -49,16 +49,16 @@ void Task::InitBaseConfig() throw(base::Exception)
 	m_waitSeconds = m_pCfg->GetCfgLongVal("SYS", "TIME_SECONDS");
 	if ( m_waitSeconds <= 0 )
 	{
-		throw base::Exception(TERROR_CHECK, "Invalid wait time seconds: %ld [FILE:%s, LINE:%d]", m_waitSeconds, __FILE__, __LINE__);
+		throw base::Exception(TERR_INIT_BASE_CFG, "Invalid wait time seconds: %ld [FILE:%s, LINE:%d]", m_waitSeconds, __FILE__, __LINE__);
 	}
 	m_pLog->Output("[TASK] Check wait time seconds OK. [TIME SECONDS: %ld]", m_waitSeconds);
 
-	m_showMaxTime = m_pCfg->GetCfgLongVal("SYS", "TASK_SHOW_SECONDS");
-	if ( m_showMaxTime <= 0 )
+	m_showSeconds = m_pCfg->GetCfgLongVal("SYS", "TASK_SHOW_SECONDS");
+	if ( m_showSeconds <= 0 )
 	{
-		throw base::Exception(TERROR_CHECK, "Invalid task show seconds: %ld [FILE:%s, LINE:%d]", m_showMaxTime, __FILE__, __LINE__);
+		throw base::Exception(TERR_INIT_BASE_CFG, "Invalid task show seconds: %ld [FILE:%s, LINE:%d]", m_showSeconds, __FILE__, __LINE__);
 	}
-	m_pLog->Output("[TASK] Check task show seconds OK. [SHOW SECONDS: %ld]", m_showMaxTime);
+	m_pLog->Output("[TASK] Check task show seconds OK. [SHOW SECONDS: %ld]", m_showSeconds);
 }
 
 bool Task::Running()
@@ -97,10 +97,14 @@ void Task::DealTasks() throw(base::Exception)
 	// 设置退出信号捕获
 	if ( !GSignal::Init(m_pLog) )
 	{
-		throw base::Exception(TERROR_DEAL_TASKS, "Init setting signal failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(TERR_DEAL_TASKS, "Init setting signal failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	m_taskShowTime = time(NULL);
+	// 设置计时
+	SecTimer wait_timer(m_waitSeconds);
+	m_showTimer.Set(m_showSeconds);
+	wait_timer.Start();
+	m_showTimer.Start();
 
 	while ( Running() )
 	{
@@ -113,17 +117,14 @@ void Task::DealTasks() throw(base::Exception)
 		FinishTask();
 
 		// 等待下一次的任务执行
-		sleep(m_waitSeconds);
+		wait_timer.WaitForTimeUp();
 	}
 }
 
 void Task::ShowTask()
 {
-	time_t t_now = time(NULL);
-	if ( (t_now - m_taskShowTime) >= m_showMaxTime )
+	if ( m_showTimer.IsTimeUp() )
 	{
-		m_taskShowTime = t_now;
-
 		ShowTasksInfo();
 	}
 }
@@ -145,7 +146,7 @@ bool Task::IsProcessAlive(long long proc_task_id) throw(base::Exception)
 	FILE* fp_pipe = popen(str_cmd.c_str(), "r");
 	if ( NULL == fp_pipe )
 	{
-		throw base::Exception(TERROR_IS_PROC_EXIST, "Popen() failed: (%d) %s [FILE:%s, LINE:%d]", errno, strerror(errno), __FILE__, __LINE__);
+		throw base::Exception(TERR_IS_PROC_EXIST, "Popen() failed: (%d) %s [FILE:%s, LINE:%d]", errno, strerror(errno), __FILE__, __LINE__);
 	}
 
 	char buffer[512] = "";
@@ -180,7 +181,7 @@ std::string Task::EtlTimeTransform(const std::string& cycle) throw(base::Excepti
 {
 	if ( cycle.size() != 8U )
 	{
-		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle size is less than 8: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
+		throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle size is less than 8: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
 	}
 
 	int year = 0;
@@ -189,24 +190,24 @@ std::string Task::EtlTimeTransform(const std::string& cycle) throw(base::Excepti
 
 	if ( !base::PubStr::Str2Int(cycle.substr(0, 4), year) || year < 1970 )
 	{
-		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
+		throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( !base::PubStr::Str2Int(cycle.substr(4, 2), mon) || mon < 1 || mon > 12 )
 	{
-		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
+		throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( !base::PubStr::Str2Int(cycle.substr(6, 2), day) || day < 1 || day > base::SimpleTime::LastDayOfTheMon(year, mon) )
 	{
-		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
+		throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
 	}
 
 	long day_apart = base::PubTime::DayApartFromToday(year, mon, day);
 	if ( day_apart < 0 )
 	{
 		std::string today = base::SimpleTime::Now().DayTime8();
-		throw base::Exception(TERROR_ETLTIME_TRANSFORM, "The statistic cycle is greater than today (%s): %s [FILE:%s, LINE:%d]", today.c_str(), cycle.c_str(), __FILE__, __LINE__);
+		throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle is greater than today (%s): %s [FILE:%s, LINE:%d]", today.c_str(), cycle.c_str(), __FILE__, __LINE__);
 	}
 
 	std::string etlrule_time;

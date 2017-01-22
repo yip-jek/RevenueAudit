@@ -1,6 +1,7 @@
 #pragma once
 
 #include "exception.h"
+#include "sectimer.h"
 
 namespace base
 {
@@ -35,13 +36,10 @@ public:
 	// 任务错误代码
 	enum TASK_ERROR
 	{
-		TERROR_CHECK             = -10000001,					// 检查失败
-		TERROR_DEAL_TASKS        = -10000002,					// 处理任务失败
-		TERROR_CREATE_TASK       = -10000003,					// 下发任务失败
-		TERROR_ETLTIME_TRANSFORM = -10000004,					// 采集时间转换失败
-		TERROR_UPD_TASK_REQ      = -10000005,					// 更新任务请求失败
-		TERROR_HDL_ETL_TASK      = -10000006,					// 处理采集任务失败
-		TERROR_IS_PROC_EXIST     = -10000007,					// 查看进程是否存在失败
+		TERR_INIT_BASE_CFG     = -10000001,			// 初始化基础任务配置失败
+		TERR_DEAL_TASKS        = -10000002,			// 处理任务失败
+		TERR_ETLTIME_TRANSFORM = -10000003,			// 采集时间转换失败
+		TERR_IS_PROC_EXIST     = -10000004,			// 查看进程是否存在失败
 	};
 
 public:
@@ -109,7 +107,7 @@ protected:
 	TASK_STATE    m_state;					// 任务状态
 	int           m_TIDAccumulator;			// 任务ID的累加值
 	long          m_waitSeconds;			// 处理时间间隔（单位：秒）
-	long          m_showMaxTime;			// 任务日志输出的时间间隔（单位：秒）
-	time_t        m_taskShowTime;			// 任务日志输出的计时（单位：秒）
+	long          m_showSeconds;			// 任务日志输出的时间间隔（单位：秒）
+	SecTimer      m_showTimer;				// 任务日志输出计时
 };
 

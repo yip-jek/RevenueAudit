@@ -1,16 +1,10 @@
 #pragma once
 
 #include <map>
-#include "struct.h"
+#include "ycstruct.h"
 #include "task.h"
 
-//namespace base
-//{
-//class Config;
-//class Log;
-//}
-
-class TaskDB2;
+class YCTaskDB2;
 
 // 业财稽核-任务调度
 class YCTask : public Task
@@ -27,6 +21,16 @@ public:
 		TSTS_AnalyseBegin     = 3,				// 开始分析
 		TSTS_AnalyseException = 4,				// 分析异常
 		TSTS_End              = 5,				// 任务完成
+	};
+
+	// 任务错误代码
+	enum YC_TASK_ERROR
+	{
+		YCTERR_INIT_CONN    = -11000001,			// 初始化数据库连接失败
+		YCTERR_CHECK        = -11000002,			// 检查失败
+		YCTERR_CREATE_TASK  = -11000003,			// 下发任务失败
+		YCTERR_UPD_TASK_REQ = -11000004,			// 更新任务请求失败
+		YCTERR_HDL_ETL_TASK = -11000005,			// 处理采集任务失败
 	};
 
 protected:
@@ -89,8 +93,8 @@ private:
 	bool GetSubRuleID(const std::string& kpi_id, TaskInfo::TASK_TYPE t_type, std::string& sub_id);
 
 private:
-	DBInfo   m_dbInfo;				// 数据库信息
-	TaskDB2* m_pTaskDB;				// 数据库连接
+	DBInfo     m_dbInfo;				// 数据库信息
+	YCTaskDB2* m_pTaskDB;				// 数据库连接
 
 private:
 	std::string m_hiveAgentPath;			// Hive代理的路径

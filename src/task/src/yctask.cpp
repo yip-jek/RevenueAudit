@@ -7,7 +7,7 @@
 #include "pubstr.h"
 #include "pubtime.h"
 #include "simpletime.h"
-#include "taskdb2.h"
+#include "yctaskdb2.h"
 
 
 YCTask::YCTask(base::Config& cfg)
@@ -78,7 +78,6 @@ void YCTask::LoadConfig() throw(base::Exception)
 
 	m_pCfg->ReadConfig();
 
-
 	m_dbInfo.db_inst = m_pCfg->GetCfgValue("DATABASE", "DB_NAME");
 	m_dbInfo.db_user = m_pCfg->GetCfgValue("DATABASE", "USER_NAME");
 	m_dbInfo.db_pwd  = m_pCfg->GetCfgValue("DATABASE", "PASSWORD");
@@ -105,13 +104,20 @@ void YCTask::LoadConfig() throw(base::Exception)
 	m_tabTaskReq = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_REQUEST");
 	m_tabKpiRule = m_pCfg->GetCfgValue("TABLE", "TAB_KPI_RULE");
 	m_tabEtlRule = m_pCfg->GetCfgValue("TABLE", "TAB_ETL_RULE");
+
+	m_pLog->Output("[YC_TASK] Load config OK.");
 }
 
 void YCTask::InitConnect() throw(base::Exception)
 {
 	ReleaseDB();
 
-	m_pTaskDB = new TaskDB2(m_dbInfo);
+	m_pTaskDB = new YCTaskDB2(m_dbInfo);
+	if ( NULL == m_pTaskDB )
+	{
+		throw base::Exception(YCTERR_INIT_CONN, "Operator new YCTaskDB2 failed: 无法申请到内存空间！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
 	m_pTaskDB->SetTabTaskRequest(m_tabTaskReq);
 	m_pTaskDB->SetTabKpiRule(m_tabKpiRule);
 	m_pTaskDB->SetTabEtlRule(m_tabEtlRule);
@@ -123,25 +129,25 @@ void YCTask::Check() throw(base::Exception)
 	// 指定工作目录为Hive代理的路径
 	if ( chdir(m_hiveAgentPath.c_str()) < 0 )
 	{
-		throw base::Exception(TERROR_CHECK, "Change work dir to '%s' failed! %s [FILE:%s, LINE:%d]", m_hiveAgentPath.c_str(), strerror(errno), __FILE__, __LINE__);
+		throw base::Exception(YCTERR_CHECK, "Change work dir to '%s' failed! %s [FILE:%s, LINE:%d]", m_hiveAgentPath.c_str(), strerror(errno), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[YC_TASK] Change work dir to '%s' OK.", m_hiveAgentPath.c_str());
 
 	if ( !m_pTaskDB->IsTableExists(m_tabTaskReq) )
 	{
-		throw base::Exception(TERROR_CHECK, "The task request table is not existed: %s [FILE:%s, LINE:%d]", m_tabTaskReq.c_str(), __FILE__, __LINE__);
+		throw base::Exception(YCTERR_CHECK, "The task request table is not existed: %s [FILE:%s, LINE:%d]", m_tabTaskReq.c_str(), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[YC_TASK] Check the task request table OK.");
 
 	if ( !m_pTaskDB->IsTableExists(m_tabKpiRule) )
 	{
-		throw base::Exception(TERROR_CHECK, "The kpi rule table is not existed: %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), __FILE__, __LINE__);
+		throw base::Exception(YCTERR_CHECK, "The kpi rule table is not existed: %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[YC_TASK] Check the kpi rule table OK.");
 
 	if ( !m_pTaskDB->IsTableExists(m_tabEtlRule) )
 	{
-		throw base::Exception(TERROR_CHECK, "The etl rule table is not existed: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), __FILE__, __LINE__);
+		throw base::Exception(YCTERR_CHECK, "The etl rule table is not existed: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[YC_TASK] Check the etl rule table OK.");
 }
@@ -232,7 +238,7 @@ void YCTask::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) thr
 		break;
 	case TSTS_Unknown:							// 未知状态
 	default:
-		throw base::Exception(TERROR_UPD_TASK_REQ, "Unknown tasksche task state: %d [FILE:%s, LINE:%d]", ts, __FILE__, __LINE__);
+		throw base::Exception(YCTERR_UPD_TASK_REQ, "Unknown tasksche task state: %d [FILE:%s, LINE:%d]", ts, __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[YC_TASK] Updating task request : %s (%s)", task_req_info.status.c_str(), task_req_info.status_desc.c_str());
@@ -269,7 +275,7 @@ void YCTask::HandleEtlTask() throw(base::Exception)
 			//ref_ti.etl_time = EtlTimeTransform(ref_tri.stat_cycle);
 			if ( !GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Analyse, ref_ti.sub_id) )
 			{
-				throw base::Exception(TERROR_HDL_ETL_TASK, "Can not find the analyse rule ID! (KPI_ID:%s) [FILE:%s, LINE:%d]", ref_tri.kpi_id.c_str(), __FILE__, __LINE__);
+				throw base::Exception(YCTERR_HDL_ETL_TASK, "Can not find the analyse rule ID! (KPI_ID:%s) [FILE:%s, LINE:%d]", ref_tri.kpi_id.c_str(), __FILE__, __LINE__);
 			}
 			m_pLog->Output("[YC_TASK] Analyse: TASK_ID=[%ld], KPI_ID=[%s], ANA_ID=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_tri.stat_city.c_str());
 
@@ -396,7 +402,7 @@ void YCTask::CreateTask(const TaskInfo& t_info) throw(base::Exception)
 	}
 	else	// 未知
 	{
-		throw base::Exception(TERROR_CREATE_TASK, "Unknown task type: %d [FILE:%s, LINE:%d]", t_info.t_type, __FILE__, __LINE__);
+		throw base::Exception(YCTERR_CREATE_TASK, "Unknown task type: %d [FILE:%s, LINE:%d]", t_info.t_type, __FILE__, __LINE__);
 	}
 
 	// 拉起进程
