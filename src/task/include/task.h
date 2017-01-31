@@ -68,8 +68,14 @@ protected:
 	// 处理任务
 	virtual void DealTasks() throw(base::Exception);
 
+	// 获取任务
+	virtual void GetTasks() throw(base::Exception);
+
 	// 获取新任务
 	virtual void GetNewTask() throw(base::Exception) = 0;
+
+	// 不获取任务
+	virtual void GetNoTask() throw(base::Exception) = 0;
 
 	// 定时输出任务当前状态
 	virtual void ShowTask();

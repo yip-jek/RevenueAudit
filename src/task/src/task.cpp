@@ -26,7 +26,7 @@ Task::~Task()
 
 std::string Task::Version()
 {
-	return ("Version 3.0002 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Version 3.0003 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Task::Run() throw(base::Exception)
@@ -118,6 +118,19 @@ void Task::DealTasks() throw(base::Exception)
 
 		// 等待下一次的任务执行
 		wait_timer.WaitForTimeUp();
+	}
+}
+
+void Task::GetTasks() throw(base::Exception)
+{
+	// 是否准备退出？
+	if ( m_state != TS_END )
+	{
+		GetNewTask();
+	}
+	else	// 不获取新任务
+	{
+		GetNoTask();
 	}
 }
 

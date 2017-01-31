@@ -64,3 +64,48 @@ bool YDTaskDB2::IsTableExists(const std::string& tab_name) throw(base::Exception
 	}
 }
 
+void YDTaskDB2::GetTaskSchedule(std::map<int, TaskSchedule>& m_tasksche) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "SELECT SEQ_ID, ACTIVATE, TASK_TYPE, KPI_ID, TASK_CYCLE, TASK_STATE, ";
+	sql += "TASK_STATE_DESC, EXPIRY_DATE_START, EXPIRY_DATE_END FROM " + m_tabTaskSche;
+	m_pLog->Output("[DB2] Get task schedule: %s", sql.c_str());
+
+	TaskSchedule task_sche;
+	std::map<int, TaskSchedule> m_ts;
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			int index = 1;
+
+			task_sche.seq_id            = (int)rs[index++];
+			task_sche.activate          = (char)rs[index++];
+			task_sche.task_type         = (const char*)rs[index++];
+			task_sche.kpi_id            = (const char*)rs[index++];
+			task_sche.task_cycle        = (const char*)rs[index++];
+			task_sche.task_state        = (const char*)rs[index++];
+			task_sche.task_state_desc   = (const char*)rs[index++];
+			task_sche.expiry_date_start = (const char*)rs[index++];
+			task_sche.expiry_date_end   = (const char*)rs[index++];
+
+			m_ts[task_sche.seq_id] = task_sche;
+
+			rs.MoveNext();
+		}
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(TDB_ERR_GET_TASKSCHE, "[DB2] Get task schedule from table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskSche.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	m_ts.swap(m_tasksche);
+}
+

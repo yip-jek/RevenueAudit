@@ -54,6 +54,9 @@ protected:
 	// 获取新任务
 	virtual void GetNewTask() throw(base::Exception);
 
+	// 不获取任务
+	virtual void GetNoTask() throw(base::Exception);
+
 	// 输出任务信息
 	virtual void ShowTasksInfo();
 

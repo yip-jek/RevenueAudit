@@ -94,6 +94,31 @@ void YDTask::Init() throw(base::Exception)
 {
 	InitConnect();
 
+	// 指定工作目录为Hive代理的路径
+	if ( chdir(m_hiveAgentPath.c_str()) < 0 )
+	{
+		throw base::Exception(YDTERR_INIT, "Change work dir to '%s' failed! %s [FILE:%s, LINE:%d]", m_hiveAgentPath.c_str(), strerror(errno), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[YD_TASK] Change work dir to '%s' OK.", m_hiveAgentPath.c_str());
+
+	if ( !m_pTaskDB2->IsTableExists(m_tabTaskSche) )
+	{
+		throw base::Exception(YDTERR_INIT, "The task schedule table is not existed: %s [FILE:%s, LINE:%d]", m_tabTaskSche.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[YD_TASK] Check the task schedule table [%s] OK.", m_tabTaskSche.c_str());
+
+	if ( !m_pTaskDB2->IsTableExists(m_tabKpiRule) )
+	{
+		throw base::Exception(YDTERR_INIT, "The kpi rule table is not existed: %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[YD_TASK] Check the kpi rule table [%s] OK.", m_tabKpiRule.c_str());
+
+	if ( !m_pTaskDB2->IsTableExists(m_tabEtlRule) )
+	{
+		throw base::Exception(YDTERR_INIT, "The etl rule table is not existed: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[YD_TASK] Check the etl rule table [%s] OK.", m_tabEtlRule.c_str());
+
 	m_pLog->Output("[YD_TASK] Init OK.");
 }
 
@@ -104,6 +129,12 @@ bool YDTask::ConfirmQuit()
 
 void YDTask::GetNewTask() throw(base::Exception)
 {
+	m_pTaskDB2->GetTaskSchedule(m_mTaskSche);
+}
+
+void YDTask::GetNoTask() throw(base::Exception)
+{
+	m_mTaskSche.clear();
 }
 
 void YDTask::ShowTasksInfo()

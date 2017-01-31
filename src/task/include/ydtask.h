@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include "ydstruct.h"
 #include "task.h"
 
@@ -14,7 +15,8 @@ public:
 	// 任务错误代码
 	enum YD_TASK_ERROR
 	{
-		YDTERR_INIT_CONN    = -11000001,			// 初始化数据库连接失败
+		YDTERR_INIT_CONN = -11000001,			// 初始化数据库连接失败
+		YDTERR_INIT      = -11000002,			// 初始化失败
 	};
 
 protected:
@@ -37,6 +39,9 @@ protected:
 
 	// 获取新任务
 	virtual void GetNewTask() throw(base::Exception);
+
+	// 不获取任务
+	virtual void GetNoTask() throw(base::Exception);
 
 	// 输出任务信息
 	virtual void ShowTasksInfo();
@@ -79,5 +84,7 @@ private:
 	std::string m_tabKpiRule;				// 指标规则表
 	std::string m_tabEtlRule;				// 采集规则表
 
+private:
+	std::map<int, TaskSchedule> m_mTaskSche;		// 任务日程
 };
 

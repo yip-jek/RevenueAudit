@@ -168,28 +168,25 @@ bool YCTask::ConfirmQuit()
 
 void YCTask::GetNewTask() throw(base::Exception)
 {
-	// 是否准备退出？
-	if ( m_state != TS_END )
+	m_pTaskDB->SelectNewTaskRequest(m_vecNewTask);
+
+	if ( !m_vecNewTask.empty() )
 	{
-		m_pTaskDB->SelectNewTaskRequest(m_vecNewTask);
+		// 更新任务状态
+		const int VEC_NEW_TASK_SIZE = m_vecNewTask.size();
+		m_pLog->Output("[YC_TASK] Get the new task size: %d", VEC_NEW_TASK_SIZE);
 
-		if ( !m_vecNewTask.empty() )
+		for ( int i = 0; i < VEC_NEW_TASK_SIZE; ++i )
 		{
-			// 更新任务状态
-			const int VEC_NEW_TASK_SIZE = m_vecNewTask.size();
-			m_pLog->Output("[YC_TASK] Get the new task size: %d", VEC_NEW_TASK_SIZE);
-
-			for ( int i = 0; i < VEC_NEW_TASK_SIZE; ++i )
-			{
-				TaskRequestUpdate(TSTS_Start, m_vecNewTask[i]);
-			}
+			TaskRequestUpdate(TSTS_Start, m_vecNewTask[i]);
 		}
 	}
-	else
-	{
-		// 不获取新任务，清空！
-		m_vecNewTask.clear();
-	}
+}
+
+void YCTask::GetNoTask() throw(base::Exception)
+{
+	// 不获取新任务，清空！
+	m_vecNewTask.clear();
 }
 
 void YCTask::ShowTasksInfo()

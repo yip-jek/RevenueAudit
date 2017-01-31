@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include "basedb2.h"
 #include "ydstruct.h"
 
@@ -10,6 +11,7 @@ public:
 	enum YDTASK_DB_ERROR
 	{
 		TDB_ERR_TAB_EXISTS     = -20000001,				// 检查表存在性失败
+		TDB_ERR_GET_TASKSCHE   = -20000002,				// 获取任务日程记录失败
 	};
 
 public:
@@ -28,6 +30,9 @@ public:
 
 	// 表是否存在
 	bool IsTableExists(const std::string& tab_name) throw(base::Exception);
+
+	// 获取任务日程记录
+	void GetTaskSchedule(std::map<int, TaskSchedule>& m_tasksche) throw(base::Exception);
 
 private:
 	std::string m_tabTaskSche;				// 任务日程表
