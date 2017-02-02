@@ -26,6 +26,7 @@ struct TaskSchedule
 	std::string task_type;				// 任务类型
 	std::string kpi_id;					// 指标 ID
 	std::string task_cycle;				// 任务周期
+	std::string etl_time;				// 采集时间
 	std::string task_state;				// 任务状态
 	std::string task_state_desc;		// 任务状态描述
 	std::string expiry_date_start;		// 有效期开始
@@ -34,6 +35,20 @@ struct TaskSchedule
 
 // 任务周期
 struct TaskCycle
+{
+	TaskCycle(): year(0), mon(0), day(0), hour(0), min(0), sec(0)
+	{}
+
+	int year;
+	int mon;
+	int day;
+	int hour;
+	int min;
+	int sec;
+};
+
+// 采集时间
+struct EtlTime
 {
 };
 
@@ -55,8 +70,10 @@ struct RATask
 	TASK_TYPE   type;					// 任务类型
 	std::string kpi_id;					// 指标 ID
 	TaskCycle   cycle;					// 任务周期
+	EtlTime     etl_time;				// 采集时间
 	long long   exprry_date_start;		// 有效期开始
 	long long   expiry_date_end;		// 有效期结束
+
 	std::vector<
 };
 
