@@ -85,6 +85,7 @@ private:
 	std::string m_tabEtlRule;				// 采集规则表
 
 private:
-	std::map<int, TaskSchedule> m_mTaskSche;		// 任务日程
+	std::map<int, TaskSchedule> m_mTaskSche;			// 任务日程
+	std::map<int, TaskSchedule> m_mTaskSche_bak;		// 任务日程备份
 };
 
