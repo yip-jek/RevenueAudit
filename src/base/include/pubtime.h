@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace base
 {
@@ -42,6 +43,9 @@ public:
 	static std::string DateNowPlusMonths(unsigned int months);
 	// 这个月之前的第n个月, 返回格式：YYYYMM
 	static std::string DateNowMinusMonths(unsigned int months);
+
+	// 展开时间段（区间）
+	static bool SpreadTimeInterval(const DATE_TYPE& d_type, const std::string& time_intvl, const std::string& dim, std::vector<int>& vec_ts);
 
 	// 计算与当前时间相差的天数
 	// 外部保证时间参数的有效性，否则返回0

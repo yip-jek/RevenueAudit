@@ -32,8 +32,6 @@ public:
 	std::string kpi_id;					// 指标 ID
 	std::string task_cycle;				// 任务周期
 	std::string etl_time;				// 采集时间
-	std::string task_state;				// 任务状态
-	std::string task_state_desc;		// 任务状态描述
 	std::string expiry_date_start;		// 有效期开始
 	std::string expiry_date_end;		// 有效期结束
 };
@@ -76,7 +74,7 @@ public:
 			{
 				s_y = ANY_TIME;
 			}
-			else if ( !base::PubStr::Str2Int(ref_y, s_y) || s_y <= 1970 )
+			else if ( !base::PubStr::Str2Int(ref_y, s_y) || s_y <= 1970 || s_y > 9999 )
 			{
 				return false;
 			}
@@ -207,7 +205,7 @@ private:
 class EtlTime
 {
 public:
-	EtlTime(): dt_type(base::PubTime::DT_UNKNOWN)
+	EtlTime(): dt_type(base::PubTime::DT_UNKNOWN), currIndex(-1)
 	{}
 
 public:
@@ -217,10 +215,13 @@ public:
 		// 初始化
 		dt_type = base::PubTime::DT_UNKNOWN;
 		std::vector<int>().swap(vecTime);
+		etl_time.clear();
+		currIndex = -1;
 
-		std::vector<std::string> vec_str;
+		base::PubTime::DATE_TYPE dt = base::PubTime::DT_UNKNOWN;
 		if ( time.find(',') != std::string::npos )		// 格式一：[时间类型],[时间段]
 		{
+			std::vector<std::string> vec_str;
 			base::PubStr::Str2StrVector(time, ",", vec_str);
 			if ( vec_str.size() != 2 )
 			{
@@ -230,28 +231,98 @@ public:
 			const std::string DTYPE = base::PubStr::TrimUpperB(vec_str[0]);
 			if ( DTYPE == "DAY" )
 			{
+				dt = base::PubTime::DT_DAY;
 			}
 			else if ( DTYPE == "MON" )
 			{
+				dt = base::PubTime::DT_MONTH;
 			}
 			else	// 不支持时间类型
 			{
 				return false;
 			}
+
+			if ( !base::PubTime::SpreadTimeInterval(dt, vec_str[1], "-", vecTime) )
+			{
+				return false;
+			}
 		}
-		else	// 格式一：[时间类型]+/-[时间数]
+		else	// 格式二：[时间类型]+/-[时间数]
 		{
+			std::string str_date;
+			if ( !base::PubTime::DateApartFromNow(time, dt, str_date) )
+			{
+				return false;
+			}
+
+			etl_time = time;
 		}
+
+		dt_type = dt;
+		currIndex = 0;
+		return true;
 	}
 
 	// 是否有效
 	bool IsValid() const
 	{ return (dt_type != base::PubTime::DT_UNKNOWN); }
 
+	// 初始化
+	void Init()
+	{
+		currIndex = IsValid() ? 0 : -1;
+	}
+
+	// 获取下一个采集时间字串
+	bool GetNext(std::string& etl)
+	{
+		if ( currIndex < 0 )
+		{
+			return false;
+		}
+
+		if ( etl_time.empty() )
+		{
+			int date = vecTime[currIndex++];
+
+			int year = 0;
+			int mon  = 0;
+			int day  = 0;
+			base::SimpleTime st_now = base::SimpleTime::Now();
+			if ( base::PubTime::DT_MONTH == dt_type )	// 月
+			{
+				year = date / 100;
+				mon  = date % 100;
+
+				int mon_diff = (st_now.GetYear() - year) * 12 + mon - st_now.GetMon();
+				base::PubStr::SetFormatString(etl, "mon-%ld", mon_diff);
+			}
+			else	// 日
+			{
+				year = date / 10000;
+				mon  = (date % 10000) / 100;
+				day  = date % 100;
+			}
+
+			if ( currIndex >= vecTime.size() )
+			{
+				currIndex = -1;
+			}
+		}
+		else
+		{
+			etl = etl_time;
+			currIndex = -1;
+		}
+
+		return true;
+	}
 
 private:
 	base::PubTime::DATE_TYPE dt_type;		// 时间类型
+	std::string              etl_time;		// 采集时间字串
 	std::vector<int>         vecTime;		// 时间列表
+	int                      currIndex;		// 当前列表中位置
 };
 
 // 稽核任务

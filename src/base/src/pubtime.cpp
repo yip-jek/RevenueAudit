@@ -65,6 +65,112 @@ std::string PubTime::DateNowMinusMonths(unsigned int months)
 	return TheDateMonths_S(st_now.GetYear(), st_now.GetMon(), months, false);
 }
 
+bool PubTime::SpreadTimeInterval(const DATE_TYPE& d_type, const std::string& time_intvl, const std::string& dim, std::vector<int>& vec_ts)
+{
+	std::vector<std::string> vec_str;
+	PubStr::Str2StrVector(time_intvl, dim, vec_str);
+
+	// 时间区间格式不正确
+	if ( vec_str.size() != 2 )
+	{
+		return false;
+	}
+
+	int time_beg = 0;
+	int time_end = 0;
+	if ( !PubStr::Str2Int(vec_str[0], time_beg)
+		|| !PubStr::Str2Int(vec_str[1], time_end)
+		|| time_beg > time_end )
+	{
+		return false;
+	}
+
+	std::vector<int> vec_tmp;
+	int time_cur = time_beg;
+	int beg_year = 0;
+	int beg_mon  = 0;
+	int beg_day  = 0;
+	int end_year = 0;
+	int end_mon  = 0;
+	int end_day  = 0;
+
+	if ( DT_MONTH == d_type )	// 月
+	{
+		beg_year = time_beg / 100;
+		beg_mon  = time_beg % 100;
+		end_year = time_end / 100;
+		end_mon  = time_end % 100;
+
+		if ( beg_year <= 1970 || beg_year > 9999 || beg_mon < 1 || beg_mon > 12 
+			|| end_year <= 1970 || end_year > 9999 || end_mon < 1 || end_mon > 12 )
+		{
+			return false;
+		}
+
+		while ( time_cur <= time_end )
+		{
+			vec_tmp.push_back(time_cur);
+
+			if ( 12 == beg_mon )
+			{
+				++beg_year;
+				beg_mon = 1;
+			}
+			else
+			{
+				++beg_mon;
+			}
+			time_cur = beg_year * 100 + beg_mon;
+		}
+	}
+	else if ( DT_DAY == d_type )	// 日
+	{
+		beg_year = time_beg / 10000;
+		beg_mon  = (time_beg % 10000) / 100;
+		beg_day  = time_beg % 100;
+		end_year = time_end / 10000;
+		end_mon  = (time_end % 10000) / 100;
+		end_day  = time_end % 100;
+
+		if ( beg_year <= 1970 || beg_year > 9999 || beg_mon < 1 || beg_mon > 12 
+			|| beg_day < 1 || beg_day > SimpleTime::LastDayOfTheMon(beg_year, beg_mon) 
+			|| end_year <= 1970 || end_year > 9999 || end_mon < 1 || end_mon > 12 
+			|| end_day < 1 || end_day > SimpleTime::LastDayOfTheMon(end_year, end_mon) )
+		{
+			return false;
+		}
+
+		while ( time_cur <= time_end )
+		{
+			vec_tmp.push_back(time_cur);
+
+			if ( 31 == beg_day && 12 == beg_mon )
+			{
+				++beg_year;
+				beg_mon = 1;
+				beg_day = 1;
+			}
+			else if ( SimpleTime::LastDayOfTheMon(beg_year, beg_mon) == beg_day )
+			{
+				++beg_mon;
+				beg_day = 1;
+			}
+			else
+			{
+				++beg_day;
+			}
+			time_cur = beg_year * 10000 + beg_mon * 100 + beg_day;
+		}
+	}
+	else	// 不支持的时间类型
+	{
+		return false;
+	}
+
+	vec_tmp.swap(vec_ts);
+	return true;
+}
+
 long PubTime::DayApartFromToday(int year, int mon, int day)
 {
 	if ( year < MIN_YEAR || mon < 1 || mon > 12 || day < 1 || day > SimpleTime::LastDayOfTheMon(year, mon) ) // Invalid
