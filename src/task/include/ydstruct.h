@@ -9,14 +9,21 @@
 struct TaskSchedule
 {
 public:
-	TaskSchedule(): seq_id(0), activate('\0')
+	TaskSchedule(): seq_id(0)
 	{}
 
-public:
-	// 是否已激活
-	bool IsActivated() const
-	{ return ('1' == activate); }
+	bool operator == (const TaskSchedule& ts)
+	{
+		return (ts.seq_id == seq_id
+			&& base::PubStr::TrimUpperB(ts.task_type) == base::PubStr::TrimUpperB(task_type)
+			&& base::PubStr::TrimUpperB(ts.kpi_id) == base::PubStr::TrimUpperB(kpi_id)
+			&& base::PubStr::TrimB(ts.task_cycle) == base::PubStr::TrimB(task_cycle)
+			&& base::PubStr::TrimUpperB(ts.etl_time) == base::PubStr::TrimUpperB(etl_time)
+			&& base::PubStr::TrimB(ts.expiry_date_start) == base::PubStr::TrimB(expiry_date_start)
+			&& base::PubStr::TrimB(ts.expiry_date_end) == base::PubStr::TrimB(expiry_date_end) );
+	}
 
+public:
 	// 是否为临时任务
 	bool IsTemporaryTask() const
 	{ return (base::PubStr::TrimUpperB(task_type) == "T"); }
@@ -27,7 +34,6 @@ public:
 
 public:
 	int         seq_id;					// 序号
-	char        activate;				// 是否激活（有效）
 	std::string task_type;				// 任务类型
 	std::string kpi_id;					// 指标 ID
 	std::string task_cycle;				// 任务周期
@@ -283,25 +289,46 @@ public:
 
 		if ( etl_time.empty() )
 		{
-			int date = vecTime[currIndex++];
-
 			int year = 0;
 			int mon  = 0;
 			int day  = 0;
+			int date = vecTime[currIndex++];
 			base::SimpleTime st_now = base::SimpleTime::Now();
+
 			if ( base::PubTime::DT_MONTH == dt_type )	// 月
 			{
 				year = date / 100;
 				mon  = date % 100;
 
-				int mon_diff = (st_now.GetYear() - year) * 12 + mon - st_now.GetMon();
-				base::PubStr::SetFormatString(etl, "mon-%ld", mon_diff);
+				int mon_diff = (st_now.GetYear() - year) * 12 + st_now.GetMon() - mon;
+				if ( mon_diff >= 0 )
+				{
+					base::PubStr::SetFormatString(etl, "mon-%d", mon_diff);
+				}
+				else
+				{
+					base::PubStr::SetFormatString(etl, "mon+%d", (-mon_diff));
+				}
 			}
-			else	// 日
+			else if ( base::PubTime::DT_DAY == dt_type )	// 日
 			{
 				year = date / 10000;
 				mon  = (date % 10000) / 100;
 				day  = date % 100;
+
+				long day_apart = base::PubTime::DayApartFromToday(year, mon, day);
+				if ( day_apart >= 0 )
+				{
+					base::PubStr::SetFormatString(etl, "day-%ld", day_apart);
+				}
+				else
+				{
+					base::PubStr::SetFormatString(etl, "day+%ld", (-day_apart));
+				}
+			}
+			else	// 不支持
+			{
+				return false;
 			}
 
 			if ( currIndex >= vecTime.size() )
@@ -325,6 +352,28 @@ private:
 	int                      currIndex;		// 当前列表中位置
 };
 
+// 任务日程日志
+struct TaskScheLog
+{
+public:
+	TaskScheLog(): log_id(0)
+	{}
+
+public:
+	int         log_id;				// 序号
+	std::string kpi_id;				// 指标 ID
+	std::string sub_id;				// 子 ID （采集ID或者分析ID）
+	std::string task_id;			// 任务 ID
+	std::string task_type;			// 任务类型
+	std::string etl_time;			// 采集时间
+	std::string app_type;			// 程序类型
+	std::string start_time;			// 开始时间
+	std::string end_time;			// 结束时间
+	std::string task_state;			// 任务状态
+	std::string state_desc;			// 任务状态描述
+	std::string remarks;			// 备注
+};
+
 // 稽核任务
 struct RATask
 {
@@ -341,14 +390,16 @@ public:
 	{}
 
 public:
-	int         seq_id;					// 序号
-	TASK_TYPE   type;					// 任务类型
-	std::string kpi_id;					// 指标 ID
-	TaskCycle   cycle;					// 任务周期
-	EtlTime     etl_time;				// 采集时间
-	long long   exprry_date_start;		// 有效期开始
-	long long   expiry_date_end;		// 有效期结束
-
-	std::vector<
+	int                      seq_id;					// 序号
+	TASK_TYPE                type;						// 任务类型
+	std::string              kpi_id;					// 指标 ID
+	TaskCycle                cycle;						// 任务周期
+	EtlTime                  etl_time;					// 采集时间
+	long long                expiry_date_start;			// 有效期开始
+	long long                expiry_date_end;			// 有效期结束
+	std::string              task_starttime;			// 任务开始时间
+	std::string              task_finishtime;			// 任务结束时间
+	std::vector<TaskScheLog> vecEtlTasks;				// 采集任务日志
+	TaskScheLog              vecAnaTask;				// 分析任务日志
 };
 

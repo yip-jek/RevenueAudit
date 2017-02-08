@@ -154,16 +154,11 @@ void YCTask::Check() throw(base::Exception)
 
 bool YCTask::ConfirmQuit()
 {
-	if ( m_vecNewTask.empty()
+	return ( m_vecNewTask.empty()
 		&& m_vecEndTask.empty()
 		&& m_mTaskReqInfo.empty()
 		&& m_vecEtlTaskInfo.empty()
-		&& m_vecAnaTaskInfo.empty() )
-	{
-		return true;
-	}
-
-	return false;
+		&& m_vecAnaTaskInfo.empty() );
 }
 
 void YCTask::GetNewTask() throw(base::Exception)

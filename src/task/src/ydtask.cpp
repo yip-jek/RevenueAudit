@@ -67,9 +67,10 @@ void YDTask::LoadConfig() throw(base::Exception)
 	m_modeAnalyse   = m_pCfg->GetCfgValue("COMMON", "ANALYSE_MODE");
 	m_cfgAnalyse    = m_pCfg->GetCfgValue("COMMON", "ANALYSE_CONFIG");
 
-	m_tabTaskSche = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_SCHE");
-	m_tabKpiRule  = m_pCfg->GetCfgValue("TABLE", "TAB_KPI_RULE");
-	m_tabEtlRule  = m_pCfg->GetCfgValue("TABLE", "TAB_ETL_RULE");
+	m_tabTaskSche    = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_SCHE");
+	m_tabTaskScheLog = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_SCHE_LOG");
+	m_tabKpiRule     = m_pCfg->GetCfgValue("TABLE", "TAB_KPI_RULE");
+	m_tabEtlRule     = m_pCfg->GetCfgValue("TABLE", "TAB_ETL_RULE");
 
 	m_pLog->Output("[YD_TASK] Load config OK.");
 }
@@ -85,6 +86,7 @@ void YDTask::InitConnect() throw(base::Exception)
 	}
 
 	m_pTaskDB2->SetTabTaskSche(m_tabTaskSche);
+	m_pTaskDB2->SetTabTaskScheLog(m_tabTaskScheLog);
 	m_pTaskDB2->SetTabKpiRule(m_tabKpiRule);
 	m_pTaskDB2->SetTabEtlRule(m_tabEtlRule);
 	m_pTaskDB2->Connect();
@@ -107,6 +109,12 @@ void YDTask::Init() throw(base::Exception)
 	}
 	m_pLog->Output("[YD_TASK] Check the task schedule table [%s] OK.", m_tabTaskSche.c_str());
 
+	if ( !m_pTaskDB2->IsTableExists(m_tabTaskScheLog) )
+	{
+		throw base::Exception(YDTERR_INIT, "The task schedule log table is not existed: %s [FILE:%s, LINE:%d]", m_tabTaskScheLog.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[YD_TASK] Check the task schedule log table [%s] OK.", m_tabTaskScheLog.c_str());
+
 	if ( !m_pTaskDB2->IsTableExists(m_tabKpiRule) )
 	{
 		throw base::Exception(YDTERR_INIT, "The kpi rule table is not existed: %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), __FILE__, __LINE__);
@@ -124,7 +132,11 @@ void YDTask::Init() throw(base::Exception)
 
 bool YDTask::ConfirmQuit()
 {
-	return true;
+	return (m_mTaskSche.empty()
+		&& m_mTaskSche_bak.empty()
+		&& m_mTaskWait.empty()
+		&& m_mEtlTaskRun.empty()
+		&& m_mAnaTaskRun.empty() );
 }
 
 void YDTask::GetNewTask() throw(base::Exception)
@@ -135,10 +147,19 @@ void YDTask::GetNewTask() throw(base::Exception)
 void YDTask::GetNoTask() throw(base::Exception)
 {
 	m_mTaskSche.clear();
+	m_mTaskSche_bak.clear();
+	m_mTaskWait.clear();
 }
 
 void YDTask::ShowTasksInfo()
 {
+	m_pLog->Output(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+	m_pLog->Output("[YD_TASK] 任务日程数: %llu", m_mTaskSche.size());
+	m_pLog->Output("[YD_TASK] 日程备份数: %llu", m_mTaskSche_bak.size());
+	m_pLog->Output("[YD_TASK] 等待任务数: %llu", m_mTaskWait.size());
+	m_pLog->Output("[YD_TASK] 采集任务数: %llu", m_mEtlTaskRun.size());
+	m_pLog->Output("[YD_TASK] 分析任务数: %llu", m_mAnaTaskRun.size());
+	m_pLog->Output("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 }
 
 void YDTask::HandleAnaTask() throw(base::Exception)

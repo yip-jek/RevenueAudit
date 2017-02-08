@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include "ydstruct.h"
 #include "task.h"
 
@@ -81,11 +82,16 @@ private:
 
 private:
 	std::string m_tabTaskSche;				// 任务日程表
+	std::string m_tabTaskScheLog;			// 任务日程日志表
 	std::string m_tabKpiRule;				// 指标规则表
 	std::string m_tabEtlRule;				// 采集规则表
 
 private:
 	std::map<int, TaskSchedule> m_mTaskSche;			// 任务日程
 	std::map<int, TaskSchedule> m_mTaskSche_bak;		// 任务日程备份
+	std::map<int, RATask>       m_mTaskWait;			// 等待任务队列
+	std::map<int, RATask>       m_mEtlTaskRun;			// 采集运行任务队列
+	std::map<int, RATask>       m_mAnaTaskRun;			// 分析运行任务队列
+	std::set<int>               m_sDelWait;				// 等待运行完删除的任务ID
 };
 
