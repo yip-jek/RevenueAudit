@@ -27,6 +27,9 @@ public:
 	// 返回：大月-31, 小月-30，闰年2月-29，平年2月-28, 其他（错误）-1
 	static int LastDayOfTheMon(int year, int mon);
 
+	// 时间是否有效？（时间格式：YYYYMMDDHHMISS）
+	static bool IsTime14Valid(long long time);
+
 public:
 	int GetYear() const { return year; }
 	int GetMon()  const { return mon ; }

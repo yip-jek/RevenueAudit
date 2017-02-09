@@ -94,6 +94,23 @@ int SimpleTime::LastDayOfTheMon(int year, int mon)
 	}
 }
 
+bool SimpleTime::IsTime14Valid(long long time)
+{
+	if ( time <= 10000000000 )
+	{
+		return false;
+	}
+
+	int year = time / 10000000000;
+	int mon  = (time % 10000000000) / 100000000;
+	int day  = (time % 100000000) / 1000000;
+	int hour = (time % 1000000) / 10000;
+	int min  = (time % 10000) / 100;
+	int sec  = time % 100;
+	SimpleTime st(year, mon, day, hour, min, sec);
+	return (st.GetYear() > 0 && st.GetMon() > 0 && st.GetDay() > 0);
+}
+
 std::string SimpleTime::TimeStamp()
 {
 	return TimeFormat("%04d-%02d-%02d %02d:%02d:%02d", year, mon, day, hour, min, sec);

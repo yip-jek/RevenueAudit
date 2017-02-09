@@ -1,4 +1,6 @@
 #include "ydtask.h"
+#include <errno.h>
+#include <string.h>
 #include "config.h"
 #include "log.h"
 #include "ydtaskdb2.h"
@@ -49,6 +51,7 @@ void YDTask::LoadConfig() throw(base::Exception)
 
 	// 读取数据库表配置
 	m_pCfg->RegisterItem("TABLE", "TAB_TASK_SCHE");
+	m_pCfg->RegisterItem("TABLE", "TAB_TASK_SCHE_LOG");
 	m_pCfg->RegisterItem("TABLE", "TAB_KPI_RULE");
 	m_pCfg->RegisterItem("TABLE", "TAB_ETL_RULE");
 
@@ -136,12 +139,97 @@ bool YDTask::ConfirmQuit()
 		&& m_mTaskSche_bak.empty()
 		&& m_mTaskWait.empty()
 		&& m_mEtlTaskRun.empty()
-		&& m_mAnaTaskRun.empty() );
+		&& m_mAnaTaskRun.empty()
+		&& m_mTaskEnd.empty() );
 }
 
 void YDTask::GetNewTask() throw(base::Exception)
 {
 	m_pTaskDB2->GetTaskSchedule(m_mTaskSche);
+
+	GetNewTaskSche();
+
+	DelUnavailableTask();
+}
+
+void YDTask::GetNewTaskSche()
+{
+	// 获取任务日程：包括新增的和更新的
+	int c_new_tasks = 0;
+	int c_upd_tasks = 0;
+	int c_err_tasks = 0;
+	RATask rat;
+	std::map<int, TaskSchedule>::iterator it;
+	std::map<int, TaskSchedule>::iterator bk_it;
+	for ( it = m_mTaskSche.begin(); it != m_mTaskSche.end(); ++it )
+	{
+		bk_it = m_mTaskSche_bak.find(it->first);
+		if ( bk_it != m_mTaskSche_bak.end() )	// 已存在
+		{
+			if ( it->second != bk_it->second )	// 更新
+			{
+				if ( rat.LoadFromTaskSche(it->second) )
+				{
+					++c_upd_tasks;
+					m_mTaskWait[it->first] = rat;
+					m_mTaskSche_bak[it->first] = it->second;
+					m_pLog->Output("[YD_TASK] 更新任务: ID=[%d], KPI_ID=[%s]", it->first, rat.kpi_id.c_str());
+				}
+				else	// 错误：载入任务日程失败，不更新
+				{
+					++c_err_tasks;
+					m_pLog->Output("[YD_TASK] 任务日程载入失败，取消更新任务：ID=[%d]", it->first);
+				}
+			}
+		}
+		else	// 不存在
+		{
+			if ( rat.LoadFromTaskSche(it->second) )		// 新增
+			{
+				++c_new_tasks;
+				m_mTaskWait[it->first] = rat;
+				m_mTaskSche_bak[it->first] = it->second;
+				m_pLog->Output("[YD_TASK] 新增任务: ID=[%d], KPI_ID=[%s]", it->first, rat.kpi_id.c_str());
+			}
+			else	// 错误：载入任务日程失败，不新增
+			{
+				++c_err_tasks;
+				m_pLog->Output("[YD_TASK] 任务日程载入失败，取消新增任务：ID=[%d]", it->first);
+			}
+		}
+	}
+
+	m_pLog->Output("[YD_TASK] 新增任务数: %d", c_new_tasks);
+	m_pLog->Output("[YD_TASK] 更新任务数: %d", c_upd_tasks);
+	m_pLog->Output("[YD_TASK] 错误任务数: %d", c_err_tasks);
+}
+
+void YDTask::DelUnavailableTask()
+{
+	// 删除不存在或者没有激活的任务
+	std::map<int, TaskSchedule>::iterator bk_it = m_mTaskSche_bak.begin();
+	while ( bk_it != m_mTaskSche_bak.end() )
+	{
+		if ( m_mTaskSche.find(bk_it->first) == m_mTaskSche.end() )	// 不存在或者没有激活
+		{
+			if ( m_mTaskWait.find(bk_it->first) != m_mTaskWait.end() )
+			{
+				m_pLog->Output("[YD_TASK] 删除不存在或者没激活的任务：ID=[%d], KPI_ID=[%s]", bk_it->first, m_mTaskWait[bk_it->first].kpi_id.c_str());
+				m_mTaskWait.erase(bk_it->first);
+			}
+			else
+			{
+				m_sDelAfterRun.insert(bk_it->first);
+				m_pLog->Output("[YD_TASK] ：ID=[%d], KPI_ID=[%s]", bk_it->first, m_mTaskWait[bk_it->first].kpi_id.c_str());
+			}
+
+			m_mTaskSche_bak.erase(bk_it++);
+		}
+		else
+		{
+			++bk_it;
+		}
+	}
 }
 
 void YDTask::GetNoTask() throw(base::Exception)
@@ -156,9 +244,10 @@ void YDTask::ShowTasksInfo()
 	m_pLog->Output(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 	m_pLog->Output("[YD_TASK] 任务日程数: %llu", m_mTaskSche.size());
 	m_pLog->Output("[YD_TASK] 日程备份数: %llu", m_mTaskSche_bak.size());
-	m_pLog->Output("[YD_TASK] 等待任务数: %llu", m_mTaskWait.size());
+	m_pLog->Output("[YD_TASK] 任务等待数: %llu", m_mTaskWait.size());
 	m_pLog->Output("[YD_TASK] 采集任务数: %llu", m_mEtlTaskRun.size());
 	m_pLog->Output("[YD_TASK] 分析任务数: %llu", m_mAnaTaskRun.size());
+	m_pLog->Output("[YD_TASK] 任务完成数: %llu", m_mTaskEnd.size());
 	m_pLog->Output("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 }
 

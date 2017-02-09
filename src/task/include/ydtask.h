@@ -41,6 +41,12 @@ protected:
 	// 获取新任务
 	virtual void GetNewTask() throw(base::Exception);
 
+	// 获取新的任务日程
+	void GetNewTaskSche();
+
+	// 删除不存在或者没有激活的任务
+	void DelUnavailableTask();
+
 	// 不获取任务
 	virtual void GetNoTask() throw(base::Exception);
 
@@ -89,9 +95,10 @@ private:
 private:
 	std::map<int, TaskSchedule> m_mTaskSche;			// 任务日程
 	std::map<int, TaskSchedule> m_mTaskSche_bak;		// 任务日程备份
-	std::map<int, RATask>       m_mTaskWait;			// 等待任务队列
+	std::map<int, RATask>       m_mTaskWait;			// 任务等待队列
 	std::map<int, RATask>       m_mEtlTaskRun;			// 采集运行任务队列
 	std::map<int, RATask>       m_mAnaTaskRun;			// 分析运行任务队列
-	std::set<int>               m_sDelWait;				// 等待运行完删除的任务ID
+	std::map<int, RATask>       m_mTaskEnd;				// 任务完成队列
+	std::set<int>               m_sDelAfterRun;			// 运行完需要删除的任务ID
 };
 

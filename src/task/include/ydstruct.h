@@ -12,16 +12,19 @@ public:
 	TaskSchedule(): seq_id(0)
 	{}
 
-	bool operator == (const TaskSchedule& ts)
+	friend bool operator == (const TaskSchedule& ts1, const TaskSchedule& ts2)
 	{
-		return (ts.seq_id == seq_id
-			&& base::PubStr::TrimUpperB(ts.task_type) == base::PubStr::TrimUpperB(task_type)
-			&& base::PubStr::TrimUpperB(ts.kpi_id) == base::PubStr::TrimUpperB(kpi_id)
-			&& base::PubStr::TrimB(ts.task_cycle) == base::PubStr::TrimB(task_cycle)
-			&& base::PubStr::TrimUpperB(ts.etl_time) == base::PubStr::TrimUpperB(etl_time)
-			&& base::PubStr::TrimB(ts.expiry_date_start) == base::PubStr::TrimB(expiry_date_start)
-			&& base::PubStr::TrimB(ts.expiry_date_end) == base::PubStr::TrimB(expiry_date_end) );
+		return (ts1.seq_id == ts2.seq_id
+			&& base::PubStr::TrimUpperB(ts1.task_type) == base::PubStr::TrimUpperB(ts2.task_type)
+			&& base::PubStr::TrimUpperB(ts1.kpi_id) == base::PubStr::TrimUpperB(ts2.kpi_id)
+			&& base::PubStr::TrimB(ts1.task_cycle) == base::PubStr::TrimB(ts2.task_cycle)
+			&& base::PubStr::TrimUpperB(ts1.etl_time) == base::PubStr::TrimUpperB(ts2.etl_time)
+			&& base::PubStr::TrimB(ts1.expiry_date_start) == base::PubStr::TrimB(ts2.expiry_date_start)
+			&& base::PubStr::TrimB(ts1.expiry_date_end) == base::PubStr::TrimB(ts2.expiry_date_end) );
 	}
+
+	friend bool operator != (const TaskSchedule& ts1, const TaskSchedule& ts2)
+	{ return !(ts1 == ts2); }
 
 public:
 	// 是否为临时任务
@@ -95,12 +98,13 @@ public:
 				return false;
 			}
 
+			const int MAX_DAY = (s_y != ANY_TIME && s_m != ANY_TIME) ? base::SimpleTime::LastDayOfTheMon(s_y, s_m) : 31;
 			std::string& ref_d = vec_str[index++];
 			if ( "*" == ref_d )
 			{
 				s_d = ANY_TIME;
 			}
-			else if ( !base::PubStr::Str2Int(ref_d, s_d) || s_d < 1 || s_d > 31 )
+			else if ( !base::PubStr::Str2Int(ref_d, s_d) || s_d < 1 || s_d > MAX_DAY )
 			{
 				return false;
 			}
@@ -265,7 +269,6 @@ public:
 		}
 
 		dt_type = dt;
-		currIndex = 0;
 		return true;
 	}
 
@@ -331,7 +334,7 @@ public:
 				return false;
 			}
 
-			if ( currIndex >= vecTime.size() )
+			if ( (size_t)currIndex >= vecTime.size() )
 			{
 				currIndex = -1;
 			}
@@ -390,13 +393,71 @@ public:
 	{}
 
 public:
+	// 载入任务日程
+	bool LoadFromTaskSche(const TaskSchedule& ts)
+	{
+		RATask tmp_rat;
+		tmp_rat.seq_id = ts.seq_id;
+		tmp_rat.kpi_id = base::PubStr::TrimUpperB(ts.kpi_id);
+
+		if ( ts.IsPermanentTask() )		// 常驻任务
+		{
+			tmp_rat.type = TTYPE_P;
+		}
+		else if ( ts.IsTemporaryTask() )	// 临时任务
+		{
+			tmp_rat.type = TTYPE_T;
+		}
+		else	// 未知
+		{
+			return false;
+		}
+
+		// 周期有效？
+		if ( !tmp_rat.cycle.Set(ts.task_cycle) )
+		{
+			return false;
+		}
+
+		// 采集时间有效？
+		if ( !tmp_rat.etl_time.SetTime(ts.etl_time) )
+		{
+			return false;
+		}
+
+		// 有效期开始时间有效？
+		long long ll_time = 0;
+		if ( !base::PubStr::Str2LLong(base::PubStr::TrimB(ts.expiry_date_start), ll_time) || !base::SimpleTime::IsTime14Valid(ll_time) )
+		{
+			return false;
+		}
+		expiry_date_start = ll_time;
+
+		// 有效期结束时间有效？
+		if ( !base::PubStr::Str2LLong(base::PubStr::TrimB(ts.expiry_date_end), ll_time) || !base::SimpleTime::IsTime14Valid(ll_time) )
+		{
+			return false;
+		}
+		expiry_date_end = ll_time;
+
+		// 有效期的结束时间比开始时间还早？
+		if ( expiry_date_start > expiry_date_end )
+		{
+			return false;
+		}
+
+		*this = tmp_rat;
+		return true;
+	}
+
+public:
 	int                      seq_id;					// 序号
 	TASK_TYPE                type;						// 任务类型
 	std::string              kpi_id;					// 指标 ID
 	TaskCycle                cycle;						// 任务周期
 	EtlTime                  etl_time;					// 采集时间
-	long long                expiry_date_start;			// 有效期开始
-	long long                expiry_date_end;			// 有效期结束
+	long long                expiry_date_start;			// 有效期开始时间
+	long long                expiry_date_end;			// 有效期结束时间
 	std::string              task_starttime;			// 任务开始时间
 	std::string              task_finishtime;			// 任务结束时间
 	std::vector<TaskScheLog> vecEtlTasks;				// 采集任务日志
