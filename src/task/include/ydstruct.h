@@ -461,6 +461,6 @@ public:
 	std::string              task_starttime;			// 任务开始时间
 	std::string              task_finishtime;			// 任务结束时间
 	std::vector<TaskScheLog> vecEtlTasks;				// 采集任务日志
-	TaskScheLog              vecAnaTask;				// 分析任务日志
+	TaskScheLog              tslogAnaTask;				// 分析任务日志
 };
 

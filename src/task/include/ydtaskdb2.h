@@ -18,6 +18,7 @@ public:
 		TDB_ERR_INS_TASKSCHELOG   = -20000006,				// 新增任务日程日志失败
 		TDB_ERR_SEL_TSLOG_STATE   = -20000007,				// 查询任务日程日志状态失败
 		TDB_ERR_UPD_ETL_TIME      = -20000008,				// 更新采集时间失败
+		TDB_ERR_UPD_TSLOG_STATE   = -20000009,				// 更新任务日程日志状态失败
 	};
 
 public:
@@ -60,6 +61,9 @@ public:
 
 	// 更新采集时间
 	void UpdateEtlTime(const std::string& etl_id, const std::string& etl_time) throw(base::Exception);
+
+	// 更新任务日程日志状态
+	void UpdateTaskScheLogState(const TaskScheLog& ts_log) throw(base::Exception);
 
 private:
 	std::string m_tabTaskSche;				// 任务日程表

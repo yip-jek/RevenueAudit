@@ -16,8 +16,10 @@ public:
 	// 任务错误代码
 	enum YD_TASK_ERROR
 	{
-		YDTERR_INIT_CONN = -11000001,			// 初始化数据库连接失败
-		YDTERR_INIT      = -11000002,			// 初始化失败
+		YDTERR_INIT_CONN    = -11000001,			// 初始化数据库连接失败
+		YDTERR_INIT         = -11000002,			// 初始化失败
+		YDTERR_HDL_ANA_TASK = -11000003,			// 处理分析任务失败
+		YDTERR_HDL_ETL_TASK = -11000004,			// 处理采集任务失败
 	};
 
 protected:
@@ -85,6 +87,7 @@ private:
 	std::string m_binAnalyse;				// 分析程序（带路径）
 	std::string m_modeAnalyse;				// 分析程序模式
 	std::string m_cfgAnalyse;				// 分析配置文件（带路径）
+	std::string m_etlStateSuccess;			// 采集成功状态
 
 private:
 	std::string m_tabTaskSche;				// 任务日程表

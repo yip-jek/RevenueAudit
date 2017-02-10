@@ -26,7 +26,7 @@ Task::~Task()
 
 std::string Task::Version()
 {
-	return ("Version 3.0007 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Version 3.0008 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Task::Run() throw(base::Exception)

@@ -48,6 +48,7 @@ void YDTask::LoadConfig() throw(base::Exception)
 	m_pCfg->RegisterItem("COMMON", "ANALYSE_BIN");
 	m_pCfg->RegisterItem("COMMON", "ANALYSE_MODE");
 	m_pCfg->RegisterItem("COMMON", "ANALYSE_CONFIG");
+	m_pCfg->RegisterItem("COMMON", "ETL_STATE_SUCCESS");
 
 	// 读取数据库表配置
 	m_pCfg->RegisterItem("TABLE", "TAB_TASK_SCHE");
@@ -61,14 +62,15 @@ void YDTask::LoadConfig() throw(base::Exception)
 	m_dbinfo.db_user = m_pCfg->GetCfgValue("DATABASE", "USER_NAME");
 	m_dbinfo.db_pwd  = m_pCfg->GetCfgValue("DATABASE", "PASSWORD");
 
-	m_hiveAgentPath = m_pCfg->GetCfgValue("COMMON", "HIVE_AGENT_PATH");
-	m_binVer        = m_pCfg->GetCfgValue("COMMON", "BIN_VER");
-	m_binAcquire    = m_pCfg->GetCfgValue("COMMON", "ACQUIRE_BIN");
-	m_modeAcquire   = m_pCfg->GetCfgValue("COMMON", "ACQUIRE_MODE");
-	m_cfgAcquire    = m_pCfg->GetCfgValue("COMMON", "ACQUIRE_CONFIG");
-	m_binAnalyse    = m_pCfg->GetCfgValue("COMMON", "ANALYSE_BIN");
-	m_modeAnalyse   = m_pCfg->GetCfgValue("COMMON", "ANALYSE_MODE");
-	m_cfgAnalyse    = m_pCfg->GetCfgValue("COMMON", "ANALYSE_CONFIG");
+	m_hiveAgentPath   = m_pCfg->GetCfgValue("COMMON", "HIVE_AGENT_PATH");
+	m_binVer          = m_pCfg->GetCfgValue("COMMON", "BIN_VER");
+	m_binAcquire      = m_pCfg->GetCfgValue("COMMON", "ACQUIRE_BIN");
+	m_modeAcquire     = m_pCfg->GetCfgValue("COMMON", "ACQUIRE_MODE");
+	m_cfgAcquire      = m_pCfg->GetCfgValue("COMMON", "ACQUIRE_CONFIG");
+	m_binAnalyse      = m_pCfg->GetCfgValue("COMMON", "ANALYSE_BIN");
+	m_modeAnalyse     = m_pCfg->GetCfgValue("COMMON", "ANALYSE_MODE");
+	m_cfgAnalyse      = m_pCfg->GetCfgValue("COMMON", "ANALYSE_CONFIG");
+	m_etlStateSuccess = m_pCfg->GetCfgValue("COMMON", "ETL_STATE_SUCCESS");
 
 	m_tabTaskSche    = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_SCHE");
 	m_tabTaskScheLog = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_SCHE_LOG");
@@ -154,16 +156,18 @@ void YDTask::GetNewTask() throw(base::Exception)
 
 void YDTask::GetNewTaskSche()
 {
-	// 获取任务日程：包括新增的和更新的
 	int c_new_tasks = 0;
 	int c_upd_tasks = 0;
 	int c_err_tasks = 0;
+
+	// 获取任务日程：包括新增的和更新的
 	RATask rat;
 	std::map<int, TaskSchedule>::iterator it;
 	std::map<int, TaskSchedule>::iterator bk_it;
 	for ( it = m_mTaskSche.begin(); it != m_mTaskSche.end(); ++it )
 	{
-		bk_it = m_mTaskSche_bak.find(it->first);
+		int id = it->first;
+		bk_it = m_mTaskSche_bak.find(id);
 		if ( bk_it != m_mTaskSche_bak.end() )	// 已存在
 		{
 			if ( it->second != bk_it->second )	// 更新
@@ -171,14 +175,14 @@ void YDTask::GetNewTaskSche()
 				if ( rat.LoadFromTaskSche(it->second) )
 				{
 					++c_upd_tasks;
-					m_mTaskWait[it->first] = rat;
-					m_mTaskSche_bak[it->first] = it->second;
-					m_pLog->Output("[YD_TASK] 更新任务: ID=[%d], KPI_ID=[%s]", it->first, rat.kpi_id.c_str());
+					m_mTaskWait[id] = rat;
+					m_mTaskSche_bak[id] = it->second;
+					m_pLog->Output("[YD_TASK] 更新任务: ID=[%d], KPI_ID=[%s]", id, rat.kpi_id.c_str());
 				}
 				else	// 错误：载入任务日程失败，不更新
 				{
 					++c_err_tasks;
-					m_pLog->Output("[YD_TASK] 任务日程载入失败，取消更新任务：ID=[%d]", it->first);
+					m_pLog->Output("[YD_TASK] 任务日程载入失败，取消更新任务：ID=[%d]", id);
 				}
 			}
 		}
@@ -187,14 +191,14 @@ void YDTask::GetNewTaskSche()
 			if ( rat.LoadFromTaskSche(it->second) )		// 新增
 			{
 				++c_new_tasks;
-				m_mTaskWait[it->first] = rat;
-				m_mTaskSche_bak[it->first] = it->second;
-				m_pLog->Output("[YD_TASK] 新增任务: ID=[%d], KPI_ID=[%s]", it->first, rat.kpi_id.c_str());
+				m_mTaskWait[id] = rat;
+				m_mTaskSche_bak[id] = it->second;
+				m_pLog->Output("[YD_TASK] 新增任务: ID=[%d], KPI_ID=[%s]", id, rat.kpi_id.c_str());
 			}
 			else	// 错误：载入任务日程失败，不新增
 			{
 				++c_err_tasks;
-				m_pLog->Output("[YD_TASK] 任务日程载入失败，取消新增任务：ID=[%d]", it->first);
+				m_pLog->Output("[YD_TASK] 任务日程载入失败，取消新增任务：ID=[%d]", id);
 			}
 		}
 	}
@@ -207,22 +211,28 @@ void YDTask::GetNewTaskSche()
 void YDTask::DelUnavailableTask()
 {
 	// 删除不存在或者没有激活的任务
+	int c_del_tasks = 0;
 	std::map<int, TaskSchedule>::iterator bk_it = m_mTaskSche_bak.begin();
 	while ( bk_it != m_mTaskSche_bak.end() )
 	{
-		if ( m_mTaskSche.find(bk_it->first) == m_mTaskSche.end() )	// 不存在或者没有激活
+		int bk_id = bk_it->first;
+		if ( m_mTaskSche.find(bk_id) == m_mTaskSche.end() )	// 不存在或者没有激活
 		{
-			if ( m_mTaskWait.find(bk_it->first) != m_mTaskWait.end() )
+			if ( m_mTaskWait.find(bk_id) != m_mTaskWait.end() )
 			{
-				m_pLog->Output("[YD_TASK] 删除不存在或者没激活的任务：ID=[%d], KPI_ID=[%s]", bk_it->first, m_mTaskWait[bk_it->first].kpi_id.c_str());
-				m_mTaskWait.erase(bk_it->first);
-			}
-			else
-			{
-				m_sDelAfterRun.insert(bk_it->first);
-				m_pLog->Output("[YD_TASK] ：ID=[%d], KPI_ID=[%s]", bk_it->first, m_mTaskWait[bk_it->first].kpi_id.c_str());
+				m_pLog->Output("[YD_TASK] 删除不存在或者没激活的任务：ID=[%d], KPI_ID=[%s]", bk_id, m_mTaskWait[bk_id].kpi_id.c_str());
+				m_mTaskWait.erase(bk_id);
 			}
 
+			if ( m_mEtlTaskRun.find(bk_id) != m_mEtlTaskRun.end()
+				|| m_mAnaTaskRun.find(bk_id) != m_mAnaTaskRun.end()
+				|| m_mTaskEnd.find(bk_id) != m_mTaskEnd.end() )
+			{
+				m_sDelAfterRun.insert(bk_id);
+				m_pLog->Output("[YD_TASK] 任务正在运行，运行结束后再删除：ID=[%d]", bk_id);
+			}
+
+			++c_del_tasks;
 			m_mTaskSche_bak.erase(bk_it++);
 		}
 		else
@@ -230,6 +240,8 @@ void YDTask::DelUnavailableTask()
 			++bk_it;
 		}
 	}
+
+	m_pLog->Output("[YD_TASK] 删除任务数: %d", c_del_tasks);
 }
 
 void YDTask::GetNoTask() throw(base::Exception)
@@ -253,17 +265,149 @@ void YDTask::ShowTasksInfo()
 
 void YDTask::HandleAnaTask() throw(base::Exception)
 {
+	if ( m_mAnaTaskRun.empty() )
+	{
+		return;
+	}
+
+	// 获取分析任务状态
+	std::map<int, RATask>::iterator it = m_mAnaTaskRun.begin();
+	while ( it != m_mAnaTaskRun.end() )
+	{
+		RATask& ref_rat = it->second;
+		TaskScheLog& ref_tslog = ref_rat.tslogAnaTask;
+		m_pTaskDB2->SelectTaskScheLogState(ref_tslog);
+
+		// 分析任务是否完成？
+		if ( !ref_tslog.end_time.empty() && !ref_tslog.task_state.empty() )
+		{
+			m_pLog->Output("[YD_TASK] Analyse finished: SEQ=[%d], TASK_ID=[%s], KPI_ID=[%s], ANA_ID=[%s], ETL_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s], STATE_DESC=[%s], REMARK=[%s]", ref_rat.seq_id, ref_tslog.task_id.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str(), ref_tslog.end_time.c_str(), ref_tslog.task_state.c_str(), ref_tslog.state_desc.c_str(), ref_tslog.remarks.c_str());
+
+			m_mTaskEnd[ref_rat.seq_id] = ref_rat;
+			m_mAnaTaskRun.erase(it++);
+			continue;
+		}
+		else	// 未完成
+		{
+			long long ll_taskid = 0;
+			if ( !base::PubStr::Str2LLong(ref_tslog.task_id, ll_taskid) )
+			{
+				throw base::Exception(YDTERR_HDL_ANA_TASK, "Convert the task_id (string) to long long failed: SEQ=[%d], KPI_ID=[%s], ANA_ID=[%s], TASK_ID=[%s] [FILE:%s, LINE:%d]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.task_id.c_str(), __FILE__, __LINE__);
+			}
+
+			// 检查分析进程是否异常退出
+			if ( !IsProcessAlive(ll_taskid) )		// 进程异常退出
+			{
+				m_pLog->Output("[YD_TASK] Analyse exited unexpectedly: SEQ=[%d], TASK_ID=[%lld], KPI_ID=[%s], ANA_ID=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ll_taskid, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str());
+
+				ref_tslog.end_time   = base::SimpleTime::Now().Time14();
+				ref_tslog.task_state = "ANALYSE_ABORT";
+				ref_tslog.state_desc = "分析进程异常退出";
+				m_pTaskDB2->UpdateTaskScheLogState(ref_tslog);
+
+				m_mTaskEnd[ref_rat.seq_id] = ref_rat;
+				m_mAnaTaskRun.erase(it++);
+				continue;
+			}
+		}
+
+		++it;
+	}
 }
 
 void YDTask::HandleEtlTask() throw(base::Exception)
 {
+	if ( m_mEtlTaskRun.empty() )
+	{
+		return;
+	}
+
+	// 获取分析任务状态
+	std::map<int, RATask>::iterator it = m_mEtlTaskRun.begin();
+	while ( it != m_mEtlTaskRun.end() )
+	{
+		RATask& ref_rat = it->second;
+
+		int c_etl_success  = 0;
+		int c_etl_finished = 0;
+
+		const int VEC_SIZE = ref_rat.vecEtlTasks.size();
+		for ( int i = 0; i < VEC_SIZE; ++i )
+		{
+			TaskScheLog& ref_tslog = ref_rat.vecEtlTasks[i];
+			if ( !ref_tslog.end_time.empty() && !ref_tslog.task_state.empty() )	// 已获取状态
+			{
+				++c_etl_finished;
+				if ( base::PubStr::TrimB(ref_tslog.task_state) == m_etlStateSuccess )
+				{
+					++c_etl_success;
+				}
+			}
+			else	// 未获取状态
+			{
+				m_pTaskDB2->SelectTaskScheLogState(ref_tslog);
+
+				// 采集任务是否完成？
+				if ( !ref_tslog.end_time.empty() && !ref_tslog.task_state.empty() )
+				{
+					m_pLog->Output("[YD_TASK] Acquire finished: SEQ=[%d], TASK_ID=[%s], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s], STATE_DESC=[%s], REMARK=[%s]", ref_rat.seq_id, ref_tslog.task_id.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str(), ref_tslog.end_time.c_str(), ref_tslog.task_state.c_str(), ref_tslog.state_desc.c_str(), ref_tslog.remarks.c_str());
+
+					++c_etl_finished;
+					if ( base::PubStr::TrimB(ref_tslog.task_state) == m_etlStateSuccess )
+					{
+						++c_etl_success;
+					}
+				}
+				else	// 未完成
+				{
+					long long ll_taskid = 0;
+					if ( !base::PubStr::Str2LLong(ref_tslog.task_id, ll_taskid) )
+					{
+						throw base::Exception(YDTERR_HDL_ETL_TASK, "Convert the task_id (string) to long long failed: SEQ=[%d], KPI_ID=[%s], ETL_ID=[%s], TASK_ID=[%s] [FILE:%s, LINE:%d]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.task_id.c_str(), __FILE__, __LINE__);
+					}
+
+					// 检查采集进程是否异常退出
+					if ( !IsProcessAlive(ll_taskid) )		// 进程异常退出
+					{
+						m_pLog->Output("[YD_TASK] Acquire exited unexpectedly: SEQ=[%d], TASK_ID=[%lld], KPI_ID=[%s], ANA_ID=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ll_taskid, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str());
+
+						ref_tslog.end_time   = base::SimpleTime::Now().Time14();
+						ref_tslog.task_state = "ACQUIRE_ABORT";
+						ref_tslog.state_desc = "采集进程异常退出";
+						m_pTaskDB2->UpdateTaskScheLogState(ref_tslog);
+
+						++c_etl_finished;
+					}
+				}
+			}
+		}
+
+		if ( VEC_SIZE == c_etl_success )	// 所有采集全部成功
+		{
+		}
+		else if ( VEC_SIZE == c_etl_finished )		// 所有采集全部完成
+		{
+		}
+		else	// 采集未全部完成
+		{
+			++it;
+		}
+	}
 }
 
 void YDTask::BuildNewTask() throw(base::Exception)
 {
+	if ( m_mTaskWait.empty() )
+	{
+		return;
+	}
 }
 
 void YDTask::FinishTask() throw(base::Exception)
 {
+	if ( m_mTaskEnd.empty() )
+	{
+		return;
+	}
 }
 

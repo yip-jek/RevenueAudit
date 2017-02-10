@@ -289,3 +289,34 @@ void YDTaskDB2::UpdateEtlTime(const std::string& etl_id, const std::string& etl_
 	}
 }
 
+void YDTaskDB2::UpdateTaskScheLogState(const TaskScheLog& ts_log) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "UPDATE " + m_tabTaskScheLog + " SET END_TIME = ?, TASK_STATE = ?";
+	sql += ", TASK_STATE_DESC = ?, REMARKS = ? WHERE LOG_ID = ?"; 
+	m_pLog->Output("[DB2] Update task schedule log state: LOG_ID=[%d], END_TIME=[%s], TASK_STATE=[%s], TASK_STATE_DESC=[%s]", ts_log.log_id, ts_log.end_time.c_str(), ts_log.task_state.c_str(), ts_log.state_desc.c_str());
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		int index = 1;
+		rs.Parameter(index++) = ts_log.end_time.c_str();
+		rs.Parameter(index++) = ts_log.task_state.c_str();
+		rs.Parameter(index++) = ts_log.state_desc.c_str();
+		rs.Parameter(index++) = ts_log.remarks.c_str();
+		rs.Parameter(index++) = ts_log.log_id;
+		rs.Execute();
+
+		Commit();
+
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(TDB_ERR_UPD_TSLOG_STATE, "[DB2] Update state to task schedule log table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskScheLog.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
