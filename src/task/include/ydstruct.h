@@ -331,10 +331,11 @@ public:
 			}
 			else	// 不支持
 			{
+				currIndex = -1;
 				return false;
 			}
 
-			if ( (size_t)currIndex >= vecTime.size() )
+			if ( currIndex >= (int)vecTime.size() )
 			{
 				currIndex = -1;
 			}

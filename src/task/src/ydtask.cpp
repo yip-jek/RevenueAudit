@@ -7,6 +7,7 @@
 
 YDTask::YDTask(base::Config& cfg)
 :Task(cfg)
+,m_minRunTimeInterval(0)
 ,m_pTaskDB2(NULL)
 {
 	// 日志文件前缀
@@ -34,6 +35,8 @@ void YDTask::ReleaseDB()
 
 void YDTask::LoadConfig() throw(base::Exception)
 {
+	m_pCfg->RegisterItem("SYS", "MIN_RUN_TIMEINTERVAL");
+
 	// 读取数据库连接配置
 	m_pCfg->RegisterItem("DATABASE", "DB_NAME");
 	m_pCfg->RegisterItem("DATABASE", "USER_NAME");
@@ -57,6 +60,8 @@ void YDTask::LoadConfig() throw(base::Exception)
 	m_pCfg->RegisterItem("TABLE", "TAB_ETL_RULE");
 
 	m_pCfg->ReadConfig();
+
+	m_minRunTimeInterval = m_pCfg->GetCfgLongVal("SYS", "MIN_RUN_TIMEINTERVAL");
 
 	m_dbinfo.db_inst = m_pCfg->GetCfgValue("DATABASE", "DB_NAME");
 	m_dbinfo.db_user = m_pCfg->GetCfgValue("DATABASE", "USER_NAME");
@@ -132,6 +137,12 @@ void YDTask::Init() throw(base::Exception)
 	}
 	m_pLog->Output("[YD_TASK] Check the etl rule table [%s] OK.", m_tabEtlRule.c_str());
 
+	if ( m_minRunTimeInterval <= 0 )
+	{
+		throw base::Exception(YDTERR_INIT, "The min run time interval is invalid: %d [FILE:%s, LINE:%d]", m_minRunTimeInterval, __FILE__, __LINE__);
+	}
+	m_pLog->Output("[YD_TASK] Check min run time interval [%d] OK.", m_minRunTimeInterval);
+
 	m_pLog->Output("[YD_TASK] Init OK.");
 }
 
@@ -177,7 +188,7 @@ void YDTask::GetNewTaskSche()
 					++c_upd_tasks;
 					m_mTaskWait[id] = rat;
 					m_mTaskSche_bak[id] = it->second;
-					m_pLog->Output("[YD_TASK] 更新任务: ID=[%d], KPI_ID=[%s]", id, rat.kpi_id.c_str());
+					m_pLog->Output("[YD_TASK] 更新任务: ID=[%d], KPI=[%s]", id, rat.kpi_id.c_str());
 				}
 				else	// 错误：载入任务日程失败，不更新
 				{
@@ -193,7 +204,7 @@ void YDTask::GetNewTaskSche()
 				++c_new_tasks;
 				m_mTaskWait[id] = rat;
 				m_mTaskSche_bak[id] = it->second;
-				m_pLog->Output("[YD_TASK] 新增任务: ID=[%d], KPI_ID=[%s]", id, rat.kpi_id.c_str());
+				m_pLog->Output("[YD_TASK] 新增任务: ID=[%d], KPI=[%s]", id, rat.kpi_id.c_str());
 			}
 			else	// 错误：载入任务日程失败，不新增
 			{
@@ -220,7 +231,7 @@ void YDTask::DelUnavailableTask()
 		{
 			if ( m_mTaskWait.find(bk_id) != m_mTaskWait.end() )
 			{
-				m_pLog->Output("[YD_TASK] 删除不存在或者没激活的任务：ID=[%d], KPI_ID=[%s]", bk_id, m_mTaskWait[bk_id].kpi_id.c_str());
+				m_pLog->Output("[YD_TASK] 删除不存在或者没激活的任务：ID=[%d], KPI=[%s]", bk_id, m_mTaskWait[bk_id].kpi_id.c_str());
 				m_mTaskWait.erase(bk_id);
 			}
 
@@ -228,8 +239,8 @@ void YDTask::DelUnavailableTask()
 				|| m_mAnaTaskRun.find(bk_id) != m_mAnaTaskRun.end()
 				|| m_mTaskEnd.find(bk_id) != m_mTaskEnd.end() )
 			{
-				m_sDelAfterRun.insert(bk_id);
 				m_pLog->Output("[YD_TASK] 任务正在运行，运行结束后再删除：ID=[%d]", bk_id);
+				m_sDelAfterRun.insert(bk_id);
 			}
 
 			++c_del_tasks;
@@ -279,9 +290,9 @@ void YDTask::HandleAnaTask() throw(base::Exception)
 		m_pTaskDB2->SelectTaskScheLogState(ref_tslog);
 
 		// 分析任务是否完成？
-		if ( !ref_tslog.end_time.empty() && !ref_tslog.task_state.empty() )
+		if ( !ref_tslog.end_time.empty() && !ref_tslog.task_state.empty() )		// 已完成
 		{
-			m_pLog->Output("[YD_TASK] Analyse finished: SEQ=[%d], TASK_ID=[%s], KPI_ID=[%s], ANA_ID=[%s], ETL_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s], STATE_DESC=[%s], REMARK=[%s]", ref_rat.seq_id, ref_tslog.task_id.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str(), ref_tslog.end_time.c_str(), ref_tslog.task_state.c_str(), ref_tslog.state_desc.c_str(), ref_tslog.remarks.c_str());
+			m_pLog->Output("[YD_TASK] Analyse finished: SEQ=[%d], TASK_ID=[%s], KPI=[%s], ANA_ID=[%s], ETL_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s], STATE_DESC=[%s], REMARK=[%s]", ref_rat.seq_id, ref_tslog.task_id.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str(), ref_tslog.end_time.c_str(), ref_tslog.task_state.c_str(), ref_tslog.state_desc.c_str(), ref_tslog.remarks.c_str());
 
 			m_mTaskEnd[ref_rat.seq_id] = ref_rat;
 			m_mAnaTaskRun.erase(it++);
@@ -292,13 +303,13 @@ void YDTask::HandleAnaTask() throw(base::Exception)
 			long long ll_taskid = 0;
 			if ( !base::PubStr::Str2LLong(ref_tslog.task_id, ll_taskid) )
 			{
-				throw base::Exception(YDTERR_HDL_ANA_TASK, "Convert the task_id (string) to long long failed: SEQ=[%d], KPI_ID=[%s], ANA_ID=[%s], TASK_ID=[%s] [FILE:%s, LINE:%d]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.task_id.c_str(), __FILE__, __LINE__);
+				throw base::Exception(YDTERR_HDL_ANA_TASK, "Convert the task_id (string) to long long failed: SEQ=[%d], KPI=[%s], ANA_ID=[%s], TASK_ID=[%s] [FILE:%s, LINE:%d]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.task_id.c_str(), __FILE__, __LINE__);
 			}
 
 			// 检查分析进程是否异常退出
 			if ( !IsProcessAlive(ll_taskid) )		// 进程异常退出
 			{
-				m_pLog->Output("[YD_TASK] Analyse exited unexpectedly: SEQ=[%d], TASK_ID=[%lld], KPI_ID=[%s], ANA_ID=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ll_taskid, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str());
+				m_pLog->Output("[YD_TASK] Analyse exited unexpectedly: SEQ=[%d], TASK_ID=[%lld], KPI=[%s], ANA_ID=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ll_taskid, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str());
 
 				ref_tslog.end_time   = base::SimpleTime::Now().Time14();
 				ref_tslog.task_state = "ANALYSE_ABORT";
@@ -348,9 +359,9 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 				m_pTaskDB2->SelectTaskScheLogState(ref_tslog);
 
 				// 采集任务是否完成？
-				if ( !ref_tslog.end_time.empty() && !ref_tslog.task_state.empty() )
+				if ( !ref_tslog.end_time.empty() && !ref_tslog.task_state.empty() )		// 已完成
 				{
-					m_pLog->Output("[YD_TASK] Acquire finished: SEQ=[%d], TASK_ID=[%s], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s], STATE_DESC=[%s], REMARK=[%s]", ref_rat.seq_id, ref_tslog.task_id.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str(), ref_tslog.end_time.c_str(), ref_tslog.task_state.c_str(), ref_tslog.state_desc.c_str(), ref_tslog.remarks.c_str());
+					m_pLog->Output("[YD_TASK] Acquire finished: SEQ=[%d], TASK_ID=[%s], KPI=[%s], ETL_ID=[%s], ETL_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s], STATE_DESC=[%s], REMARK=[%s]", ref_rat.seq_id, ref_tslog.task_id.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str(), ref_tslog.end_time.c_str(), ref_tslog.task_state.c_str(), ref_tslog.state_desc.c_str(), ref_tslog.remarks.c_str());
 
 					++c_etl_finished;
 					if ( base::PubStr::TrimB(ref_tslog.task_state) == m_etlStateSuccess )
@@ -363,13 +374,13 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 					long long ll_taskid = 0;
 					if ( !base::PubStr::Str2LLong(ref_tslog.task_id, ll_taskid) )
 					{
-						throw base::Exception(YDTERR_HDL_ETL_TASK, "Convert the task_id (string) to long long failed: SEQ=[%d], KPI_ID=[%s], ETL_ID=[%s], TASK_ID=[%s] [FILE:%s, LINE:%d]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.task_id.c_str(), __FILE__, __LINE__);
+						throw base::Exception(YDTERR_HDL_ETL_TASK, "Convert the task_id (string) to long long failed: SEQ=[%d], KPI=[%s], ETL_ID=[%s], TASK_ID=[%s] [FILE:%s, LINE:%d]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.task_id.c_str(), __FILE__, __LINE__);
 					}
 
 					// 检查采集进程是否异常退出
 					if ( !IsProcessAlive(ll_taskid) )		// 进程异常退出
 					{
-						m_pLog->Output("[YD_TASK] Acquire exited unexpectedly: SEQ=[%d], TASK_ID=[%lld], KPI_ID=[%s], ANA_ID=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ll_taskid, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str());
+						m_pLog->Output("[YD_TASK] Acquire exited unexpectedly: SEQ=[%d], TASK_ID=[%lld], KPI=[%s], ANA_ID=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ll_taskid, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str());
 
 						ref_tslog.end_time   = base::SimpleTime::Now().Time14();
 						ref_tslog.task_state = "ACQUIRE_ABORT";
@@ -382,11 +393,33 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 			}
 		}
 
+		TaskScheLog& ref_tslog = ref_rat.tslogAnaTask;
 		if ( VEC_SIZE == c_etl_success )	// 所有采集全部成功
 		{
+			m_pLog->Output("[YD_TASK] Acquire all succeed: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ref_tslog.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.etl_time.c_str());
+
+			// 下发分析任务
+			CreateTask(ref_tslog);
+
+			m_mAnaTaskRun[ref_rat.seq_id] = ref_rat;
+			m_mEtlTaskRun.erase(it++);
 		}
-		else if ( VEC_SIZE == c_etl_finished )		// 所有采集全部完成
+		else if ( VEC_SIZE == c_etl_finished )		// 所有采集全部完成，但不是全部成功
 		{
+			m_pLog->Output("[YD_TASK] Acquire all finished: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ref_tslog.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.etl_time.c_str());
+
+			// 任务失败：停止下发分析任务
+			ref_tslog.task_id    = "0";
+			ref_tslog.start_time = base::SimpleTime::Now().Time14();
+			ref_tslog.end_time   = base::SimpleTime::Now().Time14();
+			ref_tslog.task_state = "ANALYSE_IGNORE";
+			ref_tslog.state_desc = "不进行分析";
+			ref_tslog.remarks    = "采集未全部成功，任务失败！停止下发分析任务！";
+			m_pTaskDB2->InsertTaskScheLog(ref_tslog);
+
+			// 任务结束
+			m_mTaskEnd[ref_rat.seq_id] = ref_rat;
+			m_mEtlTaskRun.erase(it++);
 		}
 		else	// 采集未全部完成
 		{
@@ -401,6 +434,126 @@ void YDTask::BuildNewTask() throw(base::Exception)
 	{
 		return;
 	}
+
+	// 当前任务日志LOG_ID最大值
+	int max_log_id = m_pTaskDB2->GetTaskScheLogMaxID();
+
+	long long ll_time_now = 0;
+	base::PubStr::Str2LLong(base::SimpleTime::Now().Time14(), ll_time_now);
+
+	std::string str_task_type;
+	std::string str_etl_time;
+	std::map<int, RATask>::iterator it = m_mTaskWait.begin();
+	while ( it != m_mTaskWait.end() )
+	{
+		RATask& ref_rat = it->second;
+		if ( !ref_rat.cycle.IsValid() )
+		{
+			throw base::Exception(YDTERR_BUILD_NEWTASK, "Build new task failed: Task cycle is invalid! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		}
+
+		if ( !ref_rat.etl_time.IsValid() )
+		{
+			throw base::Exception(YDTERR_BUILD_NEWTASK, "Build new task failed: Etl time is invalid! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		}
+
+		if ( RATask::TTYPE_P == ref_rat.type )		// 常驻任务
+		{
+			str_task_type = "P"
+		}
+		else if ( RATask::TTYPE_P == ref_rat.type )		// 临时任务
+		{
+			str_task_type = "T"
+		}
+		else	// 未知任务
+		{
+			throw base::Exception(YDTERR_BUILD_NEWTASK, "Build new task failed! Unknown task type: %d [FILE:%s, LINE:%d]", ref_rat.type, __FILE__, __LINE__);
+		}
+
+		// 任务过期
+		if ( ref_rat.expiry_date_end < ll_time_now )
+		{
+			m_pLog->Output("[YD_TASK] Task expired: SEQ=[%d], KPI=[%s], TASK_TYPE=[%s], EXPIRY_DATE_START=[%lld], EXPIRY_DATE_END=[%lld]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), str_task_type.c_str(), ref_rat.expiry_date_start, ref_rat.expiry_date_end);
+
+			// 置为未激活
+			m_pTaskDB2->SetTaskScheNotActive(ref_rat.seq_id);
+			m_mTaskWait.erase(it++);
+			continue;
+		}
+
+		// 是否有下一个采集时间点？
+		if ( ref_rat.etl_time.GetNext(str_etl_time) )
+		{
+			m_pLog->Output(
+
+			ref_rat.task_starttime = base::SimpleTime::Now().Time14();
+			ref_rat.task_finishtime.clear();
+
+			// 下发采集任务
+			const int VEC_SIZE = ref_rat.vecEtlTasks.size();
+			for ( int i = 0; i < VEC_SIZE; ++i )
+			{
+				TaskScheLog& ref_tslog = ref_rat.vecEtlTasks[i];
+				ref_tslog.etl_time = str_etl_time;
+				ref_tslog.end_time.clear();
+				ref_tslog.task_state.clear();
+				ref_tslog.state_desc.clear();
+				ref_tslog.remarks.clear();
+
+				CreateTask(ref_tslog);
+			}
+
+			// 重置分析任务
+			ref_rat.tslogAnaTask.etl_time = str_etl_time;
+			ref_rat.tslogAnaTask.end_time.clear();
+			ref_rat.tslogAnaTask.task_state.clear();
+			ref_rat.tslogAnaTask.state_desc.clear();
+			ref_rat.tslogAnaTask.remarks.clear();
+		}
+		else
+		{
+		}
+
+		++it;
+	}
+
+	//void UpdateTaskScheTaskTime(int id, const std::string& start_time, const std::string& finish_time) throw(base::Exception);
+	//void GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, std::string& ana_id) throw(base::Exception);
+}
+
+void YDTask::CreateTask(TaskScheLog& ts_log)
+{
+	// 插入任务日志
+	ts_log.task_id    = base::PubStr::LLong2Str(GenerateTaskID());
+	ts_log.start_time = base::SimpleTime::Now().Time14();
+	m_pTaskDB2->InsertTaskScheLog(ts_log);
+
+	std::string command;
+	if ( "ETL" == ts_log.app_type )		// 采集任务
+	{
+		m_pLog->Output("[YD_TASK] Create acquire task: LOG=[%d], KPI=[%s], ETL_ID=[%s], TASK_ID=[%s], TASK_TYPE=[%s], ETL_TIME=[%s], START_TIME=[%s]", ts_log.log_id, ts_log.kpi_id.c_str(), ts_log.sub_id.c_str(), ts_log.task_id.c_str(), ts_log.task_type.c_str(), ts_log.etl_time.c_str(), ts_log.start_time.c_str());
+
+		// 更新采集时间
+		m_pTaskDB2->UpdateEtlTime(ts_log.sub_id, ts_log.etl_time);
+
+		// 采集程序：守护进程
+		base::PubStr::SetFormatString(command, "%s 1 %s %s %s %s 00001:%s:%s:%d:", m_binAcquire.c_str(), ts_log.task_id.c_str(), m_modeAcquire.c_str(), m_binVer.c_str(), m_cfgAcquire.c_str(), ts_log.kpi_id.c_str(), t_info.sub_id.c_str(), ts_log.log_id);
+	}
+	else if ( "ANA" == ts_log.app_type )	// 分析任务
+	{
+		m_pLog->Output("[YD_TASK] Create analyse task: LOG=[%d], KPI=[%s], ANA_ID=[%s], TASK_ID=[%s], TASK_TYPE=[%s], ETL_TIME=[%s], START_TIME=[%s]", ts_log.log_id, ts_log.kpi_id.c_str(), ts_log.sub_id.c_str(), ts_log.task_id.c_str(), ts_log.task_type.c_str(), ts_log.etl_time.c_str(), ts_log.start_time.c_str());
+
+		// 分析程序：守护进程
+		base::PubStr::SetFormatString(command, "%s 1 %s %s %s %s 00001:%s:%s:%d:", m_binAnalyse.c_str(), ts_log.task_id.c_str(), m_modeAnalyse.c_str(), m_binVer.c_str(), m_cfgAnalyse.c_str(), ts_log.kpi_id.c_str(), t_info.sub_id.c_str(), ts_log.log_id);
+	}
+	else
+	{
+		throw base::Exception(YDTERR_CREATE_TASK, "Create task failed! Unknown task type: %s [FILE:%s, LINE:%d]", ts_log.app_type.c_str(), __FILE__, __LINE__);
+	}
+
+	// 启动进程
+	m_pLog->Output("[YD_TASK] Execute: %s", command.c_str());
+	system(command.c_str());
 }
 
 void YDTask::FinishTask() throw(base::Exception)
@@ -409,5 +562,30 @@ void YDTask::FinishTask() throw(base::Exception)
 	{
 		return;
 	}
+
+	for ( std::map<int, RATask>::iterator it = m_mTaskEnd.begin(); it != m_mTaskEnd.end(); ++it )
+	{
+		RATask& ref_rat = it->second;
+		ref_rat.task_finishtime = base::SimpleTime::Now().Time14();
+		if ( m_pTaskDB2->IsTaskScheExist(ref_rat.seq_id) )
+		{
+			m_pTaskDB2->UpdateTaskScheTaskTime(ref_rat.seq_id, ref_rat.task_starttime, ref_rat.task_finishtime);
+		}
+
+		// 在删除队列中，则直接永久删除，不再回归等待队列
+		if ( m_sDelAfterRun.find(ref_rat.seq_id) != m_sDelAfterRun.end() )
+		{
+			m_sDelAfterRun.erase(ref_rat.seq_id);
+		}
+		// 等待队列已存在更新的任务，则直接永久删除
+		// 否则，回归到等待队列中
+		else if ( m_mTaskWait.find(ref_rat.seq_id) == m_mTaskWait.end() )
+		{
+			m_mTaskWait[ref_rat.seq_id] = ref_rat;
+		}
+	}
+
+	// 清空任务完成队列
+	m_mTaskEnd.clear();
 }
 

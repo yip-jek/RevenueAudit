@@ -18,7 +18,9 @@ public:
 		TDB_ERR_INS_TASKSCHELOG   = -20000006,				// 新增任务日程日志失败
 		TDB_ERR_SEL_TSLOG_STATE   = -20000007,				// 查询任务日程日志状态失败
 		TDB_ERR_UPD_ETL_TIME      = -20000008,				// 更新采集时间失败
-		TDB_ERR_UPD_TSLOG_STATE   = -20000009,				// 更新任务日程日志状态失败
+		TDB_ERR_IS_TASKCHE_EXIST  = -20000009,				// 查看任务日程是否存在失败
+		TDB_ERR_SET_TS_NOTACTIVE  = -20000010,				// 设置任务日程为未激活失败
+		//TDB_ERR_UPD_TASKSCHELOG   = -20000009,				// 更新任务日程日志失败
 	};
 
 public:
@@ -44,8 +46,14 @@ public:
 	// 获取任务日程记录
 	void GetTaskSchedule(std::map<int, TaskSchedule>& m_tasksche) throw(base::Exception);
 
+	// 任务日程是否存在？
+	bool IsTaskScheExist(int id) throw(base::Exception);
+
 	// 更新任务日程的任务时间
 	void UpdateTaskScheTaskTime(int id, const std::string& start_time, const std::string& finish_time) throw(base::Exception);
+
+	// 设置任务日程为未激活
+	void SetTaskScheNotActive(int id) throw(base::Exception);
 
 	// 获取指标规则的子ID
 	void GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, std::string& ana_id) throw(base::Exception);
@@ -62,8 +70,8 @@ public:
 	// 更新采集时间
 	void UpdateEtlTime(const std::string& etl_id, const std::string& etl_time) throw(base::Exception);
 
-	// 更新任务日程日志状态
-	void UpdateTaskScheLogState(const TaskScheLog& ts_log) throw(base::Exception);
+	//// 更新任务日程日志
+	//void UpdateTaskScheLog(const TaskScheLog& ts_log) throw(base::Exception);
 
 private:
 	std::string m_tabTaskSche;				// 任务日程表

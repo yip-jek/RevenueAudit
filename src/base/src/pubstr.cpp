@@ -178,6 +178,20 @@ std::string PubStr::Int2Str(int i)
 	return buf;
 }
 
+std::string PubStr::UInt2Str(unsigned int u)
+{
+	char buf[32] = "";
+	sprintf(buf, "%u", u);
+	return buf;
+}
+
+std::string PubStr::LLong2Str(long long ll)
+{
+	char buf[32] = "";
+	sprintf(buf, "%lld", ll);
+	return buf;
+}
+
 std::string PubStr::Double2Str(double d)
 {
 	char buf[64] = "";

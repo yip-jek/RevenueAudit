@@ -112,6 +112,36 @@ void YDTaskDB2::GetTaskSchedule(std::map<int, TaskSchedule>& m_tasksche) throw(b
 	m_ts.swap(m_tasksche);
 }
 
+bool YDTaskDB2::IsTaskScheExist(int id) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "SELECT COUNT(0) FROM " + m_tabTaskSche + " WHERE SEQ_ID = ?";
+
+	int ct = 0;
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = id;
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			ct = (int)rs[1];
+
+			rs.MoveNext();
+		}
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(TDB_ERR_IS_TASKCHE_EXIST, "[DB2] Check task schedule whether exist or not in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskSche.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	return (ct > 0);
+}
+
 void YDTaskDB2::UpdateTaskScheTaskTime(int id, const std::string& start_time, const std::string& finish_time) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
@@ -140,13 +170,37 @@ void YDTaskDB2::UpdateTaskScheTaskTime(int id, const std::string& start_time, co
 	}
 }
 
+void YDTaskDB2::SetTaskScheNotActive(int id) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "UPDATE " + m_tabTaskSche + " SET ACTIVATE = '0' WHERE SEQ_ID = ?";
+	m_pLog->Output("[DB2] Update task schedule not active: SEQ=[%d]", id);
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Parameter(1) = id;
+		rs.Execute();
+
+		Commit();
+
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(TDB_ERR_SET_TS_NOTACTIVE, "[DB2] Set task schedule not active in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskSche.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
 void YDTaskDB2::GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, std::string& ana_id) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
 	std::string sql = "SELECT ETLRULE_ID, ANALYSIS_ID FROM " + m_tabKpiRule + " WHERE KPI_ID = ?";
-	m_pLog->Output("[DB2] Get kpi rule sub_id: KPI_ID=[%s]", kpi_id.c_str());
+	m_pLog->Output("[DB2] Get kpi rule sub_id: KPI=[%s]", kpi_id.c_str());
 
 	try
 	{
@@ -204,9 +258,9 @@ void YDTaskDB2::InsertTaskScheLog(const TaskScheLog& ts_log) throw(base::Excepti
 	rs.EnableWarning(true);
 
 	std::string sql = "INSERT INTO " + m_tabTaskScheLog;
-	sql += "(LOG_ID, KPI_ID, SUB_ID, TASK_ID, TASK_TYPE, ETL_TIME, APP_TYPE, START_TIME) ";
-	sql += "VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
-	m_pLog->Output("[DB2] Insert task schedule log: LOG_ID=[%d], KPI_ID=[%s], SUB_ID=[%s], TASK_ID=[%s], ETL_TIME=[%s], APP_TYPE=[%s]", ts_log.log_id, ts_log.kpi_id.c_str(), ts_log.sub_id.c_str(), ts_log.task_id.c_str(), ts_log.etl_time.c_str(), ts_log.app_type.c_str());
+	sql += "(LOG_ID, KPI_ID, SUB_ID, TASK_ID, TASK_TYPE, ETL_TIME, APP_TYPE, START_TIME, END_TIME";
+	sql += ", TASK_STATE, TASK_STATE_DESC, REMARKS) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	m_pLog->Output("[DB2] Insert task schedule log: LOG=[%d], KPI=[%s], SUB_ID=[%s], TASK_ID=[%s], ETL_TIME=[%s], APP_TYPE=[%s], START_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s]", ts_log.log_id, ts_log.kpi_id.c_str(), ts_log.sub_id.c_str(), ts_log.task_id.c_str(), ts_log.etl_time.c_str(), ts_log.app_type.c_str(), ts_log.start_time.c_str(), ts_log.end_time.c_str(), ts_log.task_state.c_str());
 
 	try
 	{
@@ -221,6 +275,10 @@ void YDTaskDB2::InsertTaskScheLog(const TaskScheLog& ts_log) throw(base::Excepti
 		rs.Parameter(index++) = ts_log.etl_time.c_str();
 		rs.Parameter(index++) = ts_log.app_type.c_str();
 		rs.Parameter(index++) = ts_log.start_time.c_str();
+		rs.Parameter(index++) = ts_log.end_time.c_str();
+		rs.Parameter(index++) = ts_log.task_state.c_str();
+		rs.Parameter(index++) = ts_log.state_desc.c_str();
+		rs.Parameter(index++) = ts_log.remarks.c_str();
 		rs.Execute();
 
 		Commit();
@@ -240,7 +298,7 @@ void YDTaskDB2::SelectTaskScheLogState(TaskScheLog& ts_log) throw(base::Exceptio
 
 	std::string sql = "SELECT END_TIME, TASK_STATE, TASK_STATE_DESC, REMARKS FROM ";
 	sql += m_tabTaskScheLog + " WHERE LOG_ID = ?";
-	m_pLog->Output("[DB2] Select task schedule log state: LOG_ID=[%d]", ts_log.log_id);
+	m_pLog->Output("[DB2] Select task schedule log state: LOG=[%d]", ts_log.log_id);
 
 	try
 	{
@@ -289,34 +347,36 @@ void YDTaskDB2::UpdateEtlTime(const std::string& etl_id, const std::string& etl_
 	}
 }
 
-void YDTaskDB2::UpdateTaskScheLogState(const TaskScheLog& ts_log) throw(base::Exception)
-{
-	XDBO2::CRecordset rs(&m_CDB);
-	rs.EnableWarning(true);
-
-	std::string sql = "UPDATE " + m_tabTaskScheLog + " SET END_TIME = ?, TASK_STATE = ?";
-	sql += ", TASK_STATE_DESC = ?, REMARKS = ? WHERE LOG_ID = ?"; 
-	m_pLog->Output("[DB2] Update task schedule log state: LOG_ID=[%d], END_TIME=[%s], TASK_STATE=[%s], TASK_STATE_DESC=[%s]", ts_log.log_id, ts_log.end_time.c_str(), ts_log.task_state.c_str(), ts_log.state_desc.c_str());
-
-	try
-	{
-		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-
-		int index = 1;
-		rs.Parameter(index++) = ts_log.end_time.c_str();
-		rs.Parameter(index++) = ts_log.task_state.c_str();
-		rs.Parameter(index++) = ts_log.state_desc.c_str();
-		rs.Parameter(index++) = ts_log.remarks.c_str();
-		rs.Parameter(index++) = ts_log.log_id;
-		rs.Execute();
-
-		Commit();
-
-		rs.Close();
-	}
-	catch ( const XDBO2::CDBException& ex )
-	{
-		throw base::Exception(TDB_ERR_UPD_TSLOG_STATE, "[DB2] Update state to task schedule log table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskScheLog.c_str(), ex.what(), __FILE__, __LINE__);
-	}
-}
+//void YDTaskDB2::UpdateTaskScheLog(const TaskScheLog& ts_log) throw(base::Exception)
+//{
+//	XDBO2::CRecordset rs(&m_CDB);
+//	rs.EnableWarning(true);
+//
+//	std::string sql = "UPDATE " + m_tabTaskScheLog + " SET TASK_ID = ?, START_TIME = ?, END_TIME = ?";
+//	sql += ", TASK_STATE = ?, TASK_STATE_DESC = ?, REMARKS = ? WHERE LOG_ID = ?"; 
+//	m_pLog->Output("[DB2] Update task schedule log: LOG=[%d], TASK_ID=[%s], START_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s], TASK_STATE_DESC=[%s]", ts_log.log_id, ts_log.task_id.c_str(), ts_log.start_time.c_str(), ts_log.end_time.c_str(), ts_log.task_state.c_str(), ts_log.state_desc.c_str());
+//
+//	try
+//	{
+//		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+//
+//		int index = 1;
+//		rs.Parameter(index++) = ts_log.task_id.c_str();
+//		rs.Parameter(index++) = ts_log.start_time.c_str();
+//		rs.Parameter(index++) = ts_log.end_time.c_str();
+//		rs.Parameter(index++) = ts_log.task_state.c_str();
+//		rs.Parameter(index++) = ts_log.state_desc.c_str();
+//		rs.Parameter(index++) = ts_log.remarks.c_str();
+//		rs.Parameter(index++) = ts_log.log_id;
+//		rs.Execute();
+//
+//		Commit();
+//
+//		rs.Close();
+//	}
+//	catch ( const XDBO2::CDBException& ex )
+//	{
+//		throw base::Exception(TDB_ERR_UPD_TASKSCHELOG, "[DB2] Update task schedule log table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskScheLog.c_str(), ex.what(), __FILE__, __LINE__);
+//	}
+//}
 

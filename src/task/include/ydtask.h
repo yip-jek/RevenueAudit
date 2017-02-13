@@ -16,10 +16,12 @@ public:
 	// 任务错误代码
 	enum YD_TASK_ERROR
 	{
-		YDTERR_INIT_CONN    = -11000001,			// 初始化数据库连接失败
-		YDTERR_INIT         = -11000002,			// 初始化失败
-		YDTERR_HDL_ANA_TASK = -11000003,			// 处理分析任务失败
-		YDTERR_HDL_ETL_TASK = -11000004,			// 处理采集任务失败
+		YDTERR_INIT_CONN     = -11000001,			// 初始化数据库连接失败
+		YDTERR_INIT          = -11000002,			// 初始化失败
+		YDTERR_HDL_ANA_TASK  = -11000003,			// 处理分析任务失败
+		YDTERR_HDL_ETL_TASK  = -11000004,			// 处理采集任务失败
+		YDTERR_CREATE_TASK   = -11000005,			// 下发任务失败
+		YDTERR_BUILD_NEWTASK = -11000006,			// 创建新任务失败
 	};
 
 protected:
@@ -64,6 +66,9 @@ protected:
 	// 创建新任务
 	virtual void BuildNewTask() throw(base::Exception);
 
+	// 下发任务
+	void CreateTask(TaskScheLog& ts_log);
+
 	// 任务完成
 	virtual void FinishTask() throw(base::Exception);
 
@@ -75,8 +80,11 @@ private:
 	void InitConnect() throw(base::Exception);
 
 private:
-	DBInfo     m_dbinfo;			// 数据库信息
-	YDTaskDB2* m_pTaskDB2;			// 数据库连接
+	int m_minRunTimeInterval;				// 任务运行的最小时间间隔（分钟）
+
+private:
+	DBInfo     m_dbinfo;					// 数据库信息
+	YDTaskDB2* m_pTaskDB2;					// 数据库连接
 
 private:
 	std::string m_hiveAgentPath;			// Hive代理的路径

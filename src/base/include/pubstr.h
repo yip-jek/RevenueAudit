@@ -44,6 +44,10 @@ public:
 
 	// int -> string
 	static std::string Int2Str(int i);
+	// unsigned int -> string
+	static std::string UInt2Str(unsigned int u);
+	// long long -> string
+	static std::string LLong2Str(long long ll);
 	// double -> string
 	static std::string Double2Str(double d);
 	// long double -> string
