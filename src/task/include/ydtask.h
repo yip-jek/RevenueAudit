@@ -69,6 +69,12 @@ protected:
 	// 下发任务
 	void CreateTask(TaskScheLog& ts_log);
 
+	// 检查：是否有同序号或者同指标的任务在运行？
+	bool CheckSameKindRunningTask(const RATask& rat);
+
+	// 是否超过最小时间间隔？
+	bool IsOverMinTimeInterval(const std::string& time);
+
 	// 任务完成
 	virtual void FinishTask() throw(base::Exception);
 
@@ -81,6 +87,7 @@ private:
 
 private:
 	int m_minRunTimeInterval;				// 任务运行的最小时间间隔（分钟）
+	int m_maxTaskScheLogID;					// 最大的任务日程日志ID
 
 private:
 	DBInfo     m_dbinfo;					// 数据库信息
