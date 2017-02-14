@@ -721,12 +721,22 @@ bool YDTask::IsOverMinTimeInterval(const std::string& time)
 	}
 
 	// 时间格式：YYYYMMDDHHMISS
-	int year = time / 10000000000;
-	int mon  = (time % 10000000000) / 100000000;
-	int day  = (time % 100000000) / 1000000;
-	int hour = (time % 1000000) / 10000;
-	int min  = (time % 10000) / 100;
-	int sec  = time % 100;
+	base::SimpleTime st(ll_time);
+	if ( !st.IsValid() )
+	{
+		return false;
+	}
+
+	long min_off = base::PubTime::DayApartFromToday(st.GetYear(), st.GetMon(), st.GetDay()) * 1440;
+	if ( min_off < 0 )
+	{
+		return false;
+	}
+
+	base::SimpleTime st_now(base::SimpleTime::Now());
+	min_off += (st_now.GetHour() - st.GetHour()) * 60;
+	min_off += (st_now.GetMin() - st.GetMin());
+	return (min_off > m_minRunTimeInterval);
 }
 
 void YDTask::FinishTask() throw(base::Exception)

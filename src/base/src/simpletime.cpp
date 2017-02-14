@@ -8,18 +8,59 @@ namespace base
 {
 
 SimpleTime::SimpleTime()
-:year(0), mon(0), day(0), hour(0), min(0), sec(0), usec(0)
+:valid(false)
+,year(0)
+,mon(0)
+,day(0)
+,hour(0)
+,min(0)
+,sec(0)
+,usec(0)
 {
 }
 
 SimpleTime::SimpleTime(int y, int m, int d, int h, int mi, int s, int us /*= 0*/)
-:year(0), mon(0), day(0), hour(0), min(0), sec(0), usec(0)
+:valid(false)
+,year(0)
+,mon(0)
+,day(0)
+,hour(0)
+,min(0)
+,sec(0)
+,usec(0)
 {
 	Init(y, m, d, h, mi, s, us);
 }
 
+SimpleTime::SimpleTime(long long time)
+:valid(false)
+,year(0)
+,mon(0)
+,day(0)
+,hour(0)
+,min(0)
+,sec(0)
+,usec(0)
+{
+	int y  = time / 10000000000;
+	int m  = (time % 10000000000) / 100000000;
+	int d  = (time % 100000000) / 1000000;
+	int h  = (time % 1000000) / 10000;
+	int mi = (time % 10000) / 100;
+	int s  = time % 100;
+
+	Init(y, m, d, h, mi, s, 0);
+}
+
 SimpleTime::SimpleTime(const SimpleTime& st)
-:year(st.year), mon(st.mon), day(st.day), hour(st.hour), min(st.min), sec(st.sec), usec(st.usec)
+:valid(st.valid)
+,year(st.year)
+,mon(st.mon)
+,day(st.day)
+,hour(st.hour)
+,min(st.min)
+,sec(st.sec)
+,usec(st.usec)
 {
 }
 
@@ -31,13 +72,14 @@ const SimpleTime& SimpleTime::operator = (const SimpleTime& st)
 {
 	if ( this != &st )
 	{
-		this->year = st.year;
-		this->mon  = st.mon ;
-		this->day  = st.day ;
-		this->hour = st.hour;
-		this->min  = st.min ;
-		this->sec  = st.sec ;
-		this->usec = st.usec;
+		this->valid = st.valid;
+		this->year  = st.year;
+		this->mon   = st.mon ;
+		this->day   = st.day ;
+		this->hour  = st.hour;
+		this->min   = st.min ;
+		this->sec   = st.sec ;
+		this->usec  = st.usec;
 	}
 
 	return *this;
@@ -92,23 +134,6 @@ int SimpleTime::LastDayOfTheMon(int year, int mon)
 	default:	// 无效月份
 		return -1;
 	}
-}
-
-bool SimpleTime::IsTime14Valid(long long time)
-{
-	if ( time <= 10000000000 )
-	{
-		return false;
-	}
-
-	int year = time / 10000000000;
-	int mon  = (time % 10000000000) / 100000000;
-	int day  = (time % 100000000) / 1000000;
-	int hour = (time % 1000000) / 10000;
-	int min  = (time % 10000) / 100;
-	int sec  = time % 100;
-	SimpleTime st(year, mon, day, hour, min, sec);
-	return (st.GetYear() > 0 && st.GetMon() > 0 && st.GetDay() > 0);
 }
 
 std::string SimpleTime::TimeStamp()
@@ -166,7 +191,7 @@ std::string SimpleTime::YearTime()
 	return TimeFormat("%04d", year);
 }
 
-bool SimpleTime::Init(int y, int m, int d, int h, int mi, int s, int us)
+void SimpleTime::Init(int y, int m, int d, int h, int mi, int s, int us)
 {
 	int s_y  = 0;
 	int s_m  = 0;
@@ -178,64 +203,66 @@ bool SimpleTime::Init(int y, int m, int d, int h, int mi, int s, int us)
 
 	if ( y <= 0 )	// 无效年份
 	{
-		return false;
+		valid = false;
+		return;
 	}
 	s_y = y;
 
 	if ( m < 1 || m > 12 )	// 无效月份
 	{
-		return false;
+		valid = false;
+		return;
 	}
 	s_m = m;
 
 	if ( d < 1 || d > LastDayOfTheMon(y, m) )	// 无效日份
 	{
-		return false;
+		valid = false;
+		return;
 	}
 	s_d = d;
 
-	if ( h < 0 || h > 23 )	// 无效小时
+	if ( h < 0 || h > 23 )		// 无效小时
 	{
-		return false;
+		valid = false;
+		return;
 	}
 	s_h = h;
 
 	if ( mi < 0 || mi > 59 )	// 无效分钟
 	{
-		return false;
+		valid = false;
+		return;
 	}
 	s_mi = mi;
 
-	if ( s < 0 || s > 59 )	// 无效秒
+	if ( s < 0 || s > 59 )		// 无效秒
 	{
-		return false;
+		valid = false;
+		return;
 	}
 	s_s = s;
 
-	if ( us < 0 || us > 999999 )
+	if ( us < 0 || us > 999999 )	// 无效微秒
 	{
-		return false;
+		valid = false;
+		return;
 	}
 	s_us = us;
 
-	year = s_y ;
-	mon  = s_m ;
-	day  = s_d ;
-	hour = s_h ;
-	min  = s_mi;
-	sec  = s_s ;
-	usec = s_us;
-	return true;
+	year  = s_y ;
+	mon   = s_m ;
+	day   = s_d ;
+	hour  = s_h ;
+	min   = s_mi;
+	sec   = s_s ;
+	usec  = s_us;
+	valid = true;
 }
 
 std::string SimpleTime::TimeFormat(const char* format, ...)
 {
-	if ( NULL == format )
-	{
-		return std::string();
-	}
-
-	char buf[32] = "";
+	char buf[64] = "";
 	va_list arg_ptr;
 	va_start(arg_ptr, format);
 	vsprintf(buf, format, arg_ptr);

@@ -11,6 +11,7 @@ class SimpleTime
 public:
 	SimpleTime();
 	SimpleTime(int y, int m, int d, int h, int mi, int s, int us = 0);
+	SimpleTime(long long time);		// 时间格式：YYYYMMDDHHMISS
 	SimpleTime(const SimpleTime& st);
 	virtual ~SimpleTime();
 
@@ -27,10 +28,10 @@ public:
 	// 返回：大月-31, 小月-30，闰年2月-29，平年2月-28, 其他（错误）-1
 	static int LastDayOfTheMon(int year, int mon);
 
-	// 时间是否有效？（时间格式：YYYYMMDDHHMISS）
-	static bool IsTime14Valid(long long time);
-
 public:
+	// 是否有效？
+	bool IsValid() const { return valid; }
+
 	int GetYear() const { return year; }
 	int GetMon()  const { return mon ; }
 	int GetDay()  const { return day ; }
@@ -74,12 +75,14 @@ public:
 
 private:
 	// 初始化时间
-	bool Init(int y, int m, int d, int h, int mi, int s, int us);
+	void Init(int y, int m, int d, int h, int mi, int s, int us);
 
 	// 格式化时间字符串
-	std::string TimeFormat(const char* format, ...);
+	static std::string TimeFormat(const char* format, ...);
 
 private:
+	bool valid;			// 有效位
+
 	int year;
 	int mon;
 	int day;
