@@ -53,7 +53,7 @@ void Analyse_YC::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabYCStatRule(m_tabStatRule);
 	m_pAnaDB2->SetTabYCStatLog(m_tabStatLog);
 
-	// 更新任务状态为；"21"（正在分析）
+	// 更新任务状态为："21"（正在分析）
 	YCTaskReq task_req;
 	task_req.seq        = m_ycSeqID;
 	task_req.state      = "21";
@@ -72,7 +72,7 @@ void Analyse_YC::End(int err_code, const std::string& err_msg /*= std::string()*
 	task_req.seq        = m_ycSeqID;
 	if ( 0 == err_code )	// 正常退出
 	{
-		// 更新任务状态为；"22"（分析完成）
+		// 更新任务状态为："22"（分析完成）
 		task_req.state      = "22";
 		task_req.state_desc = "分析完成";
 		task_req.task_batch = m_statBatch;
@@ -80,7 +80,7 @@ void Analyse_YC::End(int err_code, const std::string& err_msg /*= std::string()*
 	}
 	else	// 异常退出
 	{
-		// 更新任务状态为；"23"（分析失败）
+		// 更新任务状态为："23"（分析失败）
 		task_req.state      = "23";
 		task_req.state_desc = "分析失败";
 		task_req.task_batch = -1;

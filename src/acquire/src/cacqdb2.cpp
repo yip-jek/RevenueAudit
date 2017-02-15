@@ -36,6 +36,11 @@ void CAcqDB2::SetTabEtlSrc(const std::string& t_etlsrc)
 	m_tabEtlSrc = t_etlsrc;
 }
 
+void CAcqDB2::SetTabTaskScheLog(const std::string& t_tslog)
+{
+	m_tabTaskScheLog = t_tslog;
+}
+
 void CAcqDB2::SetTabYCStatRule(const std::string& t_statrule)
 {
 	m_tabYCStatRule = t_statrule;
@@ -525,5 +530,36 @@ void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& v
 
 	v_yc_info.swap(vec_ycinfo);
 	m_pLog->Output("[DB2] Select YCRA stat_rule successfully! Record(s): %lu", vec_ycinfo.size());
+}
+
+void CAcqDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "UPDATE " + m_tabTaskScheLog + " SET END_TIME = ?, ";
+	sql += "TASK_STATE = ?, TASK_STATE_DESC = ?, REMARKS = ? WHERE LOG_ID = ?"; 
+	m_pLog->Output("[DB2] Update task schedule log: LOG=[%d], END_TIME=[%s], TASK_STATE=[%s], TASK_STATE_DESC=[%s], REMARK=[%s]", log, end_time.c_str(), state.c_str(), state_desc.c_str(), remark.c_str());
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		int index = 1;
+		rs.Parameter(index++) = end_time.c_str();
+		rs.Parameter(index++) = state.c_str();
+		rs.Parameter(index++) = state_desc.c_str();
+		rs.Parameter(index++) = remark.c_str();
+		rs.Parameter(index++) = log;
+		rs.Execute();
+
+		Commit();
+
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_UPD_TSLOG_STATE, "[DB2] Update state of task schedule log in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskScheLog.c_str(), ex.what(), __FILE__, __LINE__);
+	}
 }
 

@@ -20,6 +20,11 @@ std::string Acquire_HD::GetLogFilePrefix()
 	return std::string("Acquire_HD");
 }
 
+void Acquire_HD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
+{
+	// Do nothing !
+}
+
 void Acquire_HD::CheckTaskInfo() throw(base::Exception)
 {
 	if ( m_taskInfo.EtlRuleTime.empty() )

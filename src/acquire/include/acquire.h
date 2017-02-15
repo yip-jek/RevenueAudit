@@ -71,7 +71,7 @@ protected:
 	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
 
 	// 获取后续参数任务信息
-	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
+	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception) = 0;
 
 	// 设置任务信息
 	void SetTaskInfo();

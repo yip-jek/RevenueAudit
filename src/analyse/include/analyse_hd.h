@@ -27,6 +27,9 @@ public:
 	virtual std::string GetLogFilePrefix();
 
 protected:
+	// 获取后续参数任务信息
+	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
+
 	// 解析分析规则，生成Hive取数逻辑
 	virtual void AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 

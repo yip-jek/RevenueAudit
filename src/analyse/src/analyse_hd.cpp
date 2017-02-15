@@ -20,6 +20,11 @@ std::string Analyse_HD::GetLogFilePrefix()
 	return std::string("Analyse_HD");
 }
 
+void Analyse_HD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
+{
+	// Do nothing !
+}
+
 void Analyse_HD::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception)
 {
 	if ( m_taskInfo.AnaRule.AnaType != AnalyseRule::ANATYPE_HDJH_STAT )		// 话单稽核统计类型

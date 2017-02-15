@@ -20,6 +20,7 @@ public:
 		ADBERR_SEL_YC_STATRULE    = -2002007,			// 查询业财稽核因子规则信息出错
 		ADBERR_SEL_YCTASKREQ_CITY = -2002008,			// 查询任务请求表的地市信息出错
 		ADBERR_UPD_YC_TASK_REQ    = -2002009,			// （业财）更新任务请求表出错
+		ADBERR_UPD_TSLOG_STATE    = -2002010,			// 更新任务日程日志表状态出错
 	};
 
 public:
@@ -37,6 +38,9 @@ public:
 
 	// 设置采集数据源表
 	void SetTabEtlSrc(const std::string& t_etlsrc);
+
+	// 设置任务日程日志表
+	void SetTabTaskScheLog(const std::string& t_tslog);
 
 	// 设置统计因子规则表
 	void SetTabYCStatRule(const std::string& t_statrule);
@@ -63,6 +67,9 @@ public:
 	// 更新任务请求表
 	void UpdateYCTaskReq(int seq, const std::string& state, const std::string& state_desc, const std::string& task_desc) throw(base::Exception);
 
+	// 更新任务日程日志表状态
+	void UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark) throw(base::Exception);
+
 private:
 	// 查询采集规则信息
 	void SelectEtlRule(AcqTaskInfo& info) throw(base::Exception);
@@ -83,6 +90,7 @@ private:
 	std::string m_tabEtlDim;			// 采集维度规则表
 	std::string m_tabEtlVal;			// 采集值规则表
 	std::string m_tabEtlSrc;			// 采集数据源表
+	std::string m_tabTaskScheLog;		// 任务日程日志表
 
 	std::string m_tabYCTaskReq;			// （业财）任务请求表
 	std::string m_tabYCStatRule;		// （业财）统计因子规则表

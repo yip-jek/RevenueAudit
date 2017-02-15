@@ -29,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 4.0001.20170110 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 4.0002.20170215 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -207,11 +207,6 @@ void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 	m_pLog->Output("[Acquire] 任务参数信息：指标ID [KPI_ID:%s], 采集规则ID [ETL_ID:%s]", m_sKpiID.c_str(), m_sEtlID.c_str());
 
 	GetExtendParaTaskInfo(vec_str);
-}
-
-void Acquire::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
-{
-	// DO NOTHING !
 }
 
 void Acquire::SetTaskInfo()

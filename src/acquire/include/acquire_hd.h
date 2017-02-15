@@ -16,6 +16,9 @@ public:
 	virtual std::string GetLogFilePrefix();
 
 protected:
+	// 获取后续参数任务信息
+	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
+
 	// 检查采集任务信息
 	virtual void CheckTaskInfo() throw(base::Exception);
 

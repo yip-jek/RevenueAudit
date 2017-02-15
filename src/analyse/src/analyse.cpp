@@ -29,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 4.0000.20170103 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 4.0001.20170215 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -203,11 +203,6 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 	m_pLog->Output("[Analyse] 任务参数信息：指标ID [KPI_ID:%s], 分析规则ID [ANA_ID:%s]", m_sKpiID.c_str(), m_sAnaID.c_str());
 
 	GetExtendParaTaskInfo(vec_str);
-}
-
-void Analyse::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
-{
-	// DO NOTHING !
 }
 
 void Analyse::GetAnaDBInfo() throw(base::Exception)

@@ -328,7 +328,7 @@ void YDTask::HandleAnaTask() throw(base::Exception)
 				m_pLog->Output("[YD_TASK] Analyse exited unexpectedly: SEQ=[%d], TASK_ID=[%lld], KPI=[%s], ANA_ID=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ll_taskid, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str());
 
 				ref_tslog.end_time   = base::SimpleTime::Now().Time14();
-				ref_tslog.task_state = "ANALYSE_ABORT";
+				ref_tslog.task_state = "ANA_ABORT";
 				ref_tslog.state_desc = "分析进程异常退出";
 				m_pTaskDB2->UpdateTaskScheLog(ref_tslog);
 
@@ -400,7 +400,7 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 						m_pLog->Output("[YD_TASK] Acquire exited unexpectedly: SEQ=[%d], TASK_ID=[%lld], KPI=[%s], ANA_ID=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ll_taskid, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str());
 
 						ref_tslog.end_time   = base::SimpleTime::Now().Time14();
-						ref_tslog.task_state = "ACQUIRE_ABORT";
+						ref_tslog.task_state = "ETL_ABORT";
 						ref_tslog.state_desc = "采集进程异常退出";
 						m_pTaskDB2->UpdateTaskScheLog(ref_tslog);
 
@@ -433,7 +433,7 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 			ref_tslog.task_id    = "0";
 			ref_tslog.start_time = str_timenow;
 			ref_tslog.end_time   = str_timenow;
-			ref_tslog.task_state = "ANALYSE_IGNORE";
+			ref_tslog.task_state = "ANA_IGNORE";
 			ref_tslog.state_desc = "不进行分析";
 			ref_tslog.remarks    = "采集未全部成功，任务失败！停止下发分析任务！";
 			m_pTaskDB2->InsertTaskScheLog(ref_tslog);
@@ -655,7 +655,7 @@ void YDTask::CreateTask(TaskScheLog& ts_log)
 	m_pTaskDB2->InsertTaskScheLog(ts_log);
 
 	std::string command;
-	if ( "ETL" == ts_log.app_type )		// 采集任务
+	if ( TaskScheLog::S_APP_TYPE_ETL == ts_log.app_type )		// 采集任务
 	{
 		m_pLog->Output("[YD_TASK] Create acquire task: LOG=[%d], KPI=[%s], ETL_ID=[%s], TASK_ID=[%s], TASK_TYPE=[%s], ETL_TIME=[%s], START_TIME=[%s]", ts_log.log_id, ts_log.kpi_id.c_str(), ts_log.sub_id.c_str(), ts_log.task_id.c_str(), ts_log.task_type.c_str(), ts_log.etl_time.c_str(), ts_log.start_time.c_str());
 
@@ -665,7 +665,7 @@ void YDTask::CreateTask(TaskScheLog& ts_log)
 		// 采集程序：守护进程
 		base::PubStr::SetFormatString(command, "%s 1 %s %s %s %s 00001:%s:%s:%d:", m_binAcquire.c_str(), ts_log.task_id.c_str(), m_modeAcquire.c_str(), m_binVer.c_str(), m_cfgAcquire.c_str(), ts_log.kpi_id.c_str(), ts_log.sub_id.c_str(), ts_log.log_id);
 	}
-	else if ( "ANA" == ts_log.app_type )	// 分析任务
+	else if ( TaskScheLog::S_APP_TYPE_ANA == ts_log.app_type )	// 分析任务
 	{
 		m_pLog->Output("[YD_TASK] Create analyse task: LOG=[%d], KPI=[%s], ANA_ID=[%s], TASK_ID=[%s], TASK_TYPE=[%s], ETL_TIME=[%s], START_TIME=[%s]", ts_log.log_id, ts_log.kpi_id.c_str(), ts_log.sub_id.c_str(), ts_log.task_id.c_str(), ts_log.task_type.c_str(), ts_log.etl_time.c_str(), ts_log.start_time.c_str());
 

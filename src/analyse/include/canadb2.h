@@ -45,6 +45,7 @@ public:
 		ADBERR_SEL_RS_MAX_BATCH  = -3002023,			// 获取统计结果表的最新批次出错
 		ADBERR_INS_YC_STAT_LOG   = -3002024,			// 入库业财稽核记录日志出错
 		ADBERR_SEL_SRC_MAX_BATCH = -3002025,			// 获取业财数据源表最新批次出错
+		ADBERR_UPD_TSLOG_STATE   = -3002026,			// 更新任务日程日志表状态出错
 	};
 
 public:
@@ -80,6 +81,9 @@ public:
 
 	// 设置地市统一编码表
 	void SetTabDictCity(const std::string& t_dictcity);
+
+	// 设置任务日程日志表
+	void SetTabTaskScheLog(const std::string& t_tslog);
 
 	// 设置统计因子规则表
 	void SetTabYCStatRule(const std::string& t_statrule);
@@ -156,6 +160,9 @@ public:
 	// 入库业财稽核记录日志
 	void InsertYCStatLog(const YCStatLog& stat_log) throw(base::Exception);
 
+	// 更新任务日程日志表状态
+	void UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark) throw(base::Exception);
+
 private:
 	// 查询指标规则信息
 	void SelectKpiRule(AnaTaskInfo& info) throw(base::Exception);
@@ -205,10 +212,10 @@ private:
 	std::string m_tabAlarmEvent;		// 告警事件表
 	std::string m_tabDictChannel;		// 渠道统一编码表
 	std::string m_tabDictCity;			// 地市统一编码表
+	std::string m_tabTaskScheLog;		// 任务日程日志表
+
 	std::string m_tabYCStatRule;		// （业财）统计因子规则表
 	std::string m_tabStatLog;			// （业财）稽核记录日志表
-
-// 业财稽核-任务调度
-	std::string m_tabYCTaskReq;			// （业财）任务请求表
+	std::string m_tabYCTaskReq;			// （业财-任务调度）任务请求表
 };
 
