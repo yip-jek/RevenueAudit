@@ -56,7 +56,7 @@ public:
 	void SetTaskScheNotActive(int id) throw(base::Exception);
 
 	// 获取指标规则的子ID
-	void GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, std::string& ana_id) throw(base::Exception);
+	bool GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, std::string& ana_id) throw(base::Exception);
 
 	// 获取任务日程日志表的MAX序号
 	int GetTaskScheLogMaxID() throw(base::Exception);

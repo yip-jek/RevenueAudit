@@ -113,40 +113,41 @@ void YDTask::Init() throw(base::Exception)
 	{
 		throw base::Exception(YDTERR_INIT, "Change work dir to '%s' failed! %s [FILE:%s, LINE:%d]", m_hiveAgentPath.c_str(), strerror(errno), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[YD_TASK] Change work dir to '%s' OK.", m_hiveAgentPath.c_str());
+	m_pLog->Output("[YD_TASK] Change work dir OK: [%s]", m_hiveAgentPath.c_str());
 
 	if ( !m_pTaskDB2->IsTableExists(m_tabTaskSche) )
 	{
 		throw base::Exception(YDTERR_INIT, "The task schedule table is not existed: %s [FILE:%s, LINE:%d]", m_tabTaskSche.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[YD_TASK] Check the task schedule table [%s] OK.", m_tabTaskSche.c_str());
+	m_pLog->Output("[YD_TASK] Check the task schedule table OK: [%s]", m_tabTaskSche.c_str());
 
 	if ( !m_pTaskDB2->IsTableExists(m_tabTaskScheLog) )
 	{
 		throw base::Exception(YDTERR_INIT, "The task schedule log table is not existed: %s [FILE:%s, LINE:%d]", m_tabTaskScheLog.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[YD_TASK] Check the task schedule log table [%s] OK.", m_tabTaskScheLog.c_str());
+	m_pLog->Output("[YD_TASK] Check the task schedule log table OK: [%s]", m_tabTaskScheLog.c_str());
 
 	if ( !m_pTaskDB2->IsTableExists(m_tabKpiRule) )
 	{
 		throw base::Exception(YDTERR_INIT, "The kpi rule table is not existed: %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[YD_TASK] Check the kpi rule table [%s] OK.", m_tabKpiRule.c_str());
+	m_pLog->Output("[YD_TASK] Check the kpi rule table OK: [%s]", m_tabKpiRule.c_str());
 
 	if ( !m_pTaskDB2->IsTableExists(m_tabEtlRule) )
 	{
 		throw base::Exception(YDTERR_INIT, "The etl rule table is not existed: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[YD_TASK] Check the etl rule table [%s] OK.", m_tabEtlRule.c_str());
+	m_pLog->Output("[YD_TASK] Check the etl rule table OK: [%s]", m_tabEtlRule.c_str());
 
 	if ( m_minRunTimeInterval <= 0 )
 	{
 		throw base::Exception(YDTERR_INIT, "The min run time interval is invalid: %d [FILE:%s, LINE:%d]", m_minRunTimeInterval, __FILE__, __LINE__);
 	}
-	m_pLog->Output("[YD_TASK] Check min run time interval [%d] OK.", m_minRunTimeInterval);
+	m_pLog->Output("[YD_TASK] Check min run time interval OK: [%d]", m_minRunTimeInterval);
 
 	// 当前任务日志LOG_ID最大值
 	m_maxTaskScheLogID = m_pTaskDB2->GetTaskScheLogMaxID();
+	m_pLog->Output("[YD_TASK] Get the max log ID in task schedule log table: [%d]", m_maxTaskScheLogID);
 
 	m_pLog->Output("[YD_TASK] Init OK.");
 }
@@ -219,9 +220,13 @@ void YDTask::GetNewTaskSche()
 		}
 	}
 
-	m_pLog->Output("[YD_TASK] 新增任务数: %d", c_new_tasks);
-	m_pLog->Output("[YD_TASK] 更新任务数: %d", c_upd_tasks);
-	m_pLog->Output("[YD_TASK] 错误任务数: %d", c_err_tasks);
+	// 有变化才输出
+	if ( (c_new_tasks + c_upd_tasks + c_err_tasks) > 0 )
+	{
+		m_pLog->Output("[YD_TASK] 新增任务数: %d", c_new_tasks);
+		m_pLog->Output("[YD_TASK] 更新任务数: %d", c_upd_tasks);
+		m_pLog->Output("[YD_TASK] 错误任务数: %d", c_err_tasks);
+	}
 }
 
 void YDTask::DelUnavailableTask()
@@ -232,11 +237,12 @@ void YDTask::DelUnavailableTask()
 	while ( bk_it != m_mTaskSche_bak.end() )
 	{
 		int bk_id = bk_it->first;
+		TaskSchedule& ref_ts = bk_it->second;
 		if ( m_mTaskSche.find(bk_id) == m_mTaskSche.end() )	// 不存在或者没有激活
 		{
 			if ( m_mTaskWait.find(bk_id) != m_mTaskWait.end() )
 			{
-				m_pLog->Output("[YD_TASK] 删除不存在或者没激活的任务：ID=[%d], KPI=[%s]", bk_id, m_mTaskWait[bk_id].kpi_id.c_str());
+				m_pLog->Output("[YD_TASK] 从等待队列中删除不存在或者未激活的任务：ID=[%d], KPI=[%s]", bk_id, m_mTaskWait[bk_id].kpi_id.c_str());
 				m_mTaskWait.erase(bk_id);
 			}
 
@@ -244,11 +250,12 @@ void YDTask::DelUnavailableTask()
 				|| m_mAnaTaskRun.find(bk_id) != m_mAnaTaskRun.end()
 				|| m_mTaskEnd.find(bk_id) != m_mTaskEnd.end() )
 			{
-				m_pLog->Output("[YD_TASK] 任务正在运行，运行结束后再删除：ID=[%d]", bk_id);
+				m_pLog->Output("[YD_TASK] 任务 ID=[%d] 正在运行，运行结束后删除 ...", bk_id);
 				m_sDelAfterRun.insert(bk_id);
 			}
 
 			++c_del_tasks;
+			m_pLog->Output("[YD_TASK] 从日程备份中删除不存在或者未激活的任务：ID=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s]", bk_id, ref_ts.task_type.c_str(), ref_ts.kpi_id.c_str(), ref_ts.etl_time.c_str());
 			m_mTaskSche_bak.erase(bk_it++);
 		}
 		else
@@ -257,7 +264,11 @@ void YDTask::DelUnavailableTask()
 		}
 	}
 
-	m_pLog->Output("[YD_TASK] 删除任务数: %d", c_del_tasks);
+	// 有变化才输出
+	if ( c_del_tasks > 0 )
+	{
+		m_pLog->Output("[YD_TASK] 删除任务数: %d", c_del_tasks);
+	}
 }
 
 void YDTask::GetNoTask() throw(base::Exception)
@@ -405,6 +416,7 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 			m_pLog->Output("[YD_TASK] Acquire all succeed: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ref_tslog.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.etl_time.c_str());
 
 			// 下发分析任务
+			m_pLog->Output("[YD_TASK] 采集任务全部成功，准备下发分析任务");
 			CreateTask(ref_tslog);
 
 			m_mAnaTaskRun[ref_rat.seq_id] = ref_rat;
@@ -415,6 +427,7 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 			m_pLog->Output("[YD_TASK] Acquire all finished: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ref_tslog.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.etl_time.c_str());
 
 			// 任务失败：停止下发分析任务
+			m_pLog->Output("[YD_TASK] 采集任务全部完成，但没有全部成功，此轮任务失败：只记录任务日程日志，不下发分析任务！");
 			str_timenow          = base::SimpleTime::Now().Time14();
 			ref_tslog.log_id     = ++m_maxTaskScheLogID;
 			ref_tslog.task_id    = "0";
@@ -512,7 +525,7 @@ void YDTask::BuildNewTask() throw(base::Exception)
 			m_pLog->Output("[YD_TASK] Task continue: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, str_task_type.c_str(), ref_rat.kpi_id.c_str(), str_etl_time.c_str(), ref_rat.st_task_start.TimeStamp().c_str());
 
 			// 更新任务时间
-			m_pTaskDB2->UpdateTaskScheTaskTime(ref_rat.seq_id, ref_rat.st_task_start.Time14(), ref_rat.st_task_finish.Time14());
+			m_pTaskDB2->UpdateTaskScheTaskTime(ref_rat.seq_id, ref_rat.st_task_start.Time14(), "");
 
 			// 下发采集任务
 			const int VEC_SIZE = ref_rat.vecEtlTasks.size();
@@ -560,10 +573,18 @@ void YDTask::BuildNewTask() throw(base::Exception)
 					m_pLog->Output("[YD_TASK] Task start: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, str_task_type.c_str(), ref_rat.kpi_id.c_str(), str_etl_time.c_str(), ref_rat.st_task_start.TimeStamp().c_str());
 
 					// 更新任务时间
-					m_pTaskDB2->UpdateTaskScheTaskTime(ref_rat.seq_id, ref_rat.st_task_start.Time14(), ref_rat.st_task_finish.Time14());
+					m_pTaskDB2->UpdateTaskScheTaskTime(ref_rat.seq_id, ref_rat.st_task_start.Time14(), "");
 
 					// 获取采集ID与分析ID
-					m_pTaskDB2->GetKpiRuleSubID(ref_rat.kpi_id, str_etl_id, str_ana_id);
+					if ( !m_pTaskDB2->GetKpiRuleSubID(ref_rat.kpi_id, str_etl_id, str_ana_id) )
+					{
+						m_pLog->Output("[YD_TASK] <ERROR> Build new task failed! Can't get sub ID of kpi rule: SEQ=[%d], KPI=[%s], TASK_TYPE=[%s]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), str_task_type.c_str());
+
+						// 置为未激活
+						m_pTaskDB2->SetTaskScheNotActive(ref_rat.seq_id);
+						m_mTaskWait.erase(cur_it);
+						continue;
+					}
 					base::PubStr::Str2StrVector(str_etl_id, "|", vec_etl_id);
 
 					// 下发新的采集任务
@@ -735,6 +756,10 @@ void YDTask::FinishTask() throw(base::Exception)
 		if ( m_pTaskDB2->IsTaskScheExist(ref_rat.seq_id) )
 		{
 			m_pTaskDB2->UpdateTaskScheTaskTime(ref_rat.seq_id, ref_rat.st_task_start.Time14(), ref_rat.st_task_finish.Time14());
+		}
+		else
+		{
+			m_pLog->Output("[YD_TASK] <WARNING> Task does not exist: SEQ=[%d]", ref_rat.seq_id);
 		}
 
 		// 在删除队列中，则直接永久删除，不再回归等待队列

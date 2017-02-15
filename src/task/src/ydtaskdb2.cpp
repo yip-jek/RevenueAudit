@@ -76,7 +76,7 @@ void YDTaskDB2::GetTaskSchedule(std::map<int, TaskSchedule>& m_tasksche) throw(b
 
 	std::string sql = "SELECT SEQ_ID, TASK_TYPE, KPI_ID, TASK_CYCLE, ETL_TIME, ";
 	sql += "EXPIRY_DATE_START, EXPIRY_DATE_END FROM " + m_tabTaskSche + " WHERE ACTIVATE = '1'";
-	m_pLog->Output("[DB2] Get task schedule: %s", sql.c_str());
+	//m_pLog->Output("[DB2] Get task schedule: %s", sql.c_str());
 
 	TaskSchedule task_sche;
 	std::map<int, TaskSchedule> m_ts;
@@ -194,14 +194,15 @@ void YDTaskDB2::SetTaskScheNotActive(int id) throw(base::Exception)
 	}
 }
 
-void YDTaskDB2::GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, std::string& ana_id) throw(base::Exception)
+bool YDTaskDB2::GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, std::string& ana_id) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT ETLRULE_ID, ANALYSIS_ID FROM " + m_tabKpiRule + " WHERE KPI_ID = ?";
+	std::string sql = "SELECT ETLRULE_ID, ANALYSIS_ID FROM " + m_tabKpiRule + " WHERE KPI_ID = '" + kpi_id + "'";
 	m_pLog->Output("[DB2] Get kpi rule sub_id: KPI=[%s]", kpi_id.c_str());
 
+	int ct = 0;
 	try
 	{
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -209,6 +210,8 @@ void YDTaskDB2::GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, 
 
 		while ( !rs.IsEOF() )
 		{
+			++ct;
+
 			etl_id = (const char*)rs[1];
 			ana_id = (const char*)rs[2];
 
@@ -220,6 +223,8 @@ void YDTaskDB2::GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, 
 	{
 		throw base::Exception(TDB_ERR_GET_KPIRULE_SUBID, "[DB2] Get sub_id from kpi rule table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), ex.what(), __FILE__, __LINE__);
 	}
+
+	return (ct > 0);
 }
 
 int YDTaskDB2::GetTaskScheLogMaxID() throw(base::Exception)
