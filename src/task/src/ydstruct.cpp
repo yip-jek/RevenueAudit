@@ -1,9 +1,5 @@
 #include "ydstruct.h"
 
-TaskSchedule::TaskSchedule()
-:seq_id(0)
-{
-}
 
 bool operator == (const TaskSchedule& ts1, const TaskSchedule& ts2)
 {
@@ -19,6 +15,12 @@ bool operator == (const TaskSchedule& ts1, const TaskSchedule& ts2)
 bool operator != (const TaskSchedule& ts1, const TaskSchedule& ts2)
 {
 	return !(ts1 == ts2);
+}
+
+
+TaskSchedule::TaskSchedule()
+:seq_id(0)
+{
 }
 
 bool TaskSchedule::IsTemporaryTask() const
@@ -138,29 +140,29 @@ bool TaskCycle::IsCycleTimeUp()
 {
 	if ( valid )
 	{
-		base::SimpleTime st_now = base::SimpleTime::Now();
+		const base::SimpleTime ST_NOW = base::SimpleTime::Now();
 
-		if ( year != ANY_TIME && st_now.GetYear() != year )
+		if ( year != ANY_TIME && ST_NOW.GetYear() != year )
 		{
 			return false;
 		}
-		if ( mon != ANY_TIME && st_now.GetMon() != mon )
+		if ( mon != ANY_TIME && ST_NOW.GetMon() != mon )
 		{
 			return false;
 		}
-		if ( day != ANY_TIME && st_now.GetDay() != day )
+		if ( day != ANY_TIME && ST_NOW.GetDay() != day )
 		{
 			return false;
 		}
-		if ( hour != ANY_TIME && st_now.GetHour() != hour )
+		if ( hour != ANY_TIME && ST_NOW.GetHour() != hour )
 		{
 			return false;
 		}
-		if ( min != ANY_TIME && st_now.GetMin() != min )
+		if ( min != ANY_TIME && ST_NOW.GetMin() != min )
 		{
 			return false;
 		}
-		if ( sec != ANY_TIME && st_now.GetSec() != sec )
+		if ( sec != ANY_TIME && ST_NOW.GetSec() != sec )
 		{
 			return false;
 		}
@@ -265,14 +267,14 @@ bool EtlTime::GetNext(std::string& etl)
 		int mon  = 0;
 		int day  = 0;
 		int date = vecTime[currIndex++];
-		base::SimpleTime st_now = base::SimpleTime::Now();
+		const base::SimpleTime ST_NOW = base::SimpleTime::Now();
 
 		if ( base::PubTime::DT_MONTH == dt_type )	// 月
 		{
 			year = date / 100;
 			mon  = date % 100;
 
-			int mon_diff = (st_now.GetYear() - year) * 12 + st_now.GetMon() - mon;
+			int mon_diff = (ST_NOW.GetYear() - year) * 12 + ST_NOW.GetMon() - mon;
 			if ( mon_diff >= 0 )
 			{
 				base::PubStr::SetFormatString(etl, "mon-%d", mon_diff);
@@ -288,14 +290,14 @@ bool EtlTime::GetNext(std::string& etl)
 			mon  = (date % 10000) / 100;
 			day  = date % 100;
 
-			long day_apart = base::PubTime::DayApartFromToday(year, mon, day);
-			if ( day_apart >= 0 )
+			long day_diff = base::PubTime::DayDifference(base::SimpleTime(year, mon, day, 0, 0, 0), ST_NOW);
+			if ( day_diff >= 0 )
 			{
-				base::PubStr::SetFormatString(etl, "day-%ld", day_apart);
+				base::PubStr::SetFormatString(etl, "day-%ld", day_diff);
 			}
 			else
 			{
-				base::PubStr::SetFormatString(etl, "day+%ld", (-day_apart));
+				base::PubStr::SetFormatString(etl, "day+%ld", (-day_diff));
 			}
 		}
 		else	// 不支持
@@ -385,21 +387,19 @@ bool RATask::LoadFromTaskSche(const TaskSchedule& ts)
 
 	// 有效期开始时间有效？
 	long long ll_time = 0;
-	if ( !base::PubStr::Str2LLong(base::PubStr::TrimB(ts.expiry_date_start), ll_time) || !base::SimpleTime::IsTime14Valid(ll_time) )
+	if ( !base::PubStr::Str2LLong(base::PubStr::TrimB(ts.expiry_date_start), ll_time) || !tmp_rat.st_expiry_start.Set(ll_time) )
 	{
 		return false;
 	}
-	expiry_date_start = ll_time;
 
 	// 有效期结束时间有效？
-	if ( !base::PubStr::Str2LLong(base::PubStr::TrimB(ts.expiry_date_end), ll_time) || !base::SimpleTime::IsTime14Valid(ll_time) )
+	if ( !base::PubStr::Str2LLong(base::PubStr::TrimB(ts.expiry_date_end), ll_time) || !tmp_rat.st_expiry_end.Set(ll_time) )
 	{
 		return false;
 	}
-	expiry_date_end = ll_time;
 
 	// 有效期的结束时间比开始时间还早？
-	if ( expiry_date_start > expiry_date_end )
+	if ( tmp_rat.st_expiry_start > tmp_rat.st_expiry_end )
 	{
 		return false;
 	}

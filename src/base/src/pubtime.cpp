@@ -1,9 +1,13 @@
 #include "pubtime.h"
 #include "pubstr.h"
-#include "simpletime.h"
 
 namespace base
 {
+
+const char* const PubTime::S_TODAY_OF_LAST_WEEK      = "TODAY_OF_LAST_WEEK";			// 上个星期的今天
+const char* const PubTime::S_TODAY_OF_LAST_MONTH     = "TODAY_OF_LAST_MONTH";			// 上个月的今天
+const char* const PubTime::S_TODAY_OF_LAST_YEAR      = "TODAY_OF_LAST_YEAR";			// 去年的今天
+const char* const PubTime::S_THIS_MONTH_OF_LAST_YEAR = "THIS_MONTH_OF_LAST_YEAR";		// 去年的这个月
 
 std::string PubTime::DateType2String(PubTime::DATE_TYPE dt)
 {
@@ -43,26 +47,26 @@ std::string PubTime::TheDateMinusMonths(int year, int mon, unsigned int months)
 
 std::string PubTime::DateNowPlusDays(unsigned int days)
 {
-	SimpleTime st_now(SimpleTime::Now());
-	return TheDateDays_S(st_now.GetYear(), st_now.GetMon(), st_now.GetDay(), days, true);
+	const SimpleTime ST_NOW(SimpleTime::Now());
+	return TheDateDays_S(ST_NOW.GetYear(), ST_NOW.GetMon(), ST_NOW.GetDay(), days, true);
 }
 
 std::string PubTime::DateNowMinusDays(unsigned int days)
 {
-	SimpleTime st_now(SimpleTime::Now());
-	return TheDateDays_S(st_now.GetYear(), st_now.GetMon(), st_now.GetDay(), days, false);
+	const SimpleTime ST_NOW(SimpleTime::Now());
+	return TheDateDays_S(ST_NOW.GetYear(), ST_NOW.GetMon(), ST_NOW.GetDay(), days, false);
 }
 
 std::string PubTime::DateNowPlusMonths(unsigned int months)
 {
-	SimpleTime st_now(SimpleTime::Now());
-	return TheDateMonths_S(st_now.GetYear(), st_now.GetMon(), months, true);
+	const SimpleTime ST_NOW(SimpleTime::Now());
+	return TheDateMonths_S(ST_NOW.GetYear(), ST_NOW.GetMon(), months, true);
 }
 
 std::string PubTime::DateNowMinusMonths(unsigned int months)
 {
-	SimpleTime st_now(SimpleTime::Now());
-	return TheDateMonths_S(st_now.GetYear(), st_now.GetMon(), months, false);
+	const SimpleTime ST_NOW(SimpleTime::Now());
+	return TheDateMonths_S(ST_NOW.GetYear(), ST_NOW.GetMon(), months, false);
 }
 
 bool PubTime::SpreadTimeInterval(const DATE_TYPE& d_type, const std::string& time_intvl, const std::string& dim, std::vector<int>& vec_ts)
@@ -171,15 +175,14 @@ bool PubTime::SpreadTimeInterval(const DATE_TYPE& d_type, const std::string& tim
 	return true;
 }
 
-long PubTime::DayApartFromToday(int year, int mon, int day)
+long PubTime::DayDifference(const base::SimpleTime& st_beg, const base::SimpleTime& st_end)
 {
-	if ( year < MIN_YEAR || mon < 1 || mon > 12 || day < 1 || day > SimpleTime::LastDayOfTheMon(year, mon) ) // Invalid
+	if ( !st_beg.IsValid() || !st_end.IsValid() )
 	{
 		return 0;
 	}
 
-	SimpleTime st_now(SimpleTime::Now());
-	return (SumDay_S(st_now.GetYear(), st_now.GetMon(), st_now.GetDay()) - SumDay_S(year, mon, day));
+	return (SumDay_S(st_end.GetYear(), st_end.GetMon(), st_end.GetDay()) - SumDay_S(st_beg.GetYear(), st_beg.GetMon(), st_beg.GetDay()));
 }
 
 bool PubTime::DateApartFromNow(const std::string& fmt, PubTime::DATE_TYPE& d_type, std::string& date)
@@ -264,16 +267,16 @@ bool PubTime::TheDateOf(const std::string& date_of_what, std::string& date)
 {
 	std::string d_of_what = PubStr::TrimUpperB(date_of_what);
 
-	if ( "TODAY_OF_LAST_WEEK" == d_of_what )			// 上个星期的今天
+	if ( S_TODAY_OF_LAST_WEEK == d_of_what )			// 上个星期的今天
 	{
 		date = DateNowMinusDays(7);
 	}
-	else if ( "TODAY_OF_LAST_MONTH" == d_of_what )		// 上个月的今天
+	else if ( S_TODAY_OF_LAST_MONTH == d_of_what )		// 上个月的今天
 	{
-		SimpleTime st_now = SimpleTime::Now();
-		int year = st_now.GetYear();
-		int mon  = st_now.GetMon();
-		int day  = st_now.GetDay();
+		const SimpleTime ST_NOW = SimpleTime::Now();
+		int year = ST_NOW.GetYear();
+		int mon  = ST_NOW.GetMon();
+		int day  = ST_NOW.GetDay();
 
 		if ( 1 == mon )		// 本月是一月份
 		{
@@ -294,12 +297,12 @@ bool PubTime::TheDateOf(const std::string& date_of_what, std::string& date)
 
 		date = SimpleTime(year, mon, day, 0, 0, 0).DayTime8();
 	}
-	else if ( "TODAY_OF_LAST_YEAR" == d_of_what )		// 去年的今天
+	else if ( S_TODAY_OF_LAST_YEAR == d_of_what )		// 去年的今天
 	{
-		SimpleTime st_now = SimpleTime::Now();
-		int year = st_now.GetYear() - 1;
-		int mon  = st_now.GetMon();
-		int day  = st_now.GetDay();
+		const SimpleTime ST_NOW = SimpleTime::Now();
+		int year = ST_NOW.GetYear() - 1;
+		int mon  = ST_NOW.GetMon();
+		int day  = ST_NOW.GetDay();
 
 		// 是否大于去年的日份
 		int last_day = SimpleTime::LastDayOfTheMon(year, mon);
@@ -310,11 +313,11 @@ bool PubTime::TheDateOf(const std::string& date_of_what, std::string& date)
 
 		date = SimpleTime(year, mon, day, 0, 0, 0).DayTime8();
 	}
-	else if ( "THIS_MONTH_OF_LAST_YEAR" == d_of_what )	// 去年的这个月
+	else if ( S_THIS_MONTH_OF_LAST_YEAR == d_of_what )	// 去年的这个月
 	{
-		SimpleTime st_now = SimpleTime::Now();
-		int year = st_now.GetYear() - 1;
-		int mon  = st_now.GetMon();
+		const SimpleTime ST_NOW = SimpleTime::Now();
+		int year = ST_NOW.GetYear() - 1;
+		int mon  = ST_NOW.GetMon();
 
 		date = SimpleTime(year, mon, 0, 0, 0, 0).MonTime6();
 	}

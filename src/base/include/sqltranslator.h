@@ -10,7 +10,7 @@ class SQLTranslator
 {
 public:
 	SQLTranslator(PubTime::DATE_TYPE dt, const std::string& etl_date);
-	~SQLTranslator();
+	virtual ~SQLTranslator();
 
 public:
 	// 标记，格式：$(...)

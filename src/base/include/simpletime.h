@@ -11,11 +11,18 @@ class SimpleTime
 public:
 	SimpleTime();
 	SimpleTime(int y, int m, int d, int h, int mi, int s, int us = 0);
-	SimpleTime(long long time);		// 时间格式：YYYYMMDDHHMISS
+	explicit SimpleTime(long long time);		// 时间格式：YYYYMMDDHHMISS
 	SimpleTime(const SimpleTime& st);
 	virtual ~SimpleTime();
 
 	const SimpleTime& operator = (const SimpleTime& st);
+
+	friend bool operator > (const SimpleTime& st_l, const SimpleTime& st_r);
+	friend bool operator < (const SimpleTime& st_l, const SimpleTime& st_r);
+	friend bool operator == (const SimpleTime& st_l, const SimpleTime& st_r);
+	friend bool operator != (const SimpleTime& st_l, const SimpleTime& st_r);
+	friend bool operator >= (const SimpleTime& st_l, const SimpleTime& st_r);
+	friend bool operator <= (const SimpleTime& st_l, const SimpleTime& st_r);
 
 public:
 	// 当前时间
@@ -40,42 +47,49 @@ public:
 	int GetSec()  const { return sec ; }
 	int GetUSec() const { return usec; }
 
+	// 时间格式：YYYYMMDDHHMISS
+	long long GetTime() const;
+
+	// 设置时间
+	bool Set(int y, int m, int d, int h, int mi, int s, int us = 0);
+	bool Set(long long time);
+
 	// 时间戳
-	std::string TimeStamp();
+	std::string TimeStamp() const;
 
 	// 长时间戳
-	std::string LTimeStamp();
+	std::string LTimeStamp() const;
 
 	// 超长时间戳
-	std::string LLTimeStamp();
+	std::string LLTimeStamp() const;
 
 	// 时间格式：YYYYMMDDHHMISS
-	std::string Time14();
+	std::string Time14() const;
 
 	// 时间格式：YYYYMMDDHHMISSUS3
-	std::string Time17();
+	std::string Time17() const;
 
 	// 时间格式：YYYYMMDDHHMISSUS6
-	std::string Time20();
+	std::string Time20() const;
 
 	// 日时间，格式：YYYYMMDD
-	std::string DayTime8();
+	std::string DayTime8() const;
 
 	// 日时间，格式：YYYY-MM-DD
-	std::string DayTime10();
+	std::string DayTime10() const;
 
 	// 月时间，格式：YYYYMM
-	std::string MonTime6();
+	std::string MonTime6() const;
 
 	// 月时间，格式：YYYY-MM
-	std::string MonTime7();
+	std::string MonTime7() const;
 
 	// 年时间，格式：YYYY
-	std::string YearTime();
+	std::string YearTime() const;
 
 private:
-	// 初始化时间
-	void Init(int y, int m, int d, int h, int mi, int s, int us);
+	// 初始化
+	void Init();
 
 	// 格式化时间字符串
 	static std::string TimeFormat(const char* format, ...);

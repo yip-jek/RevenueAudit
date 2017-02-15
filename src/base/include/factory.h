@@ -41,10 +41,10 @@ protected:
 class FactoryAssist
 {
 public:
-	FactoryAssist(Factory* pFactory): m_pFactory(pFactory)
+	explicit FactoryAssist(Factory* pFactory): m_pFactory(pFactory)
 	{}
 
-	~FactoryAssist()
+	virtual ~FactoryAssist()
 	{
 		if ( m_pFactory != NULL )
 		{

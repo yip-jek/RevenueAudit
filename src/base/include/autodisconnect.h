@@ -23,7 +23,7 @@ public:
 class HiveConnector : public BaseConnector
 {
 public:
-	HiveConnector(BaseJHive* pHive);
+	explicit HiveConnector(BaseJHive* pHive);
 	virtual ~HiveConnector() {}
 
 public:
@@ -45,7 +45,7 @@ private:	// noncopyable
 public:
 	// 连接器资源自动释放
 	explicit AutoDisconnect(BaseConnector* pConnector);
-	~AutoDisconnect();
+	virtual ~AutoDisconnect();
 
 public:
 	void Connect() throw(Exception);

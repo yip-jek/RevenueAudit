@@ -1,5 +1,6 @@
 #include "ydtask.h"
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include "config.h"
 #include "log.h"
@@ -318,7 +319,7 @@ void YDTask::HandleAnaTask() throw(base::Exception)
 				ref_tslog.end_time   = base::SimpleTime::Now().Time14();
 				ref_tslog.task_state = "ANALYSE_ABORT";
 				ref_tslog.state_desc = "分析进程异常退出";
-				m_pTaskDB2->UpdateTaskScheLogState(ref_tslog);
+				m_pTaskDB2->UpdateTaskScheLog(ref_tslog);
 
 				m_mTaskEnd[ref_rat.seq_id] = ref_rat;
 				m_mAnaTaskRun.erase(it++);
@@ -390,7 +391,7 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 						ref_tslog.end_time   = base::SimpleTime::Now().Time14();
 						ref_tslog.task_state = "ACQUIRE_ABORT";
 						ref_tslog.state_desc = "采集进程异常退出";
-						m_pTaskDB2->UpdateTaskScheLogState(ref_tslog);
+						m_pTaskDB2->UpdateTaskScheLog(ref_tslog);
 
 						++c_etl_finished;
 					}
@@ -442,14 +443,12 @@ void YDTask::BuildNewTask() throw(base::Exception)
 		return;
 	}
 
-	long long ll_time_now = 0;
-	base::PubStr::Str2LLong(base::SimpleTime::Now().Time14(), ll_time_now);
-
 	std::string str_task_type;
 	std::string str_etl_time;
 	std::string str_etl_id;
 	std::string str_ana_id;
 	std::vector<std::string> vec_etl_id;
+	const base::SimpleTime ST_NOW(base::SimpleTime::Now());
 	
 	std::map<int, RATask>::iterator cur_it;
 	std::map<int, RATask>::iterator it = m_mTaskWait.begin();
@@ -482,15 +481,15 @@ void YDTask::BuildNewTask() throw(base::Exception)
 		}
 
 		// 任务未到达有效期
-		if ( ll_time_now < ref_rat.expiry_date_start )
+		if ( ST_NOW < ref_rat.st_expiry_start )
 		{
 			continue;
 		}
 
 		// 任务过期
-		if ( ref_rat.expiry_date_end < ll_time_now )
+		if ( ref_rat.st_expiry_end < ST_NOW )
 		{
-			m_pLog->Output("[YD_TASK] Task expired: SEQ=[%d], KPI=[%s], TASK_TYPE=[%s], EXPIRY_DATE_START=[%lld], EXPIRY_DATE_END=[%lld]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), str_task_type.c_str(), ref_rat.expiry_date_start, ref_rat.expiry_date_end);
+			m_pLog->Output("[YD_TASK] Task expired: SEQ=[%d], KPI=[%s], TASK_TYPE=[%s], EXPIRY_DATE_START=[%s], EXPIRY_DATE_END=[%s]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), str_task_type.c_str(), ref_rat.st_expiry_start.TimeStamp().c_str(), ref_rat.st_expiry_end.TimeStamp().c_str());
 
 			// 置为未激活
 			m_pTaskDB2->SetTaskScheNotActive(ref_rat.seq_id);
@@ -508,12 +507,12 @@ void YDTask::BuildNewTask() throw(base::Exception)
 		// 是否有下一个采集时间点？
 		if ( ref_rat.etl_time.GetNext(str_etl_time) )	// 获得下一个采集时间点
 		{
-			ref_rat.task_starttime = base::SimpleTime::Now().Time14();
-			ref_rat.task_finishtime.clear();
-			m_pLog->Output("[YD_TASK] Task continue: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, str_task_type.c_str(), ref_rat.kpi_id.c_str(), str_etl_time.c_str(), ref_rat.task_starttime.c_str());
+			ref_rat.st_task_start = base::SimpleTime::Now();
+			ref_rat.st_task_finish.Set(0);
+			m_pLog->Output("[YD_TASK] Task continue: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, str_task_type.c_str(), ref_rat.kpi_id.c_str(), str_etl_time.c_str(), ref_rat.st_task_start.TimeStamp().c_str());
 
 			// 更新任务时间
-			m_pTaskDB2->UpdateTaskScheTaskTime(ref_rat.seq_id, ref_rat.task_starttime, ref_rat.task_finishtime);
+			m_pTaskDB2->UpdateTaskScheTaskTime(ref_rat.seq_id, ref_rat.st_task_start.Time14(), ref_rat.st_task_finish.Time14());
 
 			// 下发采集任务
 			const int VEC_SIZE = ref_rat.vecEtlTasks.size();
@@ -544,7 +543,7 @@ void YDTask::BuildNewTask() throw(base::Exception)
 		else	// 没有采集时间点
 		{
 			// 任务是否已经执行过？
-			if ( ref_rat.task_finishtime.empty() )		// 未执行
+			if ( !ref_rat.st_task_finish.IsValid() )		// 未执行
 			{
 				// 是否到达运行周期
 				if ( ref_rat.cycle.IsCycleTimeUp() )
@@ -557,11 +556,11 @@ void YDTask::BuildNewTask() throw(base::Exception)
 						throw base::Exception(YDTERR_BUILD_NEWTASK, "Build new task failed: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s]. Can't get the first ETL time! [FILE:%s, LINE:%d]", ref_rat.seq_id, str_task_type.c_str(), ref_rat.kpi_id.c_str(), __FILE__, __LINE__);
 					}
 
-					ref_rat.task_starttime = base::SimpleTime::Now().Time14();
-					m_pLog->Output("[YD_TASK] Task start: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, str_task_type.c_str(), ref_rat.kpi_id.c_str(), str_etl_time.c_str(), ref_rat.task_starttime.c_str());
+					ref_rat.st_task_start = base::SimpleTime::Now();
+					m_pLog->Output("[YD_TASK] Task start: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, str_task_type.c_str(), ref_rat.kpi_id.c_str(), str_etl_time.c_str(), ref_rat.st_task_start.TimeStamp().c_str());
 
 					// 更新任务时间
-					m_pTaskDB2->UpdateTaskScheTaskTime(ref_rat.seq_id, ref_rat.task_starttime, ref_rat.task_finishtime);
+					m_pTaskDB2->UpdateTaskScheTaskTime(ref_rat.seq_id, ref_rat.st_task_start.Time14(), ref_rat.st_task_finish.Time14());
 
 					// 获取采集ID与分析ID
 					m_pTaskDB2->GetKpiRuleSubID(ref_rat.kpi_id, str_etl_id, str_ana_id);
@@ -604,11 +603,11 @@ void YDTask::BuildNewTask() throw(base::Exception)
 				if ( RATask::TTYPE_P == ref_rat.type )	// 常驻任务
 				{
 					// 是否超过最小时间间隔？
-					if ( IsOverMinTimeInterval(ref_rat.task_finishtime) )
+					if ( IsOverMinTimeInterval(ref_rat.st_task_finish) )
 					{
 						// 任务重置，但采集时间不重置
-						ref_rat.task_starttime.clear();
-						ref_rat.task_finishtime.clear();
+						ref_rat.st_task_start.Set(0);
+						ref_rat.st_task_finish.Set(0);
 						std::vector<TaskScheLog>().swap(ref_rat.vecEtlTasks);
 						ref_rat.tslogAnaTask.Clear();
 					}
@@ -643,14 +642,14 @@ void YDTask::CreateTask(TaskScheLog& ts_log)
 		m_pTaskDB2->UpdateEtlTime(ts_log.sub_id, ts_log.etl_time);
 
 		// 采集程序：守护进程
-		base::PubStr::SetFormatString(command, "%s 1 %s %s %s %s 00001:%s:%s:%d:", m_binAcquire.c_str(), ts_log.task_id.c_str(), m_modeAcquire.c_str(), m_binVer.c_str(), m_cfgAcquire.c_str(), ts_log.kpi_id.c_str(), t_info.sub_id.c_str(), ts_log.log_id);
+		base::PubStr::SetFormatString(command, "%s 1 %s %s %s %s 00001:%s:%s:%d:", m_binAcquire.c_str(), ts_log.task_id.c_str(), m_modeAcquire.c_str(), m_binVer.c_str(), m_cfgAcquire.c_str(), ts_log.kpi_id.c_str(), ts_log.sub_id.c_str(), ts_log.log_id);
 	}
 	else if ( "ANA" == ts_log.app_type )	// 分析任务
 	{
 		m_pLog->Output("[YD_TASK] Create analyse task: LOG=[%d], KPI=[%s], ANA_ID=[%s], TASK_ID=[%s], TASK_TYPE=[%s], ETL_TIME=[%s], START_TIME=[%s]", ts_log.log_id, ts_log.kpi_id.c_str(), ts_log.sub_id.c_str(), ts_log.task_id.c_str(), ts_log.task_type.c_str(), ts_log.etl_time.c_str(), ts_log.start_time.c_str());
 
 		// 分析程序：守护进程
-		base::PubStr::SetFormatString(command, "%s 1 %s %s %s %s 00001:%s:%s:%d:", m_binAnalyse.c_str(), ts_log.task_id.c_str(), m_modeAnalyse.c_str(), m_binVer.c_str(), m_cfgAnalyse.c_str(), ts_log.kpi_id.c_str(), t_info.sub_id.c_str(), ts_log.log_id);
+		base::PubStr::SetFormatString(command, "%s 1 %s %s %s %s 00001:%s:%s:%d:", m_binAnalyse.c_str(), ts_log.task_id.c_str(), m_modeAnalyse.c_str(), m_binVer.c_str(), m_cfgAnalyse.c_str(), ts_log.kpi_id.c_str(), ts_log.sub_id.c_str(), ts_log.log_id);
 	}
 	else
 	{
@@ -671,7 +670,7 @@ bool YDTask::CheckSameKindRunningTask(const RATask& rat)
 		|| (it = m_mTaskEnd.find(rat.seq_id)) != m_mTaskEnd.end() )
 	{
 		RATask& ref_rat = it->second;
-		m_pLog->Output("[YD_TASK] Same SEQ task is running: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, ref_rat.tslogAnaTask.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_rat.tslogAnaTask.etl_time.c_str(), ref_rat.task_starttime.c_str());
+		m_pLog->Output("[YD_TASK] Same SEQ task is running: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, ref_rat.tslogAnaTask.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_rat.tslogAnaTask.etl_time.c_str(), ref_rat.st_task_start.TimeStamp().c_str());
 		return true;
 	}
 
@@ -681,7 +680,7 @@ bool YDTask::CheckSameKindRunningTask(const RATask& rat)
 		if ( rat.kpi_id == it->second.kpi_id )
 		{
 			RATask& ref_rat = it->second;
-			m_pLog->Output("[YD_TASK] Same KPI task is running: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, ref_rat.tslogAnaTask.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_rat.tslogAnaTask.etl_time.c_str(), ref_rat.task_starttime.c_str());
+			m_pLog->Output("[YD_TASK] Same KPI task is running: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, ref_rat.tslogAnaTask.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_rat.tslogAnaTask.etl_time.c_str(), ref_rat.st_task_start.TimeStamp().c_str());
 			return true;
 		}
 	}
@@ -692,7 +691,7 @@ bool YDTask::CheckSameKindRunningTask(const RATask& rat)
 		if ( rat.kpi_id == it->second.kpi_id )
 		{
 			RATask& ref_rat = it->second;
-			m_pLog->Output("[YD_TASK] Same KPI task is running: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, ref_rat.tslogAnaTask.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_rat.tslogAnaTask.etl_time.c_str(), ref_rat.task_starttime.c_str());
+			m_pLog->Output("[YD_TASK] Same KPI task is running: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, ref_rat.tslogAnaTask.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_rat.tslogAnaTask.etl_time.c_str(), ref_rat.st_task_start.TimeStamp().c_str());
 			return true;
 		}
 	}
@@ -703,7 +702,7 @@ bool YDTask::CheckSameKindRunningTask(const RATask& rat)
 		if ( rat.kpi_id == it->second.kpi_id )
 		{
 			RATask& ref_rat = it->second;
-			m_pLog->Output("[YD_TASK] Same KPI task is running: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, ref_rat.tslogAnaTask.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_rat.tslogAnaTask.etl_time.c_str(), ref_rat.task_starttime.c_str());
+			m_pLog->Output("[YD_TASK] Same KPI task is running: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s]", ref_rat.seq_id, ref_rat.tslogAnaTask.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_rat.tslogAnaTask.etl_time.c_str(), ref_rat.st_task_start.TimeStamp().c_str());
 			return true;
 		}
 	}
@@ -711,31 +710,12 @@ bool YDTask::CheckSameKindRunningTask(const RATask& rat)
 	return false;
 }
 
-bool YDTask::IsOverMinTimeInterval(const std::string& time)
+bool YDTask::IsOverMinTimeInterval(const base::SimpleTime& st_time)
 {
-	// 转换失败，无效！
-	long long ll_time = 0;
-	if ( !base::PubStr::Str2LLong(time, ll_time) )
-	{
-		return false;
-	}
-
-	// 时间格式：YYYYMMDDHHMISS
-	base::SimpleTime st(ll_time);
-	if ( !st.IsValid() )
-	{
-		return false;
-	}
-
-	long min_off = base::PubTime::DayApartFromToday(st.GetYear(), st.GetMon(), st.GetDay()) * 1440;
-	if ( min_off < 0 )
-	{
-		return false;
-	}
-
-	base::SimpleTime st_now(base::SimpleTime::Now());
-	min_off += (st_now.GetHour() - st.GetHour()) * 60;
-	min_off += (st_now.GetMin() - st.GetMin());
+	const base::SimpleTime ST_NOW(base::SimpleTime::Now());
+	long min_off = (ST_NOW.GetHour() - st_time.GetHour()) * 60;
+	min_off += (ST_NOW.GetMin() - st_time.GetMin());
+	min_off += base::PubTime::DayDifference(st_time, ST_NOW) * 1440;
 	return (min_off > m_minRunTimeInterval);
 }
 
@@ -749,12 +729,12 @@ void YDTask::FinishTask() throw(base::Exception)
 	for ( std::map<int, RATask>::iterator it = m_mTaskEnd.begin(); it != m_mTaskEnd.end(); ++it )
 	{
 		RATask& ref_rat = it->second;
-		ref_rat.task_finishtime = base::SimpleTime::Now().Time14();
-		m_pLog->Output("[YD_TASK] Task finished: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s], TASK_END_TIME=[%s]", ref_rat.seq_id, ref_rat.tslogAnaTask.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_rat.tslogAnaTask.etl_time.c_str(), ref_rat.task_starttime.c_str(), ref_rat.task_finishtime.c_str());
+		ref_rat.st_task_finish = base::SimpleTime::Now();
+		m_pLog->Output("[YD_TASK] Task finished: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s], TASK_START_TIME=[%s], TASK_END_TIME=[%s]", ref_rat.seq_id, ref_rat.tslogAnaTask.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_rat.tslogAnaTask.etl_time.c_str(), ref_rat.st_task_start.TimeStamp().c_str(), ref_rat.st_task_finish.TimeStamp().c_str());
 
 		if ( m_pTaskDB2->IsTaskScheExist(ref_rat.seq_id) )
 		{
-			m_pTaskDB2->UpdateTaskScheTaskTime(ref_rat.seq_id, ref_rat.task_starttime, ref_rat.task_finishtime);
+			m_pTaskDB2->UpdateTaskScheTaskTime(ref_rat.seq_id, ref_rat.st_task_start.Time14(), ref_rat.st_task_finish.Time14());
 		}
 
 		// 在删除队列中，则直接永久删除，不再回归等待队列

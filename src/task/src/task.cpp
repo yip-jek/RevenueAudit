@@ -26,7 +26,7 @@ Task::~Task()
 
 std::string Task::Version()
 {
-	return ("Version 3.0011 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Version 3.0012 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Task::Run() throw(base::Exception)
@@ -198,33 +198,40 @@ std::string Task::EtlTimeTransform(const std::string& cycle) throw(base::Excepti
 	}
 
 	int year = 0;
+	if ( !base::PubStr::Str2Int(cycle.substr(0, 4), year) )
+	{
+		throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
+	}
+
 	int mon  = 0;
+	if ( !base::PubStr::Str2Int(cycle.substr(4, 2), mon) )
+	{
+		throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
+	}
+
 	int day  = 0;
-
-	if ( !base::PubStr::Str2Int(cycle.substr(0, 4), year) || year < 1970 )
+	if ( !base::PubStr::Str2Int(cycle.substr(6, 2), day) )
 	{
 		throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
 	}
 
-	if ( !base::PubStr::Str2Int(cycle.substr(4, 2), mon) || mon < 1 || mon > 12 )
+	// 时间无效
+	const base::SimpleTime ST_CYCLE(year, mon, day, 0, 0, 0);
+	if ( !ST_CYCLE.IsValid() )
 	{
 		throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
 	}
 
-	if ( !base::PubStr::Str2Int(cycle.substr(6, 2), day) || day < 1 || day > base::SimpleTime::LastDayOfTheMon(year, mon) )
+	const base::SimpleTime ST_NOW(base::SimpleTime::Now());
+	long day_diff = base::PubTime::DayDifference(ST_CYCLE, ST_NOW);
+	if ( day_diff < 0 )
 	{
-		throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle is invalid: %s [FILE:%s, LINE:%d]", cycle.c_str(), __FILE__, __LINE__);
-	}
-
-	long day_apart = base::PubTime::DayApartFromToday(year, mon, day);
-	if ( day_apart < 0 )
-	{
-		std::string today = base::SimpleTime::Now().DayTime8();
+		std::string today = ST_NOW.DayTime8();
 		throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle is greater than today (%s): %s [FILE:%s, LINE:%d]", today.c_str(), cycle.c_str(), __FILE__, __LINE__);
 	}
 
 	std::string etlrule_time;
-	base::PubStr::SetFormatString(etlrule_time, "day-%ld", day_apart);
+	base::PubStr::SetFormatString(etlrule_time, "day-%ld", day_diff);
 	return etlrule_time;
 }
 

@@ -15,7 +15,7 @@ struct StructJNI;
 class BaseJHive
 {
 public:
-	BaseJHive(const std::string& hive_jclassname);
+	explicit BaseJHive(const std::string& hive_jclassname);
 	virtual ~BaseJHive();
 
 	static const char* const S_DEBUG_HIVE_JAVA_CLASS_NAME;				// HIVE代理Java类名称（测试版本）

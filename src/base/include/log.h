@@ -12,7 +12,7 @@ class Log
 {
 private:
 	Log();
-	~Log();
+	virtual ~Log();
 
 public:
 	// 日志缓冲区大小
@@ -66,7 +66,7 @@ public:
 	AutoLogger(): m_pLogger(Log::Instance())
 	{}
 
-	~AutoLogger()
+	virtual ~AutoLogger()
 	{ Log::Release(); }
 
 public:

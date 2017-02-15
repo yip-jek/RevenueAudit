@@ -7,49 +7,60 @@
 namespace base
 {
 
-SimpleTime::SimpleTime()
-:valid(false)
-,year(0)
-,mon(0)
-,day(0)
-,hour(0)
-,min(0)
-,sec(0)
-,usec(0)
+bool operator > (const SimpleTime& st_l, const SimpleTime& st_r)
 {
+	const long long L_TIME = st_l.GetTime();
+	const long long R_TIME = st_r.GetTime();
+	return (L_TIME > R_TIME || (L_TIME == R_TIME && st_l.usec > st_r.usec));
+}
+
+bool operator < (const SimpleTime& st_l, const SimpleTime& st_r)
+{
+	const long long L_TIME = st_l.GetTime();
+	const long long R_TIME = st_r.GetTime();
+	return (L_TIME < R_TIME || (L_TIME == R_TIME && st_l.usec < st_r.usec));
+}
+
+bool operator == (const SimpleTime& st_l, const SimpleTime& st_r)
+{
+	return (st_l.valid == st_r.valid
+		&& st_l.year == st_r.year
+		&& st_l.mon  == st_r.mon
+		&& st_l.day  == st_r.day
+		&& st_l.hour == st_r.hour
+		&& st_l.min  == st_r.min
+		&& st_l.sec  == st_r.sec
+		&& st_l.usec == st_r.usec);
+}
+
+bool operator != (const SimpleTime& st_l, const SimpleTime& st_r)
+{
+	return !(st_l == st_r);
+}
+
+bool operator >= (const SimpleTime& st_l, const SimpleTime& st_r)
+{
+	return (st_l > st_r || st_l == st_r);
+}
+
+bool operator <= (const SimpleTime& st_l, const SimpleTime& st_r)
+{
+	return (st_l < st_r || st_l == st_r);
+}
+
+SimpleTime::SimpleTime()
+{
+	Init();
 }
 
 SimpleTime::SimpleTime(int y, int m, int d, int h, int mi, int s, int us /*= 0*/)
-:valid(false)
-,year(0)
-,mon(0)
-,day(0)
-,hour(0)
-,min(0)
-,sec(0)
-,usec(0)
 {
-	Init(y, m, d, h, mi, s, us);
+	Set(y, m, d, h, mi, s, us);
 }
 
 SimpleTime::SimpleTime(long long time)
-:valid(false)
-,year(0)
-,mon(0)
-,day(0)
-,hour(0)
-,min(0)
-,sec(0)
-,usec(0)
 {
-	int y  = time / 10000000000;
-	int m  = (time % 10000000000) / 100000000;
-	int d  = (time % 100000000) / 1000000;
-	int h  = (time % 1000000) / 10000;
-	int mi = (time % 10000) / 100;
-	int s  = time % 100;
-
-	Init(y, m, d, h, mi, s, 0);
+	Set(time);
 }
 
 SimpleTime::SimpleTime(const SimpleTime& st)
@@ -132,67 +143,93 @@ int SimpleTime::LastDayOfTheMon(int year, int mon)
 		}
 		break;
 	default:	// 无效月份
-		return -1;
+		return 0;
 	}
 }
 
-std::string SimpleTime::TimeStamp()
+long long SimpleTime::GetTime() const
+{
+	long long ll_time = 0;
+	ll_time += year * 10000000000;
+	ll_time += mon  * 100000000;
+	ll_time += day  * 1000000;
+	ll_time += hour * 10000;
+	ll_time += min  * 100;
+	ll_time += sec;
+	return ll_time;
+}
+
+std::string SimpleTime::TimeStamp() const
 {
 	return TimeFormat("%04d-%02d-%02d %02d:%02d:%02d", year, mon, day, hour, min, sec);
 }
 
-std::string SimpleTime::LTimeStamp()
+std::string SimpleTime::LTimeStamp() const
 {
 	return TimeFormat("%04d-%02d-%02d %02d:%02d:%02d.%03d", year, mon, day, hour, min, sec, (usec/1000));
 }
 
-std::string SimpleTime::LLTimeStamp()
+std::string SimpleTime::LLTimeStamp() const
 {
 	return TimeFormat("%04d-%02d-%02d %02d:%02d:%02d.%06d", year, mon, day, hour, min, sec, usec);
 }
 
-std::string SimpleTime::Time14()
+std::string SimpleTime::Time14() const
 {
 	return TimeFormat("%04d%02d%02d%02d%02d%02d", year, mon, day, hour, min, sec);
 }
 
-std::string SimpleTime::Time17()
+std::string SimpleTime::Time17() const
 {
 	return TimeFormat("%04d%02d%02d%02d%02d%02d%03d", year, mon, day, hour, min, sec, (usec/1000));
 }
 
-std::string SimpleTime::Time20()
+std::string SimpleTime::Time20() const
 {
 	return TimeFormat("%04d%02d%02d%02d%02d%02d%06d", year, mon, day, hour, min, sec, usec);
 }
 
-std::string SimpleTime::DayTime8()
+std::string SimpleTime::DayTime8() const
 {
 	return TimeFormat("%04d%02d%02d", year, mon, day);
 }
 
-std::string SimpleTime::DayTime10()
+std::string SimpleTime::DayTime10() const
 {
 	return TimeFormat("%04d-%02d-%02d", year, mon, day);
 }
 
-std::string SimpleTime::MonTime6()
+std::string SimpleTime::MonTime6() const
 {
 	return TimeFormat("%04d%02d", year, mon);
 }
 
-std::string SimpleTime::MonTime7()
+std::string SimpleTime::MonTime7() const
 {
 	return TimeFormat("%04d-%02d", year, mon);
 }
 
-std::string SimpleTime::YearTime()
+std::string SimpleTime::YearTime() const
 {
 	return TimeFormat("%04d", year);
 }
 
-void SimpleTime::Init(int y, int m, int d, int h, int mi, int s, int us)
+void SimpleTime::Init()
 {
+	valid = false;
+	year  = 0;
+	mon   = 0;
+	day   = 0;
+	hour  = 0;
+	min   = 0;
+	sec   = 0;
+	usec  = 0;
+}
+
+bool SimpleTime::Set(int y, int m, int d, int h, int mi, int s, int us /*= 0*/)
+{
+	Init();
+
 	int s_y  = 0;
 	int s_m  = 0;
 	int s_d  = 0;
@@ -203,50 +240,43 @@ void SimpleTime::Init(int y, int m, int d, int h, int mi, int s, int us)
 
 	if ( y <= 0 )	// 无效年份
 	{
-		valid = false;
-		return;
+		return false;
 	}
 	s_y = y;
 
 	if ( m < 1 || m > 12 )	// 无效月份
 	{
-		valid = false;
-		return;
+		return false;
 	}
 	s_m = m;
 
 	if ( d < 1 || d > LastDayOfTheMon(y, m) )	// 无效日份
 	{
-		valid = false;
-		return;
+		return false;
 	}
 	s_d = d;
 
 	if ( h < 0 || h > 23 )		// 无效小时
 	{
-		valid = false;
-		return;
+		return false;
 	}
 	s_h = h;
 
 	if ( mi < 0 || mi > 59 )	// 无效分钟
 	{
-		valid = false;
-		return;
+		return false;
 	}
 	s_mi = mi;
 
 	if ( s < 0 || s > 59 )		// 无效秒
 	{
-		valid = false;
-		return;
+		return false;
 	}
 	s_s = s;
 
 	if ( us < 0 || us > 999999 )	// 无效微秒
 	{
-		valid = false;
-		return;
+		return false;
 	}
 	s_us = us;
 
@@ -257,7 +287,19 @@ void SimpleTime::Init(int y, int m, int d, int h, int mi, int s, int us)
 	min   = s_mi;
 	sec   = s_s ;
 	usec  = s_us;
-	valid = true;
+	return (valid = true);
+}
+
+bool SimpleTime::Set(long long time)
+{
+	int y  = time / 10000000000;
+	int m  = (time % 10000000000) / 100000000;
+	int d  = (time % 100000000) / 1000000;
+	int h  = (time % 1000000) / 10000;
+	int mi = (time % 10000) / 100;
+	int s  = time % 100;
+
+	return Set(y, m, d, h, mi, s);
 }
 
 std::string SimpleTime::TimeFormat(const char* format, ...)

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include "simpletime.h"
 
 namespace base
 {
@@ -19,6 +20,11 @@ public:
 	};
 
 	static const int MIN_YEAR = 1970;			// 最小年份
+
+	static const char* const S_TODAY_OF_LAST_WEEK;			// 上个星期的今天
+	static const char* const S_TODAY_OF_LAST_MONTH;			// 上个月的今天
+	static const char* const S_TODAY_OF_LAST_YEAR;			// 去年的今天
+	static const char* const S_THIS_MONTH_OF_LAST_YEAR;		// 去年的这个月
 
 	// 时间类型转换为字符串
 	static std::string DateType2String(DATE_TYPE dt);
@@ -47,9 +53,9 @@ public:
 	// 展开时间段（区间）
 	static bool SpreadTimeInterval(const DATE_TYPE& d_type, const std::string& time_intvl, const std::string& dim, std::vector<int>& vec_ts);
 
-	// 计算与当前时间相差的天数
-	// 外部保证时间参数的有效性，否则返回0
-	static long DayApartFromToday(int year, int mon, int day);
+	// 计算相差的天数
+	// 外部保证时间参数的有效性，若无效则返回0
+	static long DayDifference(const base::SimpleTime& st_beg, const base::SimpleTime& st_end);
 
 	// 与当前时间相隔的时间（支持 月时间 或者 日时间）
 	// fmt为时间格式：（月）[mon][+/-][月数]; （日）[day][+/-][日数]

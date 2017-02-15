@@ -73,7 +73,7 @@ protected:
 	bool CheckSameKindRunningTask(const RATask& rat);
 
 	// 是否超过最小时间间隔？
-	bool IsOverMinTimeInterval(const std::string& time);
+	bool IsOverMinTimeInterval(const base::SimpleTime& st_time);
 
 	// 任务完成
 	virtual void FinishTask() throw(base::Exception);
