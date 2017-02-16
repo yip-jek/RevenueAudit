@@ -76,7 +76,6 @@ void YDTaskDB2::GetTaskSchedule(std::map<int, TaskSchedule>& m_tasksche) throw(b
 
 	std::string sql = "SELECT SEQ_ID, TASK_TYPE, KPI_ID, TASK_CYCLE, ETL_TIME, ";
 	sql += "EXPIRY_DATE_START, EXPIRY_DATE_END FROM " + m_tabTaskSche + " WHERE ACTIVATE = '1'";
-	//m_pLog->Output("[DB2] Get task schedule: %s", sql.c_str());
 
 	TaskSchedule task_sche;
 	std::map<int, TaskSchedule> m_ts;
@@ -303,7 +302,6 @@ void YDTaskDB2::SelectTaskScheLogState(TaskScheLog& ts_log) throw(base::Exceptio
 
 	std::string sql = "SELECT END_TIME, TASK_STATE, TASK_STATE_DESC, REMARKS FROM ";
 	sql += m_tabTaskScheLog + " WHERE LOG_ID = ?";
-	m_pLog->Output("[DB2] Select task schedule log state: LOG=[%d]", ts_log.log_id);
 
 	try
 	{

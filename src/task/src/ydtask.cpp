@@ -8,6 +8,7 @@
 
 YDTask::YDTask(base::Config& cfg)
 :Task(cfg)
+,m_bTaskFrozen(false)
 ,m_minRunTimeInterval(0)
 ,m_maxTaskScheLogID(0)
 ,m_pTaskDB2(NULL)
@@ -164,11 +165,39 @@ bool YDTask::ConfirmQuit()
 
 void YDTask::GetNewTask() throw(base::Exception)
 {
-	m_pTaskDB2->GetTaskSchedule(m_mTaskSche);
+	if ( !IsTaskFrozen() )
+	{
+		m_pTaskDB2->GetTaskSchedule(m_mTaskSche);
+	}
 
 	GetNewTaskSche();
 
 	DelUnavailableTask();
+}
+
+bool YDTask::IsTaskFrozen()
+{
+	// 每天夜晚 23:30 至次日凌晨 00:00 为冻结期
+	// 冻结期内，不获取也不下发新任务！
+	const base::SimpleTime ST_NOW(base::SimpleTime::Now());
+	if ( m_bTaskFrozen )	// 已冻结
+	{
+		if ( ST_NOW.GetHour() != 23 )	// 解冻
+		{
+			m_pLog->Output("[YD_TASK] Task is THAWED !!!");
+			m_bTaskFrozen = false;
+		}
+	}
+	else	// 未冻结
+	{
+		if ( ST_NOW.GetHour() == 23 && ST_NOW.GetMin() >= 30 )	// 冻结
+		{
+			m_pLog->Output("[YD_TASK] Task is FROZEN !!!");
+			m_bTaskFrozen = true;
+		}
+	}
+
+	return m_bTaskFrozen;
 }
 
 void YDTask::GetNewTaskSche()
@@ -451,7 +480,8 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 
 void YDTask::BuildNewTask() throw(base::Exception)
 {
-	if ( m_mTaskWait.empty() )
+	// 冻结期内不下发新任务
+	if ( m_bTaskFrozen || m_mTaskWait.empty() )
 	{
 		return;
 	}

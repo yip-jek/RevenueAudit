@@ -45,6 +45,9 @@ protected:
 	// 获取新任务
 	virtual void GetNewTask() throw(base::Exception);
 
+	// 任务是否冻结？
+	bool IsTaskFrozen();
+
 	// 获取新的任务日程
 	void GetNewTaskSche();
 
@@ -86,8 +89,9 @@ private:
 	void InitConnect() throw(base::Exception);
 
 private:
-	int m_minRunTimeInterval;				// 任务运行的最小时间间隔（分钟）
-	int m_maxTaskScheLogID;					// 最大的任务日程日志ID
+	bool m_bTaskFrozen;						// 任务冻结标志
+	int  m_minRunTimeInterval;				// 任务运行的最小时间间隔（分钟）
+	int  m_maxTaskScheLogID;				// 最大的任务日程日志ID
 
 private:
 	DBInfo     m_dbinfo;					// 数据库信息
