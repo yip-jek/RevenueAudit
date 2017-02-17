@@ -55,6 +55,7 @@ void YDTask::LoadConfig() throw(base::Exception)
 	m_pCfg->RegisterItem("COMMON", "ANALYSE_MODE");
 	m_pCfg->RegisterItem("COMMON", "ANALYSE_CONFIG");
 	m_pCfg->RegisterItem("COMMON", "ETL_STATE_SUCCESS");
+	m_pCfg->RegisterItem("COMMON", "ETL_IGNORE_ERROR");
 
 	// 读取数据库表配置
 	m_pCfg->RegisterItem("TABLE", "TAB_TASK_SCHE");
@@ -79,6 +80,7 @@ void YDTask::LoadConfig() throw(base::Exception)
 	m_modeAnalyse     = m_pCfg->GetCfgValue("COMMON", "ANALYSE_MODE");
 	m_cfgAnalyse      = m_pCfg->GetCfgValue("COMMON", "ANALYSE_CONFIG");
 	m_etlStateSuccess = m_pCfg->GetCfgValue("COMMON", "ETL_STATE_SUCCESS");
+	m_etlIgnoreError  = m_pCfg->GetCfgValue("COMMON", "ETL_IGNORE_ERROR");
 
 	m_tabTaskSche    = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_SCHE");
 	m_tabTaskScheLog = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_SCHE_LOG");
@@ -150,7 +152,28 @@ void YDTask::Init() throw(base::Exception)
 	m_maxTaskScheLogID = m_pTaskDB2->GetTaskScheLogMaxID();
 	m_pLog->Output("[YD_TASK] Get the max log ID in task schedule log table: [%d]", m_maxTaskScheLogID);
 
+	OutputConfiguration();
 	m_pLog->Output("[YD_TASK] Init OK.");
+}
+
+void YDTask::OutputConfiguration()
+{
+	m_pLog->Output("================================================================================");
+	m_pLog->Output("[YD_TASK] (CONFIG) HIVE_AGENT_PATH   : [%s]", m_hiveAgentPath.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) PROGRAM_VER       : [%s]", m_binVer.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) PROGRAM_ETL       : [%s]", m_binAcquire.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) ETL_MODE          : [%s]", m_modeAcquire.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) ETL_CFG_PATH      : [%s]", m_cfgAcquire.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) PROGRAM_ANA       : [%s]", m_binAnalyse.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) ANA_MODE          : [%s]", m_modeAnalyse.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) ANA_CFG_PATH      : [%s]", m_cfgAnalyse.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) ETL_SUCCESS_STATE : [%s]", m_etlStateSuccess.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) ETL_IGNORE_ERROR  : [%s]", m_etlIgnoreError.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) TASKSCHEDULE_TABLE: [%s]", m_tabTaskSche.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) TASKSCHELOG_TABLE : [%s]", m_tabTaskScheLog.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) KPI_RULE_TABLE    : [%s]", m_tabKpiRule.c_str());
+	m_pLog->Output("[YD_TASK] (CONFIG) ETL_RULE_TABLE    : [%s]", m_tabEtlRule.c_str());
+	m_pLog->Output("================================================================================");
 }
 
 bool YDTask::ConfirmQuit()
@@ -178,13 +201,14 @@ void YDTask::GetNewTask() throw(base::Exception)
 bool YDTask::IsTaskFrozen()
 {
 	// 每天夜晚 23:30 至次日凌晨 00:00 为冻结期
+	// 防止跨日时，时间换算出现不正确的情况！
 	// 冻结期内，不获取也不下发新任务！
 	const base::SimpleTime ST_NOW(base::SimpleTime::Now());
 	if ( m_bTaskFrozen )	// 已冻结
 	{
 		if ( ST_NOW.GetHour() != 23 )	// 解冻
 		{
-			m_pLog->Output("[YD_TASK] Task is THAWED !!!");
+			m_pLog->Output("[YD_TASK] (解冻) Task is THAWED !!!");
 			m_bTaskFrozen = false;
 		}
 	}
@@ -192,7 +216,7 @@ bool YDTask::IsTaskFrozen()
 	{
 		if ( ST_NOW.GetHour() == 23 && ST_NOW.GetMin() >= 30 )	// 冻结
 		{
-			m_pLog->Output("[YD_TASK] Task is FROZEN !!!");
+			m_pLog->Output("[YD_TASK] (冻结) Task is FROZEN !!!");
 			m_bTaskFrozen = true;
 		}
 	}
@@ -395,7 +419,7 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 			if ( !ref_tslog.end_time.empty() && !ref_tslog.task_state.empty() )	// 已获取状态
 			{
 				++c_etl_finished;
-				if ( base::PubStr::TrimB(ref_tslog.task_state) == m_etlStateSuccess )
+				if ( IsEtlSucceeded(ref_tslog) )
 				{
 					++c_etl_success;
 				}
@@ -410,7 +434,7 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 					m_pLog->Output("[YD_TASK] Acquire finished: SEQ=[%d], TASK_ID=[%s], KPI=[%s], ETL_ID=[%s], ETL_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s], STATE_DESC=[%s], REMARK=[%s]", ref_rat.seq_id, ref_tslog.task_id.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str(), ref_tslog.end_time.c_str(), ref_tslog.task_state.c_str(), ref_tslog.state_desc.c_str(), ref_tslog.remarks.c_str());
 
 					++c_etl_finished;
-					if ( base::PubStr::TrimB(ref_tslog.task_state) == m_etlStateSuccess )
+					if ( IsEtlSucceeded(ref_tslog) )
 					{
 						++c_etl_success;
 					}
@@ -476,6 +500,13 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 			++it;
 		}
 	}
+}
+
+bool YDTask::IsEtlSucceeded(const TaskScheLog& ts_log) const
+{
+	// 采集结果状态为成功，或是可以忽略的错误
+	return ( base::PubStr::TrimB(ts_log.task_state) == m_etlStateSuccess 
+		|| ts_log.remarks.find(m_etlIgnoreError) != std::string::npos );
 }
 
 void YDTask::BuildNewTask() throw(base::Exception)
@@ -761,7 +792,7 @@ bool YDTask::CheckSameKindRunningTask(const RATask& rat)
 	return false;
 }
 
-bool YDTask::IsOverMinTimeInterval(const base::SimpleTime& st_time)
+bool YDTask::IsOverMinTimeInterval(const base::SimpleTime& st_time) const
 {
 	const base::SimpleTime ST_NOW(base::SimpleTime::Now());
 	long min_off = (ST_NOW.GetHour() - st_time.GetHour()) * 60;

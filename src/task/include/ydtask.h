@@ -39,6 +39,9 @@ protected:
 	// 初始化
 	virtual void Init() throw(base::Exception);
 
+	// 输出配置信息
+	void OutputConfiguration();
+
 	// 确认退出？
 	virtual bool ConfirmQuit();
 
@@ -66,6 +69,9 @@ protected:
 	// 处理采集任务
 	virtual void HandleEtlTask() throw(base::Exception);
 
+	// 采集是否成功？
+	bool IsEtlSucceeded(const TaskScheLog& ts_log) const;
+
 	// 创建新任务
 	virtual void BuildNewTask() throw(base::Exception);
 
@@ -76,7 +82,7 @@ protected:
 	bool CheckSameKindRunningTask(const RATask& rat);
 
 	// 是否超过最小时间间隔？
-	bool IsOverMinTimeInterval(const base::SimpleTime& st_time);
+	bool IsOverMinTimeInterval(const base::SimpleTime& st_time) const;
 
 	// 任务完成
 	virtual void FinishTask() throw(base::Exception);
@@ -107,6 +113,7 @@ private:
 	std::string m_modeAnalyse;				// 分析程序模式
 	std::string m_cfgAnalyse;				// 分析配置文件（带路径）
 	std::string m_etlStateSuccess;			// 采集成功状态
+	std::string m_etlIgnoreError;			// 采集忽略的错误
 
 private:
 	std::string m_tabTaskSche;				// 任务日程表
