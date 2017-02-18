@@ -29,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 4.0002.20170215 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 4.0003.20170218 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -733,7 +733,7 @@ void Acquire::OuterJoin2Sql(std::vector<std::string>& vec_sql, bool hive, bool w
 		const std::string STR_IDENT = (hive ? "[HIVE]" : "[DB2]");
 		m_pLog->Output("<WARNING> [Acquire] %s Outer table did not exist: %s !", STR_IDENT.c_str(), outer_table.c_str());
 
-		throw base::Exception(ACQERR_OUTER_JOIN_FAILED, "%s Outer table '%s' did not exist ! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", STR_IDENT.c_str(), outer_table.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_CHECK_OUTER_TAB_FAILED, "%s Outer table '%s' did not exist ! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", STR_IDENT.c_str(), outer_table.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 带条件

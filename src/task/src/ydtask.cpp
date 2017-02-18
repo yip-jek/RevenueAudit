@@ -80,7 +80,10 @@ void YDTask::LoadConfig() throw(base::Exception)
 	m_modeAnalyse     = m_pCfg->GetCfgValue("COMMON", "ANALYSE_MODE");
 	m_cfgAnalyse      = m_pCfg->GetCfgValue("COMMON", "ANALYSE_CONFIG");
 	m_etlStateSuccess = m_pCfg->GetCfgValue("COMMON", "ETL_STATE_SUCCESS");
-	m_etlIgnoreError  = m_pCfg->GetCfgValue("COMMON", "ETL_IGNORE_ERROR");
+
+	// 采集忽略的错误列表
+	std::string str_etl_error = m_pCfg->GetCfgValue("COMMON", "ETL_IGNORE_ERROR");
+	base::PubStr::Str2StrVector(str_etl_error, "|", m_vecEtlIgnoreError);
 
 	m_tabTaskSche    = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_SCHE");
 	m_tabTaskScheLog = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_SCHE_LOG");
@@ -168,11 +171,17 @@ void YDTask::OutputConfiguration()
 	m_pLog->Output("[YD_TASK] (CONFIG) ANA_MODE          : [%s]", m_modeAnalyse.c_str());
 	m_pLog->Output("[YD_TASK] (CONFIG) ANA_CFG_PATH      : [%s]", m_cfgAnalyse.c_str());
 	m_pLog->Output("[YD_TASK] (CONFIG) ETL_SUCCESS_STATE : [%s]", m_etlStateSuccess.c_str());
-	m_pLog->Output("[YD_TASK] (CONFIG) ETL_IGNORE_ERROR  : [%s]", m_etlIgnoreError.c_str());
 	m_pLog->Output("[YD_TASK] (CONFIG) TASKSCHEDULE_TABLE: [%s]", m_tabTaskSche.c_str());
 	m_pLog->Output("[YD_TASK] (CONFIG) TASKSCHELOG_TABLE : [%s]", m_tabTaskScheLog.c_str());
 	m_pLog->Output("[YD_TASK] (CONFIG) KPI_RULE_TABLE    : [%s]", m_tabKpiRule.c_str());
 	m_pLog->Output("[YD_TASK] (CONFIG) ETL_RULE_TABLE    : [%s]", m_tabEtlRule.c_str());
+
+	m_pLog->Output("--------------------------------------------------------------------------------");
+	const int VEC_SIZE = m_vecEtlIgnoreError.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		m_pLog->Output("[YD_TASK] (CONFIG) ETL_IGNORE_ERROR_%02d: [%s]", (i+1), m_vecEtlIgnoreError[i].c_str());
+	}
 	m_pLog->Output("================================================================================");
 }
 
@@ -505,8 +514,21 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 bool YDTask::IsEtlSucceeded(const TaskScheLog& ts_log) const
 {
 	// 采集结果状态为成功，或是可以忽略的错误
-	return ( base::PubStr::TrimB(ts_log.task_state) == m_etlStateSuccess 
-		|| ts_log.remarks.find(m_etlIgnoreError) != std::string::npos );
+	if ( base::PubStr::TrimB(ts_log.task_state) != m_etlStateSuccess )
+	{
+		const int VEC_SIZE = m_vecEtlIgnoreError.size();
+		for ( int i = 0; i < VEC_SIZE; ++i )
+		{
+			if ( ts_log.remarks.find(m_vecEtlIgnoreError[i]) != std::string::npos )
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	return true;
 }
 
 void YDTask::BuildNewTask() throw(base::Exception)

@@ -104,16 +104,16 @@ private:
 	YDTaskDB2* m_pTaskDB2;					// 数据库连接
 
 private:
-	std::string m_hiveAgentPath;			// Hive代理的路径
-	std::string m_binVer;					// 程序版本：DEBUG or RELEASE
-	std::string m_binAcquire;				// 采集程序（带路径）
-	std::string m_modeAcquire;				// 采集程序模式
-	std::string m_cfgAcquire;				// 采集配置文件（带路径）
-	std::string m_binAnalyse;				// 分析程序（带路径）
-	std::string m_modeAnalyse;				// 分析程序模式
-	std::string m_cfgAnalyse;				// 分析配置文件（带路径）
-	std::string m_etlStateSuccess;			// 采集成功状态
-	std::string m_etlIgnoreError;			// 采集忽略的错误
+	std::string m_hiveAgentPath;					// Hive代理的路径
+	std::string m_binVer;							// 程序版本：DEBUG or RELEASE
+	std::string m_binAcquire;						// 采集程序（带路径）
+	std::string m_modeAcquire;						// 采集程序模式
+	std::string m_cfgAcquire;						// 采集配置文件（带路径）
+	std::string m_binAnalyse;						// 分析程序（带路径）
+	std::string m_modeAnalyse;						// 分析程序模式
+	std::string m_cfgAnalyse;						// 分析配置文件（带路径）
+	std::string m_etlStateSuccess;					// 采集成功状态
+	std::vector<std::string> m_vecEtlIgnoreError;	// 采集忽略的错误列表
 
 private:
 	std::string m_tabTaskSche;				// 任务日程表
