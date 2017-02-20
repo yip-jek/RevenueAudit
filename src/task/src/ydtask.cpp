@@ -262,6 +262,9 @@ void YDTask::GetNewTaskSche()
 				{
 					++c_err_tasks;
 					m_pLog->Output("[YD_TASK] 任务日程载入失败，取消更新任务：ID=[%d]", id);
+
+					// 置为未激活
+					m_pTaskDB2->SetTaskScheNotActive(id);
 				}
 			}
 		}
@@ -278,6 +281,9 @@ void YDTask::GetNewTaskSche()
 			{
 				++c_err_tasks;
 				m_pLog->Output("[YD_TASK] 任务日程载入失败，取消新增任务：ID=[%d]", id);
+
+				// 置为未激活
+				m_pTaskDB2->SetTaskScheNotActive(id);
 			}
 		}
 	}

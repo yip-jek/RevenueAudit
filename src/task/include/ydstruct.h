@@ -70,6 +70,13 @@ class EtlTime
 public:
 	EtlTime();
 
+	static const int INVALID_INDEX = -1;		// 无效的位置索引
+
+	// 时间格式转换：
+	// [YYYYMMDD] -> [day +/- 天数]
+	// 或 [YYYYMM] -> [mon +/- 月数]
+	static std::string Convert(const std::string& time);
+
 public:
 	// 设置采集时间
 	bool SetTime(const std::string& time);
@@ -81,13 +88,13 @@ public:
 	void Init();
 
 	// 获取下一个采集时间字串
-	bool GetNext(std::string& etl);
+	bool GetNext(std::string& next_etl_time);
 
 private:
-	base::PubTime::DATE_TYPE dt_type;		// 时间类型
-	std::string              etl_time;		// 采集时间字串
-	std::vector<int>         vecTime;		// 时间列表
-	int                      currIndex;		// 当前列表中位置
+	base::PubTime::DATE_TYPE dt_type;			// 时间类型
+	std::string              etl_time;			// 采集时间字串
+	std::vector<int>         vec_time;			// 时间列表
+	int                      curr_index;		// 当前列表中位置
 };
 
 // 任务日程日志

@@ -188,7 +188,7 @@ void TaskCycle::Clear()
 ////////////////////////////////////////////////////////////////////////////////
 EtlTime::EtlTime()
 :dt_type(base::PubTime::DT_UNKNOWN)
-,currIndex(-1)
+,curr_index(INVALID_INDEX)
 {
 }
 
@@ -196,26 +196,26 @@ bool EtlTime::SetTime(const std::string& time)
 {
 	// 初始化
 	dt_type = base::PubTime::DT_UNKNOWN;
-	std::vector<int>().swap(vecTime);
+	std::vector<int>().swap(vec_time);
 	etl_time.clear();
-	currIndex = -1;
+	curr_index = INVALID_INDEX;
 
 	base::PubTime::DATE_TYPE dt = base::PubTime::DT_UNKNOWN;
 	if ( time.find(',') != std::string::npos )		// 格式一：[时间类型],[时间段]
 	{
 		std::vector<std::string> vec_str;
-		base::PubStr::Str2StrVector(time, ",", vec_str);
+		base::PubStr::Str2StrVector(time, "=", vec_str);
 		if ( vec_str.size() != 2 )
 		{
 			return false;
 		}
 
 		const std::string DTYPE = base::PubStr::TrimUpperB(vec_str[0]);
-		if ( DTYPE == "DAY" )
+		if ( DTYPE == "DAY" )	// 日
 		{
 			dt = base::PubTime::DT_DAY;
 		}
-		else if ( DTYPE == "MON" )
+		else if ( DTYPE == "MON" )	// 月
 		{
 			dt = base::PubTime::DT_MONTH;
 		}
@@ -224,7 +224,7 @@ bool EtlTime::SetTime(const std::string& time)
 			return false;
 		}
 
-		if ( !base::PubTime::SpreadTimeInterval(dt, vec_str[1], "-", vecTime) )
+		if ( !base::PubTime::SpreadTimeInterval(dt, vec_str[1], "-", vec_time) )
 		{
 			return false;
 		}
@@ -251,22 +251,40 @@ bool EtlTime::IsValid() const
 
 void EtlTime::Init()
 {
-	currIndex = IsValid() ? 0 : -1;
+	curr_index = IsValid() ? 0 : INVALID_INDEX;
 }
 
-bool EtlTime::GetNext(std::string& etl)
+bool EtlTime::GetNext(std::string& next_etl_time)
 {
-	if ( currIndex < 0 )
+	if ( INVALID_INDEX == curr_index )
 	{
 		return false;
 	}
 
 	if ( etl_time.empty() )
 	{
+		next_etl_time = base::PubStr::Int2Str(vec_time[curr_index++]);
+
+		if ( curr_index >= (int)vec_time.size() )
+		{
+			curr_index = INVALID_INDEX;
+		}
+	}
+	else
+	{
+		curr_index = INVALID_INDEX;
+		base::PubTime::DateApartFromNow(etl_time, dt_type, next_etl_time);
+	}
+
+	return true;
+	///////////////////////////////////////////
+
+	if ( etl_time.empty() )
+	{
 		int year = 0;
 		int mon  = 0;
 		int day  = 0;
-		int date = vecTime[currIndex++];
+		int date = vec_time[curr_index++];
 		const base::SimpleTime ST_NOW = base::SimpleTime::Now();
 
 		if ( base::PubTime::DT_MONTH == dt_type )	// 月
@@ -302,22 +320,42 @@ bool EtlTime::GetNext(std::string& etl)
 		}
 		else	// 不支持
 		{
-			currIndex = -1;
+			curr_index = INVALID_INDEX;
 			return false;
 		}
 
-		if ( currIndex >= (int)vecTime.size() )
+		if ( curr_index >= (int)vec_time.size() )
 		{
-			currIndex = -1;
+			curr_index = INVALID_INDEX;
 		}
 	}
 	else
 	{
 		etl = etl_time;
-		currIndex = -1;
+		curr_index = INVALID_INDEX;
 	}
 
 	return true;
+}
+
+std::string EtlTime::Convert(const std::string& time)
+{
+	int date = 0;
+	if ( !base::PubStr::Str2Int(time, date) )
+	{
+		return std::string();
+	}
+
+	const int TM_SIZE = base::PubStr::TrimB(time).size();
+	if ( 8 == TM_SIZE )		// 日
+	{
+		if ( base::PubStr::Str2Int(time, date) )
+		{
+		}
+	}
+	else	// 月
+	{
+	}
 }
 
 

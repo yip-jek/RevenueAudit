@@ -49,5 +49,8 @@ public:
 
 	// 获取外连条件下采集规则的取数SQL
 	static std::string GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_val, const std::string& src_tab, const std::string& outer_tab, std::vector<std::string>& vec_join_on, const std::string& cond);
+
+	// 
+	static void Get
 };
 
