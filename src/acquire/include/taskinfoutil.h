@@ -50,7 +50,7 @@ public:
 	// 获取外连条件下采集规则的取数SQL
 	static std::string GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_val, const std::string& src_tab, const std::string& outer_tab, std::vector<std::string>& vec_join_on, const std::string& cond);
 
-	// 
-	static void Get
+	// 获得表名：支持直接表名，或从查询SQL语句中获取表名
+	static void GetTableNames(const std::string& src, std::vector<std::string>& vec_tabname);
 };
 

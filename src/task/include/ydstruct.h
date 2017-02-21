@@ -148,12 +148,12 @@ public:
 	TASK_TYPE                type;						// 任务类型
 	std::string              kpi_id;					// 指标 ID
 	TaskCycle                cycle;						// 任务周期
-	EtlTime                  etl_time;					// 采集时间
+	EtlTime                  et_etl_time;				// 采集时间
 	base::SimpleTime         st_expiry_start;			// 有效期开始时间
 	base::SimpleTime         st_expiry_end;				// 有效期结束时间
 	base::SimpleTime         st_task_start;				// 任务开始时间
 	base::SimpleTime         st_task_finish;			// 任务结束时间
-	std::vector<TaskScheLog> vecEtlTasks;				// 采集任务日志
-	TaskScheLog              tslogAnaTask;				// 分析任务日志
+	std::vector<TaskScheLog> vec_etl_tasks;				// 采集任务日志
+	TaskScheLog              tsl_ana_task;				// 分析任务日志
 };
 

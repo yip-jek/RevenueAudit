@@ -200,11 +200,12 @@ bool EtlTime::SetTime(const std::string& time)
 	etl_time.clear();
 	curr_index = INVALID_INDEX;
 
+	const std::string STR_DELIM = "=";
 	base::PubTime::DATE_TYPE dt = base::PubTime::DT_UNKNOWN;
-	if ( time.find(',') != std::string::npos )		// 格式一：[时间类型],[时间段]
+	if ( time.find(STR_DELIM) != std::string::npos )		// 格式一：[时间类型]=[时间段]
 	{
 		std::vector<std::string> vec_str;
-		base::PubStr::Str2StrVector(time, "=", vec_str);
+		base::PubStr::Str2StrVector(time, STR_DELIM, vec_str);
 		if ( vec_str.size() != 2 )
 		{
 			return false;
@@ -277,85 +278,56 @@ bool EtlTime::GetNext(std::string& next_etl_time)
 	}
 
 	return true;
-	///////////////////////////////////////////
-
-	if ( etl_time.empty() )
-	{
-		int year = 0;
-		int mon  = 0;
-		int day  = 0;
-		int date = vec_time[curr_index++];
-		const base::SimpleTime ST_NOW = base::SimpleTime::Now();
-
-		if ( base::PubTime::DT_MONTH == dt_type )	// 月
-		{
-			year = date / 100;
-			mon  = date % 100;
-
-			int mon_diff = (ST_NOW.GetYear() - year) * 12 + ST_NOW.GetMon() - mon;
-			if ( mon_diff >= 0 )
-			{
-				base::PubStr::SetFormatString(etl, "mon-%d", mon_diff);
-			}
-			else
-			{
-				base::PubStr::SetFormatString(etl, "mon+%d", (-mon_diff));
-			}
-		}
-		else if ( base::PubTime::DT_DAY == dt_type )	// 日
-		{
-			year = date / 10000;
-			mon  = (date % 10000) / 100;
-			day  = date % 100;
-
-			long day_diff = base::PubTime::DayDifference(base::SimpleTime(year, mon, day, 0, 0, 0), ST_NOW);
-			if ( day_diff >= 0 )
-			{
-				base::PubStr::SetFormatString(etl, "day-%ld", day_diff);
-			}
-			else
-			{
-				base::PubStr::SetFormatString(etl, "day+%ld", (-day_diff));
-			}
-		}
-		else	// 不支持
-		{
-			curr_index = INVALID_INDEX;
-			return false;
-		}
-
-		if ( curr_index >= (int)vec_time.size() )
-		{
-			curr_index = INVALID_INDEX;
-		}
-	}
-	else
-	{
-		etl = etl_time;
-		curr_index = INVALID_INDEX;
-	}
-
-	return true;
 }
 
 std::string EtlTime::Convert(const std::string& time)
 {
 	int date = 0;
-	if ( !base::PubStr::Str2Int(time, date) )
+	const std::string TIME = base::PubStr::TrimB(time);
+	if ( TIME.empty() || !base::PubStr::Str2Int(TIME, date) )
 	{
 		return std::string();
 	}
 
-	const int TM_SIZE = base::PubStr::TrimB(time).size();
-	if ( 8 == TM_SIZE )		// 日
+	int year = 0;
+	int mon  = 0;
+	int day  = 0;
+	std::string str_diff_time;
+	const base::SimpleTime ST_NOW = base::SimpleTime::Now();
+
+	if ( date > 1000000 )		// YYYYMMDD
 	{
-		if ( base::PubStr::Str2Int(time, date) )
+		year = date / 10000;
+		mon  = (date % 10000) / 100;
+		day  = date % 100;
+
+		long day_diff = base::PubTime::DayDifference(base::SimpleTime(year, mon, day, 0, 0, 0), ST_NOW);
+		if ( day_diff >= 0 )
 		{
+			base::PubStr::SetFormatString(str_diff_time, "day-%ld", day_diff);
+		}
+		else
+		{
+			base::PubStr::SetFormatString(str_diff_time, "day+%ld", (-day_diff));
 		}
 	}
-	else	// 月
+	else	// YYYYMM
 	{
+		year = date / 100;
+		mon  = date % 100;
+
+		int mon_diff = (ST_NOW.GetYear() - year) * 12 + ST_NOW.GetMon() - mon;
+		if ( mon_diff >= 0 )
+		{
+			base::PubStr::SetFormatString(str_diff_time, "mon-%d", mon_diff);
+		}
+		else
+		{
+			base::PubStr::SetFormatString(str_diff_time, "mon+%d", (-mon_diff));
+		}
 	}
+
+	return str_diff_time;
 }
 
 
@@ -418,7 +390,7 @@ bool RATask::LoadFromTaskSche(const TaskSchedule& ts)
 	}
 
 	// 采集时间有效？
-	if ( !tmp_rat.etl_time.SetTime(ts.etl_time) )
+	if ( !tmp_rat.et_etl_time.SetTime(ts.etl_time) )
 	{
 		return false;
 	}

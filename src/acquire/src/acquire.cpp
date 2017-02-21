@@ -29,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 4.0003.20170218 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 4.0004.20170221 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -727,13 +727,20 @@ void Acquire::OuterJoin2Sql(std::vector<std::string>& vec_sql, bool hive, bool w
 
 	// 检查外连表是否存在？
 	m_pLog->Output("[Acquire] Check outer table whether exist or not ...");
-	if ( (hive && !m_pAcqHive->CheckTableExisted(outer_table)) 			// HIVE
-		|| (!hive && !m_pAcqDB2->CheckTableExisted(outer_table)) )		// DB2
+	std::vector<std::string> vec_outer_tabname;
+	TaskInfoUtil::GetTableNames(outer_table, vec_outer_tabname);
+	const int OUTER_TABNAME_SIZE = vec_outer_tabname.size();
+	for ( int i = 0; i < OUTER_TABNAME_SIZE; ++i )
 	{
-		const std::string STR_IDENT = (hive ? "[HIVE]" : "[DB2]");
-		m_pLog->Output("<WARNING> [Acquire] %s Outer table did not exist: %s !", STR_IDENT.c_str(), outer_table.c_str());
+		std::string& ref_outer_tabname = vec_outer_tabname[i];
+		if ( (hive && !m_pAcqHive->CheckTableExisted(ref_outer_tabname)) 			// HIVE
+				|| (!hive && !m_pAcqDB2->CheckTableExisted(ref_outer_tabname)) )	// DB2
+		{
+			const std::string STR_IDENT = (hive ? "[HIVE]" : "[DB2]");
+			m_pLog->Output("<WARNING> [Acquire] %s Outer table did not exist: %s !", STR_IDENT.c_str(), ref_outer_tabname.c_str());
 
-		throw base::Exception(ACQERR_CHECK_OUTER_TAB_FAILED, "%s Outer table '%s' did not exist ! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", STR_IDENT.c_str(), outer_table.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ACQERR_CHECK_OUTER_TAB_FAILED, "%s Outer table '%s' did not exist ! (KPI_ID:%s, ETL_ID:%s) [FILE:%s, LINE:%d]", STR_IDENT.c_str(), ref_outer_tabname.c_str(), m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+		}
 	}
 
 	// 带条件

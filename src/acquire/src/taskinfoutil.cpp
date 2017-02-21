@@ -330,3 +330,73 @@ std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_
 	return etl_sql;
 }
 
+void TaskInfoUtil::GetTableNames(const std::string& src, std::vector<std::string>& vec_tabname)
+{
+	const std::string CSTR_SRC = base::PubStr::TrimUpperB(src);
+
+	std::vector<std::string> vec_tmp;
+	if ( CSTR_SRC.empty() )		// 空字串
+	{
+		vec_tmp.swap(vec_tabname);
+	}
+	else if ( CSTR_SRC.find('\x20') == std::string::npos )	// 中间没有空格，为直接表名
+	{
+		vec_tmp.push_back(CSTR_SRC);
+		vec_tmp.swap(vec_tabname);
+	}
+	else	// 表名存在于查询SQL语句中
+	{
+		size_t pos   = 0;
+		size_t n_pos = 0;
+		const std::string FROM_MARK = " FROM ";
+		const size_t      FROM_SIZE = FROM_MARK.size();
+
+		while ( (pos = CSTR_SRC.find(FROM_MARK, pos)) != std::string::npos )
+		{
+			pos += FROM_SIZE;
+
+			// 后面无内容或者全是空格
+			if ( (pos = CSTR_SRC.find_first_not_of('\x20', pos)) == std::string::npos )
+			{
+				break;
+			}
+
+			// 子SQL语句的开始
+			if ( '(' == CSTR_SRC[pos] )
+			{
+				continue;
+			}
+
+			if ( (n_pos = CSTR_SRC.find_first_of('\x20', pos)) != std::string::npos )
+			{
+				if ( CSTR_SRC[n_pos-1] != ')' )
+				{
+					vec_tmp.push_back(CSTR_SRC.substr(pos, n_pos-pos));
+				}
+				else
+				{
+					vec_tmp.push_back(CSTR_SRC.substr(pos, n_pos-pos-1));
+				}
+
+				pos = n_pos;
+			}
+			else	// 末尾
+			{
+				n_pos = CSTR_SRC.size() - 1;
+				if ( CSTR_SRC[n_pos] != ')' )
+				{
+					vec_tmp.push_back(CSTR_SRC.substr(pos));
+				}
+				else
+				{
+					vec_tmp.push_back(CSTR_SRC.substr(pos, n_pos-pos));
+				}
+
+				break;
+			}
+		}
+
+		vec_tmp.swap(vec_tabname);
+	}
+}
+
