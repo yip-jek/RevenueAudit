@@ -12,6 +12,9 @@ public:
 		TERR_TRANS_VAL_SRC_NAME = -2003001,			// 采集值对应源字段名转换失败
 	};
 
+	static const char* const S_SRC_VAL_RECORD;				// 源表的值：记录数
+	static const char* const S_SRC_VAL_NEGATIVE_SUM;		// 源表的值：负的和
+
 public:
 	// 获取目标表的维度SQL
 	static std::string GetTargetDimSql(AcqEtlDim& target_dim);
@@ -22,9 +25,9 @@ public:
 	// 获取采集规则的维度SQL
 	static std::string GetEtlDimSql(AcqEtlDim& etl_dim, bool set_as, const std::string& tab_prefix = std::string());
 
-	// 是否为采集值的负的和
-	// 格式：NEGATIVE_SUM(值)
-	static bool IsNegativeSumVal(const std::string& val_src, std::string& val);
+	// 检查：是否为指定的特殊采集值
+	// 格式：特殊标识(值)
+	static bool CheckSpecialVal(const std::string& spec, const std::string& val_src, std::string& val);
 
 	// 采集值对应源字段名转换
 	static std::string TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix = std::string()) throw(base::Exception);

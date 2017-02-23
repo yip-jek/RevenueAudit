@@ -1,6 +1,9 @@
 #include "taskinfoutil.h"
 #include "pubstr.h"
 
+const char* const TaskInfoUtil::S_SRC_VAL_RECORD       = "<RECORD>";		// 源表的值：记录数
+const char* const TaskInfoUtil::S_SRC_VAL_NEGATIVE_SUM = "NEGATIVE_SUM";	// 源表的值：负的和
+
 std::string TaskInfoUtil::GetTargetDimSql(AcqEtlDim& target_dim)
 {
 	std::string dim_sql;
@@ -47,7 +50,7 @@ std::string TaskInfoUtil::GetTargetValSql(AcqEtlVal& target_val)
 			continue;
 		}
 
-		val_sql += ", sum(" + val.EtlValName + ")";
+		val_sql += ", sum(" + val.EtlValName + ") as " + val.EtlValName;
 	}
 
 	return val_sql;
@@ -94,17 +97,18 @@ std::string TaskInfoUtil::GetEtlDimSql(AcqEtlDim& etl_dim, bool set_as, const st
 	return dim_sql;
 }
 
-bool TaskInfoUtil::IsNegativeSumVal(const std::string& val_src, std::string& val)
+bool TaskInfoUtil::CheckSpecialVal(const std::string& spec, const std::string& val_src, std::string& val)
 {
-	std::string val_check = base::PubStr::TrimUpperB(val_src);
+	std::string val_check = base::PubStr::TrimB(val_src);
 
-	// 是否为格式：NEGATIVE_SUM(值)
-	if ( val_check.size() > 14 && "NEGATIVE_SUM" == val_check.substr(0, 12) )
+	// 是否为格式：特殊标识(值)
+	const size_t SPEC_SIZE = spec.size();
+	if ( spec == val_check.substr(0, SPEC_SIZE) )
 	{
-		val_check.erase(0, 12);
+		val_check.erase(0, SPEC_SIZE);
 		base::PubStr::Trim(val_check);
 
-		if ( '(' == val_check[0] && ')' == val_check[val_check.size()-1] )
+		if ( !val_check.empty() && '(' == val_check[0] && ')' == val_check[val_check.size()-1] )
 		{
 			val_check = val_check.substr(1, val_check.size()-2);
 			base::PubStr::Trim(val_check);
@@ -124,11 +128,11 @@ std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& 
 {
 	std::string val_src = base::PubStr::TrimUpperB(val.EtlValSrcName);
 
-	if ( "<RECORD>" == val_src )	// 记录数
+	if ( S_SRC_VAL_RECORD == val_src )	// 记录数
 	{
 		val_src = "count(*)";
 	}
-	else if ( IsNegativeSumVal(val_src, val_src) )
+	else if ( CheckSpecialVal(S_SRC_VAL_NEGATIVE_SUM, val_src, val_src) )
 	{
 		// 负的和
 		val_src = "(-1 * sum(" + tab_prefix + val_src + "))";
@@ -278,15 +282,7 @@ std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_
 		}
 
 		//if ( IsOuterTabJoinDim(dim) )
-		if ( OneEtlDim::DMTYPE_JOIN_DIM == dim.EtlDimMemo )
-		{
-			tab_pre = "b.";
-		}
-		else
-		{
-			tab_pre = "a.";
-		}
-
+		tab_pre = (dim.EtlDimMemo != OneEtlDim::DMTYPE_JOIN_DIM) ? "a." : "b.";
 		if ( is_begin )
 		{
 			etl_sql += tab_pre + dim.EtlDimSrcName + " as " + dim.EtlDimName;
@@ -312,15 +308,7 @@ std::string TaskInfoUtil::GetOuterJoinEtlSQL(AcqEtlDim& etl_dim, AcqEtlVal& etl_
 		}
 
 		//if ( IsOuterTabJoinVal(val) )
-		if ( OneEtlVal::VMTYPE_JOIN_VAL == val.EtlValMemo )
-		{
-			tab_pre = "b.";
-		}
-		else
-		{
-			tab_pre = "a.";
-		}
-
+		tab_pre = (val.EtlValMemo != OneEtlVal::VMTYPE_JOIN_VAL) ? "a." : "b.";
 		etl_sql += ", " + TransEtlValSrcName(val, tab_pre) + " as " + val.EtlValName;
 	}
 
