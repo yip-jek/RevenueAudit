@@ -189,7 +189,8 @@ std::string TaskInfoUtil::GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& 
 			}
 			else
 			{
-				v_sql_diff += ", abs(a." + val_A.EtlValName + "-b." + val_B.EtlValName + ")";
+				//v_sql_diff += ", abs(a." + val_A.EtlValName + "-b." + val_B.EtlValName + ")";
+				v_sql_diff += ", a." + val_A.EtlValName + "-b." + val_B.EtlValName;
 			}
 		}
 	}
@@ -211,7 +212,8 @@ std::string TaskInfoUtil::GetCompareFieldsByCol(OneEtlRule& rule_A, OneEtlRule& 
 			}
 			else
 			{
-				v_sql_diff += ", abs(a." + val_A.EtlValName + "-b." + val_B.EtlValName + ")";
+				//v_sql_diff += ", abs(a." + val_A.EtlValName + "-b." + val_B.EtlValName + ")";
+				v_sql_diff += ", a." + val_A.EtlValName + "-b." + val_B.EtlValName;
 			}
 		}
 	}

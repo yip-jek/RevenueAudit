@@ -110,8 +110,7 @@ bool TaskInfoUtil::CheckSpecialVal(const std::string& spec, const std::string& v
 
 		if ( !val_check.empty() && '(' == val_check[0] && ')' == val_check[val_check.size()-1] )
 		{
-			val_check = val_check.substr(1, val_check.size()-2);
-			base::PubStr::Trim(val_check);
+			val_check = base::PubStr::TrimB(val_check.substr(1, val_check.size()-2));
 
 			if ( !val_check.empty() )
 			{
@@ -127,10 +126,18 @@ bool TaskInfoUtil::CheckSpecialVal(const std::string& spec, const std::string& v
 std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix /*= std::string()*/) throw(base::Exception)
 {
 	std::string val_src = base::PubStr::TrimUpperB(val.EtlValSrcName);
+	if ( val_src.empty() )
+	{
+		return std::string();
+	}
 
 	if ( S_SRC_VAL_RECORD == val_src )	// 记录数
 	{
 		val_src = "count(*)";
+	}
+	else if ( '[' == val_src[0] && ']' == val_src[val_src.size()-1] )
+	{
+		val_src = base::PubStr::TrimB(val_src.substr(1, val_src.size()-2));
 	}
 	else if ( CheckSpecialVal(S_SRC_VAL_NEGATIVE_SUM, val_src, val_src) )
 	{

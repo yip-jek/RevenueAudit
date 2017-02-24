@@ -214,7 +214,17 @@ bool SQLTranslator::TransMark(const std::string& mark, std::string& val, std::st
 		PubStr::Str2Int(m_sEtlDate.substr(0, 4), year);
 		PubStr::Str2Int(m_sEtlDate.substr(4, 2), mon);
 
-		--mon;	// 上个月
+		// 上个月
+		if ( mon > 1 )		// 非一月份
+		{
+			--mon;
+		}
+		else	// 一月份
+		{
+			--year;
+			mon = 12;
+		}
+
 		PubStr::SetFormatString(val, "%04d%02d%02d", year, mon, SimpleTime::LastDayOfTheMon(year, mon));
 	}
 	else
