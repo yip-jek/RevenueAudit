@@ -123,6 +123,76 @@ bool TaskInfoUtil::CheckSpecialVal(const std::string& spec, const std::string& v
 	return false;
 }
 
+std::string TaskInfoUtil::AddPrefixVal(const std::string& val_sql, const std::string& prefix)
+{
+	int start_pos = -1;
+	int end_pos   = -1;
+	int off_size  = 0;
+
+	std::string prefix_val = val_sql;
+	const std::string UP_VAL_SQL = base::PubStr::UpperB(val_sql);
+
+	const int PRE_SIZE = prefix.size();
+	const int UVS_SIZE = UP_VAL_SQL.size();
+	for ( int i = 0; i < UVS_SIZE; ++i )
+	{
+		const char CH = UP_VAL_SQL[i];
+		if ( start_pos < 0 )
+		{
+			if ( CH >= 'A' && CH <= 'Z' )	// 字段名以英文字母开头
+			{
+				start_pos = i;
+			}
+		}
+		else
+		{
+			if ( CH == '\x20' )
+			{
+				end_pos = i;
+				continue;
+			}
+
+			if ( end_pos < 0 )
+			{
+				if ( CH == '(' )
+				{
+					start_pos = -1;
+				}
+				else if ( CH != '_' && (CH < 'A' || CH > 'Z') && (CH < '0' || CH > '9') )
+				{
+					prefix_val.insert(start_pos+off_size, prefix);
+
+					start_pos = -1;
+					off_size += PRE_SIZE;
+				}
+			}
+			else
+			{
+				if ( CH == '(' )
+				{
+					start_pos = -1;
+					end_pos   = -1;
+				}
+				else
+				{
+					prefix_val.insert(start_pos+off_size, prefix);
+
+					start_pos = -1;
+					end_pos   = -1;
+					off_size += PRE_SIZE;
+				}
+			}
+		}
+	}
+
+	if ( start_pos >= 0 )
+	{
+		prefix_val.insert(start_pos+off_size, prefix);
+	}
+
+	return prefix_val;
+}
+
 std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix /*= std::string()*/) throw(base::Exception)
 {
 	std::string val_src = base::PubStr::TrimUpperB(val.EtlValSrcName);
@@ -142,7 +212,7 @@ std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& 
 	else if ( CheckSpecialVal(S_SRC_VAL_NEGATIVE_SUM, val_src, val_src) )
 	{
 		// 负的和
-		val_src = "(-1 * sum(" + tab_prefix + val_src + "))";
+		val_src = "(-1 * sum(" + val_src + "))";
 	}
 	else
 	{
@@ -173,7 +243,7 @@ std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& 
 		//				throw base::Exception(TERR_TRANS_VAL_SRC_NAME, "源字段个数不匹配！无法识别的值对应源字段名称：%s [FILE:%s, LINE:%d]", val_src.c_str(), __FILE__, __LINE__);
 		//			}
 
-		//			val_src = "sum(" + tab_prefix + vec_src[0] + ref_oper + tab_prefix + vec_src[1] + ")";
+		//			val_src = "sum(" + vec_src[0] + ref_oper + vec_src[1] + ")";
 		//			return val_src;
 		//		}
 		//		else
@@ -184,9 +254,10 @@ std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& 
 		//}
 
 		// 其他情况，直接取sum
-		val_src = "sum(" + tab_prefix + val_src + ")";
+		val_src = "sum(" + val_src + ")";
 	}
 
+	val_src = AddPrefixVal(val_src, tab_prefix);
 	return val_src;
 }
 

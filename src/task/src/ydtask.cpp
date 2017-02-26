@@ -2,13 +2,13 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include "basedir.h"
 #include "config.h"
 #include "log.h"
 #include "ydtaskdb2.h"
 
 YDTask::YDTask(base::Config& cfg)
 :Task(cfg)
-,m_bTaskFrozen(false)
 ,m_minRunTimeInterval(0)
 ,m_maxTaskScheLogID(0)
 ,m_pTaskDB2(NULL)
@@ -46,6 +46,7 @@ void YDTask::LoadConfig() throw(base::Exception)
 	m_pCfg->RegisterItem("DATABASE", "PASSWORD");
 
 	// 读取采集与分析程序相关配置
+	m_pCfg->RegisterItem("COMMON", "TEMP_PATH");
 	m_pCfg->RegisterItem("COMMON", "HIVE_AGENT_PATH");
 	m_pCfg->RegisterItem("COMMON", "BIN_VER");
 	m_pCfg->RegisterItem("COMMON", "ACQUIRE_BIN");
@@ -71,6 +72,7 @@ void YDTask::LoadConfig() throw(base::Exception)
 	m_dbinfo.db_user = m_pCfg->GetCfgValue("DATABASE", "USER_NAME");
 	m_dbinfo.db_pwd  = m_pCfg->GetCfgValue("DATABASE", "PASSWORD");
 
+	m_tempPath        = m_pCfg->GetCfgValue("COMMON", "TEMP_PATH");
 	m_hiveAgentPath   = m_pCfg->GetCfgValue("COMMON", "HIVE_AGENT_PATH");
 	m_binVer          = m_pCfg->GetCfgValue("COMMON", "BIN_VER");
 	m_binAcquire      = m_pCfg->GetCfgValue("COMMON", "ACQUIRE_BIN");
@@ -113,6 +115,21 @@ void YDTask::InitConnect() throw(base::Exception)
 void YDTask::Init() throw(base::Exception)
 {
 	InitConnect();
+
+	// 检查临时目录是否有效
+	// 若临时目录不存在，则自动创建
+	if ( !base::BaseDir::IsDirExist(m_tempPath) && !base::BaseDir::CreateFullPath(m_tempPath) )
+	{
+		throw base::Exception(YDTERR_INIT, "Check temp path '%s' failed! %s [FILE:%s, LINE:%d]", m_tempPath.c_str(), strerror(errno), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[YD_TASK] Check temp path OK: [%s]", m_tempPath.c_str());
+
+	base::BaseDir::DirWithSlash(m_tempPath);
+	if ( !m_ts.Init(m_tempPath) )
+	{
+		throw base::Exception(YDTERR_INIT, "Init task state failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+	m_pLog->Output("[YD_TASK] Create task state temp file: [%s]", m_ts.GetTempFile().c_str());
 
 	// 指定工作目录为Hive代理的路径
 	if ( chdir(m_hiveAgentPath.c_str()) < 0 )
@@ -197,7 +214,7 @@ bool YDTask::ConfirmQuit()
 
 void YDTask::GetNewTask() throw(base::Exception)
 {
-	if ( !IsTaskFrozen() )
+	if ( !IsTaskPause() )
 	{
 		m_pTaskDB2->GetTaskSchedule(m_mTaskSche);
 	}
@@ -207,30 +224,42 @@ void YDTask::GetNewTask() throw(base::Exception)
 	DelUnavailableTask();
 }
 
-bool YDTask::IsTaskFrozen()
+bool YDTask::IsTaskPause()
 {
-	// 每天夜晚 23:30 至次日凌晨 00:00 为冻结期
-	// 防止跨日时，时间换算出现不正确的情况！
-	// 冻结期内，不获取也不下发新任务！
-	const base::SimpleTime ST_NOW(base::SimpleTime::Now());
-	if ( m_bTaskFrozen )	// 已冻结
+	bool pause  = m_ts.IsPause();
+	bool frozen = m_ts.IsFrozen();
+
+	// 检查任务状态
+	m_ts.Check();
+
+	if ( pause != m_ts.IsPause() )
 	{
-		if ( ST_NOW.GetHour() != 23 )	// 解冻
+		pause = !pause;
+		if ( pause )
 		{
-			m_pLog->Output("[YD_TASK] (解冻) Task is THAWED !!!");
-			m_bTaskFrozen = false;
+			m_pLog->Output("[YD_TASK] GET TASK STATE: [PAUSE] (暂停)");
 		}
-	}
-	else	// 未冻结
-	{
-		if ( ST_NOW.GetHour() == 23 && ST_NOW.GetMin() >= 30 )	// 冻结
+		else
 		{
-			m_pLog->Output("[YD_TASK] (冻结) Task is FROZEN !!!");
-			m_bTaskFrozen = true;
+			m_pLog->Output("[YD_TASK] GET TASK STATE: [CONTINUE] (继续)");
 		}
 	}
 
-	return m_bTaskFrozen;
+	if ( frozen != m_ts.IsFrozen() )
+	{
+		frozen = !frozen;
+		if ( frozen )
+		{
+			m_pLog->Output("[YD_TASK] GET TASK STATE: [FROZEN] (冻结)");
+		}
+		else
+		{
+			m_pLog->Output("[YD_TASK] GET TASK STATE: [THAWED] (解冻)");
+		}
+	}
+
+	// 暂停或冻结期内，不获取也不下发新任务！
+	return (pause || frozen);
 }
 
 void YDTask::GetNewTaskSche()
@@ -541,8 +570,8 @@ bool YDTask::IsEtlSucceeded(const TaskScheLog& ts_log) const
 
 void YDTask::BuildNewTask() throw(base::Exception)
 {
-	// 冻结期内不下发新任务
-	if ( m_bTaskFrozen || m_mTaskWait.empty() )
+	// 任务暂停时不下发新任务
+	if ( IsTaskPause() || m_mTaskWait.empty() )
 	{
 		return;
 	}

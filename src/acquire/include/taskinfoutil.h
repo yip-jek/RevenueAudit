@@ -29,6 +29,9 @@ public:
 	// 格式：特殊标识(值)
 	static bool CheckSpecialVal(const std::string& spec, const std::string& val_src, std::string& val);
 
+	// 在值字段名前加上前缀
+	static std::string AddPrefixVal(const std::string& val_sql, const std::string& prefix);
+
 	// 采集值对应源字段名转换
 	static std::string TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix = std::string()) throw(base::Exception);
 

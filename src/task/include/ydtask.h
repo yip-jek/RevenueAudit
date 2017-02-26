@@ -3,6 +3,7 @@
 #include <map>
 #include <set>
 #include "ydstruct.h"
+#include "ydtaskstate.h"
 #include "task.h"
 
 class YDTaskDB2;
@@ -48,8 +49,8 @@ protected:
 	// 获取新任务
 	virtual void GetNewTask() throw(base::Exception);
 
-	// 任务是否冻结？
-	bool IsTaskFrozen();
+	// 任务是否暂停？
+	bool IsTaskPause();
 
 	// 获取新的任务日程
 	void GetNewTaskSche();
@@ -95,24 +96,25 @@ private:
 	void InitConnect() throw(base::Exception);
 
 private:
-	bool m_bTaskFrozen;						// 任务冻结标志
 	int  m_minRunTimeInterval;				// 任务运行的最小时间间隔（分钟）
 	int  m_maxTaskScheLogID;				// 最大的任务日程日志ID
 
 private:
-	DBInfo     m_dbinfo;					// 数据库信息
-	YDTaskDB2* m_pTaskDB2;					// 数据库连接
+	YDTaskState m_ts;						// 任务状态
+	DBInfo      m_dbinfo;					// 数据库信息
+	YDTaskDB2*  m_pTaskDB2;					// 数据库连接
 
 private:
-	std::string m_hiveAgentPath;					// Hive代理的路径
-	std::string m_binVer;							// 程序版本：DEBUG or RELEASE
-	std::string m_binAcquire;						// 采集程序（带路径）
-	std::string m_modeAcquire;						// 采集程序模式
-	std::string m_cfgAcquire;						// 采集配置文件（带路径）
-	std::string m_binAnalyse;						// 分析程序（带路径）
-	std::string m_modeAnalyse;						// 分析程序模式
-	std::string m_cfgAnalyse;						// 分析配置文件（带路径）
-	std::string m_etlStateSuccess;					// 采集成功状态
+	std::string              m_tempPath;			// 临时目录
+	std::string              m_hiveAgentPath;		// Hive代理的路径
+	std::string              m_binVer;				// 程序版本：DEBUG or RELEASE
+	std::string              m_binAcquire;			// 采集程序（带路径）
+	std::string              m_modeAcquire;			// 采集程序模式
+	std::string              m_cfgAcquire;			// 采集配置文件（带路径）
+	std::string              m_binAnalyse;			// 分析程序（带路径）
+	std::string              m_modeAnalyse;			// 分析程序模式
+	std::string              m_cfgAnalyse;			// 分析配置文件（带路径）
+	std::string              m_etlStateSuccess;		// 采集成功状态
 	std::vector<std::string> m_vecEtlIgnoreError;	// 采集忽略的错误列表
 
 private:
