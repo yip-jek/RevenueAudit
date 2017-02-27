@@ -287,12 +287,12 @@ void YDTask::GetNewTaskSche()
 					++c_upd_tasks;
 					m_mTaskWait[id] = rat;
 					m_mTaskSche_bak[id] = ref_ts;
-					m_pLog->Output("[YD_TASK] 更新任务: ID=[%d], KPI=[%s], TASK_TYPE=[%s], CYCLE=[%s], ETL_TIME=[%s], EXPIRY_DATE_START=[%s], EXPIRY_DATE_END=[%s]", id, rat.kpi_id.c_str(), ref_ts.task_type.c_str(), ref_ts.task_cycle.c_str(), ref_ts.etl_time.c_str(), ref_ts.expiry_date_start.c_str(), ref_ts.expiry_date_end.c_str());
+					m_pLog->Output("[YD_TASK] 更新任务: SEQ=[%d], KPI=[%s], TASK_TYPE=[%s], CYCLE=[%s], ETL_TIME=[%s], EXPIRY_DATE_START=[%s], EXPIRY_DATE_END=[%s]", id, rat.kpi_id.c_str(), ref_ts.task_type.c_str(), ref_ts.task_cycle.c_str(), ref_ts.etl_time.c_str(), ref_ts.expiry_date_start.c_str(), ref_ts.expiry_date_end.c_str());
 				}
 				else	// 错误：载入任务日程失败，不更新
 				{
 					++c_err_tasks;
-					m_pLog->Output("[YD_TASK] 任务日程载入失败，取消更新任务：ID=[%d], KPI=[%s], TASK_TYPE=[%s], CYCLE=[%s], ETL_TIME=[%s], EXPIRY_DATE_START=[%s], EXPIRY_DATE_END=[%s]", id, ref_ts.kpi_id.c_str(), ref_ts.task_type.c_str(), ref_ts.task_cycle.c_str(), ref_ts.etl_time.c_str(), ref_ts.expiry_date_start.c_str(), ref_ts.expiry_date_end.c_str());
+					m_pLog->Output("[YD_TASK] 任务日程载入失败，取消更新任务：SEQ=[%d], KPI=[%s], TASK_TYPE=[%s], CYCLE=[%s], ETL_TIME=[%s], EXPIRY_DATE_START=[%s], EXPIRY_DATE_END=[%s]", id, ref_ts.kpi_id.c_str(), ref_ts.task_type.c_str(), ref_ts.task_cycle.c_str(), ref_ts.etl_time.c_str(), ref_ts.expiry_date_start.c_str(), ref_ts.expiry_date_end.c_str());
 
 					// 置为未激活
 					m_pTaskDB2->SetTaskScheNotActive(id);
@@ -306,12 +306,12 @@ void YDTask::GetNewTaskSche()
 				++c_new_tasks;
 				m_mTaskWait[id] = rat;
 				m_mTaskSche_bak[id] = ref_ts;
-				m_pLog->Output("[YD_TASK] 新增任务: ID=[%d], KPI=[%s], TASK_TYPE=[%s], CYCLE=[%s], ETL_TIME=[%s], EXPIRY_DATE_START=[%s], EXPIRY_DATE_END=[%s]", id, rat.kpi_id.c_str(), ref_ts.task_type.c_str(), ref_ts.task_cycle.c_str(), ref_ts.etl_time.c_str(), ref_ts.expiry_date_start.c_str(), ref_ts.expiry_date_end.c_str());
+				m_pLog->Output("[YD_TASK] 新增任务: SEQ=[%d], KPI=[%s], TASK_TYPE=[%s], CYCLE=[%s], ETL_TIME=[%s], EXPIRY_DATE_START=[%s], EXPIRY_DATE_END=[%s]", id, rat.kpi_id.c_str(), ref_ts.task_type.c_str(), ref_ts.task_cycle.c_str(), ref_ts.etl_time.c_str(), ref_ts.expiry_date_start.c_str(), ref_ts.expiry_date_end.c_str());
 			}
 			else	// 错误：载入任务日程失败，不新增
 			{
 				++c_err_tasks;
-				m_pLog->Output("[YD_TASK] 任务日程载入失败，取消新增任务：ID=[%d], KPI=[%s], TASK_TYPE=[%s], CYCLE=[%s], ETL_TIME=[%s], EXPIRY_DATE_START=[%s], EXPIRY_DATE_END=[%s]", id, ref_ts.kpi_id.c_str(), ref_ts.task_type.c_str(), ref_ts.task_cycle.c_str(), ref_ts.etl_time.c_str(), ref_ts.expiry_date_start.c_str(), ref_ts.expiry_date_end.c_str());
+				m_pLog->Output("[YD_TASK] 任务日程载入失败，取消新增任务：SEQ=[%d], KPI=[%s], TASK_TYPE=[%s], CYCLE=[%s], ETL_TIME=[%s], EXPIRY_DATE_START=[%s], EXPIRY_DATE_END=[%s]", id, ref_ts.kpi_id.c_str(), ref_ts.task_type.c_str(), ref_ts.task_cycle.c_str(), ref_ts.etl_time.c_str(), ref_ts.expiry_date_start.c_str(), ref_ts.expiry_date_end.c_str());
 
 				// 置为未激活
 				m_pTaskDB2->SetTaskScheNotActive(id);
@@ -341,7 +341,7 @@ void YDTask::DelUnavailableTask()
 		{
 			if ( m_mTaskWait.find(bk_id) != m_mTaskWait.end() )
 			{
-				m_pLog->Output("[YD_TASK] 从等待队列中删除不存在或者未激活的任务：ID=[%d], KPI=[%s]", bk_id, m_mTaskWait[bk_id].kpi_id.c_str());
+				m_pLog->Output("[YD_TASK] 从等待队列中删除不存在或者未激活的任务：SEQ=[%d], KPI=[%s]", bk_id, m_mTaskWait[bk_id].kpi_id.c_str());
 				m_mTaskWait.erase(bk_id);
 			}
 
@@ -349,12 +349,12 @@ void YDTask::DelUnavailableTask()
 				|| m_mAnaTaskRun.find(bk_id) != m_mAnaTaskRun.end()
 				|| m_mTaskEnd.find(bk_id) != m_mTaskEnd.end() )
 			{
-				m_pLog->Output("[YD_TASK] 任务 ( ID=[%d] ) 正在运行，运行结束后删除 ...", bk_id);
+				m_pLog->Output("[YD_TASK] 任务正在运行，预定于运行结束后删除：SEQ=[%d], KPI=[%s]", bk_id, ref_ts.kpi_id.c_str());
 				m_sDelAfterRun.insert(bk_id);
 			}
 
 			++c_del_tasks;
-			m_pLog->Output("[YD_TASK] 从日程备份中删除不存在或者未激活的任务: ID=[%d], KPI=[%s], TASK_TYPE=[%s], CYCLE=[%s], ETL_TIME=[%s], EXPIRY_DATE_START=[%s], EXPIRY_DATE_END=[%s]", bk_id, ref_ts.kpi_id.c_str(), ref_ts.task_type.c_str(), ref_ts.task_cycle.c_str(), ref_ts.etl_time.c_str(), ref_ts.expiry_date_start.c_str(), ref_ts.expiry_date_end.c_str());
+			m_pLog->Output("[YD_TASK] 从日程备份中删除不存在或者未激活的任务: SEQ=[%d], KPI=[%s], TASK_TYPE=[%s], CYCLE=[%s], ETL_TIME=[%s], EXPIRY_DATE_START=[%s], EXPIRY_DATE_END=[%s]", bk_id, ref_ts.kpi_id.c_str(), ref_ts.task_type.c_str(), ref_ts.task_cycle.c_str(), ref_ts.etl_time.c_str(), ref_ts.expiry_date_start.c_str(), ref_ts.expiry_date_end.c_str());
 			m_mTaskSche_bak.erase(bk_it++);
 		}
 		else
@@ -879,17 +879,22 @@ void YDTask::FinishTask() throw(base::Exception)
 		}
 		else
 		{
-			m_pLog->Output("[YD_TASK] <WARNING> Task does not exist: SEQ=[%d]", ref_rat.seq_id);
+			m_pLog->Output("[YD_TASK] <WARNING> Task doesn't exist in task schedule table: SEQ=[%d], KPI=[%s]", ref_rat.seq_id);
 		}
 
 		// 在删除队列中，则直接永久删除，不再回归等待队列
 		if ( m_sDelAfterRun.find(ref_rat.seq_id) != m_sDelAfterRun.end() )
 		{
+			m_pLog->Output("[YD_TASK] 任务已预定删除，现执行删除操作：SEQ=[%d], TASK_TYPE=[%s], KPI=[%s]", ref_rat.seq_id, ref_rat.tsl_ana_task.task_type.c_str(), ref_rat.kpi_id.c_str());
 			m_sDelAfterRun.erase(ref_rat.seq_id);
 		}
 		// 等待队列已存在更新的任务，则直接永久删除
+		else if ( m_mTaskWait.find(ref_rat.seq_id) != m_mTaskWait.end() )
+		{
+			m_pLog->Output("[YD_TASK] 任务已更新，因此删除旧任务：SEQ=[%d], TASK_TYPE=[%s], KPI=[%s]", ref_rat.seq_id, ref_rat.tsl_ana_task.task_type.c_str(), ref_rat.kpi_id.c_str());
+		}
 		// 否则，回归到等待队列中
-		else if ( m_mTaskWait.find(ref_rat.seq_id) == m_mTaskWait.end() )
+		else
 		{
 			m_mTaskWait[ref_rat.seq_id] = ref_rat;
 		}
