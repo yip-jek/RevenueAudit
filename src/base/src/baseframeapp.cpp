@@ -140,44 +140,59 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		pLog->SetPath(pApp->GetLogPathConfig());
-		pLog->Init();
+		try
+		{
+			pLog->SetPath(pApp->GetLogPathConfig());
+			pLog->Init();
 
-		std::cout << pApp->Version() << std::endl;
-		pLog->Output(pApp->Version());
+			std::cout << pApp->Version() << std::endl;
+			pLog->Output(pApp->Version());
 
-		pApp->LoadConfig();
-		pApp->Init();
-		pApp->Run();
+			pApp->LoadConfig();
+			pApp->Init();
+			pApp->Run();
+		}
+		catch ( Exception& ex )
+		{
+			pApp->End(ex.ErrorCode(), ex.What());
+
+			std::cerr << "[ERROR] " << ex.What() << ", ERROR_CODE: " << ex.ErrorCode() << std::endl;
+			pLog->Output("[ERROR] %s, ERROR_CODE: %d", ex.What().c_str(), ex.ErrorCode());
+
+			//// 上报错误码
+			//std::string str_err;
+			//PubStr::SetFormatString(str_err, "%s_ERROR_CODE:%d", argv[2], ex.ErrorCode());
+			//ts.abort(str_err);
+			return -1;
+		}
+		catch ( ... )
+		{
+			pApp->End(-1, "Unknown error!");
+
+			std::cerr << "[ERROR] Unknown error! [FILE:" << __FILE__ << ", LINE:" << __LINE__ << "]" << std::endl;
+			pLog->Output("[ERROR] Unknown error! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+
+			//// 上报错误
+			//std::string str_err;
+			//PubStr::SetFormatString(str_err, "%s_ERROR:Unknown_error", argv[2]);
+			//ts.abort(str_err);
+			return -1;
+		}
+
+		pApp->End(0);
 	}
 	catch ( Exception& ex )
 	{
-		pApp->End(ex.ErrorCode(), ex.What());
-
 		std::cerr << "[ERROR] " << ex.What() << ", ERROR_CODE: " << ex.ErrorCode() << std::endl;
 		pLog->Output("[ERROR] %s, ERROR_CODE: %d", ex.What().c_str(), ex.ErrorCode());
-
-		//// 上报错误码
-		//std::string str_err;
-		//PubStr::SetFormatString(str_err, "%s_ERROR_CODE:%d", argv[2], ex.ErrorCode());
-		//ts.abort(str_err);
 		return -1;
 	}
 	catch ( ... )
 	{
-		pApp->End(-1, "Unknown error!");
-
 		std::cerr << "[ERROR] Unknown error! [FILE:" << __FILE__ << ", LINE:" << __LINE__ << "]" << std::endl;
 		pLog->Output("[ERROR] Unknown error! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
-
-		//// 上报错误
-		//std::string str_err;
-		//PubStr::SetFormatString(str_err, "%s_ERROR:Unknown_error", argv[2]);
-		//ts.abort(str_err);
 		return -1;
 	}
-
-	pApp->End(0);
 
 	std::cout << argv[0] << " quit!" << std::endl;
 	pLog->Output("%s quit!", argv[0]);
