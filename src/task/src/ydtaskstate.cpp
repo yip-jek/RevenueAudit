@@ -36,7 +36,7 @@ bool YDTaskState::Init(const std::string& path)
 		m_tmpCfg.SetCfgFile(m_tmpFile);
 		m_tmpCfg.RegisterItem("STATE", "PAUSE");
 	}
-	catch ( ... )
+	catch ( ... )	// 异常
 	{
 		return false;
 	}
@@ -72,8 +72,15 @@ void YDTaskState::Check()
 
 	if ( m_timer.IsTimeUp() )
 	{
-		m_tmpCfg.ReadConfig();
-		m_pause = m_tmpCfg.GetCfgBoolVal("STATE", "PAUSE");
+		try
+		{
+			m_tmpCfg.ReadConfig();
+			m_pause = m_tmpCfg.GetCfgBoolVal("STATE", "PAUSE");
+		}
+		catch ( ... )	// 异常：无法成功获取状态配置
+		{
+			m_pause = false;
+		}
 	}
 }
 

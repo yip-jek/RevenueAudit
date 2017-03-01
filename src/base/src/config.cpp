@@ -104,6 +104,9 @@ void Config::ReadConfig() throw(Exception)
 		throw Exception(CFG_OPEN_FILE_FAIL, "Open configuration file \"%s\" fail! [FILE:%s, LINE:%d]", m_cfgFile.c_str(), __FILE__, __LINE__);
 	}
 
+	// 初始化所有配置项
+	InitItems();
+
 	std::string strLine;
 	std::string strSegment;
 	std::string strName;
