@@ -29,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 4.0003.20170301 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 4.0004.20170309 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -339,6 +339,13 @@ void Analyse::UpdateDimValue()
 
 	if ( VEC_DV > 0 )
 	{
+		m_pLog->Output("[Analyse] 详细的需要更新的维度取值如下：");
+		for ( size_t s = 0; s < VEC_DV; ++s )
+		{
+			DimVal& ref_dv = vec_diff_dv[s];
+			m_pLog->Output("[Analyse] 维度取值 [%llu]：KPI=[%s], DB_NAME=[%s], VALUE=[%s]", (s+1), ref_dv.KpiID.c_str(), ref_dv.DBName.c_str(), ref_dv.Value.c_str());
+		}
+
 		m_pAnaDB2->InsertNewDimValue(vec_diff_dv);
 		m_pLog->Output("[Analyse] 更新维度取值范围成功！");
 	}
