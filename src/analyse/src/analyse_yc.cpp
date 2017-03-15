@@ -235,16 +235,16 @@ void Analyse_YC::GenerateYCResultData(std::map<std::string, double>& map_factor)
 	std::vector<std::vector<std::string> > vec_yc_data;
 	std::map<std::string, double>::iterator m_it;
 
-	// 生成结果数据
+	// 生成一般因子与组合因子的结果数据
 	const int VEC_YCSI_SIZE = m_vecYCSInfo.size();
 	for ( int i = 0; i < VEC_YCSI_SIZE; ++i )
 	{
 		YCStatInfo& ref_ycsi = m_vecYCSInfo[i];
 		base::PubStr::TrimUpper(ref_ycsi.statdim_id);
-		m_pLog->Output("[Analyse_YC] [STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%d] 正在生成统计因子结果数据...", ref_ycsi.stat_id.c_str(), ref_ycsi.statdim_id.c_str(), ref_ycsi.stat_pri);
 
 		if ( YCStatInfo::SP_Level_0 == ref_ycsi.stat_pri )
 		{
+			m_pLog->Output("[Analyse_YC] [STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%d] 正在生成统计因子结果数据...", ref_ycsi.stat_id.c_str(), ref_ycsi.statdim_id.c_str(), ref_ycsi.stat_pri);
 			m_pLog->Output("[Analyse_YC] 统计因子类型：一般因子");
 
 			yc_sr.stat_report = ref_ycsi.stat_report;
@@ -266,7 +266,40 @@ void Analyse_YC::GenerateYCResultData(std::map<std::string, double>& map_factor)
 		}
 		else if ( YCStatInfo::SP_Level_1 == ref_ycsi.stat_pri )
 		{
+			m_pLog->Output("[Analyse_YC] [STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%d] 正在生成统计因子结果数据...", ref_ycsi.stat_id.c_str(), ref_ycsi.statdim_id.c_str(), ref_ycsi.stat_pri);
 			m_pLog->Output("[Analyse_YC] 统计因子类型：组合因子");
+
+			yc_sr.stat_report = ref_ycsi.stat_report;
+			yc_sr.stat_id     = ref_ycsi.stat_id;
+			yc_sr.stat_name   = ref_ycsi.stat_name;
+			yc_sr.statdim_id  = ref_ycsi.statdim_id;
+			yc_sr.stat_value  = CalcYCComplexFactor(map_factor, ref_ycsi.stat_sql);
+
+			// 登记组合因子结果
+			map_factor[yc_sr.statdim_id] = yc_sr.stat_value;
+
+			yc_sr.Trans2Vector(v_dat);
+			base::PubStr::VVectorSwapPushBack(vec_yc_data, v_dat);
+		}
+		else if ( YCStatInfo::SP_Level_2 == ref_ycsi.stat_pri )
+		{
+			// 汇总因子，后续再进行统计
+			continue;
+		}
+		else
+		{
+			throw base::Exception(ANAERR_GENERATE_YCDATA_FAILED, "未知的统计因子优先级别！(KPI_ID:%s, ANA_ID:%s, STATDIM_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), ref_ycsi.statdim_id.c_str(), __FILE__, __LINE__);
+		}
+	}
+
+	// 生成汇总因子的结果数据
+	for ( int i = 0; i < VEC_YCSI_SIZE; ++i )
+	{
+		YCStatInfo& ref_ycsi = m_vecYCSInfo[i];
+		if ( YCStatInfo::SP_Level_2 == ref_ycsi.stat_pri )
+		{
+			m_pLog->Output("[Analyse_YC] [STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%d] 正在生成汇总因子结果数据...", ref_ycsi.stat_id.c_str(), ref_ycsi.statdim_id.c_str(), ref_ycsi.stat_pri);
+			m_pLog->Output("[Analyse_YC] 统计因子类型：汇总因子");
 
 			yc_sr.stat_report = ref_ycsi.stat_report;
 			yc_sr.stat_id     = ref_ycsi.stat_id;
@@ -276,10 +309,6 @@ void Analyse_YC::GenerateYCResultData(std::map<std::string, double>& map_factor)
 
 			yc_sr.Trans2Vector(v_dat);
 			base::PubStr::VVectorSwapPushBack(vec_yc_data, v_dat);
-		}
-		else
-		{
-			throw base::Exception(ANAERR_GENERATE_YCDATA_FAILED, "未知的统计因子优先级别！(KPI_ID:%s, ANA_ID:%s, STATDIM_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), ref_ycsi.statdim_id.c_str(), __FILE__, __LINE__);
 		}
 	}
 
