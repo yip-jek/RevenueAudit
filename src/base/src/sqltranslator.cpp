@@ -11,6 +11,7 @@ const char* const SQLTranslator::S_SYS_DAY = "SYS_DAY";				// 系统（当前）
 const char* const SQLTranslator::S_SYS_MON = "SYS_MON";				// 系统（当前）时间：month
 
 const char* const SQLTranslator::S_FIRST_DAY_THIS_PM = "FIRST_DAY_THIS_PM";		// 本月1日
+const char* const SQLTranslator::S_LAST_DAY_THIS_PM  = "LAST_DAY_THIS_PM";		// 本账期月最后一天
 const char* const SQLTranslator::S_LAST_DAY_LAST_PM  = "LAST_DAY_LAST_PM";		// 上个月最后一天
 
 SQLTranslator::SQLTranslator(PubTime::DATE_TYPE dt, const std::string& etl_date)
@@ -206,6 +207,15 @@ bool SQLTranslator::TransMark(const std::string& mark, std::string& val, std::st
 	else if ( T_MARK == S_FIRST_DAY_THIS_PM )
 	{
 		val = m_sEtlDate.substr(0, 6) + "01";
+	}
+	else if ( T_MARK == S_LAST_DAY_THIS_PM )
+	{
+		int year = 0;
+		int mon  = 0;
+		PubStr::Str2Int(m_sEtlDate.substr(0, 4), year);
+		PubStr::Str2Int(m_sEtlDate.substr(4, 2), mon);
+
+		PubStr::SetFormatString(val, "%04d%02d%02d", year, mon, SimpleTime::LastDayOfTheMon(year, mon));
 	}
 	else if ( T_MARK == S_LAST_DAY_LAST_PM )
 	{

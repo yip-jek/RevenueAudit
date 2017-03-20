@@ -20,6 +20,7 @@ public:
 	static const char* const S_SYS_MON;				// 系统（当前）时间：month
 
 	static const char* const S_FIRST_DAY_THIS_PM;		// 本账期月1日
+	static const char* const S_LAST_DAY_THIS_PM;		// 本账期月最后一天
 	static const char* const S_LAST_DAY_LAST_PM;		// 上个账期月最后一天
 
 public:

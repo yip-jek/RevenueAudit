@@ -29,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 4.0005.20170315 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 4.0005.20170320 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
