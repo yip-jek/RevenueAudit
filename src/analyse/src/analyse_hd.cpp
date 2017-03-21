@@ -304,11 +304,10 @@ void Analyse_HD::StoreResult() throw(base::Exception)
 {
 	Analyse::StoreResult();
 
-	std::vector<std::vector<std::string> > tmp_vec2_data;
 	const int VEC_SIZE = m_vecExecSql.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
-		m_pAnaDB2->ResultDataInsert(m_vecExecSql[i], tmp_vec2_data);
+		m_pAnaDB2->ExecuteSQL(m_vecExecSql[i]);
 	}
 }
 

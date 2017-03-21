@@ -216,6 +216,9 @@ void Acquire_YC::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) thro
 		ExchangeSQLMark(yc_sql);
 		ExtendSQLCondition(yc_sql);
 
+		// 地市标记转换
+		CityMarkExchange(yc_sql);
+
 		m_pLog->Output("[Acquire_YC] (转换后) 统计因子SQL [%d]: %s", (i+1), yc_sql.c_str());
 		v_yc_sql.push_back(yc_sql);
 	}
@@ -228,10 +231,8 @@ void Acquire_YC::ExtendSQLCondition(std::string& sql) throw(base::Exception)
 	// 不需要进行扩展SQL语句的条件？
 	if ( NoNeedExtendSQL(sql) )
 	{
-		// 删除标记
+		// 删除标记: [NO_NEED_EXTEND]
 		sql.erase(0, sql.find(']')+1);
-		// 地市标记转换
-		CityMarkExchange(sql);
 		return;
 	}
 

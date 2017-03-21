@@ -874,6 +874,26 @@ void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<s
 	m_pLog->Output("[DB2] Insert report statistics data successfully, size: %llu", vec2_reportdata.size());
 }
 
+void CAnaDB2::ExecuteSQL(const std::string& exe_sql) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	try
+	{
+		rs.Prepare(exe_sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		m_pLog->Output("[DB2] Execute SQL: %s", exe_sql.c_str());
+
+		rs.Execute();
+		Commit();
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ADBERR_EXECUTE_SQL, "[DB2] Execute SQL failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+	}
+}
+
 void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
@@ -1511,6 +1531,12 @@ void CAnaDB2::DeleteFromTable(const std::string& tab_name, const std::string& co
 
 void CAnaDB2::ResultDataInsert(const std::string& db_sql, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
 {
+	if ( vec2_data.empty() )
+	{
+		m_pLog->Output("[DB2] <WARNING> No result data to be inserted!");
+		return;
+	}
+
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
@@ -1521,30 +1547,23 @@ void CAnaDB2::ResultDataInsert(const std::string& db_sql, std::vector<std::vecto
 
 		Begin();
 
-		if ( vec2_data.empty() )	// 没有数据，只执行一次SQL
+		const size_t V2_DATA_SIZE = vec2_data.size();
+		for ( size_t i = 0; i < V2_DATA_SIZE; ++i )
 		{
-			rs.Execute();
-		}
-		else
-		{
-			const size_t V2_DATA_SIZE = vec2_data.size();
-			for ( size_t i = 0; i < V2_DATA_SIZE; ++i )
+			std::vector<std::string>& ref_vec_data = vec2_data[i];
+
+			const int REF_DATA_SIZE = ref_vec_data.size();
+			for ( int j = 0; j < REF_DATA_SIZE; ++j )
 			{
-				std::vector<std::string>& ref_vec_data = vec2_data[i];
+				rs.Parameter(j+1) = ref_vec_data[j].c_str();
+			}
 
-				const int REF_DATA_SIZE = ref_vec_data.size();
-				for ( int j = 0; j < REF_DATA_SIZE; ++j )
-				{
-					rs.Parameter(j+1) = ref_vec_data[j].c_str();
-				}
+			rs.Execute();
 
-				rs.Execute();
-
-				// 每达到最大值提交一次
-				if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
-				{
-					Commit();
-				}
+			// 每达到最大值提交一次
+			if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
+			{
+				Commit();
 			}
 		}
 

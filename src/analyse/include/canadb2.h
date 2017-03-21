@@ -46,6 +46,7 @@ public:
 		ADBERR_INS_YC_STAT_LOG   = -3002024,			// 入库业财稽核记录日志出错
 		ADBERR_SEL_SRC_MAX_BATCH = -3002025,			// 获取业财数据源表最新批次出错
 		ADBERR_UPD_TSLOG_STATE   = -3002026,			// 更新任务日程日志表状态出错
+		ADBERR_EXECUTE_SQL       = -3002027,			// 直接执行 SQL 出错
 	};
 
 public:
@@ -126,8 +127,8 @@ public:
 	// 插入报表统计数据
 	void InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_reportdata) throw(base::Exception);
 
-	// 结果数据入库
-	void ResultDataInsert(const std::string& db_sql, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
+	// 直接执行SQL
+	void ExecuteSQL(const std::string& exe_sql) throw(base::Exception);
 
 	// 获取目标数据
 	void SelectTargetData(AnaDBInfo& db_info, const std::string& date, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
@@ -198,6 +199,9 @@ private:
 
 	// 删除结果表数据
 	void DeleteFromTable(const std::string& tab_name, const std::string& condition) throw(base::Exception);
+
+	// 结果数据入库
+	void ResultDataInsert(const std::string& db_sql, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
 
 private:
 	// 数据库表名
