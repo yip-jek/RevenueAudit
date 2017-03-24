@@ -245,6 +245,11 @@ bool EtlTime::SetTime(const std::string& time)
 	return true;
 }
 
+bool EtlTime::HaveNext() const
+{
+	return (curr_index != INVALID_INDEX);
+}
+
 bool EtlTime::IsValid() const
 {
 	return (dt_type != base::PubTime::DT_UNKNOWN);
@@ -255,29 +260,25 @@ void EtlTime::Init()
 	curr_index = IsValid() ? 0 : INVALID_INDEX;
 }
 
-bool EtlTime::GetNext(std::string& next_etl_time)
+void EtlTime::GetNext(std::string& next_etl_time)
 {
-	if ( INVALID_INDEX == curr_index )
+	if ( curr_index != INVALID_INDEX )
 	{
-		return false;
-	}
+		if ( etl_time.empty() )
+		{
+			next_etl_time = base::PubStr::Int2Str(vec_time[curr_index++]);
 
-	if ( etl_time.empty() )
-	{
-		next_etl_time = base::PubStr::Int2Str(vec_time[curr_index++]);
-
-		if ( curr_index >= (int)vec_time.size() )
+			if ( curr_index >= (int)vec_time.size() )
+			{
+				curr_index = INVALID_INDEX;
+			}
+		}
+		else
 		{
 			curr_index = INVALID_INDEX;
+			base::PubTime::DateApartFromNow(etl_time, dt_type, next_etl_time);
 		}
 	}
-	else
-	{
-		curr_index = INVALID_INDEX;
-		base::PubTime::DateApartFromNow(etl_time, dt_type, next_etl_time);
-	}
-
-	return true;
 }
 
 std::string EtlTime::Convert(const std::string& time)
@@ -367,6 +368,11 @@ RATask::RATask()
 bool RATask::LoadFromTaskSche(const TaskSchedule& ts)
 {
 	RATask tmp_rat;
+
+	if ( ts.seq_id < 0 )	// 无效的序号
+	{
+		return false;
+	}
 	tmp_rat.seq_id = ts.seq_id;
 	tmp_rat.kpi_id = base::PubStr::TrimUpperB(ts.kpi_id);
 

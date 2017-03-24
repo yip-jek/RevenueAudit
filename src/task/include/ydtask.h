@@ -76,11 +76,14 @@ protected:
 	// 创建新任务
 	virtual void BuildNewTask() throw(base::Exception);
 
+	// 执行新任务
+	int PerformNewTask(RATask& rat, bool task_continue);
+
 	// 下发任务
 	void CreateTask(TaskScheLog& ts_log);
 
 	// 检查：是否有同序号或者同指标的任务在运行？
-	bool CheckSameKindRunningTask(const RATask& rat);
+	bool CheckSameKindRunningTask(const RATask& rat, std::string* pMsg = NULL);
 
 	// 是否超过最小时间间隔？
 	bool IsOverMinTimeInterval(const base::SimpleTime& st_time) const;
@@ -94,6 +97,9 @@ private:
 
 	// 初始化数据库连接
 	void InitConnect() throw(base::Exception);
+
+	// 从任务暂停队列中删除指定序号的任务
+	bool DelTaskPauseWithSEQ(const int& seq);
 
 private:
 	int  m_minRunTimeInterval;				// 任务运行的最小时间间隔（分钟）
@@ -127,6 +133,7 @@ private:
 	std::map<int, TaskSchedule> m_mTaskSche;			// 任务日程
 	std::map<int, TaskSchedule> m_mTaskSche_bak;		// 任务日程备份
 	std::map<int, RATask>       m_mTaskWait;			// 任务等待队列
+	std::list<RATask>         	m_listTaskPause;		// 任务暂停队列
 	std::map<int, RATask>       m_mEtlTaskRun;			// 采集运行任务队列
 	std::map<int, RATask>       m_mAnaTaskRun;			// 分析运行任务队列
 	std::map<int, RATask>       m_mTaskEnd;				// 任务完成队列

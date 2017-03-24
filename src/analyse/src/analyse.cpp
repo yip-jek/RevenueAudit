@@ -29,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 4.0006.20170321 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 4.0007.20170324 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -740,11 +740,31 @@ void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) th
 
 	v_hive_sql.push_back(hive_sql);
 
-	// 3) 汇总：取 A、B 两份汇总数据，（后续）找出非共有的数据
-	hive_sql = TaskInfoUtil::GetOneEtlRuleDetailSQL(first_one);
+	//// 3) 汇总：取 A、B 两份汇总数据，（后续）找出非共有的数据
+	//hive_sql = TaskInfoUtil::GetOneEtlRuleDetailSQL(first_one);
+	//v_hive_sql.push_back(hive_sql);
+
+	//hive_sql = TaskInfoUtil::GetOneEtlRuleDetailSQL(second_one);
+	//v_hive_sql.push_back(hive_sql);
+
+	// 3) 汇总：差异“左有右无”的Hive SQL语句
+	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(first_one, second_one, vec_col, true);
+	hive_sql += ", '" + m_taskInfo.vecComResDesc[1] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
+	hive_sql += " from " + first_one.TargetPatch + " a left outer join " + second_one.TargetPatch;
+	hive_sql += " b on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
+	hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(second_one, "b.");
+	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
+
 	v_hive_sql.push_back(hive_sql);
 
-	hive_sql = TaskInfoUtil::GetOneEtlRuleDetailSQL(second_one);
+	// 4) 汇总：差异“左无右有”的Hive SQL语句
+	hive_sql = "select " + TaskInfoUtil::GetCompareFieldsByCol(second_one, first_one, vec_col, true, true);
+	hive_sql += ", '" + m_taskInfo.vecComResDesc[1] + "'" + TaskInfoUtil::GetBothSingleDims(first_one, second_one);
+	hive_sql += " from " + second_one.TargetPatch + " b left outer join " + first_one.TargetPatch;
+	hive_sql += " a on (" + TaskInfoUtil::GetCompareDims(first_one, second_one);
+	hive_sql += ") where " + TaskInfoUtil::GetOneRuleValsNull(first_one, "a.");
+	//TaskInfoUtil::AddConditionSql(hive_sql, ADD_CONDITION);
+
 	v_hive_sql.push_back(hive_sql);
 
 	v_hive_sql.swap(vec_hivesql);

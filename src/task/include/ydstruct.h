@@ -78,6 +78,8 @@ public:
 	static std::string Convert(const std::string& time);
 
 public:
+	bool HaveNext() const;
+
 	// 设置采集时间
 	bool SetTime(const std::string& time);
 
@@ -88,7 +90,7 @@ public:
 	void Init();
 
 	// 获取下一个采集时间字串
-	bool GetNext(std::string& next_etl_time);
+	void GetNext(std::string& next_etl_time);
 
 private:
 	base::PubTime::DATE_TYPE dt_type;			// 时间类型
