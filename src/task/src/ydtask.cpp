@@ -715,15 +715,10 @@ int YDTask::PerformNewTask(RATask& rat, bool task_continue)
 		// 任务是否已经执行过？
 		if ( !rat.st_task_finish.IsValid() )		// 未执行
 		{
-			// 是否到达运行周期
-			if ( rat.cycle.IsCycleTimeUp() )
+			// 尝试恢复任务时，直接下发任务
+			// 否则，判断是否到达运行周期
+			if ( task_continue || (!task_continue && rat.cycle.IsCycleTimeUp()) )
 			{
-				rat.et_etl_time.Init();
-				if ( !rat.et_etl_time.HaveNext() )		// 没有首个采集时间点
-				{
-					throw base::Exception(YDTERR_BUILD_NEWTASK, "Build new task failed: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s]. Can't get the first ETL time! [FILE:%s, LINE:%d]", rat.seq_id, str_task_type.c_str(), rat.kpi_id.c_str(), __FILE__, __LINE__);
-				}
-
 				// 是否有同类型的任务在运行？
 				if ( !task_continue && CheckSameKindRunningTask(rat, &str_msg) )
 				{
@@ -731,6 +726,12 @@ int YDTask::PerformNewTask(RATask& rat, bool task_continue)
 					m_listTaskPause.push_back(rat);
 					m_pLog->Output("[YD_TASK] Task pause: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s]", rat.seq_id, str_task_type.c_str(), rat.kpi_id.c_str());
 					return rat.seq_id;
+				}
+
+				rat.et_etl_time.Init();
+				if ( !rat.et_etl_time.HaveNext() )		// 没有首个采集时间点
+				{
+					throw base::Exception(YDTERR_BUILD_NEWTASK, "Build new task failed: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s]. Can't get the first ETL time! [FILE:%s, LINE:%d]", rat.seq_id, str_task_type.c_str(), rat.kpi_id.c_str(), __FILE__, __LINE__);
 				}
 
 				rat.et_etl_time.GetNext(str_etl_time);
