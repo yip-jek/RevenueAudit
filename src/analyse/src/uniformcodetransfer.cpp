@@ -1,5 +1,6 @@
 #include "uniformcodetransfer.h"
 #include "pubstr.h"
+#include "anaerror.h"
 
 
 UniformCodeTransfer::UniformCodeTransfer()

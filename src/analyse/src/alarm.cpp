@@ -1,6 +1,7 @@
 #include "alarm.h"
 #include "anataskinfo.h"
 #include "anadbinfo.h"
+#include "anaerror.h"
 #include "log.h"
 #include "pubstr.h"
 #include "thresholdcompare.h"

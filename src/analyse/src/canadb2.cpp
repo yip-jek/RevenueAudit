@@ -2,6 +2,7 @@
 #include "log.h"
 #include "pubstr.h"
 #include "anadbinfo.h"
+#include "anaerror.h"
 #include "uniformcodetransfer.h"
 #include "alarmevent.h"
 

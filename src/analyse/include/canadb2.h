@@ -18,37 +18,6 @@ public:
 
 	static const int DB_MAX_COMMIT = 20000;
 
-	enum ADB_ERROR
-	{
-		ADBERR_SEL_KPI_RULE      = -3002001,			// 查询指标规则出错
-		ADBERR_SEL_KPI_COL       = -3002002,			// 查询指标字段出错
-		ADBERR_SEL_DIM_VALUE     = -3002003,			// 查询维度取值出错
-		ADBERR_INS_DIM_VALUE     = -3002004,			// 插入维度取值出错
-		ADBERR_SEL_ETL_RULE      = -3002005,			// 查询采集规则出错
-		ADBERR_SEL_ANA_RULE      = -3002006,			// 查询分析规则出错
-		ADBERR_SEL_ALARM_RULE    = -3002007,			// 查询告警规则出错
-		ADBERR_SEL_ETL_DIM       = -3002008,			// 查询采集维度规则出错
-		ADBERR_SEL_ETL_VAL       = -3002009,			// 查询采集值规则出错
-		ADBERR_SEL_REPORT_DATA   = -3002010,			// 统计报表统计数据出错
-		ADBERR_SEL_CHANN_UNICODE = -3002011,			// 获取渠道统一编码数据出错
-		ADBERR_SEL_CITY_UNICODE  = -3002012,			// 获取地市统一编码数据出错
-		ADBERR_SEL_MAX_EVENTID   = -3002013,			// 获取最大告警事件 ID 出错
-		ADBERR_INS_ALARMEVENT    = -3002014,			// 插入告警事件出错
-		ADBERR_SEL_COM_RES_DESC  = -3002015,			// 查询对比结果描述出错
-		ADBERR_ALTER_EMPTY_TAB   = -3002016,			// 清空结果表数据出错
-		ADBERR_DEL_FROM_TAB      = -3002017,			// 删除结果表数据出错
-		ADBERR_INS_RESULT_DATA   = -3002018,			// 插入结果数据出错
-		ADBERR_SEL_YC_STATRULE   = -3002019,			// 查询业财稽核因子规则信息出错
-		ADBERR_UPD_YC_TASK_REQ   = -3002020,			// 更新任务请求表出错
-		ADBERR_SEL_SEQUENCE      = -3002021,			// 获取数据库序列出错
-		ADBERR_SEL_YC_TASK_CITY  = -3002022,			// 获取任务请求的地市信息出错
-		ADBERR_SEL_RS_MAX_BATCH  = -3002023,			// 获取统计结果表的最新批次出错
-		ADBERR_INS_YC_STAT_LOG   = -3002024,			// 入库业财稽核记录日志出错
-		ADBERR_SEL_SRC_MAX_BATCH = -3002025,			// 获取业财数据源表最新批次出错
-		ADBERR_UPD_TSLOG_STATE   = -3002026,			// 更新任务日程日志表状态出错
-		ADBERR_EXECUTE_SQL       = -3002027,			// 直接执行 SQL 出错
-	};
-
 public:
 	// 设置指标规则表
 	void SetTabKpiRule(const std::string& t_kpirule);

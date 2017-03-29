@@ -31,13 +31,6 @@ public:
 	UniformCodeTransfer();
 	~UniformCodeTransfer();
 
-	// 编码转换错误码
-	enum UNI_CODE_TRANSFER_ERROR
-	{
-		UCTERR_INPUT_CHANN_UNICODE_FAILED = -3003001,		// 录入渠道统一编码信息失败
-		UCTERR_INPUT_CITY_UNICODE_FAILED  = -3003002,		// 录入地市统一编码信息失败
-	};
-
 public:
 	// 录入渠道统一编码信息
 	void InputChannelUniformCode(std::vector<ChannelUniformCode>& vec_channunicode) throw(base::Exception);

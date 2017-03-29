@@ -58,12 +58,6 @@
 //	virtual ~CompareResult();
 //
 //public:
-//	enum COM_RES_ERROR
-//	{
-//		CRERR_SET_COMPARE_DATA   = -3005001,		// 设置对比数据失败
-//		CRERR_GET_COMPARE_RESULT = -3005002,		// 获取对比结果数据失败
-//	};
-//
 //	enum COMPARE_TYPE
 //	{
 //		CTYPE_EQUAL	= 1,		// 对平结果

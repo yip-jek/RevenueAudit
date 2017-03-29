@@ -1,5 +1,6 @@
 //#include "compareresult.h"
 //#include "pubstr.h"
+//#include "anaerror.h"
 //
 //CompareResult::CompareResult()
 //{

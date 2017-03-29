@@ -26,37 +26,6 @@ public:
 	static const size_t COMPARE_HIVE_SRCDATA_SIZE = 4;		// 对比源数据个数
 
 public:
-	enum ANA_ERROR
-	{
-		ANAERR_TASKINFO_ERROR         = -3000001,			// 任务信息异常
-		ANAERR_KPIID_INVALID          = -3000002,			// 指标ID无效
-		ANAERR_ANAID_INVALID          = -3000003,			// 分析规则ID无效
-		ANAERR_HIVE_PORT_INVALID      = -3000004,			// Hive服务器端口无效
-		ANAERR_INIT_FAILED            = -3000005,			// 初始化失败
-		ANAERR_TASKINFO_INVALID       = -3000006,			// 任务信息无效
-		ANAERR_ANA_RULE_FAILED        = -3000007,			// 解析分析规则失败
-		ANAERR_GENERATE_TAB_FAILED    = -3000008,			// 生成目标表名失败
-		ANAERR_GET_DBINFO_FAILED      = -3000009,			// 获取数据库信息失败
-		ANAERR_GET_SUMMARY_FAILED     = -3000010,			// 生成汇总对比HIVE SQL失败
-		ANAERR_GET_DETAIL_FAILED      = -3000011,			// 生成明细对比HIVE SQL失败
-		ANAERR_DETERMINE_GROUP_FAILED = -3000012,			// 确定数据组失败
-		ANAERR_SPLIT_HIVESQL_FAILED   = -3000013,			// 拆分可执行HIVE SQL失败
-		ANAERR_GET_STATISTICS_FAILED  = -3000014,			// 生成一般统计HIVE SQL失败
-		ANAERR_GET_REPORT_STAT_FAILED = -3000015,			// 生成报表统计HIVE SQL失败
-		ANAERR_GET_STAT_BY_SET_FAILED = -3000016,			// 生成指定组的统计HIVE SQL失败
-		ANAERR_ALARM_JUDGEMENT_FAILED = -3000017,			// 告警判断失败
-		ANAERR_COMPARE_RESULT_DATA    = -3000018,			// 生成对比结果失败
-		ANAERR_SRC_DATA_UNIFIED_CODE  = -3000019,			// 源数据的统一编码转换失败
-		ANAERR_ANA_YCRA_DATA_FAILED   = -3000020,			// 分析业财稽核数据失败
-		ANAERR_TRANS_YCFACTOR_FAILED  = -3000021,			// 业财稽核统计因子转换失败
-		ANAERR_GENERATE_YCDATA_FAILED = -3000022,			// 生成业财稽核数据失败
-		ANAERR_CAL_YCCMPLX_FAILED     = -3000023,			// 计算业财稽核组合因子失败
-		ANAERR_GET_EXP_HIVESQL_FAILED = -3000024,			// 从分析表达式中生成HIVE SQL失败
-		ANAERR_EXCHG_SQLMARK_FAILED   = -3000025,			// 标志转换失败
-		ANAERR_GENE_DELTIME_FAILED    = -3000026,			// 生成数据删除的时间失败
-	};
-
-public:
 	// 版本信息
 	virtual const char* Version();
 
