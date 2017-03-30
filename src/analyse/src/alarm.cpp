@@ -108,7 +108,7 @@ std::string Alarm::GenerateDimKey(std::vector<std::string>& vec_str) throw(base:
 {
 	if ( vec_str.size() < (size_t)m_kpiDimSize )
 	{
-		throw base::Exception(AE_GENERATE_DIM_KEY_FAILED, "[ALARM] 无法生成维度 KEY 值：数据列数(size:%lu) < 维度列数(size:%d) (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", vec_str.size(), m_kpiDimSize, m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_GENERATE_DIMKEY, "[ALARM] 无法生成维度 KEY 值：数据列数(size:%lu) < 维度列数(size:%d) (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", vec_str.size(), m_kpiDimSize, m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	std::string dim;
@@ -140,7 +140,7 @@ void Alarm::CollectValueColumn(const std::string& val_col) throw(base::Exception
 	// 只支持单个字母表示
 	if ( str_vc.size() != 1 )
 	{
-		throw base::Exception(AE_COLLECT_VALCOL_FAILED, "[ALARM] 无法识别的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_COLLECT_VALCOL, "[ALARM] 无法识别的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	int index = str_vc[0] - 'A';
@@ -148,7 +148,7 @@ void Alarm::CollectValueColumn(const std::string& val_col) throw(base::Exception
 	// 不在有效范围
 	if ( index < 0 || index >= m_kpiValSize )
 	{
-		throw base::Exception(AE_COLLECT_VALCOL_FAILED, "[ALARM] 不在有效范围的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_COLLECT_VALCOL, "[ALARM] 不在有效范围的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 计算“值”所处的列
@@ -157,7 +157,7 @@ void Alarm::CollectValueColumn(const std::string& val_col) throw(base::Exception
 	// 列重复
 	if ( m_setValCol.find(index) != m_setValCol.end() )
 	{
-		throw base::Exception(AE_COLLECT_VALCOL_FAILED, "[ALARM] 存在重复的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_COLLECT_VALCOL, "[ALARM] 存在重复的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", str_vc.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	m_setValCol.insert(index);

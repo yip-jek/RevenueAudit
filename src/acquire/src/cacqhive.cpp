@@ -1,6 +1,7 @@
 #include "cacqhive.h"
 #include <vector>
 #include "log.h"
+#include "acqerror.h"
 
 CAcqHive::CAcqHive(const std::string& hive_jclassname)
 :base::BaseJHive(hive_jclassname)
@@ -15,12 +16,12 @@ void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string
 {
 	if ( tab_name.empty() )
 	{
-		throw base::Exception(HTERR_REBUILD_TABLE_FAILED, "[HIVE] Can not rebuild! 库表名为空! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ACQERR_REBUILD_TABLE, "[HIVE] Can not rebuild! 库表名为空! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
 	if ( vec_field.empty() )
 	{
-		throw base::Exception(HTERR_REBUILD_TABLE_FAILED, "[HIVE] 没有库表 [%s] 的字段信息! [FILE:%s, LINE:%d]", tab_name.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_REBUILD_TABLE, "[HIVE] 没有库表 [%s] 的字段信息! [FILE:%s, LINE:%d]", tab_name.c_str(), __FILE__, __LINE__);
 	}
 
 	std::string sql_drop = "DROP TABLE IF EXISTS " + tab_name;
@@ -33,7 +34,7 @@ void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string
 
 		if ( str_field.empty() )
 		{
-			throw base::Exception(HTERR_REBUILD_TABLE_FAILED, "[HIVE] 缺少库表 [%s] 的第 [%lu] 个字段的信息! [FILE:%s, LINE:%d]", tab_name.c_str(), (i+1), __FILE__, __LINE__);
+			throw base::Exception(ACQERR_REBUILD_TABLE, "[HIVE] 缺少库表 [%s] 的第 [%lu] 个字段的信息! [FILE:%s, LINE:%d]", tab_name.c_str(), (i+1), __FILE__, __LINE__);
 		}
 
 		if ( i != 0 )
@@ -66,7 +67,7 @@ void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string
 	}
 	catch ( const base::Exception& ex )
 	{
-		throw base::Exception(HTERR_REBUILD_TABLE_FAILED, "[HIVE] Rebuild table \"%s\" failed! %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.What().c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_REBUILD_TABLE, "[HIVE] Rebuild table \"%s\" failed! %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.What().c_str(), __FILE__, __LINE__);
 	}
 }
 
@@ -74,7 +75,7 @@ void CAcqHive::ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exce
 {
 	if ( vec_sql.empty() )
 	{
-		throw base::Exception(HTERR_EXECUTE_ACQSQL_FAILED, "[HIVE] No sql to be executed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ACQERR_EXECUTE_ACQSQL, "[HIVE] No sql to be executed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
 	try
@@ -89,7 +90,7 @@ void CAcqHive::ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exce
 	}
 	catch ( const base::Exception& ex )
 	{
-		throw base::Exception(HTERR_EXECUTE_ACQSQL_FAILED, "[HIVE] Execute sql failed! %s [FILE:%s, LINE:%d]", ex.What().c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_EXECUTE_ACQSQL, "[HIVE] Execute sql failed! %s [FILE:%s, LINE:%d]", ex.What().c_str(), __FILE__, __LINE__);
 	}
 }
 
@@ -107,7 +108,7 @@ bool CAcqHive::CheckTableExisted(const std::string& tab_name) throw(base::Except
 	}
 	catch ( const base::Exception& ex )
 	{
-		throw base::Exception(HTERR_CHECK_TAB_EXISTED_FAILED, "[HIVE] Execute sql failed! %s [FILE:%s, LINE:%d]", ex.What().c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_CHECK_TAB_EXISTED, "[HIVE] Execute sql failed! %s [FILE:%s, LINE:%d]", ex.What().c_str(), __FILE__, __LINE__);
 	}
 }
 

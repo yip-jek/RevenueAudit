@@ -5,7 +5,6 @@
 #include "log.h"
 #include "autodisconnect.h"
 #include "pubstr.h"
-#include "anaerror.h"
 #include "canadb2.h"
 #include "canahive.h"
 #include "taskinfoutil.h"
@@ -30,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 4.0008.20170329 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 4.0009.20170330 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)

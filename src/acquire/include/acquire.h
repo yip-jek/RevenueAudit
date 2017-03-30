@@ -1,6 +1,7 @@
 #pragma once
 
 #include "baseframeapp.h"
+#include "acqerror.h"
 #include "acqtaskinfo.h"
 #include "hdfsconnector.h"
 #include "pubtime.h"
@@ -21,29 +22,6 @@ class Acquire : public base::BaseFrameApp
 public:
 	Acquire();
 	virtual ~Acquire();
-
-public:
-	enum ACQ_ERROR
-	{
-		ACQERR_TASKINFO_ERROR          = -2000001,			// 任务信息异常
-		ACQERR_KPIID_INVALID           = -2000002,			// 指标ID无效
-		ACQERR_ETLID_INVALID           = -2000003,			// 采集规则ID无效
-		ACQERR_HIVE_PORT_INVALID       = -2000004,			// Hive服务器端口无效
-		ACQERR_INIT_FAILED             = -2000005,			// 初始化失败
-		ACQERR_TASKINFO_INVALID        = -2000006,			// 任务信息无效
-		ACQERR_TRANS_DATASRC_FAILED    = -2000007,			// 源表转换失败
-		ACQERR_OUTER_JOIN_FAILED       = -2000008,			// 外连条件下生成Hive SQL失败
-		ACQERR_DATA_ACQ_FAILED         = -2000009,			// 数据采集失败
-		ACQERR_HDFS_PORT_INVALID       = -2000010,			// HDFS端口无效
-		ACQERR_OUTPUT_HDFS_FILE_FAILED = -2000011,			// 输出到HDFS文件失败
-		ACQERR_LOAD_HIVE_FAILED        = -2000012,			// 载入数据到HIVE失败
-		ACQERR_CHECK_SRC_TAB_FAILED    = -2000013,			// 检查源表失败
-		ACQERR_GEN_ETL_DATE_FAILED     = -2000014,			// 生成采集时间失败
-		ACQERR_EXCHANGE_SQLMARK_FAILED = -2000015,			// 标记转换失败
-		ACQERR_YC_STATRULE_SQL_FAILED  = -2000016,			// 生成业财稽核SQL失败
-		ACQERR_ADD_CITY_BATCH_FAILED   = -2000017,			// 增加地市和批次失败
-		ACQERR_CHECK_OUTER_TAB_FAILED  = -2000018,			// 检查外连表失败
-	};
 
 public:
 	// 版本信息

@@ -7,11 +7,6 @@
 class TaskInfoUtil
 {
 public:
-	enum TASK_INFO_UTIL_ERROR
-	{
-		TERR_TRANS_VAL_SRC_NAME = -2003001,			// 采集值对应源字段名转换失败
-	};
-
 	static const char* const S_SRC_VAL_RECORD;				// 源表的值：记录数
 	static const char* const S_SRC_VAL_NEGATIVE_SUM;		// 源表的值：负的和
 

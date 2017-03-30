@@ -1,6 +1,7 @@
 #pragma once
 
 #include "baseframeapp.h"
+#include "anaerror.h"
 #include "anadbinfo.h"
 #include "dimvaldiffer.h"
 #include "uniformcodetransfer.h"

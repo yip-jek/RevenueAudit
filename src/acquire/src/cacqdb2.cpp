@@ -1,6 +1,7 @@
 #include "cacqdb2.h"
 #include "log.h"
 #include "pubstr.h"
+#include "acqerror.h"
 
 CAcqDB2::CAcqDB2(const std::string& db_name, const std::string& usr, const std::string& pw)
 :BaseDB2(db_name, usr, pw)
@@ -78,12 +79,12 @@ void CAcqDB2::SelectYCTaskReqCity(int seq, std::string& city) throw(base::Except
 
 		if ( 0 == counter )
 		{
-			throw base::Exception(ADBERR_SEL_YCTASKREQ_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d] NO Record! [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, __FILE__, __LINE__);
+			throw base::Exception(ACQERR_SEL_YCTASKREQ_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d] NO Record! [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, __FILE__, __LINE__);
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_YCTASKREQ_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d, REC:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, counter, ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_SEL_YCTASKREQ_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d, REC:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, counter, ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -112,7 +113,7 @@ void CAcqDB2::UpdateYCTaskReq(int seq, const std::string& state, const std::stri
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -182,12 +183,12 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 
 			if ( !info.SetDataSourceType(dat_src_type) )
 			{
-				throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) 无法识别的数据源类型: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), dat_src_type.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ACQERR_SEL_ETL_RULE, "[DB2] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) 无法识别的数据源类型: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), dat_src_type.c_str(), __FILE__, __LINE__);
 			}
 
 			if ( !info.SetConditionType(cond_type) )
 			{
-				throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) 无法识别的采集条件类型: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), cond_type.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ACQERR_SEL_ETL_RULE, "[DB2] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) 无法识别的采集条件类型: %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), cond_type.c_str(), __FILE__, __LINE__);
 			}
 
 			rs.MoveNext();
@@ -196,12 +197,12 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_SEL_ETL_RULE, "[DB2] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( 0 == counter )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! No record! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_SEL_ETL_RULE, "[DB2] Select %s failed! No record! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s, ETLRULE_ID:%s) [Record(s):%d]", m_tabEtlRule.c_str(), info.KpiID.c_str(), info.EtlRuleID.c_str(), counter);
 
@@ -216,7 +217,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 		data_src.srcTabName = vec_str[i];
 		if ( data_src.srcTabName.empty() )
 		{
-			throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] 采集数据源(ETLRULE_DATASOURCE:%s)配置不正确: 第%lu个数据源为空值! (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", data_source.c_str(), (i+1), info.EtlRuleID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ACQERR_SEL_ETL_RULE, "[DB2] 采集数据源(ETLRULE_DATASOURCE:%s)配置不正确: 第%lu个数据源为空值! (ETLRULE_ID:%s) [FILE:%s, LINE:%d]", data_source.c_str(), (i+1), info.EtlRuleID.c_str(), __FILE__, __LINE__);
 		}
 
 		info.vecEtlRuleDataSrc.push_back(data_src);
@@ -291,12 +292,12 @@ void CAcqDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB2] Select %s failed! (ETLDIM_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_SEL_ETL_DIM, "[DB2] Select %s failed! (ETLDIM_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( v_dim.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB2] Select %s failed! No record! (ETLDIM_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_SEL_ETL_DIM, "[DB2] Select %s failed! No record! (ETLDIM_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[DB2] Select %s successfully! (ETLDIM_ID:%s) [Record(s):%lu]", m_tabEtlDim.c_str(), dim_id.c_str(), v_dim.size());
 
@@ -341,12 +342,12 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB2] Select %s failed! (ETLVAL_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_SEL_ETL_VAL, "[DB2] Select %s failed! (ETLVAL_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( v_val.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB2] Select %s failed! No record! (ETLVAL_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_SEL_ETL_VAL, "[DB2] Select %s failed! No record! (ETLVAL_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[DB2] Select %s successfully! (ETLVAL_ID:%s) [Record(s):%lu]", m_tabEtlVal.c_str(), val_id.c_str(), v_val.size());
 
@@ -381,17 +382,17 @@ void CAcqDB2::SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcIn
 
 			if ( !src_info.SetEtlSrcType(stype) )
 			{
-				throw base::Exception(ADBERR_SEL_ETL_SRC, "[DB2] Select %s failed! (ETLRULE_ID:%s) 无法识别的数据源条件类型：%s [FILE:%s, LINE:%d]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), stype.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ACQERR_SEL_ETL_SRC, "[DB2] Select %s failed! (ETLRULE_ID:%s) 无法识别的数据源条件类型：%s [FILE:%s, LINE:%d]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), stype.c_str(), __FILE__, __LINE__);
 			}
 
 			if ( seq <= 0 )
 			{
-				throw base::Exception(ADBERR_SEL_ETL_SRC, "[DB2] Select %s failed! (ETLRULE_ID:%s) 无效的采集源序号：%d [FILE:%s, LINE:%d]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), seq, __FILE__, __LINE__);
+				throw base::Exception(ACQERR_SEL_ETL_SRC, "[DB2] Select %s failed! (ETLRULE_ID:%s) 无效的采集源序号：%d [FILE:%s, LINE:%d]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), seq, __FILE__, __LINE__);
 			}
 
 			if ( map_src.find(seq) != map_src.end() )
 			{
-				throw base::Exception(ADBERR_SEL_ETL_SRC, "[DB2] Select %s failed! (ETLRULE_ID:%s) 重复的采集源序号：%d [FILE:%s, LINE:%d]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), seq, __FILE__, __LINE__);
+				throw base::Exception(ACQERR_SEL_ETL_SRC, "[DB2] Select %s failed! (ETLRULE_ID:%s) 重复的采集源序号：%d [FILE:%s, LINE:%d]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), seq, __FILE__, __LINE__);
 			}
 			else
 			{
@@ -404,7 +405,7 @@ void CAcqDB2::SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcIn
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_SRC, "[DB2] Select %s failed! (ETLRULE_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_SEL_ETL_SRC, "[DB2] Select %s failed! (ETLRULE_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Select %s successfully! (ETLRULE_ID:%s) [Record(s):%lu]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), map_src.size());
@@ -453,7 +454,7 @@ void CAcqDB2::FetchEtlData(const std::string& sql, int data_size, std::vector<st
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_FETCH_ETL_DATA, "[DB2] Execute acquire sql failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_FETCH_ETL_DATA, "[DB2] Execute acquire sql failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 
 	v2_data.swap(vec2_data);
@@ -483,7 +484,7 @@ bool CAcqDB2::CheckTableExisted(const std::string& tab_name) throw(base::Excepti
 
 		if ( count < 0 )	// 没有返回结果
 		{
-			throw base::Exception(ADBERR_CHECK_SRC_TAB, "[DB2] Check table '%s' whether exist or not failed: NO result! [FILE:%s, LINE:%d]", tab_name.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ACQERR_CHECK_SRC_TAB, "[DB2] Check table '%s' whether exist or not failed: NO result! [FILE:%s, LINE:%d]", tab_name.c_str(), __FILE__, __LINE__);
 		}
 		else
 		{
@@ -492,7 +493,7 @@ bool CAcqDB2::CheckTableExisted(const std::string& tab_name) throw(base::Excepti
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_CHECK_SRC_TAB, "[DB2] Check table '%s' whether exist or not failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_CHECK_SRC_TAB, "[DB2] Check table '%s' whether exist or not failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -525,7 +526,7 @@ void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& v
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_YC_STATRULE, "[DB2] Select table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCStatRule.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_SEL_YC_STATRULE, "[DB2] Select table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCStatRule.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	v_yc_info.swap(vec_ycinfo);
@@ -559,7 +560,7 @@ void CAcqDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_UPD_TSLOG_STATE, "[DB2] Update state of task schedule log in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskScheLog.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_UPD_TSLOG_STATE, "[DB2] Update state of task schedule log in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskScheLog.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 

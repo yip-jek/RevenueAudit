@@ -118,12 +118,12 @@ void CAnaDB2::SelectYCTaskReqCity(int seq, std::string& city) throw(base::Except
 
 		if ( 0 == counter )
 		{
-			throw base::Exception(ADBERR_SEL_YC_TASK_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d] NO Record! [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, __FILE__, __LINE__);
+			throw base::Exception(ANAERR_SEL_YC_TASK_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d] NO Record! [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, __FILE__, __LINE__);
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_YC_TASK_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d, REC:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, counter, ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_YC_TASK_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d, REC:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, counter, ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -166,7 +166,7 @@ void CAnaDB2::UpdateYCTaskReq(const YCTaskReq& t_req) throw(base::Exception)
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), t_req.seq, ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), t_req.seq, ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -204,12 +204,12 @@ void CAnaDB2::SelectStatResultMaxBatch(const std::string& tab_result, YCStatBatc
 
 		if ( 0 == counter )
 		{
-			throw base::Exception(ADBERR_SEL_RS_MAX_BATCH, "[DB2] Select max batch from result table '%s' failed! NO Record! [FILE:%s, LINE:%d]", tab_result.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_SEL_RS_MAX_BATCH, "[DB2] Select max batch from result table '%s' failed! NO Record! [FILE:%s, LINE:%d]", tab_result.c_str(), __FILE__, __LINE__);
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_RS_MAX_BATCH, "[DB2] Select max batch from result table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_result.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_RS_MAX_BATCH, "[DB2] Select max batch from result table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_result.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -243,7 +243,7 @@ void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vect
 	{
 		m_pLog->Output("[DB2] Before CDBException, select sequence '%s' size: %llu", seq_name.c_str(), v_seq.size());
 
-		throw base::Exception(ADBERR_SEL_SEQUENCE, "[DB2] Select sequence '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", seq_name.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_SEQUENCE, "[DB2] Select sequence '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", seq_name.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	v_seq.swap(vec_seq);
@@ -277,12 +277,12 @@ void CAnaDB2::SelectYCSrcMaxBatch(YCSrcInfo& yc_info) throw(base::Exception)
 
 		if ( 0 == counter )
 		{
-			throw base::Exception(ADBERR_SEL_SRC_MAX_BATCH, "[DB2] Select YC source max batch from table '%s' failed! NO Record! [FILE:%s, LINE:%d]", yc_info.src_tab.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_SEL_SRC_MAX_BATCH, "[DB2] Select YC source max batch from table '%s' failed! NO Record! [FILE:%s, LINE:%d]", yc_info.src_tab.c_str(), __FILE__, __LINE__);
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_SRC_MAX_BATCH, "[DB2] Select YC source max batch from table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", yc_info.src_tab.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_SRC_MAX_BATCH, "[DB2] Select YC source max batch from table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", yc_info.src_tab.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -315,7 +315,7 @@ void CAnaDB2::InsertYCStatLog(const YCStatLog& stat_log) throw(base::Exception)
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_INS_YC_STAT_LOG, "[DB2] Insert YC stat log to table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabStatLog.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_INS_YC_STAT_LOG, "[DB2] Insert YC stat log to table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabStatLog.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -393,7 +393,7 @@ void CAnaDB2::SelectChannelUniformCode(std::vector<ChannelUniformCode>& vec_chan
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_CHANN_UNICODE, "[DB2] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDictChannel.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_CHANN_UNICODE, "[DB2] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDictChannel.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Select %s successfully! [Record: %llu]", m_tabDictChannel.c_str(), v_chann_uc.size());
@@ -433,7 +433,7 @@ void CAnaDB2::SelectCityUniformCode(std::vector<CityUniformCode>& vec_cityunicod
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_CITY_UNICODE, "[DB2] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDictCity.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_CITY_UNICODE, "[DB2] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDictCity.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Select %s successfully! [Record: %llu]", m_tabDictCity.c_str(), v_city_uc.size());
@@ -476,7 +476,7 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 
 			if ( !info.SetTableType(result_type) )
 			{
-				throw base::Exception(ADBERR_SEL_KPI_RULE, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的结果表类型: %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), result_type.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_SEL_KPI_RULE, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的结果表类型: %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), result_type.c_str(), __FILE__, __LINE__);
 			}
 
 			rs.MoveNext();
@@ -485,12 +485,12 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_KPI_RULE, "[DB2] Select %s failed! (KPI_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_KPI_RULE, "[DB2] Select %s failed! (KPI_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( 0 == counter )
 	{
-		throw base::Exception(ADBERR_SEL_KPI_RULE, "[DB2] Select %s failed! No record! (KPI_ID:%s) [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_KPI_RULE, "[DB2] Select %s failed! No record! (KPI_ID:%s) [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s) [Record:%d]", m_tabKpiRule.c_str(), info.KpiID.c_str(), counter);
 
@@ -564,17 +564,17 @@ void CAnaDB2::SelectKpiColumn(AnaTaskInfo& info) throw(base::Exception)
 
 			if ( !col.SetDisplayType(dis_type) )
 			{
-				throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的前台显示方式: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), dis_type.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的前台显示方式: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), dis_type.c_str(), __FILE__, __LINE__);
 			}
 
 			if ( !col.SetColumnType(col_type) )
 			{
-				throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的指标字段类型: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), col_type.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的指标字段类型: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), col_type.c_str(), __FILE__, __LINE__);
 			}
 
 			if ( !col.SetExpWayType(exp_way) )
 			{
-				throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的后台表示方式: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), exp_way.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的后台表示方式: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), exp_way.c_str(), __FILE__, __LINE__);
 			}
 
 			if ( KpiColumn::EWTYPE_SINGLE_LEFT == col.ExpWay )		// 左侧单独显示方式
@@ -596,7 +596,7 @@ void CAnaDB2::SelectKpiColumn(AnaTaskInfo& info) throw(base::Exception)
 					v_val.push_back(col);
 					break;
 				default:
-					throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的指标字段类型: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), col_type.c_str(), __FILE__, __LINE__);
+					throw base::Exception(ANAERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 无法识别的指标字段类型: %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), col_type.c_str(), __FILE__, __LINE__);
 				}
 			}
 
@@ -606,16 +606,16 @@ void CAnaDB2::SelectKpiColumn(AnaTaskInfo& info) throw(base::Exception)
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( v_dim.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 没有维度数据! [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 没有维度数据! [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
 	}
 	if ( v_val.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 没有值数据! [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_KPI_COL, "[DB2] Select %s failed! (KPI_ID:%s) 没有值数据! [FILE:%s, LINE:%d]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s) [ETLDIM size:%lu] [ETLVAL size:%lu] [SINGLE_LEFT size:%lu] [SINGLE_RIGHT size:%lu]", m_tabKpiColumn.c_str(), info.KpiID.c_str(), v_dim.size(), v_val.size(), v_left.size(), v_right.size());
@@ -659,7 +659,7 @@ void CAnaDB2::SelectDimValue(const std::string& kpi_id, DimValDiffer& differ) th
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_DIM_VALUE, "[DB2] Select %s failed! (KPI_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), kpi_id.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_DIM_VALUE, "[DB2] Select %s failed! (KPI_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), kpi_id.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s) [DIM_VAL size:%lu]", m_tabDimValue.c_str(), kpi_id.c_str(), differ.GetDBDimValSize());
@@ -706,7 +706,7 @@ void CAnaDB2::InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Excepti
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_INS_DIM_VALUE, "[DB2] Insert new dim_value to %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_INS_DIM_VALUE, "[DB2] Insert new dim_value to %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Insert new dim_value to [%s]: %lu", m_tabDimValue.c_str(), vec_dv.size());
@@ -716,7 +716,7 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 {
 	if ( db_info.db2_sql.empty() )
 	{
-		throw base::Exception(ADBERR_INS_RESULT_DATA, "[DB2] Insert result data failed: NO sql to be executed ! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ANAERR_INS_RESULT_DATA, "[DB2] Insert result data failed: NO sql to be executed ! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Insert result data to table: [%s]", db_info.target_table.c_str());
@@ -755,7 +755,7 @@ size_t CAnaDB2::SelectResultData(const std::string& tab_name, const std::string&
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_REPORT_DATA, "[DB2] Select report statistics data failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_REPORT_DATA, "[DB2] Select report statistics data failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Select the result data size: %llu", num_of_data);
@@ -857,7 +857,7 @@ void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<s
 {
 	if ( db_info.db2_sql.empty() )
 	{
-		throw base::Exception(ADBERR_INS_RESULT_DATA, "[DB2] Insert report statistics data failed: NO sql to be executed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ANAERR_INS_RESULT_DATA, "[DB2] Insert report statistics data failed: NO sql to be executed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
 	// 入库报表结果表
@@ -891,7 +891,7 @@ void CAnaDB2::ExecuteSQL(const std::string& exe_sql) throw(base::Exception)
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_EXECUTE_SQL, "[DB2] Execute SQL failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_EXECUTE_SQL, "[DB2] Execute SQL failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -953,7 +953,7 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select targat table %s failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ETL_RULE, "[DB2] Select targat table %s failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Select targat table [%s], data size: %llu", db_info.target_table.c_str(), v2_data.size());
@@ -1005,12 +1005,12 @@ bool CAnaDB2::SelectMaxAlarmEventID(int& max_event_id) throw(base::Exception)
 		}
 		else	// 无返回值
 		{
-			throw base::Exception(ADBERR_SEL_MAX_EVENTID, "[DB2] %s failed: NO result ! [FILE:%s, LINE:%d]", sql.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_SEL_MAX_EVENTID, "[DB2] %s failed: NO result ! [FILE:%s, LINE:%d]", sql.c_str(), __FILE__, __LINE__);
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_MAX_EVENTID, "[DB2] Select %s max event ID failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmEvent.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_MAX_EVENTID, "[DB2] Select %s max event ID failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmEvent.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -1057,7 +1057,7 @@ void CAnaDB2::InsertAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::E
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_INS_ALARMEVENT, "[DB2] Insert alarm event to %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmEvent.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_INS_ALARMEVENT, "[DB2] Insert alarm event to %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmEvent.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Insert alarm event to [%s]: %lu", m_tabAlarmEvent.c_str(), vec_event.size());
@@ -1096,12 +1096,12 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ETL_RULE, "[DB2] Select %s failed! (KPI_ID:%s, ETLRULE_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( 0 == counter )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! No record (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ETL_RULE, "[DB2] Select %s failed! No record (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 只取第一组维度
@@ -1109,11 +1109,11 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 	base::PubStr::Str2StrVector(one.DimID, "|", vec_str);
 	if ( vec_str.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! No ETLDIM_ID! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ETL_RULE, "[DB2] Select %s failed! No ETLDIM_ID! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 	else if ( vec_str[0].empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! No ETLDIM_ID! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ETL_RULE, "[DB2] Select %s failed! No ETLDIM_ID! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 	else
 	{
@@ -1124,11 +1124,11 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 	base::PubStr::Str2StrVector(one.ValID, "|", vec_str);
 	if ( vec_str.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! No ETLVAL_ID! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ETL_RULE, "[DB2] Select %s failed! No ETLVAL_ID! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 	else if ( vec_str[0].empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_RULE, "[DB2] Select %s failed! No ETLVAL_ID! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ETL_RULE, "[DB2] Select %s failed! No ETLVAL_ID! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 	else
 	{
@@ -1189,12 +1189,12 @@ void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB2] Select %s failed! (ETLDIM_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ETL_DIM, "[DB2] Select %s failed! (ETLDIM_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( v_dim.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_DIM, "[DB2] Select %s failed! No etl_dim record! (ETLDIM_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ETL_DIM, "[DB2] Select %s failed! No etl_dim record! (ETLDIM_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlDim.c_str(), dim_id.c_str(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Select %s successfully! (ETLDIM_ID:%s) [DIM size:%lu] [SINGLE_DIM size:%lu]", m_tabEtlDim.c_str(), dim_id.c_str(), v_dim.size(), v_singledim.size());
@@ -1245,12 +1245,12 @@ void CAnaDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB2] Select %s failed! (ETLVAL_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ETL_VAL, "[DB2] Select %s failed! (ETLVAL_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( v_val.empty() )
 	{
-		throw base::Exception(ADBERR_SEL_ETL_VAL, "[DB2] Select %s failed! No record (ETLVAL_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ETL_VAL, "[DB2] Select %s failed! No record (ETLVAL_ID:%s) [FILE:%s, LINE:%d]", m_tabEtlVal.c_str(), val_id.c_str(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Select %s successfully! (ETLVAL_ID:%s) [Record:%lu]", m_tabEtlVal.c_str(), val_id.c_str(), v_val.size());
@@ -1295,12 +1295,12 @@ void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
 
 			if ( !ana.SetAnalyseType(ana_type) )
 			{
-				throw base::Exception(ADBERR_SEL_ANA_RULE, "[DB2] Select %s failed! (ANALYSIS_ID:%s) 无法识别的分析规则类型: %s [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), ana.AnaID.c_str(), ana_type.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_SEL_ANA_RULE, "[DB2] Select %s failed! (ANALYSIS_ID:%s) 无法识别的分析规则类型: %s [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), ana.AnaID.c_str(), ana_type.c_str(), __FILE__, __LINE__);
 			}
 
 			//if ( !ana.SetAnalyseConditionType(cond_type) )
 			//{
-			//	throw base::Exception(ADBERR_SEL_ANA_RULE, "[DB2] Select %s failed! (ANALYSIS_ID:%s) 无法识别的分析条件类型: %s [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), ana.AnaID.c_str(), cond_type.c_str(), __FILE__, __LINE__);
+			//	throw base::Exception(ANAERR_SEL_ANA_RULE, "[DB2] Select %s failed! (ANALYSIS_ID:%s) 无法识别的分析条件类型: %s [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), ana.AnaID.c_str(), cond_type.c_str(), __FILE__, __LINE__);
 			//}
 
 			rs.MoveNext();
@@ -1309,12 +1309,12 @@ void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ANA_RULE, "[DB2] Select %s failed! (ANALYSIS_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), ana.AnaID.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ANA_RULE, "[DB2] Select %s failed! (ANALYSIS_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), ana.AnaID.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( 0 == counter )
 	{
-		throw base::Exception(ADBERR_SEL_ANA_RULE, "[DB2] Select %s failed! No record! (ANALYSIS_ID:%s) [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), ana.AnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ANA_RULE, "[DB2] Select %s failed! No record! (ANALYSIS_ID:%s) [FILE:%s, LINE:%d]", m_tabAnaRule.c_str(), ana.AnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Select %s: [ANALYSIS_ID:%s] [ANALYSIS_NAME:%s] [ANALYSIS_TYPE:%s] [ANALYSIS_EXPRESSION:%s] [Record:%d]", 
@@ -1353,7 +1353,7 @@ void CAnaDB2::SelectAlarmRule(AlarmRule& alarm) throw(base::Exception)
 
 			if ( !alarm.SetAlarmType(alarm_type) )
 			{
-				throw base::Exception(ADBERR_SEL_ALARM_RULE, "[DB2] Select %s failed! (ALARM_ID:%s) 无法识别的告警类型：%s [FILE:%s, LINE:%d]", m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), alarm_type.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_SEL_ALARM_RULE, "[DB2] Select %s failed! (ALARM_ID:%s) 无法识别的告警类型：%s [FILE:%s, LINE:%d]", m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), alarm_type.c_str(), __FILE__, __LINE__);
 			}
 
 			rs.MoveNext();
@@ -1362,12 +1362,12 @@ void CAnaDB2::SelectAlarmRule(AlarmRule& alarm) throw(base::Exception)
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_ALARM_RULE, "[DB2] Select %s failed! (ALARM_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ALARM_RULE, "[DB2] Select %s failed! (ALARM_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	if ( 0 == counter )
 	{
-		throw base::Exception(ADBERR_SEL_ALARM_RULE, "[DB2] Select %s failed! No record! (ALARM_ID:%s) [FILE:%s, LINE:%d]", m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_ALARM_RULE, "[DB2] Select %s failed! No record! (ALARM_ID:%s) [FILE:%s, LINE:%d]", m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[DB2] Select %s: [ALARM_ID:%s] [ALARM_NAME:%s] [ALARM_TYPE:%s] [Record:%d]", 
@@ -1409,7 +1409,7 @@ void CAnaDB2::SelectCompareResultDesc(const std::string& kpi_id, const std::stri
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_COM_RES_DESC, "[DB2] Select compare result description from %s failed! (KPI_ID:%s, DIM_NAME:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), kpi_id.c_str(), comp_res_name.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_COM_RES_DESC, "[DB2] Select compare result description from %s failed! (KPI_ID:%s, DIM_NAME:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabDimValue.c_str(), kpi_id.c_str(), comp_res_name.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -1418,7 +1418,6 @@ void CAnaDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCStatInfo
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string st_pri;				// 优先级别
 	YCStatInfo yc_si;
 	std::vector<YCStatInfo> v_yc_si;
 
@@ -1435,16 +1434,10 @@ void CAnaDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCStatInfo
 		{
 			int index = 1;
 
-			yc_si.stat_id    = (const char*)rs[index++];
-			yc_si.stat_name  = (const char*)rs[index++];
-			yc_si.statdim_id = (const char*)rs[index++];
-
-			st_pri = (const char*)rs[index++];
-			if ( !yc_si.SetStatPriority(st_pri) )
-			{
-				throw base::Exception(ADBERR_SEL_YC_STATRULE, "[DB2] Select table '%s' failed! (KPI_ID:%s) 无法识别的优先级别：%s [FILE:%s, LINE:%d]", m_tabYCStatRule.c_str(), kpi_id.c_str(), st_pri.c_str(), __FILE__, __LINE__);
-			}
-
+			yc_si.stat_id       = (const char*)rs[index++];
+			yc_si.stat_name     = (const char*)rs[index++];
+			yc_si.statdim_id    = (const char*)rs[index++];
+			yc_si.stat_priority = (const char*)rs[index++];
 			yc_si.stat_sql    = (const char*)rs[index++];
 			yc_si.stat_report = (const char*)rs[index++];
 
@@ -1456,7 +1449,7 @@ void CAnaDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCStatInfo
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_SEL_YC_STATRULE, "[DB2] Select table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCStatRule.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_YC_STATRULE, "[DB2] Select table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCStatRule.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
 	v_yc_si.swap(vec_ycsi);
@@ -1501,7 +1494,7 @@ void CAnaDB2::AlterEmptyTable(const std::string& tab_name) throw(base::Exception
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_ALTER_EMPTY_TAB, "[DB2] Alter table [%s] to empty table failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALTER_EMPTY_TAB, "[DB2] Alter table [%s] to empty table failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -1526,7 +1519,7 @@ void CAnaDB2::DeleteFromTable(const std::string& tab_name, const std::string& co
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_DEL_FROM_TAB, "[DB2] Delete result data from [%s] failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_DEL_FROM_TAB, "[DB2] Delete result data from [%s] failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_name.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -1575,7 +1568,7 @@ void CAnaDB2::ResultDataInsert(const std::string& db_sql, std::vector<std::vecto
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_INS_RESULT_DATA, "[DB2] Insert result-data failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_INS_RESULT_DATA, "[DB2] Insert result-data failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -1606,7 +1599,7 @@ void CAnaDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ADBERR_UPD_TSLOG_STATE, "[DB2] Update state of task schedule log in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskScheLog.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_UPD_TSLOG_STATE, "[DB2] Update state of task schedule log in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskScheLog.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 

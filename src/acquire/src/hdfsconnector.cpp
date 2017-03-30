@@ -1,5 +1,6 @@
 #include "hdfsconnector.h"
 #include "log.h"
+#include "acqerror.h"
 
 HdfsConnector::HdfsConnector(const std::string& host, int port)
 :m_pLogger(base::Log::Instance())
@@ -18,13 +19,13 @@ void HdfsConnector::ToConnect() throw(base::Exception)
 {
 	if ( m_hdfsFS != NULL )
 	{
-		throw base::Exception(HCERR_CONNECT_FAILED, "[HDFS] 重复连接：已经连接！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ACQERR_HDFS_CONNECT_FAILED, "[HDFS] 重复连接：已经连接！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
 	m_hdfsFS = hdfsConnect(m_sHost.c_str(), m_nPort);
 	if ( NULL == m_hdfsFS )
 	{
-		throw base::Exception(HCERR_CONNECT_FAILED, "[HDFS] Connect <%s:%d> failed! [FILE:%s, LINE:%d]", m_sHost.c_str(), m_nPort, __FILE__, __LINE__);
+		throw base::Exception(ACQERR_HDFS_CONNECT_FAILED, "[HDFS] Connect <%s:%d> failed! [FILE:%s, LINE:%d]", m_sHost.c_str(), m_nPort, __FILE__, __LINE__);
 	}
 
 	m_pLogger->Output("[HDFS] Connect <%s:%d> OK.", m_sHost.c_str(), m_nPort);

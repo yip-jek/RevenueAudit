@@ -2,7 +2,7 @@
 
 #include <map>
 #include "analyse.h"
-#include "ycinfo.h"
+#include "ycstatfactor.h"
 
 // 业财稽核-分析模块
 class Analyse_YC : public Analyse

@@ -14,17 +14,17 @@
 //{
 //	if ( size_dim <= 0 )
 //	{
-//		throw base::Exception(CRERR_SET_COMPARE_DATA, "Invalid dim size: %d [FILE:%s, LINE:%d]", size_dim, __FILE__, __LINE__);
+//		throw base::Exception(ANAERR_SET_COMPARE_DATA, "Invalid dim size: %d [FILE:%s, LINE:%d]", size_dim, __FILE__, __LINE__);
 //	}
 //
 //	if ( size_val <= 0 )
 //	{
-//		throw base::Exception(CRERR_SET_COMPARE_DATA, "Invalid val size: %d [FILE:%s, LINE:%d]", size_val, __FILE__, __LINE__);
+//		throw base::Exception(ANAERR_SET_COMPARE_DATA, "Invalid val size: %d [FILE:%s, LINE:%d]", size_val, __FILE__, __LINE__);
 //	}
 //
 //	if ( size_singledim < 0 )
 //	{
-//		throw base::Exception(CRERR_SET_COMPARE_DATA, "Invalid single dim size: %d [FILE:%s, LINE:%d]", size_singledim, __FILE__, __LINE__);
+//		throw base::Exception(ANAERR_SET_COMPARE_DATA, "Invalid single dim size: %d [FILE:%s, LINE:%d]", size_singledim, __FILE__, __LINE__);
 //	}
 //
 //	m_vComData.push_back(CompareData());
@@ -45,7 +45,7 @@
 //		const int REF_VSIZE = ref_vec.size();
 //		if ( REF_VSIZE < TOTAL_SIZE )
 //		{
-//			throw base::Exception(CRERR_SET_COMPARE_DATA, "[Index:%llu] Compare data size [%d] less than the total size [%d]! (The total size is the sum of dim_size [%d] and val_size [%d] and single_dim_size [%d]) [FILE:%s, LINE:%d]", (i+1), REF_VSIZE, TOTAL_SIZE, size_dim, size_val, size_singledim, __FILE__, __LINE__);
+//			throw base::Exception(ANAERR_SET_COMPARE_DATA, "[Index:%llu] Compare data size [%d] less than the total size [%d]! (The total size is the sum of dim_size [%d] and val_size [%d] and single_dim_size [%d]) [FILE:%s, LINE:%d]", (i+1), REF_VSIZE, TOTAL_SIZE, size_dim, size_val, size_singledim, __FILE__, __LINE__);
 //		}
 //
 //		str_key.clear();
@@ -68,17 +68,17 @@
 //{
 //	if ( !left_index.IsValid(m_vComData) )
 //	{
-//		throw base::Exception(CRERR_GET_COMPARE_RESULT, "The left index (%d) is invalid in compare-data vector ! [FILE:%s, LINE:%d]", left_index.m_dataIndex, __FILE__, __LINE__);
+//		throw base::Exception(ANAERR_GET_COMPARE_RESULT, "The left index (%d) is invalid in compare-data vector ! [FILE:%s, LINE:%d]", left_index.m_dataIndex, __FILE__, __LINE__);
 //	}
 //
 //	if ( !right_index.IsValid(m_vComData) )
 //	{
-//		throw base::Exception(CRERR_GET_COMPARE_RESULT, "The right index (%d) is invalid in compare-data vector ! [FILE:%s, LINE:%d]", right_index.m_dataIndex, __FILE__, __LINE__);
+//		throw base::Exception(ANAERR_GET_COMPARE_RESULT, "The right index (%d) is invalid in compare-data vector ! [FILE:%s, LINE:%d]", right_index.m_dataIndex, __FILE__, __LINE__);
 //	}
 //
 //	if ( left_index == right_index )
 //	{
-//		throw base::Exception(CRERR_GET_COMPARE_RESULT, "The right index (%d) is a duplicate of the left index (%d) ! [FILE:%s, LINE:%d]", right_index.m_dataIndex, left_index.m_dataIndex, __FILE__, __LINE__);
+//		throw base::Exception(ANAERR_GET_COMPARE_RESULT, "The right index (%d) is a duplicate of the left index (%d) ! [FILE:%s, LINE:%d]", right_index.m_dataIndex, left_index.m_dataIndex, __FILE__, __LINE__);
 //	}
 //
 //	CompareData* p_left_comdata  = left_index.At(m_vComData);
@@ -87,10 +87,10 @@
 //	switch ( com_type )
 //	{
 //	case CTYPE_EQUAL:
-//		throw base::Exception(CRERR_GET_COMPARE_RESULT, "NOT support equal compare type ! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+//		throw base::Exception(ANAERR_GET_COMPARE_RESULT, "NOT support equal compare type ! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 //		break;
 //	case CTYPE_DIFF:
-//		throw base::Exception(CRERR_GET_COMPARE_RESULT, "NOT support differ compare type ! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+//		throw base::Exception(ANAERR_GET_COMPARE_RESULT, "NOT support differ compare type ! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 //		break;
 //	case CTYPE_LEFT:
 //		LeftNotInRight(p_left_comdata, p_right_comdata, false, result_desc, vec2_result);
@@ -99,7 +99,7 @@
 //		LeftNotInRight(p_right_comdata, p_left_comdata, true, result_desc, vec2_result);
 //		break;
 //	default:
-//		throw base::Exception(CRERR_GET_COMPARE_RESULT, "Unknown compare type: %d ! [FILE:%s, LINE:%d]", com_type, __FILE__, __LINE__);
+//		throw base::Exception(ANAERR_GET_COMPARE_RESULT, "Unknown compare type: %d ! [FILE:%s, LINE:%d]", com_type, __FILE__, __LINE__);
 //	}
 //}
 //

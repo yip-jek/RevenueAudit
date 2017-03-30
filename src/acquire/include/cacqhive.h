@@ -10,15 +10,6 @@ public:
 	virtual ~CAcqHive();
 
 public:
-	// 错误码（枚举）
-	enum HT_ERROR
-	{
-		HTERR_REBUILD_TABLE_FAILED     = -2001001,			// 重建Hive表失败
-		HTERR_EXECUTE_ACQSQL_FAILED    = -2001002,			// 执行采集SQL失败
-		HTERR_CHECK_TAB_EXISTED_FAILED = -2001003,			// 检查表是否存在失败
-	};
-
-public:
 	// 重建表数据
 	void RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field, const std::string& tab_location) throw(base::Exception);
 

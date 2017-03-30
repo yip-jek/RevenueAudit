@@ -17,12 +17,6 @@ public:
 	virtual ~HdfsConnector();
 
 public:
-	enum HDFS_CONN_ERROR
-	{
-		HCERR_CONNECT_FAILED	= -2004001,		// 连接失败
-	};
-
-public:
 	virtual void ToConnect() throw(base::Exception);
 	virtual void ToDisconnect();
 

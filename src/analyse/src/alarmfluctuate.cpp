@@ -27,7 +27,7 @@ void AlarmFluctuate::AnalyseExpression() throw(base::Exception)
 	base::PubStr::Str2StrVector(ALARM_EXP, "|", vec_str);
 	if ( vec_str.size() != 2 )
 	{
-		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_ANALYSIS_EXP, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	AnalyseColumns(vec_str[0]);
@@ -103,7 +103,7 @@ void AlarmFluctuate::AnalyseColumns(const std::string& exp_columns) throw(base::
 	const int VEC_SIZE = vec_str.size();
 	if ( VEC_SIZE <= 0 )
 	{
-		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 告警表达式没有指定列！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_ANALYSIS_EXP, "[ALARM] 告警表达式没有指定列！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	for ( int i = 0; i < VEC_SIZE; ++i )
@@ -118,7 +118,7 @@ void AlarmFluctuate::AnalyseFluctExp(const std::string& exp_fluct) throw(base::E
 	base::PubStr::Str2StrVector(exp_fluct, ">", vec_str);
 	if ( vec_str.size() != 2 )
 	{
-		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_fluct.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_ANALYSIS_EXP, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_fluct.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 先尝试特殊时间格式转换
@@ -128,14 +128,14 @@ void AlarmFluctuate::AnalyseFluctExp(const std::string& exp_fluct) throw(base::E
 		base::PubTime::DATE_TYPE d_type;
 		if ( !base::PubTime::DateApartFromNow(vec_str[0], d_type, m_strAlarmDate) )
 		{
-			throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_fluct.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_ALARM_ANALYSIS_EXP, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_fluct.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 		}
 	}
 
 	std::string& ref_str = vec_str[1];
 	if ( ref_str.empty() )
 	{
-		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_fluct.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_ANALYSIS_EXP, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_fluct.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 处理等于号
@@ -144,7 +144,7 @@ void AlarmFluctuate::AnalyseFluctExp(const std::string& exp_fluct) throw(base::E
 	m_expAlarmThreshold = base::PubStr::TrimB(ref_str);
 	if ( !base::PubStr::StrTrans2Double(m_expAlarmThreshold, m_alarmThreshold) )
 	{
-		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_fluct.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_ANALYSIS_EXP, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_fluct.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 	// 限定告警阈值的最小值（零值）
 	if ( m_alarmThreshold < 1e-6 )
@@ -161,7 +161,7 @@ void AlarmFluctuate::AnalyseFluctExp(const std::string& exp_fluct) throw(base::E
 	}
 	else if ( !m_pDBInfo->IsEtlDayValid() )		// 普通表且没有时间字段
 	{
-		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 目标表的时间字段缺失，无法进行波动告警！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_ANALYSIS_EXP, "[ALARM] 目标表的时间字段缺失，无法进行波动告警！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 }
 
@@ -182,23 +182,23 @@ void AlarmFluctuate::AlarmCalculation(const std::string& key, std::vector<std::s
 		const int& index = *s_it;
 		if ( index >= TARGET_SIZE )
 		{
-			throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 目标数据不存在的列：%d (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", (index+1), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_ALARM_CALC, "[ALARM] 目标数据不存在的列：%d (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", (index+1), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 		}
 		if ( index >= SRC_SIZE )
 		{
-			throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 源数据不存在的列：%d (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", (index+1), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_ALARM_CALC, "[ALARM] 源数据不存在的列：%d (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", (index+1), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 		}
 
 		std::string& ref_target = vec_target[index];
 		if ( !base::PubStr::Str2Double(ref_target, dou_target) )
 		{
-			throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 目标数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_target.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_ALARM_CALC, "[ALARM] 目标数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_target.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 		}
 
 		std::string& ref_src = vec_src[index];
 		if ( !base::PubStr::Str2Double(ref_src, dou_src) )
 		{
-			throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 源数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_src.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_ALARM_CALC, "[ALARM] 源数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_src.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 		}
 
 		// 是否达到告警阈值？
@@ -234,7 +234,7 @@ bool AlarmFluctuate::DealWithEqual(std::string& exp) throw(base::Exception)
 
 	if ( exp.empty() )
 	{
-		throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 无法识别的告警表达式：没有配置阈值！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_CALC, "[ALARM] 无法识别的告警表达式：没有配置阈值！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( '=' == exp[0] )	// 包含等号

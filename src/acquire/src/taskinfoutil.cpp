@@ -1,5 +1,6 @@
 #include "taskinfoutil.h"
 #include "pubstr.h"
+#include "acqerror.h"
 
 const char* const TaskInfoUtil::S_SRC_VAL_RECORD       = "<RECORD>";		// 源表的值：记录数
 const char* const TaskInfoUtil::S_SRC_VAL_NEGATIVE_SUM = "NEGATIVE_SUM";	// 源表的值：负的和
@@ -229,7 +230,7 @@ std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& 
 		//	{
 		//		if ( vec_memo.size() != 2 )
 		//		{
-		//			throw base::Exception(TERR_TRANS_VAL_SRC_NAME, "格式不正确！无法识别的备注类型：%s [FILE:%s, LINE:%d]", memo.c_str(), __FILE__, __LINE__);
+		//			throw base::Exception(ACQERR_TRANS_VAL_SRC_NAME, "格式不正确！无法识别的备注类型：%s [FILE:%s, LINE:%d]", memo.c_str(), __FILE__, __LINE__);
 		//		}
 
 		//		std::string& ref_oper = vec_memo[1];
@@ -240,7 +241,7 @@ std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& 
 
 		//			if ( vec_src.size() != 2 )
 		//			{
-		//				throw base::Exception(TERR_TRANS_VAL_SRC_NAME, "源字段个数不匹配！无法识别的值对应源字段名称：%s [FILE:%s, LINE:%d]", val_src.c_str(), __FILE__, __LINE__);
+		//				throw base::Exception(ACQERR_TRANS_VAL_SRC_NAME, "源字段个数不匹配！无法识别的值对应源字段名称：%s [FILE:%s, LINE:%d]", val_src.c_str(), __FILE__, __LINE__);
 		//			}
 
 		//			val_src = "sum(" + vec_src[0] + ref_oper + vec_src[1] + ")";
@@ -248,7 +249,7 @@ std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& 
 		//		}
 		//		else
 		//		{
-		//			throw base::Exception(TERR_TRANS_VAL_SRC_NAME, "不支持的运算符！无法识别的备注类型：%s [FILE:%s, LINE:%d]", memo.c_str(), __FILE__, __LINE__);
+		//			throw base::Exception(ACQERR_TRANS_VAL_SRC_NAME, "不支持的运算符！无法识别的备注类型：%s [FILE:%s, LINE:%d]", memo.c_str(), __FILE__, __LINE__);
 		//		}
 		//	}
 		//}

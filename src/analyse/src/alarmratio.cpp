@@ -27,7 +27,7 @@ void AlarmRatio::AnalyseExpression() throw(base::Exception)
 	base::PubStr::Str2StrVector(ALARM_EXP, "|", vec_str);
 	if ( vec_str.size() != 2 )
 	{
-		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_ANALYSIS_EXP, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ALARM_EXP.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	AnalyseColumns(vec_str[0]);
@@ -41,7 +41,7 @@ void AlarmRatio::AnalyseTargetData(std::vector<std::vector<std::string> >& vec2_
 
 	if ( m_setValCol.size() != 2 )
 	{
-		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 告警规则所指定的列数不正确：%lu (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_setValCol.size(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_ANALYSIS_EXP, "[ALARM] 告警规则所指定的列数不正确：%lu (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_setValCol.size(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	std::string key;
@@ -86,7 +86,7 @@ void AlarmRatio::AnalyseColumns(const std::string& exp_columns) throw(base::Exce
 	// 只支持两组数据的对比
 	if ( vec_str.size() != 2 )
 	{
-		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警规则表达式所指定的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_columns.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_ANALYSIS_EXP, "[ALARM] 无法识别的告警规则表达式所指定的列：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp_columns.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	CollectValueColumn(vec_str[0]);
@@ -98,7 +98,7 @@ void AlarmRatio::AnalyseRatioExp(const std::string& exp_ratio) throw(base::Excep
 	std::string exp = base::PubStr::TrimB(exp_ratio);
 	if ( exp.empty() )
 	{
-		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警表达式：没有配置阈值！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_ANALYSIS_EXP, "[ALARM] 无法识别的告警表达式：没有配置阈值！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 是否包含等号 ('=')
@@ -112,7 +112,7 @@ void AlarmRatio::AnalyseRatioExp(const std::string& exp_ratio) throw(base::Excep
 	m_expAlarmThreshold = base::PubStr::TrimB(exp);
 	if ( !base::PubStr::StrTrans2Double(m_expAlarmThreshold, m_alarmThreshold) )
 	{
-		throw base::Exception(AE_ANALYSIS_EXP_FAILED, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_ANALYSIS_EXP, "[ALARM] 无法识别的告警规则表达式：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", exp.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 	// 限定告警阈值的最小值（零值）
 	if ( m_alarmThreshold < 1e-6 )
@@ -136,14 +136,14 @@ void AlarmRatio::AlarmCalculation(const std::string& key, std::vector<std::strin
 	std::string& ref_target = vec_str[TARGET_INDEX];
 	if ( !base::PubStr::Str2Double(ref_target, dou_target) )
 	{
-		throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 目标数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_target.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_CALC, "[ALARM] 目标数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_target.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	const int SRC_INDEX  = *m_setValCol.rbegin();
 	std::string& ref_src = vec_str[SRC_INDEX];
 	if ( !base::PubStr::Str2Double(ref_src, dou_src) )
 	{
-		throw base::Exception(AE_ALARM_CALC_FAILED, "[ALARM] 源数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_src.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_ALARM_CALC, "[ALARM] 源数据非精度类型：%s (KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", ref_src.c_str(), m_pTaskInfo->KpiID.c_str(), m_pAlarmRule->AlarmID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 是否达到告警阈值？
