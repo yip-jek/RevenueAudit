@@ -138,25 +138,18 @@ void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 	m_pLog->Output("[Analyse_YC] Get task request city: [%s]", m_taskCity.c_str());
 
 	m_pLog->Output("[Analyse_YC] 获取业财稽核因子规则信息 ...");
-	m_pAnaDB2->SelectYCStatRule(m_sKpiID, m_vecYCSInfo);
+	std::vector<YCStatInfo> vec_ycsinfo;
+	m_pAnaDB2->SelectYCStatRule(m_sKpiID, vec_ycsinfo);
+	m_statFactor.LoadStatInfo(vec_ycsinfo);
 }
 
 void Analyse_YC::AnalyseSourceData() throw(base::Exception)
 {
 	//Analyse::AnalyseSourceData();
 
-	// 业财稽核统计
-	if ( m_vecYCSInfo.empty() )
-	{
-		throw base::Exception(ANAERR_ANA_YCRA_DATA_FAILED, "没有业财稽核因子规则信息! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-	}
-
 	GenerateNewBatch();
-
-	std::map<std::string, double> map_src;
-	TransYCStatFactor(map_src);
-
-	GenerateYCResultData(map_src);
+	ConvertStatFactor();
+	GenerateResultData();
 
 	// 生成了业财稽核的统计数据，再进行数据补全
 	DataSupplement();
@@ -166,8 +159,8 @@ void Analyse_YC::GenerateNewBatch()
 {
 	// 查询统计结果表已存在的最新批次
 	YCStatBatch st_batch;
-	st_batch.stat_report = m_vecYCSInfo[0].stat_report;
-	st_batch.stat_id     = m_vecYCSInfo[0].stat_id;
+	st_batch.stat_report = m_statFactor.GetStatReport();
+	st_batch.stat_id     = m_statFactor.GetStatID();
 	st_batch.stat_date   = m_dbinfo.GetEtlDay();
 	st_batch.stat_city   = m_taskCity;
 	st_batch.stat_batch  = 0;
@@ -179,219 +172,31 @@ void Analyse_YC::GenerateNewBatch()
 	m_pLog->Output("[Analyse_YC] 因此，当前统计结果的批次为: %d", m_statBatch);
 }
 
-void Analyse_YC::TransYCStatFactor(std::map<std::string, double>& map_factor) throw(base::Exception)
+void Analyse_YC::ConvertStatFactor() throw(base::Exception)
 {
-	double yc_val = 0.0;
-	std::string yc_dim;
-	std::map<std::string, double> map_f;
+	int conv_size = m_statFactor.LoadDimFactor(m_v3HiveSrcData);
+	m_pLog->Output("[Analyse_YC] 统计因子转换大小：%d", conv_size);
 
-	const int VEC3_SIZE = m_v3HiveSrcData.size();
-	for ( int i = 0; i < VEC3_SIZE; ++i )
+	if ( conv_size < 1 )
 	{
-		std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
-
-		const int VEC2_SIZE = ref_vec2.size();
-		for ( int j = 0; j < VEC2_SIZE; ++j )
-		{
-			std::vector<std::string>& ref_vec = ref_vec2[j];
-
-			// 因子重复！
-			yc_dim = base::PubStr::TrimUpperB(ref_vec[0]);
-			if ( map_f.find(yc_dim) != map_f.end() )
-			{
-				throw base::Exception(ANAERR_TRANS_YCFACTOR_FAILED, "重复的业财稽核维度因子: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", yc_dim.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-			}
-
-			// 维度值无法转换为精度型
-			if ( !base::PubStr::Str2Double(ref_vec[1], yc_val) )
-			{
-				throw base::Exception(ANAERR_TRANS_YCFACTOR_FAILED, "无效的业财稽核统计维度值: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_vec[1].c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-			}
-
-			map_f[yc_dim] = yc_val;
-		}
+		throw base::Exception(ANAERR_TRANS_YCFACTOR_FAILED, "缺少业财稽核统计源数据! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
-
-	if ( map_f.empty() )
-	{
-		throw base::Exception(ANAERR_TRANS_YCFACTOR_FAILED, "没有业财稽核统计源数据! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-	}
-
-	map_f.swap(map_factor);
-	m_pLog->Output("[Analyse_YC] 统计因子转换大小：%lu", map_factor.size());
 
 	// 释放Hive源数据
 	std::vector<std::vector<std::vector<std::string> > >().swap(m_v3HiveSrcData);
 }
 
-void Analyse_YC::GenerateYCResultData(std::map<std::string, double>& map_factor) throw(base::Exception)
+void Analyse_YC::GenerateResultData() throw(base::Exception)
 {
-	// 统计结果增加地市与批次
-	YCStatResult yc_sr;
-	yc_sr.stat_city  = m_taskCity;
-	yc_sr.stat_batch = m_statBatch;
-
-	std::vector<std::string> v_dat;
 	std::vector<std::vector<std::string> > vec_yc_data;
-	std::map<std::string, double>::iterator m_it;
-
-	// 生成一般因子与组合因子的结果数据
-	const int VEC_YCSI_SIZE = m_vecYCSInfo.size();
-	for ( int i = 0; i < VEC_YCSI_SIZE; ++i )
+	m_statFactor.GenerateResult(m_statBatch, m_taskCity, vec_yc_data);
+	if ( vec_yc_data.empty() )
 	{
-		YCStatInfo& ref_ycsi = m_vecYCSInfo[i];
-		base::PubStr::TrimUpper(ref_ycsi.statdim_id);
-
-		if ( YCStatInfo::SP_Level_0 == ref_ycsi.stat_pri )
-		{
-			m_pLog->Output("[Analyse_YC] [STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%d] 正在生成统计因子结果数据...", ref_ycsi.stat_id.c_str(), ref_ycsi.statdim_id.c_str(), ref_ycsi.stat_pri);
-			m_pLog->Output("[Analyse_YC] 统计因子类型：一般因子");
-
-			yc_sr.stat_report = ref_ycsi.stat_report;
-			yc_sr.stat_id     = ref_ycsi.stat_id;
-			yc_sr.stat_name   = ref_ycsi.stat_name;
-			yc_sr.statdim_id  = ref_ycsi.statdim_id;
-
-			if ( (m_it = map_factor.find(ref_ycsi.statdim_id)) != map_factor.end() )
-			{
-				yc_sr.stat_value = m_it->second;
-			}
-			else
-			{
-				throw base::Exception(ANAERR_GENERATE_YCDATA_FAILED, "不存在的业财稽核统计维度ID: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_ycsi.statdim_id.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-			}
-
-			yc_sr.Trans2Vector(v_dat);
-			base::PubStr::VVectorSwapPushBack(vec_yc_data, v_dat);
-		}
-		else if ( YCStatInfo::SP_Level_1 == ref_ycsi.stat_pri )
-		{
-			m_pLog->Output("[Analyse_YC] [STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%d] 正在生成统计因子结果数据...", ref_ycsi.stat_id.c_str(), ref_ycsi.statdim_id.c_str(), ref_ycsi.stat_pri);
-			m_pLog->Output("[Analyse_YC] 统计因子类型：组合因子");
-
-			yc_sr.stat_report = ref_ycsi.stat_report;
-			yc_sr.stat_id     = ref_ycsi.stat_id;
-			yc_sr.stat_name   = ref_ycsi.stat_name;
-			yc_sr.statdim_id  = ref_ycsi.statdim_id;
-			yc_sr.stat_value  = CalcYCComplexFactor(map_factor, ref_ycsi.stat_sql);
-
-			// 登记组合因子结果
-			map_factor[yc_sr.statdim_id] = yc_sr.stat_value;
-
-			yc_sr.Trans2Vector(v_dat);
-			base::PubStr::VVectorSwapPushBack(vec_yc_data, v_dat);
-		}
-		else if ( YCStatInfo::SP_Level_2 == ref_ycsi.stat_pri )
-		{
-			// 汇总因子，后续再进行统计
-			continue;
-		}
-		else
-		{
-			throw base::Exception(ANAERR_GENERATE_YCDATA_FAILED, "未知的统计因子优先级别！(KPI_ID:%s, ANA_ID:%s, STATDIM_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), ref_ycsi.statdim_id.c_str(), __FILE__, __LINE__);
-		}
-	}
-
-	// 生成汇总因子的结果数据
-	for ( int i = 0; i < VEC_YCSI_SIZE; ++i )
-	{
-		YCStatInfo& ref_ycsi = m_vecYCSInfo[i];
-		if ( YCStatInfo::SP_Level_2 == ref_ycsi.stat_pri )
-		{
-			m_pLog->Output("[Analyse_YC] [STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%d] 正在生成汇总因子结果数据...", ref_ycsi.stat_id.c_str(), ref_ycsi.statdim_id.c_str(), ref_ycsi.stat_pri);
-			m_pLog->Output("[Analyse_YC] 统计因子类型：汇总因子");
-
-			yc_sr.stat_report = ref_ycsi.stat_report;
-			yc_sr.stat_id     = ref_ycsi.stat_id;
-			yc_sr.stat_name   = ref_ycsi.stat_name;
-			yc_sr.statdim_id  = ref_ycsi.statdim_id;
-			yc_sr.stat_value  = CalcYCComplexFactor(map_factor, ref_ycsi.stat_sql);
-
-			yc_sr.Trans2Vector(v_dat);
-			base::PubStr::VVectorSwapPushBack(vec_yc_data, v_dat);
-		}
+		throw base::Exception(ANAERR_GENERATE_YCDATA_FAILED, "生成结果数据失败！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	// 插入业财稽核结果数据
 	base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec_yc_data);
-}
-
-double Analyse_YC::CalcYCComplexFactor(std::map<std::string, double>& map_factor, const std::string& cmplx_factr_fmt) throw(base::Exception)
-{
-	m_pLog->Output("[Analyse_YC] 组合因子表达式：%s", cmplx_factr_fmt.c_str());
-
-	// 组合因子格式：[ A1, A2, A3, ...|+, -, ... ]
-	std::vector<std::string> vec_cf_1;
-	base::PubStr::Str2StrVector(cmplx_factr_fmt, "|", vec_cf_1);
-	if ( vec_cf_1.size() != 2 )
-	{
-		throw base::Exception(ANAERR_CAL_YCCMPLX_FAILED, "无法识别的组合因子表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", cmplx_factr_fmt.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-	}
-
-	std::string yc_dims = base::PubStr::TrimUpperB(vec_cf_1[0]);
-	std::string yc_oper = base::PubStr::TrimUpperB(vec_cf_1[1]);
-
-	std::vector<std::string> vec_cf_2;
-	base::PubStr::Str2StrVector(yc_dims, ",", vec_cf_1);
-	base::PubStr::Str2StrVector(yc_oper, ",", vec_cf_2);
-
-	// 至少两个统计维度；且运算符个数比维度少一个
-	const int VEC_CF_SIZE = vec_cf_1.size();
-	if ( VEC_CF_SIZE < 2 || (size_t)VEC_CF_SIZE != (vec_cf_2.size() + 1) )
-	{
-		throw base::Exception(ANAERR_CAL_YCCMPLX_FAILED, "不匹配的组合因子表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", cmplx_factr_fmt.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-	}
-
-	// 计算结果
-	std::map<std::string, double>::iterator m_it;
-	double cmplx_factr_result = 0.0;
-	for ( int i = 1; i < VEC_CF_SIZE; ++i )
-	{
-		if ( 1 == i )	// 首次
-		{
-			std::string& ref_dim_0 = vec_cf_1[0];
-			if ( (m_it = map_factor.find(ref_dim_0)) != map_factor.end() )
-			{
-				cmplx_factr_result += m_it->second;
-			}
-			else
-			{
-				throw base::Exception(ANAERR_CAL_YCCMPLX_FAILED, "不存在的业财稽核统计维度ID: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_dim_0.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-			}
-		}
-
-		std::string& ref_dim = vec_cf_1[i];
-		if ( (m_it = map_factor.find(ref_dim)) != map_factor.end() )
-		{
-			std::string& ref_oper = vec_cf_2[i-1];
-			if ( "+" == ref_oper )
-			{
-				cmplx_factr_result += m_it->second;
-			}
-			else if ( "-" == ref_oper )
-			{
-				cmplx_factr_result -= m_it->second;
-			}
-			else if ( "*" == ref_oper )
-			{
-				cmplx_factr_result *= m_it->second;
-			}
-			else if ( "/" == ref_oper )
-			{
-				cmplx_factr_result /= m_it->second;
-			}
-			else
-			{
-				throw base::Exception(ANAERR_CAL_YCCMPLX_FAILED, "无法识别的组合因子运算符: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_oper.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-			}
-		}
-		else
-		{
-			throw base::Exception(ANAERR_CAL_YCCMPLX_FAILED, "不存在的业财稽核统计维度ID: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_dim.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-		}
-	}
-
-	return cmplx_factr_result;
 }
 
 void Analyse_YC::StoreResult() throw(base::Exception)
@@ -416,7 +221,7 @@ void Analyse_YC::StoreResult() throw(base::Exception)
 void Analyse_YC::RecordStatisticsLog()
 {
 	YCStatLog yc_log;
-	yc_log.stat_report     = m_vecYCSInfo[0].stat_report;
+	yc_log.stat_report     = m_statFactor.GetStatReport();
 	yc_log.stat_batch      = m_statBatch;
 	yc_log.stat_city       = m_taskCity;
 	yc_log.stat_cycle      = m_dbinfo.GetEtlDay();

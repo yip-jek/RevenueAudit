@@ -5,6 +5,7 @@
 #include <set>
 #include <map>
 #include "exception.h"
+#include "anaerror.h"
 
 namespace base
 {

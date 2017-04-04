@@ -41,13 +41,10 @@ protected:
 	void GenerateNewBatch();
 
 	// 统计因子转换
-	void TransYCStatFactor(std::map<std::string, double>& map_factor) throw(base::Exception);
+	void ConvertStatFactor() throw(base::Exception);
 
 	// 生成业财稽核结果数据
-	void GenerateYCResultData(std::map<std::string, double>& map_factor) throw(base::Exception);
-
-	// 计算组合因子的维度值
-	double CalcYCComplexFactor(std::map<std::string, double>& map_factor, const std::string& cmplx_factr_fmt) throw(base::Exception);
+	void GenerateResultData() throw(base::Exception);
 
 	// 结果数据入库 [DB2]
 	virtual void StoreResult() throw(base::Exception);
@@ -65,17 +62,17 @@ protected:
 	virtual void UpdateDimValue();
 
 protected:
-	std::string             m_tabYCTaskReq;			// （业财）任务请求表
-	std::string             m_tabStatRule;			// （业财）统计因子规则表
-	std::string             m_tabStatLog;			// （业财）稽核记录日志表
-	std::string             m_fieldPeriod;			// 账期字段名
-	std::string             m_fieldCity;			// 地市字段名
-	std::string             m_fieldBatch;			// 批次字段名
+	std::string  m_tabYCTaskReq;			// （业财）任务请求表
+	std::string  m_tabStatRule;				// （业财）统计因子规则表
+	std::string  m_tabStatLog;				// （业财）稽核记录日志表
+	std::string  m_fieldPeriod;				// 账期字段名
+	std::string  m_fieldCity;				// 地市字段名
+	std::string  m_fieldBatch;				// 批次字段名
 
 protected:
-	int                     m_ycSeqID;				// 任务流水号
-	int                     m_statBatch;			// 统计结果的批次
-	std::string             m_taskCity;				// 任务地市
-	std::vector<YCStatInfo> m_vecYCSInfo;			// 业财稽核因子规则信息
+	int          m_ycSeqID;					// 任务流水号
+	int          m_statBatch;				// 统计结果的批次
+	std::string  m_taskCity;				// 任务地市
+	YCStatFactor m_statFactor;				// 稽核规则因子类
 };
 
