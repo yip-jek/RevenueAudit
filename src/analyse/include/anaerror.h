@@ -79,8 +79,10 @@ enum ANALYSE_ERROR
 	// （业财）规则因子类错误码
 	ANAERR_LOAD_STAT_INFO         = -3006001,			// 载入规则因子信息失败
 	ANAERR_LOAD_DIM_FACTOR        = -3006002,			// 载入维度因子对失败
-	ANAERR_GENERATE_RESULT        = -3006003,			// 生成结果失败
+	ANAERR_MAKE_STATINFO_RESULT   = -3006003,			// 由因子规则生成结果数据失败
 	ANAERR_CALC_COMPLEX_FACTOR    = -3006004,			// 计算业财稽核组合因子失败
 	ANAERR_OPERATE_ONE_FACTOR     = -3006005,			// 计算单个因子失败
+	ANAERR_CALC_CATEGORY_FACTOR   = -3006006,			// 计算组合分类因子的维度值失败
+	ANAERR_EXPAND_CATEGORY_INFO   = -3006007,			// 扩展分类因子信息失败
 };
 

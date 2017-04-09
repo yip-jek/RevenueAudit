@@ -16,6 +16,8 @@ public:
 	virtual ~YCStatFactor();
 
 	static const char* const S_TOP_PRIORITY;			// 最高优先级
+	static const int S_BASE_COLUMN_SIZE     = 2;		// 基础数据列数
+	static const int S_CATEGORY_COLUMN_SIZE = 3;		// 分列数据列数
 
 public:
 	// 获取统计指标ID
@@ -37,17 +39,38 @@ private:
 	// 计算组合因子的维度值
 	std::string CalcComplexFactor(const std::string& cmplx_fctr_fmt) throw(base::Exception);
 
+	// 计算组合分类因子的维度值
+	std::string CalcCategoryFactor(const std::string& ctg_fmt) throw(base::Exception);
+
+	// 生成分类因子维度ID
+	void ExtendCategoryDim(std::string& dim, int index);
+
+	// 获取指定组合分类因子的维度值
+	bool GetCategoryFactorValue(const std::string& ctg_fmt, int index, std::string& val);
+
 	// 计算单个因子
 	void OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception);
 
-private:
-	base::Log*                              m_pLog;
-	std::string                             m_statID;				// 统计指标ID
-	std::string                             m_statReport;			// 关联报表
+	// 是否存在于分类因子列表中
+	bool IsCategoryDim(const std::string& dim);
+
+	// 由因子规则生成结果数据
+	void MakeStatInfoResult(int batch, const std::string& city, const YCStatInfo& st_info, bool agg, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception);
+
+	// 扩展分类因子信息
+	void ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, std::vector<YCCategoryFactor>& vec_ctgfctr) throw(base::Exception);
 
 private:
-	std::map<std::string, std::string>      m_mDimFactor;			// 维度因子对
-	std::map<int, std::vector<YCStatInfo> > m_mvStatInfo;			// 规则因子信息列表
-	std::vector<YCStatInfo>                 m_vTopStatInfo;			// （最高优先级）规则因子信息列表
+	base::Log*                              m_pLog;
+	std::string                             m_statID;					// 统计指标ID
+	std::string                             m_statReport;				// 关联报表
+
+private:
+	std::map<std::string, std::string>      m_mDimFactor;				// 维度因子对
+	std::map<int, std::vector<YCStatInfo> > m_mvStatInfo;				// 规则因子信息列表
+	std::vector<YCStatInfo>                 m_vTopStatInfo;				// （最高优先级）规则因子信息列表
+
+private:
+	std::map<std::string, std::vector<YCCategoryFactor> > m_mvCategoryFactor;		// 分类维度因子对
 };
 

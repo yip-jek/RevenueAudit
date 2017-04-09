@@ -33,10 +33,24 @@ public:
 	int         stat_batch;				// 统计批次
 };
 
-// 业财稽核因子规则信息
+// （业财稽核）分类维度因子对
+struct YCCategoryFactor
+{
+public:
+	std::string dim_id;					// 维度ID
+	std::string item;					// 数据项名称
+	std::string value;					// 维度值
+};
+
+// （业财稽核）因子规则信息
 struct YCStatInfo
 {
 public:
+	YCStatInfo(): category(false)
+	{}
+
+public:
+	bool        category;				// 分类因子标志
 	std::string stat_id;				// 统计指标ID
 	std::string stat_name;				// 统计指标名称
 	std::string statdim_id;				// 统计维度ID
@@ -45,7 +59,7 @@ public:
 	std::string stat_report;			// 关联报表
 };
 
-// 业财稽核因子结果信息
+// （业财稽核）因子结果信息
 struct YCStatResult
 {
 public:
@@ -78,7 +92,7 @@ public:
 	std::string stat_value;					// 统计维度值
 };
 
-// 业财稽核日志信息
+// （业财稽核）日志信息
 struct YCStatLog
 {
 public:
@@ -93,7 +107,7 @@ public:
 	std::string stat_time;					// 稽核时间
 };
 
-// 业财稽核数据源信息
+// （业财稽核）数据源信息
 struct YCSrcInfo
 {
 public:
