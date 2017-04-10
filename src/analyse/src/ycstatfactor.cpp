@@ -44,6 +44,7 @@ void YCStatFactor::LoadStatInfo(std::vector<YCStatInfo>& vec_statinfo) throw(bas
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
 		YCStatInfo& ref_si = vec_statinfo[i];
+		base::PubStr::TrimUpper(ref_si.statdim_id);
 
 		// 是否为分类因子：维度 ID 包含问号
 		ref_si.category = (ref_si.statdim_id.find('?') != std::string::npos);
