@@ -43,7 +43,7 @@ private:
 	std::string CalcCategoryFactor(const std::string& ctg_fmt) throw(base::Exception);
 
 	// 生成分类因子维度ID
-	void ExtendCategoryDim(std::string& dim, int index);
+	std::string ExtendCategoryDim(const std::string& dim, int index);
 
 	// 获取指定组合分类因子的维度值
 	bool GetCategoryFactorValue(const std::string& ctg_fmt, int index, std::string& val);
@@ -59,6 +59,9 @@ private:
 
 	// 扩展分类因子信息
 	void ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, std::vector<YCCategoryFactor>& vec_ctgfctr) throw(base::Exception);
+
+	// 匹配一般分类因子
+	void MatchCategoryFactor(const std::string& dim, const std::string& dim_a, const std::string& dim_b, std::vector<YCCategoryFactor>& vec_ctgfctr);
 
 private:
 	base::Log*                              m_pLog;

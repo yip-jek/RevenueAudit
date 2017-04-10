@@ -284,24 +284,24 @@ std::string YCStatFactor::CalcCategoryFactor(const std::string& ctg_fmt) throw(b
 	}
 }
 
-void YCStatFactor::ExtendCategoryDim(std::string& dim, int index)
+std::string YCStatFactor::ExtendCategoryDim(const std::string& dim, int index)
 {
+	std::string       new_dim   = dim;
 	const std::string STR_INDEX = base::PubStr::Int2Str(index);
 
 	// 将问号（?）替换为 index
 	size_t pos = 0;
-	while ( (pos = dim.find('?')) != std::string::npos )
+	while ( (pos = new_dim.find('?')) != std::string::npos )
 	{
-		dim.replace(pos, 1, STR_INDEX);
+		new_dim.replace(pos, 1, STR_INDEX);
 	}
+
+	return new_dim;
 }
 
 bool YCStatFactor::GetCategoryFactorValue(const std::string& ctg_fmt, int index, std::string& val)
 {
-	std::string dim_id = ctg_fmt;
-	ExtendCategoryDim(dim_id, index);
-
-	std::map<std::string, std::string>::iterator m_it = m_mDimFactor.find(dim_id);
+	std::map<std::string, std::string>::iterator m_it = m_mDimFactor.find(ExtendCategoryDim(ctg_fmt, index));
 	if ( m_it != m_mDimFactor.end() )
 	{
 		val = m_it->second;
@@ -441,7 +441,7 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 		}
 		else	// 一般因子
 		{
-			std::map<std::string, std::string>::iterator m_it = m_mDimFactor.find(st_info.statdim_id);
+			std::map<std::string, std::string>::iterator m_it = m_mDimFactor.find(base::PubStr::TrimUpperB(st_info.statdim_id));
 			if ( m_it != m_mDimFactor.end() )
 			{
 				yc_sr.stat_value = m_it->second;
@@ -460,13 +460,194 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 void YCStatFactor::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, std::vector<YCCategoryFactor>& vec_ctgfctr) throw(base::Exception)
 {
 	std::vector<YCCategoryFactor> vec_cf;
+	std::vector<std::string>      vec_fmt;
+
 	if ( agg )	// 组合因子
 	{
+		// 参考格式：因子"A?_B?"，其表达式"A?,B?|-"
+		base::PubStr::Str2StrVector(st_info.stat_sql, "|", vec_fmt);
+		if ( vec_fmt.size() != 2 )
+		{
+			throw base::Exception(ANAERR_EXPAND_CATEGORY_INFO, "无法识别的组合分类因子表达式：%s [FILE:%s, LINE:%d]", st_info.stat_sql.c_str(), __FILE__, __LINE__);
+		}
+
+		std::string dims = base::PubStr::TrimUpperB(vec_fmt[0]);
+		std::string oper = base::PubStr::TrimUpperB(vec_fmt[1]);
+
+		std::vector<std::string> vec_oper;
+		base::PubStr::Str2StrVector(dims, ",", vec_fmt);
+		base::PubStr::Str2StrVector(oper, ",", vec_oper);
+
+		// 至少两个统计维度；且运算符个数比维度少一个
+		const int VEC_DIM_SIZE = vec_fmt.size();
+		if ( VEC_DIM_SIZE < 2 || (size_t)VEC_DIM_SIZE != (vec_oper.size() + 1) )
+		{
+			throw base::Exception(ANAERR_EXPAND_CATEGORY_INFO, "不匹配的组合分类因子表达式：%s [FILE:%s, LINE:%d]", st_info.stat_sql.c_str(), __FILE__, __LINE__);
+		}
+
+		int              index = 1;
+		std::string      fctr_value;
+		std::string      cmpl_fctr_result;
+		YCCategoryFactor ctg_factor;
+
+		// 计算结果
+		while ( true )
+		{
+			bool break_out = false;
+
+			for ( int i = 1; i < VEC_DIM_SIZE; ++i )
+			{
+				if ( 1 == i )	// 首次
+				{
+					if ( GetCategoryFactorValue(vec_fmt[0], index, fctr_value) )
+					{
+						OperateOneFactor(cmpl_fctr_result, "+", fctr_value);
+					}
+					else
+					{
+						break_out = true;
+						break;
+					}
+				}
+
+				if ( GetCategoryFactorValue(vec_fmt[i], index, fctr_value) )
+				{
+					OperateOneFactor(cmpl_fctr_result, vec_oper[i-1], fctr_value);
+				}
+				else
+				{
+					break_out = true;
+					break;
+				}
+			}
+
+			if ( break_out )
+			{
+				break;
+			}
+
+			ctg_factor.dim_id = ExtendCategoryDim(st_info.statdim_id, index);
+			ctg_factor.value  = cmpl_fctr_result;
+			vec_cf.push_back(ctg_factor);
+
+			++index;
+		}
 	}
 	else	// 一般因子
 	{
+		// 参考格式：因子"A?(B?)"、"B?"、"A?(0)"
+		const std::string DIM = base::PubStr::TrimUpperB(st_info.statdim_id);
+		if ( DIM.find('(') != std::string::npos )	// 主因子
+		{
+			base::PubStr::Str2StrVector(DIM, "(", vec_fmt);
+			if ( vec_fmt.size() != 2 )
+			{
+				throw base::Exception(ANAERR_EXPAND_CATEGORY_INFO, "无法识别的组合分类因子维度：%s [FILE:%s, LINE:%d]", DIM.c_str(), __FILE__, __LINE__);
+			}
+
+			std::string dim_B = vec_fmt[1];
+			if ( dim_B.size() < 2 || dim_B[dim_B.size()-1] != ')' )
+			{
+				throw base::Exception(ANAERR_EXPAND_CATEGORY_INFO, "无法识别的组合分类因子维度：%s [FILE:%s, LINE:%d]", DIM.c_str(), __FILE__, __LINE__);
+			}
+			dim_B = base::PubStr::TrimB(dim_B.substr(0,dim_B.size()-1));
+
+			std::string dim_A = vec_fmt[0];
+			MatchCategoryFactor(DIM, dim_A, dim_B, vec_cf);
+		}
+		else	// 辅助因子
+		{
+			m_pLog->Output("[YCStatFactor] 一般辅助分类因子：%s [IGNORED]", DIM.c_str());
+		}
 	}
 
 	vec_cf.swap(vec_ctgfctr);
+}
+
+void YCStatFactor::MatchCategoryFactor(const std::string& dim, const std::string& dim_a, const std::string& dim_b, std::vector<YCCategoryFactor>& vec_ctgfctr)
+{
+	std::map<std::string, std::vector<YCCategoryFactor> >::iterator m_it = m_mvCategoryFactor.find(dim);
+	if ( m_it == m_mvCategoryFactor.end() )		// 没有源数据
+	{
+		throw base::Exception(ANAERR_MATCH_CATEGORY_FACTOR, "没有分类因子维度对应的源数据：%s [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
+	}
+	std::vector<YCCategoryFactor>& ref_vec_cf_A = m_it->second;
+
+	YCCategoryFactor ctg_factor;
+	if ( dim_b != "0" )		// 包含辅助因子，匹配关系 A<->B
+	{
+		m_it = m_mvCategoryFactor.find(dim_b);
+		if ( m_it == m_mvCategoryFactor.end() )		// 没有源数据
+		{
+			throw base::Exception(ANAERR_MATCH_CATEGORY_FACTOR, "没有分类因子维度对应的源数据：%s [FILE:%s, LINE:%d]", dim_b.c_str(), __FILE__, __LINE__);
+		}
+		std::vector<YCCategoryFactor>& ref_vec_cf_B = m_it->second;
+
+		int index      = 1;
+		YCPairCategoryFactor pcf;
+		std::map<std::string, YCPairCategoryFactor> mItemPairCF;
+		int vec_size = ref_vec_cf_A.size();
+		for ( int i = 0; i < vec_size; ++i )
+		{
+			ctg_factor = ref_vec_cf_A[i];
+			if ( mItemPairCF.find(ctg_factor.item) != mItemPairCF.end() )
+			{
+				throw base::Exception(ANAERR_MATCH_CATEGORY_FACTOR, "分类因子数据项重复：DIM=[%s], ITEM=[%s], VAL=[%s] [FILE:%s, LINE:%d]", ctg_factor.dim_id.c_str(), ctg_factor.item.c_str(), ctg_factor.value.c_str(), __FILE__, __LINE__);
+			}
+
+			pcf.index         = index++;
+			ctg_factor.dim_id = ExtendCategoryDim(dim_a, pcf.index);
+			pcf.cf_A          = ctg_factor;
+			pcf.cf_B.dim_id   = ExtendCategoryDim(dim_b, pcf.index);
+			pcf.cf_B.item     = ctg_factor.item;
+			pcf.cf_B.value    = "0";
+			mItemPairCF[ctg_factor.item] = pcf;
+		}
+
+		std::set<std::string> sItemRep;
+		std::map<std::string, YCPairCategoryFactor>::iterator it;
+		vec_size = ref_vec_cf_B.size();
+		for ( int j = 0; j < vec_size; ++j )
+		{
+			ctg_factor = ref_vec_cf_B[j];
+			if ( sItemRep.find(ctg_factor.item) != sItemRep.end() )
+			{
+				throw base::Exception(ANAERR_MATCH_CATEGORY_FACTOR, "分类因子数据项重复：DIM=[%s], ITEM=[%s], VAL=[%s] [FILE:%s, LINE:%d]", ctg_factor.dim_id.c_str(), ctg_factor.item.c_str(), ctg_factor.value.c_str(), __FILE__, __LINE__);
+			}
+			sItemRep.insert(ctg_factor.item);
+
+			if ( (it = mItemPairCF.find(ctg_factor.item)) != mItemPairCF.end() )	// 数据项已存在
+			{
+				ctg_factor.dim_id = ExtendCategoryDim(dim_b, it->second.index);
+				it->second.cf_B   = ctg_factor;
+			}
+			else	// 数据项不存在
+			{
+				pcf.index         = index++;
+				ctg_factor.dim_id = ExtendCategoryDim(dim_b, pcf.index);
+				pcf.cf_A.dim_id   = ExtendCategoryDim(dim_a, pcf.index);
+				pcf.cf_A.item     = ctg_factor.item;
+				pcf.cf_A.value    = "0";
+				pcf.cf_B          = ctg_factor;
+				mItemPairCF[ctg_factor.item] = pcf;
+			}
+		}
+
+		for ( it = mItemPairCF.begin(); it != mItemPairCF.end(); ++it )
+		{
+			vec_ctgfctr.push_back(it->second.cf_A);
+			vec_ctgfctr.push_back(it->second.cf_B);
+		}
+	}
+	else	// 不含辅助因子
+	{
+		const int VEC_SIZE = ref_vec_cf_A.size();
+		for ( int i = 0; i < VEC_SIZE; ++i )
+		{
+			ctg_factor        = ref_vec_cf_A[i];
+			ctg_factor.dim_id = ExtendCategoryDim(dim_a, (i+1));
+			vec_ctgfctr.push_back(ctg_factor);
+		}
+	}
 }
 

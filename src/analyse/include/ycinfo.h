@@ -42,6 +42,19 @@ public:
 	std::string value;					// 维度值
 };
 
+// （业财稽核）两个分类维度因子对
+struct YCPairCategoryFactor
+{
+public:
+	YCPairCategoryFactor(): index(0)
+	{}
+
+public:
+	int              index;				// 序号
+	YCCategoryFactor cf_A;				// （左A）分类维度因子对
+	YCCategoryFactor cf_B;				// （右B）分类维度因子对
+};
+
 // （业财稽核）因子规则信息
 struct YCStatInfo
 {

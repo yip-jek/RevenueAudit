@@ -84,5 +84,6 @@ enum ANALYSE_ERROR
 	ANAERR_OPERATE_ONE_FACTOR     = -3006005,			// 计算单个因子失败
 	ANAERR_CALC_CATEGORY_FACTOR   = -3006006,			// 计算组合分类因子的维度值失败
 	ANAERR_EXPAND_CATEGORY_INFO   = -3006007,			// 扩展分类因子信息失败
+	ANAERR_MATCH_CATEGORY_FACTOR  = -3006008,			// 匹配一般分类因子失败
 };
 
