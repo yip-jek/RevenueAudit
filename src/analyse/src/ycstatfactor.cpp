@@ -331,40 +331,40 @@ bool YCStatFactor::GetCategoryFactorValue(const std::string& ctg_fmt, int index,
 
 void YCStatFactor::OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception)
 {
-	long double ld_res = 0.0;
-	if ( !result.empty() && !base::PubStr::Str2LDouble(result, ld_res) )
+	double dou_res = 0.0;
+	if ( !result.empty() && !base::PubStr::Str2Double(result, dou_res) )
 	{
 		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "结果值无法转化为精度型：%s [FILE:%s, LINE:%d]", result.c_str(), __FILE__, __LINE__);
 	}
 
-	long double ld_fctr = 0.0;
-	if ( factor.empty() || !base::PubStr::Str2LDouble(factor, ld_fctr) )
+	double dou_fctr = 0.0;
+	if ( factor.empty() || !base::PubStr::Str2Double(factor, dou_fctr) )
 	{
 		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "非有效因子值：%s [FILE:%s, LINE:%d]", factor.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( "+" == op )
 	{
-		ld_res += ld_fctr;
+		dou_res += dou_fctr;
 	}
 	else if ( "-" == op )
 	{
-		ld_res -= ld_fctr;
+		dou_res -= dou_fctr;
 	}
 	else if ( "*" == op )
 	{
-		ld_res *= ld_fctr;
+		dou_res *= dou_fctr;
 	}
 	else if ( "/" == op )
 	{
-		ld_res /= ld_fctr;
+		dou_res /= dou_fctr;
 	}
 	else
 	{
 		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "无法识别的因子运算符：%s [FILE:%s, LINE:%d]", op.c_str(), __FILE__, __LINE__);
 	}
 
-	result = base::PubStr::LDouble2Str(ld_res);
+	result = base::PubStr::Double2FormatStr(dou_res);
 }
 
 bool YCStatFactor::IsCategoryDim(const std::string& dim)

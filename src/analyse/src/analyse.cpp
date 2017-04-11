@@ -1143,11 +1143,8 @@ void Analyse::AnalyseSourceData() throw(base::Exception)
 		// 将源数据中的空值字符串("NULL")转换为("0")
 		base::PubStr::ReplaceInStrVector2(m_v2ReportStatData, "NULL", "0", false, true);
 
-		// 将数组中的带 'E' 的精度字符串转换为长精度字符串表示
-		base::PubStr::TransVecDouStrWithE2LongDouStr(m_v2ReportStatData, BEG_POS, END_POS);
-
-		// 去除尾部的"."和其后的"0"
-		base::PubStr::TrimTail0StrVec2(m_v2ReportStatData, BEG_POS, END_POS);
+		// 将数组中的值进行格式化
+		base::PubStr::FormatValueStrVector(m_v2ReportStatData, BEG_POS, END_POS);
 	}
 	else	// 非报表统计
 	{
@@ -1162,11 +1159,8 @@ void Analyse::AnalyseSourceData() throw(base::Exception)
 			// 将源数据中的空值字符串("NULL")转换为("0")
 			base::PubStr::ReplaceInStrVector2(ref_vec2, "NULL", "0", false, true);
 
-			// 将数组中的带 'E' 的精度字符串转换为长精度字符串表示
-			base::PubStr::TransVecDouStrWithE2LongDouStr(ref_vec2, BEG_POS, END_POS);
-
-			// 去除尾部的"."和其后的"0"
-			base::PubStr::TrimTail0StrVec2(ref_vec2, BEG_POS, END_POS);
+			// 将数组中的值进行格式化
+			base::PubStr::FormatValueStrVector(ref_vec2, BEG_POS, END_POS);
 		}
 	}
 

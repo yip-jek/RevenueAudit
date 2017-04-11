@@ -53,6 +53,12 @@ public:
 	// long double -> string
 	static std::string LDouble2Str(long double ld);
 
+	// double --> [FORMAT] string
+	// 保留2位小数
+	// 考虑 double 类型的精度，字符串最大长度不超过32
+	// double 值过大，会被截断，请谨慎使用！
+	static std::string Double2FormatStr(double d);
+
 public:
 	// 由字符串拆分为字符串数组
 	static void Str2StrVector(const std::string& src_str, const std::string& delim, std::vector<std::string>& vec_str);
@@ -75,16 +81,9 @@ public:
 	// 字符串转换为小数（支持百分数）
 	static bool StrTrans2Double(const std::string& str, double& d);
 
-	// 去除数组中每个的字符串结尾的"."和其后的"0"
+	// 将数组中的值进行格式化
 	// 参数 start_pos 和 end_pos 组成前闭后开区间，即[start_pos, end_pos)
-	static void TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos);
-
-	// 数值去科学计数化（即去'E'化）
-	static bool DouStr2LongDouStr(std::string& double_str);
-
-	// 将数组中的带 'E' 的精度字符串转换为长精度字符串表示
-	// 参数 start_pos 和 end_pos 组成前闭后开区间，即[start_pos, end_pos)
-	static void TransVecDouStrWithE2LongDouStr(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos);
+	static void FormatValueStrVector(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos);
 
 public:
 	// 将Vector进行交换push back

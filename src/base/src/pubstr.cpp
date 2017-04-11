@@ -206,6 +206,13 @@ std::string PubStr::LDouble2Str(long double ld)
 	return buf;
 }
 
+std::string PubStr::Double2FormatStr(double d)
+{
+	char buf[32] = "";
+	snprintf(buf, 32, "%.2lf", d);
+	return buf;
+}
+
 void PubStr::Str2StrVector(const std::string& src_str, const std::string& delim, std::vector<std::string>& vec_str)
 {
 	std::vector<std::string> v_str;
@@ -410,9 +417,11 @@ bool PubStr::StrTrans2Double(const std::string& str, double& d)
 	}
 }
 
-void PubStr::TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos)
+void PubStr::FormatValueStrVector(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos)
 {
+	double    dou_tmp     = 0.0;
 	const int BEGIN_POS = (start_pos < 0 ? 0 : start_pos);
+
 	const size_t VEC2_SIZE = vec2_str.size();
 	for ( size_t i = 0; i < VEC2_SIZE; ++i )
 	{
@@ -423,49 +432,8 @@ void PubStr::TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, 
 		{
 			std::string& ref_str = ref_vec[j];
 
-			// 去除尾部的"."和其后的"0"
-			const size_t STR_SIZE = ref_str.size();
-			const size_t POS = ref_str.find('.');
-			if ( POS != std::string::npos )
-			{
-				bool all_zero = true;
-				for ( size_t k = POS+1; k < STR_SIZE; ++k )
-				{
-					if ( ref_str[k] != '0' )
-					{
-						all_zero = false;
-						break;
-					}
-				}
-
-				if ( all_zero )
-				{
-					ref_str.erase(POS);
-				}
-			}
-		}
-	}
-}
-
-void PubStr::TransVecDouStrWithE2LongDouStr(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos)
-{
-	std::string str_tmp;
-	const int BEGIN_POS = (start_pos < 0 ? 0 : start_pos);
-	const size_t VEC2_SIZE = vec2_str.size();
-	for ( size_t i = 0; i < VEC2_SIZE; ++i )
-	{
-		std::vector<std::string>& ref_vec = vec2_str[i];
-
-		const int LAST_POS = (end_pos < (int)ref_vec.size() ? end_pos : ref_vec.size());
-		for ( int j = BEGIN_POS; j < LAST_POS; ++j )
-		{
-			std::string& ref_str = ref_vec[j];
-
-			str_tmp = UpperB(ref_str);
-			if ( str_tmp.find('E') != std::string::npos )
-			{
-				DouStr2LongDouStr(ref_str);
-			}
+			Str2Double(ref_str, dou_tmp);
+			ref_str = Double2FormatStr(dou_tmp);
 		}
 	}
 }
