@@ -447,20 +447,6 @@ void PubStr::TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, 
 	}
 }
 
-bool PubStr::DouStr2LongDouStr(std::string& double_str)
-{
-	long double ld_val = 0.0;
-	if ( Str2LDouble(double_str, ld_val) )
-	{
-		double_str = LDouble2Str(ld_val);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
 void PubStr::TransVecDouStrWithE2LongDouStr(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos)
 {
 	std::string str_tmp;

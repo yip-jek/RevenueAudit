@@ -79,7 +79,7 @@ public:
 	// 参数 start_pos 和 end_pos 组成前闭后开区间，即[start_pos, end_pos)
 	static void TrimTail0StrVec2(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos);
 
-	// 将短精度字符串转换为长精度字符串表示
+	// 数值去科学计数化（即去'E'化）
 	static bool DouStr2LongDouStr(std::string& double_str);
 
 	// 将数组中的带 'E' 的精度字符串转换为长精度字符串表示

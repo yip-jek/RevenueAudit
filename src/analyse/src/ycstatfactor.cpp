@@ -197,12 +197,31 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 		return CalcCategoryFactor(cmplx_fctr_fmt);
 	}
 
+	std::string cmplx_fctr_result;
+	std::map<std::string, std::string>::iterator m_it;
+
 	// 组合因子格式：[ A1, A2, A3, ...|+, -, ... ]
 	std::vector<std::string> vec_fmt_left;
 	base::PubStr::Str2StrVector(cmplx_fctr_fmt, "|", vec_fmt_left);
 	if ( vec_fmt_left.size() != 2 )
 	{
-		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fctr_fmt.c_str(), __FILE__, __LINE__);
+		if ( vec_fmt_left.size() == 1 )		// 特殊的组合因子：不含运算符，直接等于某个因子（一般因子或者组合因子）
+		{
+			if ( (m_it = m_mDimFactor.find(vec_fmt_left[0])) != m_mDimFactor.end() )
+			{
+				OperateOneFactor(cmplx_fctr_result, "+", m_it->second);
+			}
+			else
+			{
+				throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不存在的业财稽核统计维度ID：%s [FILE:%s, LINE:%d]", vec_fmt_left[0].c_str(), __FILE__, __LINE__);
+			}
+
+			return cmplx_fctr_result;
+		}
+		else
+		{
+			throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fctr_fmt.c_str(), __FILE__, __LINE__);
+		}
 	}
 
 	std::string yc_dims = base::PubStr::TrimUpperB(vec_fmt_left[0]);
@@ -220,8 +239,6 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 	}
 
 	// 计算结果
-	std::string cmplx_fctr_result;
-	std::map<std::string, std::string>::iterator m_it;
 	for ( int i = 1; i < VEC_DIM_SIZE; ++i )
 	{
 		if ( 1 == i )	// 首次
@@ -314,40 +331,40 @@ bool YCStatFactor::GetCategoryFactorValue(const std::string& ctg_fmt, int index,
 
 void YCStatFactor::OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception)
 {
-	double d_res = 0.0;
-	if ( !result.empty() && !base::PubStr::Str2Double(result, d_res) )
+	long double ld_res = 0.0;
+	if ( !result.empty() && !base::PubStr::Str2LDouble(result, ld_res) )
 	{
 		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "结果值无法转化为精度型：%s [FILE:%s, LINE:%d]", result.c_str(), __FILE__, __LINE__);
 	}
 
-	double d_fctr = 0.0;
-	if ( factor.empty() || !base::PubStr::Str2Double(factor, d_fctr) )
+	long double ld_fctr = 0.0;
+	if ( factor.empty() || !base::PubStr::Str2LDouble(factor, ld_fctr) )
 	{
 		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "非有效因子值：%s [FILE:%s, LINE:%d]", factor.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( "+" == op )
 	{
-		d_res += d_fctr;
+		ld_res += ld_fctr;
 	}
 	else if ( "-" == op )
 	{
-		d_res -= d_fctr;
+		ld_res -= ld_fctr;
 	}
 	else if ( "*" == op )
 	{
-		d_res *= d_fctr;
+		ld_res *= ld_fctr;
 	}
 	else if ( "/" == op )
 	{
-		d_res /= d_fctr;
+		ld_res /= ld_fctr;
 	}
 	else
 	{
 		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "无法识别的因子运算符：%s [FILE:%s, LINE:%d]", op.c_str(), __FILE__, __LINE__);
 	}
 
-	result = base::PubStr::Double2Str(d_res);
+	result = base::PubStr::LDouble2Str(ld_res);
 }
 
 bool YCStatFactor::IsCategoryDim(const std::string& dim)
@@ -420,6 +437,7 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 				m_mDimFactor[yc_sr.statdim_id] = yc_sr.stat_value;
 			}
 
+			m_pLog->Output("[YCStatFactor] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
 			yc_sr.Trans2Vector(vec_data);
 			base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
 		}
@@ -453,6 +471,7 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 			}
 		}
 
+		m_pLog->Output("[YCStatFactor] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
 		yc_sr.Trans2Vector(vec_data);
 		base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
 	}
@@ -593,7 +612,7 @@ void YCStatFactor::MatchCategoryFactor(const std::string& dim, const std::string
 			ctg_factor = ref_vec_cf_A[i];
 			if ( mItemPairCF.find(ctg_factor.item) != mItemPairCF.end() )
 			{
-				throw base::Exception(ANAERR_MATCH_CATEGORY_FACTOR, "分类因子数据项重复：DIM=[%s], ITEM=[%s], VAL=[%s] [FILE:%s, LINE:%d]", ctg_factor.dim_id.c_str(), ctg_factor.item.c_str(), ctg_factor.value.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_MATCH_CATEGORY_FACTOR, "分类因子数据项重复：DIM=[%s], ITEM=[%s], VALUE=[%s] [FILE:%s, LINE:%d]", ctg_factor.dim_id.c_str(), ctg_factor.item.c_str(), ctg_factor.value.c_str(), __FILE__, __LINE__);
 			}
 
 			pcf.index         = index++;
