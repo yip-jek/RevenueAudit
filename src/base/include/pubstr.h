@@ -59,6 +59,10 @@ public:
 	// double 值过大，会被截断，请谨慎使用！
 	static std::string Double2FormatStr(double d);
 
+	// 结合 Str2Double 与 Double2FormatStr
+	// 失败则返回空字符串
+	static std::string StringDoubleFormat(const std::string& str);
+
 public:
 	// 由字符串拆分为字符串数组
 	static void Str2StrVector(const std::string& src_str, const std::string& delim, std::vector<std::string>& vec_str);

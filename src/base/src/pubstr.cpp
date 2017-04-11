@@ -213,6 +213,17 @@ std::string PubStr::Double2FormatStr(double d)
 	return buf;
 }
 
+std::string PubStr::StringDoubleFormat(const std::string& str)
+{
+	double dou = 0.0;
+	if ( Str2Double(str, dou) )
+	{
+		return Double2FormatStr(dou);
+	}
+
+	return std::string();
+}
+
 void PubStr::Str2StrVector(const std::string& src_str, const std::string& delim, std::vector<std::string>& vec_str)
 {
 	std::vector<std::string> v_str;
@@ -419,9 +430,7 @@ bool PubStr::StrTrans2Double(const std::string& str, double& d)
 
 void PubStr::FormatValueStrVector(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos)
 {
-	double    dou_tmp     = 0.0;
-	const int BEGIN_POS = (start_pos < 0 ? 0 : start_pos);
-
+	const int    BEGIN_POS = (start_pos < 0 ? 0 : start_pos);
 	const size_t VEC2_SIZE = vec2_str.size();
 	for ( size_t i = 0; i < VEC2_SIZE; ++i )
 	{
@@ -431,9 +440,7 @@ void PubStr::FormatValueStrVector(std::vector<std::vector<std::string> >& vec2_s
 		for ( int j = BEGIN_POS; j < LAST_POS; ++j )
 		{
 			std::string& ref_str = ref_vec[j];
-
-			Str2Double(ref_str, dou_tmp);
-			ref_str = Double2FormatStr(dou_tmp);
+			ref_str = StringDoubleFormat(ref_str);
 		}
 	}
 }
