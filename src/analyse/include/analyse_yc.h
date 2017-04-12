@@ -49,6 +49,9 @@ protected:
 	// 结果数据入库 [DB2]
 	virtual void StoreResult() throw(base::Exception);
 
+	// 入库差异汇总结果数据
+	void StoreDiffSummaryResult(std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception);
+
 	// 登记稽核记录日志
 	void RecordStatisticsLog();
 

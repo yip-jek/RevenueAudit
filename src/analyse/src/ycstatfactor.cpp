@@ -3,7 +3,7 @@
 #include "pubstr.h"
 #include "log.h"
 
-const char* const YCStatFactor::S_TOP_PRIORITY  = "NN";			// 最高优先级
+const char* const YCStatFactor::S_TOP_PRIORITY  = "NN";			// 最高优先级 (差异汇总)
 
 
 YCStatFactor::YCStatFactor()
@@ -173,6 +173,13 @@ void YCStatFactor::GenerateResult(int batch, const std::string& city, std::vecto
 		}
 	}
 
+	vec2_result.swap(v2_result);
+}
+
+void YCStatFactor::GenerateDiffSummaryResult(const std::string& city, std::vector<std::vector<std::string> >& v2_result) throw(base::Exception)
+{
+	std::vector<std::vector<std::string> > vec2_result;
+
 	// 生成汇总因子的结果数据
 	const int VEC_TOP_SIZE = m_vTopStatInfo.size();
 	for ( int n = 0; n < VEC_TOP_SIZE; ++n )
@@ -181,7 +188,9 @@ void YCStatFactor::GenerateResult(int batch, const std::string& city, std::vecto
 
 		m_pLog->Output("[YCStatFactor] 统计因子类型：汇总因子");
 		m_pLog->Output("[YCStatFactor] 生成汇总因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
-		MakeStatInfoResult(batch, city, ref_si, true, vec2_result);
+
+		// 汇总因子批次锁定为 0
+		MakeStatInfoResult(0, city, ref_si, true, vec2_result);
 	}
 
 	vec2_result.swap(v2_result);
@@ -444,7 +453,7 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 			}
 
 			m_pLog->Output("[YCStatFactor] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
-			yc_sr.Trans2Vector(vec_data);
+			yc_sr.Convert2Vector(vec_data);
 			base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
 		}
 	}
@@ -478,7 +487,7 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 		}
 
 		m_pLog->Output("[YCStatFactor] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
-		yc_sr.Trans2Vector(vec_data);
+		yc_sr.Convert2Vector(vec_data);
 		base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
 	}
 }

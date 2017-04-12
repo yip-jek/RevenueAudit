@@ -1034,13 +1034,14 @@ void CAnaDB2::InsertAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::E
 		{
 			AlarmEvent& ref_event = vec_event[i];
 
-			rs.Parameter(1) = ref_event.eventID;
-			rs.Parameter(2) = ref_event.eventCont.c_str();
-			rs.Parameter(3) = ref_event.eventDesc.c_str();
-			rs.Parameter(4) = AlarmEvent::TransAlarmLevel(ref_event.alarmLevel).c_str();
-			rs.Parameter(5) = ref_event.alarmID.c_str();
-			rs.Parameter(6) = ref_event.alarmTime.c_str();
-			rs.Parameter(7) = AlarmEvent::TransAlarmState(ref_event.alarmState);
+			int index = 1;
+			rs.Parameter(index++) = ref_event.eventID;
+			rs.Parameter(index++) = ref_event.eventCont.c_str();
+			rs.Parameter(index++) = ref_event.eventDesc.c_str();
+			rs.Parameter(index++) = AlarmEvent::TransAlarmLevel(ref_event.alarmLevel).c_str();
+			rs.Parameter(index++) = ref_event.alarmID.c_str();
+			rs.Parameter(index++) = ref_event.alarmTime.c_str();
+			rs.Parameter(index++) = AlarmEvent::TransAlarmState(ref_event.alarmState);
 
 			rs.Execute();
 
@@ -1391,8 +1392,6 @@ void CAnaDB2::SelectCompareResultDesc(const std::string& kpi_id, const std::stri
 		m_pLog->Output("[DB2] Select compare result description, SQL: %s", sql.c_str());
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		//rs.Parameter(1) = kpi_id.c_str();
-		//rs.Parameter(1) = comp_res_name.c_str();
 		rs.Execute();
 
 		std::vector<std::string> vec_desc;
@@ -1600,6 +1599,87 @@ void CAnaDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const
 	catch ( const XDBO2::CDBException& ex )
 	{
 		throw base::Exception(ANAERR_UPD_TSLOG_STATE, "[DB2] Update state of task schedule log in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskScheLog.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatResult& ycsr) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "SELECT COUNT(0) FROM " + db_info.target_table + " WHERE STAT_REPORT = ? ";
+	sql += "and STAT_ID = ? and STATDIM_ID = ? and STAT_DATE = ? and STAT_CITY = ?";
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		int index = 1;
+		rs.Parameter(index++) = ycsr.stat_report.c_str();
+		rs.Parameter(index++) = ycsr.stat_id.c_str();
+		rs.Parameter(index++) = ycsr.statdim_id.c_str();
+		rs.Parameter(index++) = db_info.GetEtlDay().c_str();
+		rs.Parameter(index++) = ycsr.stat_city.c_str();
+		rs.Execute();
+
+		int num = 0;
+		while ( !rs.IsEOF() )
+		{
+			num = (int)rs[1];
+
+			rs.MoveNext();
+		}
+		rs.Close();
+
+		// 差异汇总维度数据是否存在？
+		if ( num > 0 )	// 已存在
+		{
+			sql  = "UPDATE " + db_info.target_table + " SET STAT_NAME = ?, STAT_VALUE = ?, INTIME = ?, STAT_NUM = ? ";
+			sql += "WHERE STAT_REPORT = ? and STAT_ID = ? and STATDIM_ID = ? and STAT_DATE = ? and STAT_CITY = ?";
+
+			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+			index = 1;
+			rs.Parameter(index++) = ycsr.stat_name.c_str();
+			rs.Parameter(index++) = ycsr.stat_value.c_str();
+			rs.Parameter(index++) = db_info.GetNowDay().c_str();
+			rs.Parameter(index++) = ycsr.stat_batch;
+			rs.Parameter(index++) = ycsr.stat_report.c_str();
+			rs.Parameter(index++) = ycsr.stat_id.c_str();
+			rs.Parameter(index++) = ycsr.statdim_id.c_str();
+			rs.Parameter(index++) = db_info.GetEtlDay().c_str();
+			rs.Parameter(index++) = ycsr.stat_city.c_str();
+
+			rs.Execute();
+			Commit();
+			rs.Close();
+		}
+		else	// 不存在
+		{
+			sql  = "INSERT INTO " + db_info.target_table + "(STAT_REPORT, STAT_ID, STAT_NAME, STATDIM_ID";
+			sql += ", STAT_VALUE, STAT_DATE, INTIME, STAT_CITY, STAT_NUM) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+			index = 1;
+			rs.Parameter(index++) = ycsr.stat_report.c_str();
+			rs.Parameter(index++) = ycsr.stat_id.c_str();
+			rs.Parameter(index++) = ycsr.stat_name.c_str();
+			rs.Parameter(index++) = ycsr.statdim_id.c_str();
+			rs.Parameter(index++) = ycsr.stat_value.c_str();
+			rs.Parameter(index++) = db_info.GetEtlDay().c_str();
+			rs.Parameter(index++) = db_info.GetNowDay().c_str();
+			rs.Parameter(index++) = ycsr.stat_city.c_str();
+			rs.Parameter(index++) = ycsr.stat_batch;
+
+			rs.Execute();
+			Commit();
+			rs.Close();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ANAERR_UPD_INS_DIFFSUMMARY, "[DB2] Update or insert diff summary result in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 

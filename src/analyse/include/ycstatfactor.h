@@ -15,7 +15,7 @@ public:
 	YCStatFactor();
 	virtual ~YCStatFactor();
 
-	static const char* const S_TOP_PRIORITY;			// 最高优先级
+	static const char* const S_TOP_PRIORITY;			// 最高优先级 (差异汇总)
 	static const int S_BASE_COLUMN_SIZE     = 2;		// 基础数据列数
 	static const int S_CATEGORY_COLUMN_SIZE = 3;		// 分列数据列数
 
@@ -32,8 +32,11 @@ public:
 	// 载入维度因子对
 	int LoadDimFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception);
 
-	// 生成结果
+	// 生成报表结果
 	void GenerateResult(int batch, const std::string& city, std::vector<std::vector<std::string> >& v2_result) throw(base::Exception);
+
+	// 生成差异汇总结果
+	void GenerateDiffSummaryResult(const std::string& city, std::vector<std::vector<std::string> >& v2_result) throw(base::Exception);
 
 private:
 	// 计算组合因子的维度值

@@ -133,6 +133,9 @@ public:
 	// 更新任务日程日志表状态
 	void UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark) throw(base::Exception);
 
+	// (业财) 更新或插入差异汇总结果数据
+	void UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatResult& ycsr) throw(base::Exception);
+
 private:
 	// 查询指标规则信息
 	void SelectKpiRule(AnaTaskInfo& info) throw(base::Exception);

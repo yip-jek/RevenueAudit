@@ -79,9 +79,36 @@ public:
 	YCStatResult(): stat_batch(0)
 	{}
 
+	static const int S_NUMBER_OF_MEMBERS = 7;			// 总成员数
+
 public:
+	// 载入数据
+	bool LoadFromVector(std::vector<std::string>& vec_str)
+	{
+		const int VEC_SIZE = vec_str.size();
+		if ( VEC_SIZE != S_NUMBER_OF_MEMBERS )
+		{
+			return false;
+		}
+	
+		int index = 0;
+		stat_report = vec_str[index++];
+		stat_id     = vec_str[index++];
+		stat_name   = vec_str[index++];
+		statdim_id  = vec_str[index++];
+		stat_city   = vec_str[index++];
+	
+		if ( !base::PubStr::Str2Int(vec_str[index++], stat_batch) )
+		{
+			return false;
+		}
+	
+		stat_value  = vec_str[index++];
+		return true;
+	}
+
 	// 数据转换 -> std::vector<std::string>
-	void Trans2Vector(std::vector<std::string>& vec_str)
+	void Convert2Vector(std::vector<std::string>& vec_str)
 	{
 		std::vector<std::string> v_str;
 		v_str.push_back(stat_report);

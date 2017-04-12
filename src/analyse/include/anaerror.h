@@ -28,6 +28,7 @@ enum ANALYSE_ERROR
 	ANAERR_GET_EXP_HIVESQL_FAILED = -3000022,			// 从分析表达式中生成HIVE SQL失败
 	ANAERR_EXCHG_SQLMARK_FAILED   = -3000023,			// 标志转换失败
 	ANAERR_GENE_DELTIME_FAILED    = -3000024,			// 生成数据删除的时间失败
+	ANAERR_STORE_RESULT_FAILED    = -3000025,			// 结果数据入库失败
 
 	// HIVE类错误码
 	ANAERR_FETCH_SRCDATA_FAILED   = -3001001,			// 获取源数据失败
@@ -61,6 +62,7 @@ enum ANALYSE_ERROR
 	ANAERR_SEL_SRC_MAX_BATCH      = -3002025,			// 获取业财数据源表最新批次出错
 	ANAERR_UPD_TSLOG_STATE        = -3002026,			// 更新任务日程日志表状态出错
 	ANAERR_EXECUTE_SQL            = -3002027,			// 直接执行 SQL 出错
+	ANAERR_UPD_INS_DIFFSUMMARY    = -3002028,			// (业财) 更新或插入差异汇总结果数据出错
 
 	// 编码转换错误码
 	ANAERR_INPUT_CHANN_UNICODE    = -3003001,			// 录入渠道统一编码信息失败
@@ -85,5 +87,6 @@ enum ANALYSE_ERROR
 	ANAERR_CALC_CATEGORY_FACTOR   = -3006006,			// 计算组合分类因子的维度值失败
 	ANAERR_EXPAND_CATEGORY_INFO   = -3006007,			// 扩展分类因子信息失败
 	ANAERR_MATCH_CATEGORY_FACTOR  = -3006008,			// 匹配一般分类因子失败
+	ANAERR_STORE_DIFF_SUMMARY     = -3006009,			// 入库差异汇总结果数据失败
 };
 
