@@ -36,6 +36,12 @@ protected:
 	// 检查采集任务信息
 	virtual void CheckTaskInfo() throw(base::Exception);
 
+	// 进行数据采集
+	virtual void DoDataAcquisition() throw(base::Exception);
+
+	// 采集业财稽核数据
+	void YCDataAcquisition() throw(base::Exception);
+
 	// 检查源表是否存在
 	virtual void CheckSourceTable(bool hive) throw(base::Exception);
 

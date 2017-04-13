@@ -29,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 4.0008.20170411 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 4.0009.20170413 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -341,7 +341,6 @@ void Acquire::DB2DataAcquisition() throw(base::Exception)
 	LoadHdfsConfig();
 
 	HdfsConnector* pHdfsConnector = new HdfsConnector(m_sHdfsHost, m_nHdfsPort);
-
 	base::AutoDisconnect a_disconn(pHdfsConnector);		// 资源自动释放
 	a_disconn.Connect();
 

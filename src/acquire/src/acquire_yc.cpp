@@ -116,6 +116,25 @@ void Acquire_YC::CheckTaskInfo() throw(base::Exception)
 	}
 }
 
+void Acquire_YC::DoDataAcquisition() throw(base::Exception)
+{
+	m_pLog->Output("[Acquire_YC] 分析业财稽核采集规则 ...");
+	GenerateEtlDate(m_taskInfo.EtlRuleTime);
+
+	// 暂时只支持从 DB2 数据库采集源数据
+	if ( AcqTaskInfo::DSTYPE_DB2 != m_taskInfo.DataSrcType )
+	{
+		throw base::Exception(ACQERR_DATA_ACQ_FAILED, "不支持的数据源类型: %d [KPI_ID:%s, ETL_ID:%s] [FILE:%s, LINE:%d]", m_taskInfo.DataSrcType, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+	}
+
+	YCDataAcquisition();
+	m_pLog->Output("[Acquire_YC] 采集业财稽核数据完成.");
+}
+
+void Acquire_YC::YCDataAcquisition() throw(base::Exception)
+{
+}
+
 void Acquire_YC::CheckSourceTable(bool hive) throw(base::Exception)
 {
 	m_pLog->Output("[Acquire_YC] Check source table whether exists or not ?");

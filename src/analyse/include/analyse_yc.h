@@ -50,7 +50,7 @@ protected:
 	virtual void StoreResult() throw(base::Exception);
 
 	// 入库差异汇总结果数据
-	void StoreDiffSummaryResult(std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception);
+	void StoreDiffSummaryResult() throw(base::Exception);
 
 	// 登记稽核记录日志
 	void RecordStatisticsLog();
@@ -77,5 +77,8 @@ protected:
 	int          m_statBatch;				// 统计结果的批次
 	std::string  m_taskCity;				// 任务地市
 	YCStatFactor m_statFactor;				// 稽核规则因子类
+
+protected:
+	std::vector<std::vector<std::string> > m_vec2DiffSummary;			// 差异汇总结果数据
 };
 

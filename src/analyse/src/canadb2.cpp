@@ -1607,6 +1607,8 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatRe
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
+	const std::string ETL_DAY = db_info.GetEtlDay();
+	const std::string NOW_DAY = db_info.GetNowDay();
 	std::string sql = "SELECT COUNT(0) FROM " + db_info.target_table + " WHERE STAT_REPORT = ? ";
 	sql += "and STAT_ID = ? and STATDIM_ID = ? and STAT_DATE = ? and STAT_CITY = ?";
 
@@ -1618,7 +1620,7 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatRe
 		rs.Parameter(index++) = ycsr.stat_report.c_str();
 		rs.Parameter(index++) = ycsr.stat_id.c_str();
 		rs.Parameter(index++) = ycsr.statdim_id.c_str();
-		rs.Parameter(index++) = db_info.GetEtlDay().c_str();
+		rs.Parameter(index++) = ETL_DAY.c_str();
 		rs.Parameter(index++) = ycsr.stat_city.c_str();
 		rs.Execute();
 
@@ -1631,23 +1633,25 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatRe
 		}
 		rs.Close();
 
+		m_pLog->Output("[DB2] DIFF SUMMARY DIM_ID=[%s], COUNT:%d", ycsr.statdim_id.c_str(), num);
 		// 差异汇总维度数据是否存在？
 		if ( num > 0 )	// 已存在
 		{
 			sql  = "UPDATE " + db_info.target_table + " SET STAT_NAME = ?, STAT_VALUE = ?, INTIME = ?, STAT_NUM = ? ";
 			sql += "WHERE STAT_REPORT = ? and STAT_ID = ? and STATDIM_ID = ? and STAT_DATE = ? and STAT_CITY = ?";
+			m_pLog->Output("[DB2] UPDATE DIFF SUMMARY: REPORT=[%s], STAT_ID=[%s], STAT_NAME=[%s], CITY=[%s], BATCH=[%d], ETL_DAY=[%s], NOW_DAY=[%s], DIM=[%s], VALUE=[%s]", ycsr.stat_report.c_str(), ycsr.stat_id.c_str(), ycsr.stat_name.c_str(), ycsr.stat_city.c_str(), ycsr.stat_batch, ETL_DAY.c_str(), NOW_DAY.c_str(), ycsr.statdim_id.c_str(), ycsr.stat_value.c_str());
 
 			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 			index = 1;
 			rs.Parameter(index++) = ycsr.stat_name.c_str();
 			rs.Parameter(index++) = ycsr.stat_value.c_str();
-			rs.Parameter(index++) = db_info.GetNowDay().c_str();
+			rs.Parameter(index++) = NOW_DAY.c_str();
 			rs.Parameter(index++) = ycsr.stat_batch;
 			rs.Parameter(index++) = ycsr.stat_report.c_str();
 			rs.Parameter(index++) = ycsr.stat_id.c_str();
 			rs.Parameter(index++) = ycsr.statdim_id.c_str();
-			rs.Parameter(index++) = db_info.GetEtlDay().c_str();
+			rs.Parameter(index++) = ETL_DAY.c_str();
 			rs.Parameter(index++) = ycsr.stat_city.c_str();
 
 			rs.Execute();
@@ -1658,6 +1662,7 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatRe
 		{
 			sql  = "INSERT INTO " + db_info.target_table + "(STAT_REPORT, STAT_ID, STAT_NAME, STATDIM_ID";
 			sql += ", STAT_VALUE, STAT_DATE, INTIME, STAT_CITY, STAT_NUM) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			m_pLog->Output("[DB2] INSERT DIFF SUMMARY: REPORT=[%s], STAT_ID=[%s], STAT_NAME=[%s], CITY=[%s], BATCH=[%d], ETL_DAY=[%s], NOW_DAY=[%s], DIM=[%s], VALUE=[%s]", ycsr.stat_report.c_str(), ycsr.stat_id.c_str(), ycsr.stat_name.c_str(), ycsr.stat_city.c_str(), ycsr.stat_batch, ETL_DAY.c_str(), NOW_DAY.c_str(), ycsr.statdim_id.c_str(), ycsr.stat_value.c_str());
 
 			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
@@ -1667,8 +1672,8 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatRe
 			rs.Parameter(index++) = ycsr.stat_name.c_str();
 			rs.Parameter(index++) = ycsr.statdim_id.c_str();
 			rs.Parameter(index++) = ycsr.stat_value.c_str();
-			rs.Parameter(index++) = db_info.GetEtlDay().c_str();
-			rs.Parameter(index++) = db_info.GetNowDay().c_str();
+			rs.Parameter(index++) = ETL_DAY.c_str();
+			rs.Parameter(index++) = NOW_DAY.c_str();
 			rs.Parameter(index++) = ycsr.stat_city.c_str();
 			rs.Parameter(index++) = ycsr.stat_batch;
 
