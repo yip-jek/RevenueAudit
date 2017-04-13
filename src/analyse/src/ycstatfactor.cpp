@@ -452,7 +452,15 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 				m_mDimFactor[yc_sr.statdim_id] = yc_sr.stat_value;
 			}
 
-			m_pLog->Output("[YCStatFactor] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
+			if ( agg )
+			{
+				m_pLog->Output("[YCStatFactor] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
+			}
+			else
+			{
+				m_pLog->Output("[YCStatFactor] 因子结果：ITEM=[%s], DIM=[%s], VALUE=[%s]", yc_sr.stat_name.c_str(), yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
+			}
+
 			yc_sr.Convert2Vector(vec_data);
 			base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
 		}
@@ -529,6 +537,7 @@ void YCStatFactor::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, s
 		while ( true )
 		{
 			bool break_out = false;
+			cmpl_fctr_result.clear();			// 结果值初始化（清空）
 
 			for ( int i = 1; i < VEC_DIM_SIZE; ++i )
 			{
@@ -601,30 +610,30 @@ void YCStatFactor::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, s
 
 void YCStatFactor::MatchCategoryFactor(const std::string& dim, const std::string& dim_a, const std::string& dim_b, std::vector<YCCategoryFactor>& vec_ctgfctr)
 {
+	std::vector<YCCategoryFactor> vec_cf_A;
 	std::map<std::string, std::vector<YCCategoryFactor> >::iterator m_it = m_mvCategoryFactor.find(dim);
-	if ( m_it == m_mvCategoryFactor.end() )		// 没有源数据
+	if ( m_it != m_mvCategoryFactor.end() )
 	{
-		throw base::Exception(ANAERR_MATCH_CATEGORY_FACTOR, "没有分类因子维度对应的源数据：%s [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
+		vec_cf_A.assign(m_it->second.begin(), m_it->second.end());
 	}
-	std::vector<YCCategoryFactor>& ref_vec_cf_A = m_it->second;
 
 	YCCategoryFactor ctg_factor;
 	if ( dim_b != "0" )		// 包含辅助因子，匹配关系 A<->B
 	{
+		std::vector<YCCategoryFactor> vec_cf_B;
 		m_it = m_mvCategoryFactor.find(dim_b);
-		if ( m_it == m_mvCategoryFactor.end() )		// 没有源数据
+		if ( m_it != m_mvCategoryFactor.end() )
 		{
-			throw base::Exception(ANAERR_MATCH_CATEGORY_FACTOR, "没有分类因子维度对应的源数据：%s [FILE:%s, LINE:%d]", dim_b.c_str(), __FILE__, __LINE__);
+			vec_cf_B.assign(m_it->second.begin(), m_it->second.end());
 		}
-		std::vector<YCCategoryFactor>& ref_vec_cf_B = m_it->second;
 
-		int index      = 1;
+		int index = 1;
 		YCPairCategoryFactor pcf;
 		std::map<std::string, YCPairCategoryFactor> mItemPairCF;
-		int vec_size = ref_vec_cf_A.size();
+		int vec_size = vec_cf_A.size();
 		for ( int i = 0; i < vec_size; ++i )
 		{
-			ctg_factor = ref_vec_cf_A[i];
+			ctg_factor = vec_cf_A[i];
 			if ( mItemPairCF.find(ctg_factor.item) != mItemPairCF.end() )
 			{
 				throw base::Exception(ANAERR_MATCH_CATEGORY_FACTOR, "分类因子数据项重复：DIM=[%s], ITEM=[%s], VALUE=[%s] [FILE:%s, LINE:%d]", ctg_factor.dim_id.c_str(), ctg_factor.item.c_str(), ctg_factor.value.c_str(), __FILE__, __LINE__);
@@ -641,10 +650,10 @@ void YCStatFactor::MatchCategoryFactor(const std::string& dim, const std::string
 
 		std::set<std::string> sItemRep;
 		std::map<std::string, YCPairCategoryFactor>::iterator it;
-		vec_size = ref_vec_cf_B.size();
+		vec_size = vec_cf_B.size();
 		for ( int j = 0; j < vec_size; ++j )
 		{
-			ctg_factor = ref_vec_cf_B[j];
+			ctg_factor = vec_cf_B[j];
 			if ( sItemRep.find(ctg_factor.item) != sItemRep.end() )
 			{
 				throw base::Exception(ANAERR_MATCH_CATEGORY_FACTOR, "分类因子数据项重复：DIM=[%s], ITEM=[%s], VAL=[%s] [FILE:%s, LINE:%d]", ctg_factor.dim_id.c_str(), ctg_factor.item.c_str(), ctg_factor.value.c_str(), __FILE__, __LINE__);
@@ -668,6 +677,11 @@ void YCStatFactor::MatchCategoryFactor(const std::string& dim, const std::string
 			}
 		}
 
+		if ( mItemPairCF.empty() )
+		{
+			throw base::Exception(ANAERR_MATCH_CATEGORY_FACTOR, "没有分类因子维度对应的源数据：[%s] and [%s] [FILE:%s, LINE:%d]", dim.c_str(), dim_b.c_str(), __FILE__, __LINE__);
+		}
+
 		for ( it = mItemPairCF.begin(); it != mItemPairCF.end(); ++it )
 		{
 			vec_ctgfctr.push_back(it->second.cf_A);
@@ -676,10 +690,15 @@ void YCStatFactor::MatchCategoryFactor(const std::string& dim, const std::string
 	}
 	else	// 不含辅助因子
 	{
-		const int VEC_SIZE = ref_vec_cf_A.size();
+		if ( vec_cf_A.empty() )
+		{
+			throw base::Exception(ANAERR_MATCH_CATEGORY_FACTOR, "没有分类因子维度对应的源数据：[%s] [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
+		}
+
+		const int VEC_SIZE = vec_cf_A.size();
 		for ( int i = 0; i < VEC_SIZE; ++i )
 		{
-			ctg_factor        = ref_vec_cf_A[i];
+			ctg_factor        = vec_cf_A[i];
 			ctg_factor.dim_id = ExtendCategoryDim(dim_a, (i+1));
 			vec_ctgfctr.push_back(ctg_factor);
 		}

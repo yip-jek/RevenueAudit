@@ -199,11 +199,8 @@ void Analyse_YC::GenerateResultData() throw(base::Exception)
 	base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec_yc_data);
 
 	// (2) 生成业财稽核差异汇总结果数据
+	// 不一定有差异汇总数据，因此不判断是否为空！
 	m_statFactor.GenerateDiffSummaryResult(m_taskCity, m_vec2DiffSummary);
-	if ( m_vec2DiffSummary.empty() )
-	{
-		throw base::Exception(ANAERR_GENERATE_YCDATA_FAILED, "生成差异汇总结果数据失败！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-	}
 }
 
 void Analyse_YC::StoreResult() throw(base::Exception)
