@@ -209,7 +209,7 @@ std::string PubStr::LDouble2Str(long double ld)
 std::string PubStr::Double2FormatStr(double d)
 {
 	char buf[32] = "";
-	snprintf(buf, 32, "%.2lf", d);
+	snprintf(buf, sizeof(buf), "%.2lf", d);
 	return buf;
 }
 

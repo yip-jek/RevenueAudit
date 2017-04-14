@@ -29,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 4.0009.20170413 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 4.0010.20170414 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -332,14 +332,16 @@ void Acquire::HiveDataAcquisition() throw(base::Exception)
 	std::vector<std::string> vec_hivesql;
 	TaskInfo2Sql(vec_hivesql, true);
 
-	m_pLog->Output("[Acquire] [HIVE] 执行数据采集 ...");
+	m_pLog->Output("[Acquire] 执行 HIVE 的数据采集 ...");
 	m_pAcqHive->ExecuteAcqSQL(vec_hivesql);
 }
 
 void Acquire::DB2DataAcquisition() throw(base::Exception)
 {
+	// 载入 HDFS 配置
 	LoadHdfsConfig();
 
+	// 创建 HDFS 连接
 	HdfsConnector* pHdfsConnector = new HdfsConnector(m_sHdfsHost, m_nHdfsPort);
 	base::AutoDisconnect a_disconn(pHdfsConnector);		// 资源自动释放
 	a_disconn.Connect();
@@ -352,8 +354,7 @@ void Acquire::DB2DataAcquisition() throw(base::Exception)
 	std::vector<std::string> vec_sql;
 	TaskInfo2Sql(vec_sql, false);
 
-	m_pLog->Output("[Acquire] [DB2] 执行数据采集 ...");
-
+	m_pLog->Output("[Acquire] 执行 DB2 的数据采集 ...");
 	hdfsFS hd_fs = pHdfsConnector->GetHdfsFS();
 	const int VEC_SIZE = vec_sql.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )

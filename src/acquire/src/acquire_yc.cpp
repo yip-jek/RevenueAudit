@@ -133,6 +133,36 @@ void Acquire_YC::DoDataAcquisition() throw(base::Exception)
 
 void Acquire_YC::YCDataAcquisition() throw(base::Exception)
 {
+	// 载入 HDFS 配置
+	LoadHdfsConfig();
+
+	// 创建 HDFS 连接
+	HdfsConnector* pHdfsConnector = new HdfsConnector(m_sHdfsHost, m_nHdfsPort);
+	base::AutoDisconnect a_disconn(pHdfsConnector);		// 资源自动释放
+	a_disconn.Connect();
+
+	int field_size = RebuildHiveTable();
+
+	// 重建目标表后，再检查源表是否存在
+	CheckSourceTable(false);
+	HandleYCInfo();
+
+	m_pLog->Output("[Acquire_YC] 执行 DB2 的业财数据采集 ...");
+	hdfsFS hd_fs = pHdfsConnector->GetHdfsFS();
+	std::vector<std::vector<std::string> > vec2_data;
+
+	const int VEC_YCI_SIZE = m_vecYCInfo.size();
+	for ( int i = 0; i < VEC_YCI_SIZE; ++i )
+	{
+		YCInfo& ref_yci = m_vecYCInfo[i];
+		m_pAcqDB2->FetchEtlData(ref_yci.stat_sql, field_size, vec2_data);
+		;
+
+		std::string hdfsFile = GeneralHdfsFileName();
+		hdfsFile = DB2DataOutputHdfsFile(vec2_data, hd_fs, hdfsFile);
+
+		LoadHdfsFile2Hive(m_taskInfo.EtlRuleTarget, hdfsFile);
+	}
 }
 
 void Acquire_YC::CheckSourceTable(bool hive) throw(base::Exception)
@@ -188,61 +218,31 @@ void Acquire_YC::GenerateEtlDate(const std::string& date_fmt) throw(base::Except
 	m_pLog->Output("[Acquire_YC] 重设采集 (HIVE) 目标表名为: %s", m_taskInfo.EtlRuleTarget.c_str());
 }
 
-void Acquire_YC::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception)
+void Acquire_YC::HandleYCInfo() throw(base::Exception)
 {
-	const int VEC_YCINFO_SIZE = m_vecYCInfo.size();
-	if ( VEC_YCINFO_SIZE <= 0 )
+	if ( m_vecYCInfo.empty() )
 	{
-		throw base::Exception(ACQERR_YC_STATRULE_SQL_FAILED, "没有业财稽核因子规则信息! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_HANDLE_YCINFO_FAILED, "没有业财稽核因子规则信息! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
-	// HIVE: 前置 insert sql
-	std::string prefix_sql;
-	if ( hive )
+	const int VEC_YCI_SIZE = m_vecYCInfo.size();
+	for ( int i = 0; i < VEC_YCI_SIZE; ++i )
 	{
-		prefix_sql = "insert " + m_sInsertMode + " table " + m_taskInfo.EtlRuleTarget + " ";
-	}
+		int seq = i + 1;
+		YCInfo& ref_yci = m_vecYCInfo[i];
 
-	size_t pos = 0;
-	std::string yc_dimid;
-	std::string yc_sql;
-	std::vector<std::string> v_yc_sql;
-
-	for ( int i = 0; i < VEC_YCINFO_SIZE; ++i )
-	{
-		YCInfo& ref_ycinf = m_vecYCInfo[i];
-		m_pLog->Output("[Acquire_YC] 业财统计因子SQL [%d]: %s", (i+1), ref_ycinf.stat_sql.c_str());
-
-		yc_dimid = base::PubStr::TrimUpperB(ref_ycinf.stat_dimid);
-		if ( yc_dimid.empty() )
+		base::PubStr::TrimUpper(ref_yci.stat_dimid);
+		if ( ref_yci.stat_dimid.empty() )
 		{
-			throw base::Exception(ACQERR_YC_STATRULE_SQL_FAILED, "无效的业财稽核统计因子维度ID！(KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
-		}
-		yc_dimid = "'" + yc_dimid + "', ";
-
-		yc_sql = base::PubStr::UpperB(ref_ycinf.stat_sql);
-		pos = yc_sql.find("SELECT ");
-		if ( std::string::npos == pos )
-		{
-			throw base::Exception(ACQERR_YC_STATRULE_SQL_FAILED, "业财稽核统计因子SQL没有正确配置！(KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ACQERR_HANDLE_YCINFO_FAILED, "业财稽核统计因子维度ID为空值！[INDEX:%d] (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", seq, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 		}
 
-		pos += 7;
-		yc_sql = ref_ycinf.stat_sql;
-		yc_sql.insert(pos, yc_dimid);
-		yc_sql.insert(0, prefix_sql);
-
-		ExchangeSQLMark(yc_sql);
-		ExtendSQLCondition(yc_sql);
-
-		// 地市标记转换
-		CityMarkExchange(yc_sql);
-
-		m_pLog->Output("[Acquire_YC] (转换后) 统计因子SQL [%d]: %s", (i+1), yc_sql.c_str());
-		v_yc_sql.push_back(yc_sql);
+		m_pLog->Output("[Acquire_YC] 原业财统计因子 SQL(%d) [%s]: %s", seq, ref_yci.stat_dimid.c_str(), ref_yci.stat_sql.c_str());
+		ExchangeSQLMark(ref_yci.stat_sql);
+		ExtendSQLCondition(ref_yci.stat_sql);
+		CityMarkExchange(ref_yci.stat_sql);		// 地市标记转换
+		m_pLog->Output("[Acquire_YC] (转换后) 新统计因子 SQL(%d) [%s]: %s", seq, ref_yci.stat_dimid.c_str(), ref_yci.stat_sql.c_str());
 	}
-
-	v_yc_sql.swap(vec_sql);
 }
 
 void Acquire_YC::ExtendSQLCondition(std::string& sql) throw(base::Exception)

@@ -369,8 +369,9 @@ void CAcqDB2::SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcIn
 		std::string sql = "select ETLSRC_SEQ, CONDITION_TYPE, CONDITION from ";
 		sql += m_tabEtlSrc + " where ETLRULE_ID = '" + etlrule_id + "' order by ETLSRC_SEQ";
 
-		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Execute();
+		//rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		//rs.Execute();
+		rs.Open(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		while ( !rs.IsEOF() )
 		{
@@ -470,8 +471,9 @@ bool CAcqDB2::CheckTableExisted(const std::string& tab_name) throw(base::Excepti
 		std::string sql = "select count(0) from syscat.tables where tabname='" + tab_name + "'";
 		m_pLog->Output("[DB2] Check table: %s", tab_name.c_str());
 
-		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Execute();
+		//rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		//rs.Execute();
+		rs.Open(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		int count = -1;
 		while ( !rs.IsEOF() )
@@ -511,8 +513,9 @@ void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& v
 		sql += " where STAT_ID = '" + kpi_id + "' and STAT_PRIORITY = '00'";
 		m_pLog->Output("[DB2] Select table [%s]: %s", m_tabYCStatRule.c_str(), sql.c_str());
 
-		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Execute();
+		//rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		//rs.Execute();
+		rs.Open(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		while ( !rs.IsEOF() )
 		{

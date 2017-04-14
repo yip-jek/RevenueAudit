@@ -48,9 +48,8 @@ protected:
 	// 生成采集时间
 	virtual void GenerateEtlDate(const std::string& date_fmt) throw(base::Exception);
 
-	// 分析统计因子规则，生成业财稽核SQL
-	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
-	virtual void TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
+	// 分析处理业财稽核统计因子规则
+	void HandleYCInfo() throw(base::Exception);
 
 	// 扩展采集SQL语句的条件：增加账期、地市和批次
 	void ExtendSQLCondition(std::string& sql) throw(base::Exception);
@@ -60,6 +59,9 @@ protected:
 
 	// 地市标记转换
 	void CityMarkExchange(std::string& sql);
+
+	// 补全业财采集结果数据
+	void Make
 
 protected:
 	std::string         m_tabYCTaskReq;				// （业财）任务请求表

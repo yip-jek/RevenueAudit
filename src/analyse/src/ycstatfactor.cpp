@@ -308,7 +308,7 @@ std::string YCStatFactor::CalcCategoryFactor(const std::string& ctg_fmt) throw(b
 			++ctg_index;
 		}
 
-		m_pLog->Output("[YCStatFactor] 组合分类因子表达式 [%s] 共包含 [%d] 个分类因子", ctg_fmt.c_str(), (ctg_index-1));
+		m_pLog->Output("[YCStatFactor] 组合分类因子表达式 %s 共包含 [%d] 个分类因子", ctg_fmt.c_str(), (ctg_index-1));
 		return ctg_result;
 	}
 	else
