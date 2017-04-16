@@ -77,7 +77,7 @@ protected:
 	virtual void BuildNewTask() throw(base::Exception);
 
 	// 执行新任务
-	int PerformNewTask(RATask& rat, bool task_continue);
+	int PerformNewTask(const base::SimpleTime& st_now, RATask& rat, bool task_continue);
 
 	// 下发任务
 	void CreateTask(TaskScheLog& ts_log);
@@ -102,8 +102,9 @@ private:
 	bool DelTaskPauseWithSEQ(const int& seq);
 
 private:
-	int  m_minRunTimeInterval;				// 任务运行的最小时间间隔（分钟）
-	int  m_maxTaskScheLogID;				// 最大的任务日程日志ID
+	int              m_minRunTimeInterval;			// 任务运行的最小时间间隔（分钟）
+	int              m_maxTaskScheLogID;			// 最大的任务日程日志ID
+	base::SimpleTime m_stLastTaskBuild;				// 上一次创建任务的时间
 
 private:
 	YDTaskState m_ts;						// 任务状态

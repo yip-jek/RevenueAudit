@@ -384,6 +384,9 @@ void YCTask::CreateTask(const TaskInfo& t_info) throw(base::Exception)
 		// 更新采集时间
 		m_pTaskDB->UpdateEtlTime(t_info.sub_id, t_info.etl_time);
 
+		// 休眠 1 秒，避免采集程序拉起得过于密集导致重建采集结果表失败
+		sleep(1);
+
 		// 采集程序：守护进程
 		base::PubStr::SetFormatString(command, "%s 1 %lld %s %s %s 00001:%s:%s:%d:", m_binAcquire.c_str(), t_info.task_id, m_modeAcquire.c_str(), m_binVer.c_str(), m_cfgAcquire.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str(), t_info.seq_id);
 	}

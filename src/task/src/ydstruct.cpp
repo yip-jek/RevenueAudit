@@ -136,38 +136,44 @@ bool TaskCycle::Set(const std::string& tc)
 	return false;
 }
 
-bool TaskCycle::IsCycleTimeUp()
+bool TaskCycle::IsTimeRange(const base::SimpleTime& st_lasttime, const base::SimpleTime& st_thistime)
 {
 	if ( valid )
 	{
-		const base::SimpleTime ST_NOW = base::SimpleTime::Now();
+		int c_y  = year;
+		int c_m  = mon;
+		int c_d  = day;
+		int c_h  = hour;
+		int c_mi = min;
+		int c_s  = sec;
 
-		if ( year != ANY_TIME && ST_NOW.GetYear() != year )
+		if ( ANY_TIME == c_y )
 		{
-			return false;
+			c_y = st_thistime.GetYear();
 		}
-		if ( mon != ANY_TIME && ST_NOW.GetMon() != mon )
+		if ( ANY_TIME == c_m )
 		{
-			return false;
+			c_m = st_thistime.GetMon();
 		}
-		if ( day != ANY_TIME && ST_NOW.GetDay() != day )
+		if ( ANY_TIME == c_d )
 		{
-			return false;
+			c_d = st_thistime.GetDay();
 		}
-		if ( hour != ANY_TIME && ST_NOW.GetHour() != hour )
+		if ( ANY_TIME == c_h )
 		{
-			return false;
+			c_h = st_thistime.GetHour();
 		}
-		if ( min != ANY_TIME && ST_NOW.GetMin() != min )
+		if ( ANY_TIME == c_mi )
 		{
-			return false;
+			c_mi = st_thistime.GetMin();
 		}
-		if ( sec != ANY_TIME && ST_NOW.GetSec() != sec )
+		if ( ANY_TIME == c_s )
 		{
-			return false;
+			c_s = st_thistime.GetSec();
 		}
 
-		return true;
+		base::SimpleTime cycle_time(c_y, c_m, c_d, c_h, c_mi, c_s);
+		return (cycle_time > st_lasttime && cycle_time <= st_thistime);
 	}
 
 	return false;

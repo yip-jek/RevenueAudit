@@ -186,6 +186,7 @@ void YDTask::Init() throw(base::Exception)
 	m_maxTaskScheLogID = m_pTaskDB2->GetTaskScheLogMaxID();
 	m_pLog->Output("[YD_TASK] Get the max log ID in task schedule log table: [%d]", m_maxTaskScheLogID);
 
+	m_stLastTaskBuild = base::SimpleTime::Now();
 	OutputConfiguration();
 	m_pLog->Output("[YD_TASK] Init OK.");
 }
@@ -610,7 +611,7 @@ void YDTask::BuildNewTask() throw(base::Exception)
 	{
 		curr_it = it++;
 
-		if ( PerformNewTask(*curr_it, true) >= 0 )
+		if ( PerformNewTask(ST_NOW, *curr_it, true) >= 0 )
 		{
 			m_listTaskPause.erase(curr_it);
 		}
@@ -641,14 +642,16 @@ void YDTask::BuildNewTask() throw(base::Exception)
 			continue;
 		}
 
-		if ( PerformNewTask(ref_rat, false) >= 0 )
+		if ( PerformNewTask(ST_NOW, ref_rat, false) >= 0 )
 		{
 			m_mTaskWait.erase(curr_m_it);
 		}
 	}
+
+	m_stLastTaskBuild = ST_NOW;
 }
 
-int YDTask::PerformNewTask(RATask& rat, bool task_continue)
+int YDTask::PerformNewTask(const base::SimpleTime& st_now, RATask& rat, bool task_continue)
 {
 	// 尝试恢复任务：同类型的任务仍在运行？
 	if ( task_continue && CheckSameKindRunningTask(rat) )
@@ -717,7 +720,7 @@ int YDTask::PerformNewTask(RATask& rat, bool task_continue)
 		{
 			// 尝试恢复任务时，直接下发任务
 			// 否则，判断是否到达运行周期
-			if ( task_continue || (!task_continue && rat.cycle.IsCycleTimeUp()) )
+			if ( task_continue || (!task_continue && rat.cycle.IsTimeRange(m_stLastTaskBuild, st_now)) )
 			{
 				// 是否有同类型的任务在运行？
 				if ( !task_continue && CheckSameKindRunningTask(rat, &str_msg) )
@@ -827,6 +830,9 @@ void YDTask::CreateTask(TaskScheLog& ts_log)
 
 		// 更新采集时间
 		m_pTaskDB2->UpdateEtlTime(ts_log.sub_id, EtlTime::Convert(ts_log.etl_time));
+
+		// 休眠 1 秒，避免采集程序拉起得过于密集导致重建采集结果表失败
+		sleep(1);
 
 		// 采集程序：守护进程
 		base::PubStr::SetFormatString(command, "%s 1 %s %s %s %s 00001:%s:%s:%d:", m_binAcquire.c_str(), ts_log.task_id.c_str(), m_modeAcquire.c_str(), m_binVer.c_str(), m_cfgAcquire.c_str(), ts_log.kpi_id.c_str(), ts_log.sub_id.c_str(), ts_log.log_id);

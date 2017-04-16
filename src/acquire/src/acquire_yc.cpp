@@ -156,7 +156,7 @@ void Acquire_YC::YCDataAcquisition() throw(base::Exception)
 	{
 		YCInfo& ref_yci = m_vecYCInfo[i];
 		m_pAcqDB2->FetchEtlData(ref_yci.stat_sql, field_size, vec2_data);
-		;
+		MakeYCResultComplete(ref_yci.stat_dimid, field_size, vec2_data);
 
 		std::string hdfsFile = GeneralHdfsFileName();
 		hdfsFile = DB2DataOutputHdfsFile(vec2_data, hd_fs, hdfsFile);
@@ -347,6 +347,48 @@ void Acquire_YC::CityMarkExchange(std::string& sql)
 	{
 		sql.replace(pos, F_CTMK_SIZE, m_taskCity);
 		up_sql = base::PubStr::UpperB(sql);
+	}
+}
+
+void Acquire_YC::MakeYCResultComplete(const std::string& dim, const int& fields, std::vector<std::vector<std::string> >& vec_result)
+{
+	const int VEC2_SIZE = vec_result.size();
+	m_pLog->Output("[Acquire_YC] 业财采集结果：DIM=[%s], RESULT_SIZE=[%d]", dim.c_str(), VEC2_SIZE);
+
+	// 业财采集结果维度 ID 补全
+	if ( dim.find('?') != std::string::npos )	// 一般分类因子
+	{
+		m_pLog->Output("[Acquire_YC] 此为分类因子：保留所有采集结果");
+		for ( int i = 0; i < VEC2_SIZE; ++i )
+		{
+			std::vector<std::string>& ref_vec = vec_result[i];
+			ref_vec.insert(ref_vec.begin(), dim);
+		}
+	}
+	else
+	{
+		if ( 1 == VEC2_SIZE )	// 一个结果
+		{
+			vec_result[0].insert(vec_result[0].begin(), dim);
+		}
+		else if ( VEC2_SIZE > 1 )	// 多个结果
+		{
+			// 仅保留第一个结果
+			m_pLog->Output("[Acquire_YC] 多个采集结果：仅保留第一个结果");
+			vec_result.erase(vec_result.begin()+1, vec_result.end());
+			vec_result[0].insert(vec_result[0].begin(), dim);
+		}
+		else	// 没有结果
+		{
+			// 添加一个默认结果
+			m_pLog->Output("[Acquire_YC] 没有采集结果：添加一个默认结果");
+			std::vector<std::string> vec_default;
+			vec_default.push_back(dim);
+			for ( int i = 0; i < fields; ++i )
+			{
+				vec_default.push_back("");
+			}
+		}
 	}
 }
 

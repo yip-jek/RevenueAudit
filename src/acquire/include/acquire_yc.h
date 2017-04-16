@@ -61,7 +61,7 @@ protected:
 	void CityMarkExchange(std::string& sql);
 
 	// 补全业财采集结果数据
-	void Make
+	void MakeYCResultComplete(const std::string& dim, const int& fields, std::vector<std::vector<std::string> >& vec_result);
 
 protected:
 	std::string         m_tabYCTaskReq;				// （业财）任务请求表

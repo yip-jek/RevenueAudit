@@ -28,6 +28,9 @@ public:
 	// 当前时间
 	static SimpleTime Now();
 
+	// 当前时间 (time_t)
+	static time_t CurrentTime();
+
 	// 是否为闰年
 	static bool IsLeapYear(int year);
 
@@ -52,7 +55,7 @@ public:
 
 	// 设置时间
 	bool Set(int y, int m, int d, int h, int mi, int s, int us = 0);
-	bool Set(long long time);
+	bool Set(long long time);		// 时间格式：YYYYMMDDHHMISS
 
 	// 时间戳
 	std::string TimeStamp() const;

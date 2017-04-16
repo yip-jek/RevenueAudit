@@ -48,8 +48,8 @@ public:
 	// 设置周期
 	bool Set(const std::string& tc);
 
-	// 是否到时间点
-	bool IsCycleTimeUp();
+	// 是否在时间范围
+	bool IsTimeRange(const base::SimpleTime& st_lasttime, const base::SimpleTime& st_thistime);
 
 private:
 	void Clear();

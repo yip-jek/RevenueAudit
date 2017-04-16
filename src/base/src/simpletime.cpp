@@ -105,6 +105,11 @@ SimpleTime SimpleTime::Now()
 	return SimpleTime(pt->tm_year+1900, pt->tm_mon+1, pt->tm_mday, pt->tm_hour, pt->tm_min, pt->tm_sec, tv_now.tv_usec);
 }
 
+time_t SimpleTime::CurrentTime()
+{
+	return time(NULL);
+}
+
 bool SimpleTime::IsLeapYear(int year)
 {
 	if ( year > 0 )
