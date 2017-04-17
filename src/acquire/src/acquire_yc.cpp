@@ -141,7 +141,10 @@ void Acquire_YC::YCDataAcquisition() throw(base::Exception)
 	base::AutoDisconnect a_disconn(pHdfsConnector);		// 资源自动释放
 	a_disconn.Connect();
 
-	int field_size = RebuildHiveTable();
+	// 采集结果表字段包含维度ID
+	// 但采集 SQL 并没有加入维度ID，维度ID在采集完结果数据后再进行补全
+	// 因此此处要减去1
+	const int FIELD_SIZE = RebuildHiveTable() - 1;
 
 	// 重建目标表后，再检查源表是否存在
 	CheckSourceTable(false);
@@ -155,12 +158,14 @@ void Acquire_YC::YCDataAcquisition() throw(base::Exception)
 	for ( int i = 0; i < VEC_YCI_SIZE; ++i )
 	{
 		YCInfo& ref_yci = m_vecYCInfo[i];
-		m_pAcqDB2->FetchEtlData(ref_yci.stat_sql, field_size, vec2_data);
-		MakeYCResultComplete(ref_yci.stat_dimid, field_size, vec2_data);
 
+		// 从 DB2 数据库中采集结果数据
+		m_pAcqDB2->FetchEtlData(ref_yci.stat_sql, FIELD_SIZE, vec2_data);
+		MakeYCResultComplete(ref_yci.stat_dimid, FIELD_SIZE, vec2_data);
+
+		// 将采集结果数据写入 HDFS 再 load 到 HIVE
 		std::string hdfsFile = GeneralHdfsFileName();
 		hdfsFile = DB2DataOutputHdfsFile(vec2_data, hd_fs, hdfsFile);
-
 		LoadHdfsFile2Hive(m_taskInfo.EtlRuleTarget, hdfsFile);
 	}
 }
@@ -388,6 +393,7 @@ void Acquire_YC::MakeYCResultComplete(const std::string& dim, const int& fields,
 			{
 				vec_default.push_back("");
 			}
+			vec_result.push_back(vec_default);
 		}
 	}
 }
