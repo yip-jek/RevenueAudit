@@ -3,7 +3,6 @@
 #include <map>
 #include <set>
 #include "ydstruct.h"
-#include "ydtaskstate.h"
 #include "task.h"
 
 class YDTaskDB2;
@@ -48,9 +47,6 @@ protected:
 
 	// 获取新任务
 	virtual void GetNewTask() throw(base::Exception);
-
-	// 任务是否暂停？
-	bool IsTaskPause();
 
 	// 获取新的任务日程
 	void GetNewTaskSche();
@@ -107,12 +103,10 @@ private:
 	base::SimpleTime m_stLastTaskBuild;				// 上一次创建任务的时间
 
 private:
-	YDTaskState m_ts;						// 任务状态
-	DBInfo      m_dbinfo;					// 数据库信息
-	YDTaskDB2*  m_pTaskDB2;					// 数据库连接
+	DBInfo     m_dbinfo;			// 数据库信息
+	YDTaskDB2* m_pTaskDB2;			// 数据库连接
 
 private:
-	std::string              m_tempPath;			// 临时目录
 	std::string              m_hiveAgentPath;		// Hive代理的路径
 	std::string              m_binVer;				// 程序版本：DEBUG or RELEASE
 	std::string              m_binAcquire;			// 采集程序（带路径）

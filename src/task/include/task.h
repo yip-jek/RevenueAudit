@@ -2,6 +2,7 @@
 
 #include "exception.h"
 #include "sectimer.h"
+#include "taskstatusswitch.h"
 
 namespace base
 {
@@ -65,6 +66,9 @@ protected:
 	// 确认退出？
 	virtual bool ConfirmQuit() = 0;
 
+	// 检查任务状态
+	virtual void CheckTaskStatus();
+
 	// 处理任务
 	virtual void DealTasks() throw(base::Exception);
 
@@ -108,12 +112,14 @@ protected:
 	std::string EtlTimeTransform(const std::string& cycle) throw(base::Exception);
 
 protected:
-	base::Config* m_pCfg;					// 配置文件
-	base::Log*    m_pLog;					// 日志输出
-	TASK_STATE    m_state;					// 任务状态
-	int           m_TIDAccumulator;			// 任务ID的累加值
-	long          m_waitSeconds;			// 处理时间间隔（单位：秒）
-	long          m_showSeconds;			// 任务日志输出的时间间隔（单位：秒）
-	SecTimer      m_showTimer;				// 任务日志输出计时
+	base::Config*    m_pCfg;					// 配置文件
+	base::Log*       m_pLog;					// 日志输出
+	TASK_STATE       m_state;					// 任务状态
+	int              m_TIDAccumulator;			// 任务ID的累加值
+	long             m_waitSeconds;				// 处理时间间隔（单位：秒）
+	long             m_showSeconds;				// 任务日志输出的时间间隔（单位：秒）
+	SecTimer         m_showTimer;				// 任务日志输出计时
+	TaskStatusSwitch m_tsSwitch;				// 任务状态切换
+	bool             m_taskContinue;			// 任务是否继续的标志
 };
 

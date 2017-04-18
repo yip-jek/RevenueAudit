@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include "log.h"
+#include "basedir.h"
 #include "config.h"
 #include "gsignal.h"
 #include "pubstr.h"
@@ -16,6 +17,7 @@ Task::Task(base::Config& cfg)
 ,m_waitSeconds(0)
 ,m_showSeconds(0)
 ,m_showTimer(0)
+,m_taskContinue(true)
 {
 }
 
@@ -26,7 +28,7 @@ Task::~Task()
 
 std::string Task::Version()
 {
-	return ("Version 3.0026.20170416 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Version 3.0027.20170418 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Task::Run() throw(base::Exception)
@@ -44,6 +46,7 @@ void Task::InitBaseConfig() throw(base::Exception)
 {
 	m_pCfg->RegisterItem("SYS", "TIME_SECONDS");
 	m_pCfg->RegisterItem("SYS", "TASK_SHOW_SECONDS");
+	m_pCfg->RegisterItem("COMMON", "TEMP_PATH");
 	m_pCfg->ReadConfig();
 
 	m_waitSeconds = m_pCfg->GetCfgLongVal("SYS", "TIME_SECONDS");
@@ -59,6 +62,22 @@ void Task::InitBaseConfig() throw(base::Exception)
 		throw base::Exception(TERR_INIT_BASE_CFG, "Invalid task show seconds: %ld [FILE:%s, LINE:%d]", m_showSeconds, __FILE__, __LINE__);
 	}
 	m_pLog->Output("[TASK] Check task show seconds OK. [SHOW SECONDS: %ld]", m_showSeconds);
+
+	// 任务临时目录
+	// 检查临时目录是否有效
+	// 若临时目录不存在，则自动创建
+	std::string temp_path = m_pCfg->GetCfgValue("COMMON", "TEMP_PATH");
+	if ( !base::BaseDir::IsDirExist(temp_path) && !base::BaseDir::CreateFullPath(temp_path) )
+	{
+		throw base::Exception(TERR_INIT_BASE_CFG, "Create temp path '%s' failed: %s [FILE:%s, LINE:%d]", temp_path.c_str(), strerror(errno), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[TASK] Check temp path OK: [%s]", temp_path.c_str());
+
+	if ( !m_tsSwitch.Init(temp_path) )
+	{
+		throw base::Exception(TERR_INIT_BASE_CFG, "TaskStatusSwitch initialization failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+	m_pLog->Output("[TASK] TaskStatusSwitch initialization OK.");
 }
 
 bool Task::Running()
@@ -108,6 +127,8 @@ void Task::DealTasks() throw(base::Exception)
 
 	while ( Running() )
 	{
+		CheckTaskStatus();
+
 		GetTasks();
 
 		ShowTask();
@@ -121,12 +142,54 @@ void Task::DealTasks() throw(base::Exception)
 	}
 }
 
+void Task::CheckTaskStatus()
+{
+	bool pause  = m_tsSwitch.GetPauseState();
+	bool frozen = m_tsSwitch.GetFrozenState();
+
+	// 检查任务状态
+	m_tsSwitch.Check();
+
+	if ( pause != m_tsSwitch.GetPauseState() )
+	{
+		pause = !pause;
+		if ( pause )
+		{
+			m_pLog->Output("[TASK] GET TASK STATE: [PAUSE] (暂停)");
+		}
+		else
+		{
+			m_pLog->Output("[TASK] GET TASK STATE: [CONTINUE] (继续)");
+		}
+	}
+
+	if ( frozen != m_tsSwitch.GetFrozenState() )
+	{
+		frozen = !frozen;
+		if ( frozen )
+		{
+			m_pLog->Output("[TASK] GET TASK STATE: [FROZEN] (冻结)");
+		}
+		else
+		{
+			m_pLog->Output("[TASK] GET TASK STATE: [THAWED] (解冻)");
+		}
+	}
+
+	// 暂停或冻结期内，不获取也不下发新任务！
+	m_taskContinue = (!pause && !frozen);
+}
+
 void Task::GetTasks() throw(base::Exception)
 {
 	// 是否准备退出？
 	if ( m_state != TS_END )
 	{
-		GetNewTask();
+		// 暂停或冻结期内，不获取新任务！
+		if ( m_taskContinue )
+		{
+			GetNewTask();
+		}
 	}
 	else	// 不获取新任务
 	{
@@ -148,7 +211,11 @@ void Task::ExecuteTask() throw(base::Exception)
 
 	HandleEtlTask();
 
-	BuildNewTask();
+	// 暂停或冻结期内，不下发新任务！
+	if ( m_taskContinue )
+	{
+		BuildNewTask();
+	}
 }
 
 bool Task::IsProcessAlive(long long proc_task_id) throw(base::Exception)

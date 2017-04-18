@@ -2,7 +2,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include "basedir.h"
 #include "config.h"
 #include "log.h"
 #include "ydtaskdb2.h"
@@ -46,7 +45,6 @@ void YDTask::LoadConfig() throw(base::Exception)
 	m_pCfg->RegisterItem("DATABASE", "PASSWORD");
 
 	// 读取采集与分析程序相关配置
-	m_pCfg->RegisterItem("COMMON", "TEMP_PATH");
 	m_pCfg->RegisterItem("COMMON", "HIVE_AGENT_PATH");
 	m_pCfg->RegisterItem("COMMON", "BIN_VER");
 	m_pCfg->RegisterItem("COMMON", "ACQUIRE_BIN");
@@ -72,7 +70,6 @@ void YDTask::LoadConfig() throw(base::Exception)
 	m_dbinfo.db_user = m_pCfg->GetCfgValue("DATABASE", "USER_NAME");
 	m_dbinfo.db_pwd  = m_pCfg->GetCfgValue("DATABASE", "PASSWORD");
 
-	m_tempPath        = m_pCfg->GetCfgValue("COMMON", "TEMP_PATH");
 	m_hiveAgentPath   = m_pCfg->GetCfgValue("COMMON", "HIVE_AGENT_PATH");
 	m_binVer          = m_pCfg->GetCfgValue("COMMON", "BIN_VER");
 	m_binAcquire      = m_pCfg->GetCfgValue("COMMON", "ACQUIRE_BIN");
@@ -129,21 +126,6 @@ bool YDTask::DelTaskPauseWithSEQ(const int& seq)
 void YDTask::Init() throw(base::Exception)
 {
 	InitConnect();
-
-	// 检查临时目录是否有效
-	// 若临时目录不存在，则自动创建
-	if ( !base::BaseDir::IsDirExist(m_tempPath) && !base::BaseDir::CreateFullPath(m_tempPath) )
-	{
-		throw base::Exception(YDTERR_INIT, "Check temp path '%s' failed! %s [FILE:%s, LINE:%d]", m_tempPath.c_str(), strerror(errno), __FILE__, __LINE__);
-	}
-	m_pLog->Output("[YD_TASK] Check temp path OK: [%s]", m_tempPath.c_str());
-
-	base::BaseDir::DirWithSlash(m_tempPath);
-	if ( !m_ts.Init(m_tempPath) )
-	{
-		throw base::Exception(YDTERR_INIT, "Init task state failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
-	}
-	m_pLog->Output("[YD_TASK] Create task state temp file: [%s]", m_ts.GetTempFile().c_str());
 
 	// 指定工作目录为Hive代理的路径
 	if ( chdir(m_hiveAgentPath.c_str()) < 0 )
@@ -230,52 +212,10 @@ bool YDTask::ConfirmQuit()
 
 void YDTask::GetNewTask() throw(base::Exception)
 {
-	if ( !IsTaskPause() )
-	{
-		m_pTaskDB2->GetTaskSchedule(m_mTaskSche);
-	}
+	m_pTaskDB2->GetTaskSchedule(m_mTaskSche);
 
 	GetNewTaskSche();
-
 	DelUnavailableTask();
-}
-
-bool YDTask::IsTaskPause()
-{
-	bool pause  = m_ts.IsPause();
-	bool frozen = m_ts.IsFrozen();
-
-	// 检查任务状态
-	m_ts.Check();
-
-	if ( pause != m_ts.IsPause() )
-	{
-		pause = !pause;
-		if ( pause )
-		{
-			m_pLog->Output("[YD_TASK] GET TASK STATE: [PAUSE] (暂停)");
-		}
-		else
-		{
-			m_pLog->Output("[YD_TASK] GET TASK STATE: [CONTINUE] (继续)");
-		}
-	}
-
-	if ( frozen != m_ts.IsFrozen() )
-	{
-		frozen = !frozen;
-		if ( frozen )
-		{
-			m_pLog->Output("[YD_TASK] GET TASK STATE: [FROZEN] (冻结)");
-		}
-		else
-		{
-			m_pLog->Output("[YD_TASK] GET TASK STATE: [THAWED] (解冻)");
-		}
-	}
-
-	// 暂停或冻结期内，不获取也不下发新任务！
-	return (pause || frozen);
 }
 
 void YDTask::GetNewTaskSche()
@@ -597,8 +537,7 @@ bool YDTask::IsEtlSucceeded(const TaskScheLog& ts_log) const
 
 void YDTask::BuildNewTask() throw(base::Exception)
 {
-	// 任务暂停时不下发新任务
-	if ( IsTaskPause() || (m_mTaskWait.empty() && m_listTaskPause.empty()) )
+	if ( m_mTaskWait.empty() && m_listTaskPause.empty() )
 	{
 		return;
 	}
@@ -689,6 +628,7 @@ int YDTask::PerformNewTask(const base::SimpleTime& st_now, RATask& rat, bool tas
 
 		// 下发采集任务
 		const int VEC_SIZE = rat.vec_etl_tasks.size();
+		m_pLog->Output("[YD_TASK] 需要下发的采集任务数：%d", VEC_SIZE);
 		for ( int i = 0; i < VEC_SIZE; ++i )
 		{
 			TaskScheLog& ref_tslog = rat.vec_etl_tasks[i];
@@ -758,6 +698,7 @@ int YDTask::PerformNewTask(const base::SimpleTime& st_now, RATask& rat, bool tas
 				// 下发新的采集任务
 				TaskScheLog ts_log;
 				const int VEC_SIZE = vec_etl_id.size();
+				m_pLog->Output("[YD_TASK] 需要下发的采集任务数：%d", VEC_SIZE);
 				for ( int i = 0; i < VEC_SIZE; ++i )
 				{
 					ts_log.Clear();
