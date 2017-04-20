@@ -251,52 +251,53 @@ void YCTask::HandleEtlTask() throw(base::Exception)
 	for ( int i = 0; i < VEC_ETL_SIZE; ++i )
 	{
 		TaskInfo& ref_ti = m_vecEtlTaskInfo[i];
-		t_state.seq_id = ref_ti.seq_id;
-		m_pTaskDB->SelectTaskState(t_state);
 
-		TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
-		if ( m_etlStateEnd == t_state.state )			// 采集完成
+		// 检查采集进程是否已经退出
+		if ( IsProcessAlive(ref_ti.task_id) )	// 进程是活动的
 		{
-			m_pLog->Output("[YC_TASK] Acquire finished: TASK_ID=[%lld], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_ti.etl_time.c_str(), ref_tri.stat_city.c_str());
-
-			TaskRequestUpdate(TSTS_AnalyseBegin, ref_tri);
-
-			ref_ti.t_type   = TaskInfo::TT_Analyse;
-			ref_ti.task_id  = GenerateTaskID();
-			ref_ti.kpi_id   = ref_tri.kpi_id;
-			//ref_ti.etl_time = EtlTimeTransform(ref_tri.stat_cycle);
-			if ( !GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Analyse, ref_ti.sub_id) )
-			{
-				throw base::Exception(YCTERR_HDL_ETL_TASK, "Can not find the analyse rule ID! (KPI_ID:%s) [FILE:%s, LINE:%d]", ref_tri.kpi_id.c_str(), __FILE__, __LINE__);
-			}
-			m_pLog->Output("[YC_TASK] Analyse: TASK_ID=[%ld], KPI_ID=[%s], ANA_ID=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_tri.stat_city.c_str());
-
-			// 开始分析任务
-			CreateTask(ref_ti);
-
-			m_vecAnaTaskInfo.push_back(ref_ti);
+			vEtlTaskInfo.push_back(ref_ti);
 		}
-		else if ( m_etlStateError == t_state.state )	// 采集异常
+		else	// 进程已退出
 		{
-			m_pLog->Output("[YC_TASK] Acquire failed: TASK_ID=[%lld], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_ti.etl_time.c_str(), ref_tri.stat_city.c_str());
+			t_state.seq_id = ref_ti.seq_id;
+			m_pTaskDB->SelectTaskState(t_state);
 
-			ref_tri.desc = t_state.task_desc;
-			m_pLog->Output("[YC_TASK] Acquire exception: %s", ref_tri.desc.c_str());
-
-			TaskRequestUpdate(TSTS_EtlException, ref_tri);
-			m_pLog->Output("[YC_TASK] Error task: SEQ=[%d], KPI=[%s], CITY=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_city.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
-
-			// 任务删除
-			m_mTaskReqInfo.erase(t_state.seq_id);
-		}
-		else		// 其他状态
-		{
-			// 检查采集进程是否异常退出
-			if ( IsProcessAlive(ref_ti.task_id) )		// 进程是活动的
+			TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
+			if ( m_etlStateEnd == t_state.state )	// 采集完成
 			{
-				vEtlTaskInfo.push_back(ref_ti);
+				m_pLog->Output("[YC_TASK] Acquire finished: TASK_ID=[%lld], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_ti.etl_time.c_str(), ref_tri.stat_city.c_str());
+
+				TaskRequestUpdate(TSTS_AnalyseBegin, ref_tri);
+
+				ref_ti.t_type   = TaskInfo::TT_Analyse;
+				ref_ti.task_id  = GenerateTaskID();
+				ref_ti.kpi_id   = ref_tri.kpi_id;
+				//ref_ti.etl_time = EtlTimeTransform(ref_tri.stat_cycle);
+				if ( !GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Analyse, ref_ti.sub_id) )
+				{
+					throw base::Exception(YCTERR_HDL_ETL_TASK, "Can not find the analyse rule ID! (KPI_ID:%s) [FILE:%s, LINE:%d]", ref_tri.kpi_id.c_str(), __FILE__, __LINE__);
+				}
+
+				// 开始分析任务
+				m_pLog->Output("[YC_TASK] Analyse: TASK_ID=[%ld], KPI_ID=[%s], ANA_ID=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_tri.stat_city.c_str());
+				CreateTask(ref_ti);
+
+				m_vecAnaTaskInfo.push_back(ref_ti);
 			}
-			else	// 进程异常退出
+			else if ( m_etlStateError == t_state.state )	// 采集报错
+			{
+				m_pLog->Output("[YC_TASK] Acquire failed: TASK_ID=[%lld], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_ti.etl_time.c_str(), ref_tri.stat_city.c_str());
+
+				ref_tri.desc = t_state.task_desc;
+				m_pLog->Output("[YC_TASK] Acquire exception: %s", ref_tri.desc.c_str());
+
+				TaskRequestUpdate(TSTS_EtlException, ref_tri);
+				m_pLog->Output("[YC_TASK] Error task: SEQ=[%d], KPI=[%s], CITY=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_city.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
+
+				// 任务删除
+				m_mTaskReqInfo.erase(t_state.seq_id);
+			}
+			else	// 采集异常
 			{
 				m_pLog->Output("[YC_TASK] Acquire exited unexpectedly: TASK_ID=[%lld], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_ti.etl_time.c_str(), ref_tri.stat_city.c_str());
 
@@ -327,39 +328,40 @@ void YCTask::HandleAnaTask() throw(base::Exception)
 	for ( int i = 0; i < VEC_ANA_SIZE; ++i )
 	{
 		TaskInfo& ref_ti = m_vecAnaTaskInfo[i];
-		t_state.seq_id = ref_ti.seq_id;
-		m_pTaskDB->SelectTaskState(t_state);
 
-		TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
-		if ( m_anaStateEnd == t_state.state )			// 分析完成
+		// 检查分析进程是否已经退出
+		if ( IsProcessAlive(ref_ti.task_id) )	// 进程是活动的
 		{
-			m_pLog->Output("[YC_TASK] Analyse finished: TASK_ID=[%lld], KPI_ID=[%s], ANA_ID=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_tri.stat_city.c_str());
-
-			// 移到已完成的任务列表
-			m_vecEndTask.push_back(ref_tri);
-			m_mTaskReqInfo.erase(t_state.seq_id);
+			vAnaTaskInfo.push_back(ref_ti);
 		}
-		else if ( m_anaStateError == t_state.state )	// 分析异常
+		else	// 进程已退出
 		{
-			m_pLog->Output("[YC_TASK] Analyse failed: TASK_ID=[%lld], KPI_ID=[%s], ANA_ID=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_tri.stat_city.c_str());
+			t_state.seq_id = ref_ti.seq_id;
+			m_pTaskDB->SelectTaskState(t_state);
 
-			ref_tri.desc = t_state.task_desc;
-			m_pLog->Output("[YC_TASK] Analyse exception: %s", ref_tri.desc.c_str());
-
-			TaskRequestUpdate(TSTS_AnalyseException, ref_tri);
-			m_pLog->Output("[YC_TASK] Error task: SEQ=[%d], KPI=[%s], CITY=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_city.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
-
-			// 任务删除
-			m_mTaskReqInfo.erase(t_state.seq_id);
-		}
-		else	// 其他状态
-		{
-			// 检查分析进程是否异常退出
-			if ( IsProcessAlive(ref_ti.task_id) )		// 进程是活动的
+			TaskReqInfo& ref_tri = m_mTaskReqInfo[t_state.seq_id];
+			if ( m_anaStateEnd == t_state.state )	// 分析完成
 			{
-				vAnaTaskInfo.push_back(ref_ti);
+				m_pLog->Output("[YC_TASK] Analyse finished: TASK_ID=[%lld], KPI_ID=[%s], ANA_ID=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_tri.stat_city.c_str());
+
+				// 移到已完成的任务列表
+				m_vecEndTask.push_back(ref_tri);
+				m_mTaskReqInfo.erase(t_state.seq_id);
 			}
-			else	// 进程异常退出
+			else if ( m_anaStateError == t_state.state )	// 分析报错
+			{
+				m_pLog->Output("[YC_TASK] Analyse failed: TASK_ID=[%lld], KPI_ID=[%s], ANA_ID=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_tri.stat_city.c_str());
+
+				ref_tri.desc = t_state.task_desc;
+				m_pLog->Output("[YC_TASK] Analyse exception: %s", ref_tri.desc.c_str());
+
+				TaskRequestUpdate(TSTS_AnalyseException, ref_tri);
+				m_pLog->Output("[YC_TASK] Error task: SEQ=[%d], KPI=[%s], CITY=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_city.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
+
+				// 任务删除
+				m_mTaskReqInfo.erase(t_state.seq_id);
+			}
+			else	// 分析异常
 			{
 				m_pLog->Output("[YC_TASK] Analyse exited unexpectedly: TASK_ID=[%lld], KPI_ID=[%s], ANA_ID=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_tri.stat_city.c_str());
 
@@ -430,9 +432,9 @@ void YCTask::BuildNewTask() throw(base::Exception)
 		task_info.kpi_id   = ref_tri.kpi_id;
 		task_info.etl_time = EtlTimeTransform(ref_tri.stat_cycle);
 		GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Acquire, task_info.sub_id);
-		m_pLog->Output("[YC_TASK] Acquire: TASK_ID=[%ld], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], CITY=[%s]", task_info.task_id, task_info.kpi_id.c_str(), task_info.sub_id.c_str(), task_info.etl_time.c_str(), ref_tri.stat_city.c_str());
 
 		// 开始采集任务
+		m_pLog->Output("[YC_TASK] Acquire: TASK_ID=[%ld], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], CITY=[%s]", task_info.task_id, task_info.kpi_id.c_str(), task_info.sub_id.c_str(), task_info.etl_time.c_str(), ref_tri.stat_city.c_str());
 		CreateTask(task_info);
 
 		m_vecEtlTaskInfo.push_back(task_info);

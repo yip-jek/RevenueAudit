@@ -367,29 +367,32 @@ void YDTask::HandleAnaTask() throw(base::Exception)
 	std::map<int, RATask>::iterator it = m_mAnaTaskRun.begin();
 	while ( it != m_mAnaTaskRun.end() )
 	{
-		RATask& ref_rat = it->second;
+		RATask&      ref_rat   = it->second;
 		TaskScheLog& ref_tslog = ref_rat.tsl_ana_task;
-		m_pTaskDB2->SelectTaskScheLogState(ref_tslog);
 
-		// 分析任务是否完成？
-		if ( !ref_tslog.end_time.empty() && !ref_tslog.task_state.empty() )		// 已完成
+		long long ll_taskid = 0;
+		if ( !base::PubStr::Str2LLong(ref_tslog.task_id, ll_taskid) )
 		{
-			m_pLog->Output("[YD_TASK] Analyse finished: SEQ=[%d], LOG=[%d], TASK_ID=[%s], KPI=[%s], ANA_ID=[%s], ETL_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s], STATE_DESC=[%s], REMARK=[%s]", ref_rat.seq_id, ref_tslog.log_id, ref_tslog.task_id.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str(), ref_tslog.end_time.c_str(), ref_tslog.task_state.c_str(), ref_tslog.state_desc.c_str(), ref_tslog.remarks.c_str());
-
-			m_mTaskEnd[ref_rat.seq_id] = ref_rat;
-			m_mAnaTaskRun.erase(it++);
-			continue;
+			throw base::Exception(YDTERR_HDL_ANA_TASK, "Convert the task_id (string) to long long type failed: SEQ=[%d], KPI=[%s], ANA_ID=[%s], TASK_ID=[%s] [FILE:%s, LINE:%d]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.task_id.c_str(), __FILE__, __LINE__);
 		}
-		else	// 未完成
-		{
-			long long ll_taskid = 0;
-			if ( !base::PubStr::Str2LLong(ref_tslog.task_id, ll_taskid) )
-			{
-				throw base::Exception(YDTERR_HDL_ANA_TASK, "Convert the task_id (string) to long long failed: SEQ=[%d], KPI=[%s], ANA_ID=[%s], TASK_ID=[%s] [FILE:%s, LINE:%d]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.task_id.c_str(), __FILE__, __LINE__);
-			}
 
-			// 检查分析进程是否异常退出
-			if ( !IsProcessAlive(ll_taskid) )		// 进程异常退出
+		// 检查分析进程是否已经退出
+		if ( IsProcessAlive(ll_taskid) )	// 进程是活动的
+		{
+			++it;
+		}
+		else	// 进程已退出
+		{
+			// 分析任务是否已完成？
+			m_pTaskDB2->SelectTaskScheLogState(ref_tslog);
+			if ( !ref_tslog.end_time.empty() && !ref_tslog.task_state.empty() )	// 分析已完成
+			{
+				m_pLog->Output("[YD_TASK] Analyse finished: SEQ=[%d], LOG=[%d], TASK_ID=[%s], KPI=[%s], ANA_ID=[%s], ETL_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s], STATE_DESC=[%s], REMARK=[%s]", ref_rat.seq_id, ref_tslog.log_id, ref_tslog.task_id.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str(), ref_tslog.end_time.c_str(), ref_tslog.task_state.c_str(), ref_tslog.state_desc.c_str(), ref_tslog.remarks.c_str());
+
+				m_mTaskEnd[ref_rat.seq_id] = ref_rat;
+				m_mAnaTaskRun.erase(it++);
+			}
+			else	// 分析异常 (未完成)
 			{
 				m_pLog->Output("[YD_TASK] Analyse exited unexpectedly: SEQ=[%d], LOG=[%d], TASK_ID=[%lld], KPI=[%s], ANA_ID=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ref_tslog.log_id, ll_taskid, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str());
 
@@ -400,11 +403,8 @@ void YDTask::HandleAnaTask() throw(base::Exception)
 
 				m_mTaskEnd[ref_rat.seq_id] = ref_rat;
 				m_mAnaTaskRun.erase(it++);
-				continue;
 			}
 		}
-
-		++it;
 	}
 }
 
@@ -424,7 +424,6 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 
 		int c_etl_success  = 0;
 		int c_etl_finished = 0;
-
 		const int VEC_SIZE = ref_rat.vec_etl_tasks.size();
 		for ( int i = 0; i < VEC_SIZE; ++i )
 		{
@@ -439,31 +438,31 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 			}
 			else	// 未获取状态
 			{
-				m_pTaskDB2->SelectTaskScheLogState(ref_tslog);
-
-				// 采集任务是否完成？
-				if ( !ref_tslog.end_time.empty() && !ref_tslog.task_state.empty() )		// 已完成
+				long long ll_taskid = 0;
+				if ( !base::PubStr::Str2LLong(ref_tslog.task_id, ll_taskid) )
 				{
-					m_pLog->Output("[YD_TASK] Acquire finished: SEQ=[%d], LOG=[%d], TASK_ID=[%s], KPI=[%s], ETL_ID=[%s], ETL_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s], STATE_DESC=[%s], REMARK=[%s]", ref_rat.seq_id, ref_tslog.log_id, ref_tslog.task_id.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str(), ref_tslog.end_time.c_str(), ref_tslog.task_state.c_str(), ref_tslog.state_desc.c_str(), ref_tslog.remarks.c_str());
-
-					++c_etl_finished;
-					if ( IsEtlSucceeded(ref_tslog) )
-					{
-						++c_etl_success;
-					}
+					throw base::Exception(YDTERR_HDL_ETL_TASK, "Convert the task_id (string) to long long type failed: SEQ=[%d], KPI=[%s], ETL_ID=[%s], TASK_ID=[%s] [FILE:%s, LINE:%d]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.task_id.c_str(), __FILE__, __LINE__);
 				}
-				else	// 未完成
-				{
-					long long ll_taskid = 0;
-					if ( !base::PubStr::Str2LLong(ref_tslog.task_id, ll_taskid) )
-					{
-						throw base::Exception(YDTERR_HDL_ETL_TASK, "Convert the task_id (string) to long long failed: SEQ=[%d], KPI=[%s], ETL_ID=[%s], TASK_ID=[%s] [FILE:%s, LINE:%d]", ref_rat.seq_id, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.task_id.c_str(), __FILE__, __LINE__);
-					}
 
-					// 检查采集进程是否异常退出
-					if ( !IsProcessAlive(ll_taskid) )		// 进程异常退出
+				// 检查采集进程是否已经退出
+				// 如果进程为活动的，则 DO NOTHING!
+				if ( !IsProcessAlive(ll_taskid) )	// 进程已退出
+				{
+					// 采集任务是否已完成？
+					m_pTaskDB2->SelectTaskScheLogState(ref_tslog);
+					if ( !ref_tslog.end_time.empty() && !ref_tslog.task_state.empty() )	// 采集已完成
 					{
-						m_pLog->Output("[YD_TASK] Acquire exited unexpectedly: SEQ=[%d], LOG=[%d], TASK_ID=[%lld], KPI=[%s], ANA_ID=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ref_tslog.log_id, ll_taskid, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str());
+						m_pLog->Output("[YD_TASK] Acquire finished: SEQ=[%d], LOG=[%d], TASK_ID=[%s], KPI=[%s], ETL_ID=[%s], ETL_TIME=[%s], END_TIME=[%s], TASK_STATE=[%s], STATE_DESC=[%s], REMARK=[%s]", ref_rat.seq_id, ref_tslog.log_id, ref_tslog.task_id.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str(), ref_tslog.end_time.c_str(), ref_tslog.task_state.c_str(), ref_tslog.state_desc.c_str(), ref_tslog.remarks.c_str());
+
+						++c_etl_finished;
+						if ( IsEtlSucceeded(ref_tslog) )
+						{
+							++c_etl_success;
+						}
+					}
+					else	// 采集异常 (未完成)
+					{
+						m_pLog->Output("[YD_TASK] Acquire exited unexpectedly: SEQ=[%d], LOG=[%d], TASK_ID=[%lld], KPI=[%s], ETL_ID=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ref_tslog.log_id, ll_taskid, ref_rat.kpi_id.c_str(), ref_tslog.sub_id.c_str(), ref_tslog.etl_time.c_str());
 
 						ref_tslog.end_time   = base::SimpleTime::Now().Time14();
 						ref_tslog.task_state = "ETL_ABORT";
@@ -488,7 +487,7 @@ void YDTask::HandleEtlTask() throw(base::Exception)
 			m_mAnaTaskRun[ref_rat.seq_id] = ref_rat;
 			m_mEtlTaskRun.erase(it++);
 		}
-		else if ( VEC_SIZE == c_etl_finished )		// 所有采集全部完成，但不是全部成功
+		else if ( VEC_SIZE == c_etl_finished )	// 所有采集全部完成，但不是全部成功
 		{
 			m_pLog->Output("[YD_TASK] Acquire all finished: SEQ=[%d], TASK_TYPE=[%s], KPI=[%s], ETL_TIME=[%s]", ref_rat.seq_id, ref_tslog.task_type.c_str(), ref_rat.kpi_id.c_str(), ref_tslog.etl_time.c_str());
 
