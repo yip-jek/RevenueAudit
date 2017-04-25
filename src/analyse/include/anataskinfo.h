@@ -577,80 +577,6 @@ public:
 	std::string          Remark_5;				// 备注5
 };
 
-// 告警规则
-struct AlarmRule
-{
-public:
-	// 告警类型
-	enum ALARM_TYPE
-	{
-		AT_UNKNOWN   = 0,			// 未知类型
-		AT_FLUCTUATE = 1,			// 波动告警
-		AT_RATIO     = 2,			// 对比告警
-	};
-
-public:
-	AlarmRule(): AlarmType(AT_UNKNOWN)
-	{}
-
-	AlarmRule(const AlarmRule& alarm)
-	:AlarmID(alarm.AlarmID)
-	,AlarmName(alarm.AlarmName)
-	,AlarmType(alarm.AlarmType)
-	,AlarmExpress(alarm.AlarmExpress)
-	,AlarmEvent(alarm.AlarmEvent)
-	,SendAms(alarm.SendAms)
-	,SendSms(alarm.SendSms)
-	{}
-
-	const AlarmRule& operator = (const AlarmRule& alarm)
-	{
-		if ( this != &alarm )
-		{
-			this->AlarmID      = alarm.AlarmID     ;
-			this->AlarmName    = alarm.AlarmName   ;
-			this->AlarmType    = alarm.AlarmType   ;
-			this->AlarmExpress = alarm.AlarmExpress;
-			this->AlarmEvent   = alarm.AlarmEvent  ;
-			this->SendAms      = alarm.SendAms     ;
-			this->SendSms      = alarm.SendSms     ;
-		}
-
-		return *this;
-	}
-
-	// 设置告警类型
-	bool SetAlarmType(const std::string& a_type)
-	{
-		const std::string TYPE = base::PubStr::TrimUpperB(a_type);
-
-		if ( "FLUCTUATE" == TYPE )		// 波动告警
-		{
-			AlarmType = AT_FLUCTUATE;
-		}
-		else if ( "RATIO" == TYPE )		// 对比告警
-		{
-			AlarmType = AT_RATIO;
-		}
-		else	// 未知告警
-		{
-			AlarmType = AT_UNKNOWN;
-			return false;
-		}
-
-		return true;
-	};
-
-public:
-	std::string AlarmID;				// 告警规则ID
-	std::string AlarmName;				// 告警规则名称
-	ALARM_TYPE  AlarmType;				// 告警规则类型
-	std::string AlarmExpress;			// 告警规则表达式
-	std::string AlarmEvent;				// 告警事件
-	std::string SendAms;				// 发送工单
-	std::string SendSms;				// 发送短信
-};
-
 // 指标任务信息
 struct AnaTaskInfo
 {
@@ -678,7 +604,6 @@ public:
 	,ResultType(info.ResultType)
 	,TableName(info.TableName)
 	,AnaRule(info.AnaRule)
-	,vecAlarm(info.vecAlarm)
 	,vecEtlRule(info.vecEtlRule)
 	,vecKpiDimCol(info.vecKpiDimCol)
 	,vecKpiValCol(info.vecKpiValCol)
@@ -699,7 +624,6 @@ public:
 			this->TableName   = info.TableName ;
 			this->AnaRule     = info.AnaRule   ;
 
-			this->vecAlarm       = info.vecAlarm;
 			this->vecEtlRule     = info.vecEtlRule;
 			this->vecKpiDimCol   = info.vecKpiDimCol;
 			this->vecKpiValCol   = info.vecKpiValCol;
@@ -768,7 +692,6 @@ public:
 	std::string     TableName;				// 分析结果表
 	AnalyseRule     AnaRule;				// 分析规则
 
-	std::vector<AlarmRule>  vecAlarm;				// 告警规则集
 	std::vector<OneEtlRule> vecEtlRule;				// 采集规则集
 	std::vector<KpiColumn>  vecKpiDimCol;			// 指标维度字段集
 	std::vector<KpiColumn>  vecKpiValCol;			// 指标值字段集

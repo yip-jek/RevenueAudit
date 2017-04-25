@@ -58,9 +58,6 @@ protected:
 	// 删除旧数据
 	virtual void RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception);
 
-	// 告警判断: 如果达到告警阀值，则生成告警
-	virtual void AlarmJudgement() throw(base::Exception);
-
 	// 更新维度取值范围
 	virtual void UpdateDimValue();
 

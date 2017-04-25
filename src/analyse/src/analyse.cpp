@@ -9,9 +9,6 @@
 #include "canahive.h"
 #include "taskinfoutil.h"
 #include "sqltranslator.h"
-#include "alarmevent.h"
-#include "alarmfluctuate.h"
-#include "alarmratio.h"
 //#include "compareresult.h"
 
 
@@ -29,7 +26,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 4.0015.20170416 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 4.0016.20170425 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -55,8 +52,6 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_DIM");
 	m_cfg.RegisterItem("TABLE", "TAB_ETL_VAL");
 	m_cfg.RegisterItem("TABLE", "TAB_ANA_RULE");
-	m_cfg.RegisterItem("TABLE", "TAB_ALARM_RULE");
-	m_cfg.RegisterItem("TABLE", "TAB_ALARM_EVENT");
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CHANNEL");
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CITY");
 
@@ -88,8 +83,6 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_tabEtlDim      = m_cfg.GetCfgValue("TABLE", "TAB_ETL_DIM");
 	m_tabEtlVal      = m_cfg.GetCfgValue("TABLE", "TAB_ETL_VAL");
 	m_tabAnaRule     = m_cfg.GetCfgValue("TABLE", "TAB_ANA_RULE");
-	m_tabAlarmRule   = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_RULE");
-	m_tabAlarmEvent  = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_EVENT");
 	m_tabDictChannel = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CHANNEL");
 	m_tabDictCity    = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
 
@@ -114,8 +107,6 @@ void Analyse::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabEtlDim(m_tabEtlDim);
 	m_pAnaDB2->SetTabEtlVal(m_tabEtlVal);
 	m_pAnaDB2->SetTabAnaRule(m_tabAnaRule);
-	m_pAnaDB2->SetTabAlarmRule(m_tabAlarmRule);
-	m_pAnaDB2->SetTabAlarmEvent(m_tabAlarmEvent);
 	m_pAnaDB2->SetTabDictChannel(m_tabDictChannel);
 	m_pAnaDB2->SetTabDictCity(m_tabDictCity);
 
@@ -562,9 +553,6 @@ void Analyse::DoDataAnalyse() throw(base::Exception)
 
 	m_pLog->Output("[Analyse] 生成结果数据 ...");
 	StoreResult();
-
-	m_pLog->Output("[Analyse] 告警判断 ...");
-	AlarmJudgement();
 
 	m_pLog->Output("[Analyse] 更新维度取值范围 ...");
 	UpdateDimValue();
@@ -1507,166 +1495,6 @@ void Analyse::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype
 	else
 	{
 		m_pLog->Output("[Analyse] 无法按时间区分结果数据，因此不进行删除操作！");
-	}
-}
-
-void Analyse::AlarmJudgement() throw(base::Exception)
-{
-	// 是否有配置告警？
-	if ( m_taskInfo.vecAlarm.empty() )
-	{
-		m_pLog->Output("[Analyse] 无告警配置：不产生告警!");
-		return;
-	}
-
-	const int VEC_SIZE = m_taskInfo.vecAlarm.size();
-	for ( int i = 0; i < VEC_SIZE; ++i )
-	{
-		AlarmRule& ref_rule = m_taskInfo.vecAlarm[i];
-		m_pLog->Output("[Analyse] 告警判断：告警 %d <ID:%s, NAME:%d>", (i+1), ref_rule.AlarmID.c_str(), ref_rule.AlarmName.c_str());
-
-		if ( ref_rule.AlarmExpress.empty() )
-		{
-			throw base::Exception(ANAERR_ALARM_JUDGEMENT_FAILED, "告警规则表达式缺失！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), ref_rule.AlarmID.c_str(), __FILE__, __LINE__);
-		}
-
-		switch ( ref_rule.AlarmType )
-		{
-		case AlarmRule::AT_FLUCTUATE:
-			m_pLog->Output("[Analyse] 告警类型：波动告警");
-			FluctuateAlarm(ref_rule);
-			break;
-		case AlarmRule::AT_RATIO:
-			m_pLog->Output("[Analyse] 告警类型：对比告警");
-			RatioAlarm(ref_rule);
-			break;
-		case AlarmRule::AT_UNKNOWN:
-		default:
-			throw base::Exception(ANAERR_ALARM_JUDGEMENT_FAILED, "无法识别的告警规则类型：AT_UNKNOWN！(KPI_ID:%s, ALARM_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), ref_rule.AlarmID.c_str(), __FILE__, __LINE__);
-			break;
-		}
-	}
-}
-
-void Analyse::FluctuateAlarm(AlarmRule& alarm_rule) throw(base::Exception)
-{
-	AlarmFluctuate alarm_flu;
-	alarm_flu.SetTaskDBInfo(m_taskInfo, m_dbinfo);
-	alarm_flu.SetAlarmRule(alarm_rule);
-	alarm_flu.SetUnicodeTransfer(m_UniCodeTransfer);
-	alarm_flu.AnalyseExpression();
-
-	const std::string ALARM_DATE = alarm_flu.GetFluctuateDate();
-	m_pLog->Output("[Analyse] 准备目标表(%s)的比对数据 (时间:%s) ...", m_dbinfo.target_table.c_str(), ALARM_DATE.c_str());
-	std::vector<std::vector<std::string> > vec2_old_data;
-	m_pAnaDB2->SelectTargetData(m_dbinfo, ALARM_DATE, vec2_old_data);
-	m_pLog->Output("[Analyse] 获得比对数据，大小为：%llu", vec2_old_data.size());
-
-	alarm_flu.SetCompareData(vec2_old_data);
-
-	// 是否为报表数据
-	if ( m_taskInfo.AnaRule.AnaType != AnalyseRule::ANATYPE_REPORT_STATISTICS )	// 非报表数据
-	{
-		const int VEC3_SIZE = m_v3HiveSrcData.size();
-		for ( int i = 0; i < VEC3_SIZE; ++i )
-		{
-			std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
-
-			alarm_flu.AnalyseTargetData(ref_vec2);
-		}
-	}
-	else	// 报表数据
-	{
-		alarm_flu.AnalyseTargetData(m_v2ReportStatData);
-	}
-
-	// 生成告警事件
-	std::vector<AlarmEvent> vec_event;
-	if ( alarm_flu.GenerateAlarmEvent(vec_event) )		// 产生告警事件
-	{
-		HandleAlarmEvent(vec_event);
-	}
-	else		// 无告警事件
-	{
-		m_pLog->Output("[Analyse] 无告警生成！(ALARM_ID:%s, ALARM_NAME:%s)", alarm_rule.AlarmID.c_str(), alarm_rule.AlarmName.c_str());
-	}
-}
-
-void Analyse::RatioAlarm(AlarmRule& alarm_rule) throw(base::Exception)
-{
-	AlarmRatio alarm_rat;
-	alarm_rat.SetTaskDBInfo(m_taskInfo, m_dbinfo);
-	alarm_rat.SetAlarmRule(alarm_rule);
-	alarm_rat.SetUnicodeTransfer(m_UniCodeTransfer);
-	alarm_rat.AnalyseExpression();
-
-	// 是否为报表数据
-	if ( m_taskInfo.AnaRule.AnaType != AnalyseRule::ANATYPE_REPORT_STATISTICS )	// 非报表数据
-	{
-		const int VEC3_SIZE = m_v3HiveSrcData.size();
-		for ( int i = 0; i < VEC3_SIZE; ++i )
-		{
-			std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
-
-			alarm_rat.AnalyseTargetData(ref_vec2);
-		}
-	}
-	else	// 报表数据
-	{
-		alarm_rat.AnalyseTargetData(m_v2ReportStatData);
-	}
-
-	// 生成告警事件
-	std::vector<AlarmEvent> vec_event;
-	if ( alarm_rat.GenerateAlarmEvent(vec_event) )		// 产生告警事件
-	{
-		HandleAlarmEvent(vec_event);
-	}
-	else		// 无告警事件
-	{
-		m_pLog->Output("[Analyse] 无告警生成！(ALARM_ID:%s, ALARM_NAME:%s)", alarm_rule.AlarmID.c_str(), alarm_rule.AlarmName.c_str());
-	}
-}
-
-void Analyse::HandleAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::Exception)
-{
-	if ( vec_event.empty() )
-	{
-		m_pLog->Output("[Analyse] 无告警事件需要处理！");
-	}
-	else
-	{
-		m_pLog->Output("[Analyse] 处理告警事件 ...");
-
-		int event_id = 0;
-		if ( m_pAnaDB2->SelectMaxAlarmEventID(event_id) )
-		{
-			m_pLog->Output("[Analyse] 告警事件表 (%s) 中最大告警事件ID: %d", m_tabAlarmEvent.c_str(), event_id);
-
-			++event_id;		// 最大告警事件 ID + 1
-		}
-		else
-		{
-			m_pLog->Output("[Analyse] 告警事件表 (%s) 中无告警事件记录！", m_tabAlarmEvent.c_str());
-
-			event_id = 1;
-			m_pLog->Output("[Analyse] 默认告警事件 ID 从 1 开始.");
-		}
-
-		// 设置告警事件 ID
-		m_pLog->Output("[Analyse] 设置告警事件 ID ...");
-		const int VEC_EVENT_SIZE = vec_event.size();
-		for ( int i = 0; i < VEC_EVENT_SIZE; ++i )
-		{
-			AlarmEvent& ref_event = vec_event[i];
-			ref_event.eventID = event_id++;
-		}
-
-		// 告警事件入库
-		m_pLog->Output("[Analyse] 登记告警事件 ...");
-		m_pAnaDB2->InsertAlarmEvent(vec_event);
-
-		m_pLog->Output("[Analyse] 成功登记告警事件：%lu", VEC_EVENT_SIZE);
 	}
 }
 

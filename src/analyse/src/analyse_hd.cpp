@@ -350,12 +350,6 @@ void Analyse_HD::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabt
 	}
 }
 
-void Analyse_HD::AlarmJudgement() throw(base::Exception)
-{
-	// 业财稽核统计，暂不生成告警！
-	m_pLog->Output("[Analyse_HD] 暂不生成告警！");
-}
-
 void Analyse_HD::UpdateDimValue()
 {
 	// 业财稽核统计，无需更新维度取值范围！

@@ -58,9 +58,6 @@ protected:
 	// 删除采集目标表
 	void DropEtlTargetTable();
 
-	// 告警判断: 如果达到告警阀值，则生成告警
-	virtual void AlarmJudgement() throw(base::Exception);
-
 	// 更新维度取值范围
 	virtual void UpdateDimValue();
 

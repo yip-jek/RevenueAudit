@@ -8,7 +8,6 @@
 struct AnaDBInfo;
 struct ChannelUniformCode;
 struct CityUniformCode;
-class AlarmEvent;
 
 class CAnaDB2 : public base::BaseDB2
 {
@@ -39,12 +38,6 @@ public:
 
 	// 设置分析规则表
 	void SetTabAnaRule(const std::string& t_anarule);
-
-	// 设置告警规则表
-	void SetTabAlarmRule(const std::string& t_alarmrule);
-
-	// 设置告警事件表
-	void SetTabAlarmEvent(const std::string& t_alarmevent);
 
 	// 设置渠道统一编码表
 	void SetTabDictChannel(const std::string& t_dictchann);
@@ -102,13 +95,6 @@ public:
 	// 获取目标数据
 	void SelectTargetData(AnaDBInfo& db_info, const std::string& date, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
 
-	// 获取最大告警事件 ID
-	// 返回：true-成功获取，false-获取失败（无告警事件数据）
-	bool SelectMaxAlarmEventID(int& max_event_id) throw(base::Exception);
-
-	// 插入告警事件数据
-	void InsertAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::Exception);
-
 	// 设置任务请求表
 	void SetTabYCTaskReq(const std::string& t_yc_taskreq);
 
@@ -155,9 +141,6 @@ private:
 	// 查询分析规则表
 	void SelectAnaRule(AnalyseRule& ana) throw(base::Exception);
 
-	// 查询告警规则表
-	void SelectAlarmRule(AlarmRule& alarm) throw(base::Exception);
-
 	// 查询对比结果描述（从维度取值表中获取）
 	// 若没有获取到，则返回空集
 	void SelectCompareResultDesc(const std::string& kpi_id, const std::string& comp_res_name, std::vector<std::string>& vec_comresdesc);
@@ -184,8 +167,6 @@ private:
 	std::string m_tabEtlDim;			// 采集维度规则表
 	std::string m_tabEtlVal;			// 采集值规则表
 	std::string m_tabAnaRule;			// 分析规则表
-	std::string m_tabAlarmRule;			// 告警规则表
-	std::string m_tabAlarmEvent;		// 告警事件表
 	std::string m_tabDictChannel;		// 渠道统一编码表
 	std::string m_tabDictCity;			// 地市统一编码表
 	std::string m_tabTaskScheLog;		// 任务日程日志表

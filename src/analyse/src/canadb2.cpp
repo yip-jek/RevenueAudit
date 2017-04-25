@@ -4,7 +4,6 @@
 #include "anadbinfo.h"
 #include "anaerror.h"
 #include "uniformcodetransfer.h"
-#include "alarmevent.h"
 
 
 CAnaDB2::CAnaDB2(const std::string& db_name, const std::string& usr, const std::string& pw)
@@ -49,16 +48,6 @@ void CAnaDB2::SetTabEtlVal(const std::string& t_etlval)
 void CAnaDB2::SetTabAnaRule(const std::string& t_anarule)
 {
 	m_tabAnaRule = t_anarule;
-}
-
-void CAnaDB2::SetTabAlarmRule(const std::string& t_alarmrule)
-{
-	m_tabAlarmRule = t_alarmrule;
-}
-
-void CAnaDB2::SetTabAlarmEvent(const std::string& t_alarmevent)
-{
-	m_tabAlarmEvent = t_alarmevent;
 }
 
 void CAnaDB2::SetTabDictChannel(const std::string& t_dictchann)
@@ -328,8 +317,8 @@ void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 	SelectKpiColumn(info);
 
 	// 获取采集规则数据
-	size_t v_size = info.vecEtlRule.size();
-	for ( size_t i = 0; i < v_size; ++i )
+	const int VEC_SIZE = info.vecEtlRule.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
 		OneEtlRule& one = info.vecEtlRule[i];
 
@@ -344,15 +333,6 @@ void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 
 	// 获取分析规则数据
 	SelectAnaRule(info.AnaRule);
-
-	// 获取告警规则数据
-	v_size = info.vecAlarm.size();
-	for ( size_t i = 0; i < v_size; ++i )
-	{
-		AlarmRule& alarm = info.vecAlarm[i];
-
-		SelectAlarmRule(alarm);
-	}
 
 	// 获取对比结果字段名称
 	const std::string COMPARE_RESULT_DBNAME = GetCompareResultName(info.vecKpiValCol);
@@ -446,13 +426,12 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string str_etlruleid;
-	std::string str_alarmid;
-
 	int counter = 0;
+	std::string str_etlruleid;
+
 	try
 	{
-		std::string sql = "select DATA_SOURCE, ETLRULE_ID, KPI_CYCLE, ALARM_ID, RESULT_TYPE, KPI_TABLENAME from ";
+		std::string sql = "select DATA_SOURCE, ETLRULE_ID, KPI_CYCLE, RESULT_TYPE, KPI_TABLENAME from ";
 		sql += m_tabKpiRule + " where KPI_ID = ?";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -470,7 +449,6 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 			info.DataSrcType   = (const char*)rs[index++];
 			str_etlruleid      = (const char*)rs[index++];
 			info.KpiCycle      = (const char*)rs[index++];
-			str_alarmid        = (const char*)rs[index++];
 			result_type        = (const char*)rs[index++];
 			info.TableName     = (const char*)rs[index++];
 
@@ -501,28 +479,14 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 	std::vector<OneEtlRule> vec_etl;
 	OneEtlRule one;
 	one.KpiID = info.KpiID;
-	size_t v_size = vec_id.size();
-	for ( size_t i = 0; i < v_size; ++i )
+	const int VEC_SIZE = vec_id.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
 		one.EtlRuleID = vec_id[i];
 
 		vec_etl.push_back(one);
 	}
 	vec_etl.swap(info.vecEtlRule);
-
-	// 告警规则集
-	base::PubStr::Str2StrVector(str_alarmid, "|", vec_id);
-
-	std::vector<AlarmRule> vec_alarm;
-	AlarmRule alarm;
-	v_size = vec_id.size();
-	for ( size_t i = 0; i < v_size; ++i )
-	{
-		alarm.AlarmID = vec_id[i];
-
-		vec_alarm.push_back(alarm);
-	}
-	vec_alarm.swap(info.vecAlarm);
 }
 
 void CAnaDB2::SelectKpiColumn(AnaTaskInfo& info) throw(base::Exception)
@@ -961,109 +925,6 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 	v2_data.swap(vec2_data);
 }
 
-bool CAnaDB2::SelectMaxAlarmEventID(int& max_event_id) throw(base::Exception)
-{
-	XDBO2::CRecordset rs(&m_CDB);
-	rs.EnableWarning(true);
-
-	try
-	{
-		std::string sql = "select count(0) from " + m_tabAlarmEvent;
-
-		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Execute();
-
-		int rec_count = -1;
-		while ( !rs.IsEOF() )
-		{
-			rec_count = (int)rs[1];
-
-			rs.MoveNext();
-		}
-		rs.Close();
-
-		if ( rec_count > 0 )			// 有记录
-		{
-			sql = "select max(ALARMEVENT_ID) from " + m_tabAlarmEvent;
-
-			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-			rs.Execute();
-
-			while ( !rs.IsEOF() )
-			{
-				max_event_id = (int)rs[1];
-
-				rs.MoveNext();
-			}
-			rs.Close();
-
-			return true;
-		}
-		else if ( 0 == rec_count )		// 无记录
-		{
-			return false;
-		}
-		else	// 无返回值
-		{
-			throw base::Exception(ANAERR_SEL_MAX_EVENTID, "[DB2] %s failed: NO result ! [FILE:%s, LINE:%d]", sql.c_str(), __FILE__, __LINE__);
-		}
-	}
-	catch ( const XDBO2::CDBException& ex )
-	{
-		throw base::Exception(ANAERR_SEL_MAX_EVENTID, "[DB2] Select %s max event ID failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmEvent.c_str(), ex.what(), __FILE__, __LINE__);
-	}
-}
-
-void CAnaDB2::InsertAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::Exception)
-{
-	XDBO2::CRecordset rs(&m_CDB);
-	rs.EnableWarning(true);
-
-	try
-	{
-		std::string sql = "insert into " + m_tabAlarmEvent;
-		sql += "(ALARMEVENT_ID, ALARMEVENT_CONT, ALARMEVENT_DESC, ALARM_LEVEL, ALARM_ID, ALARM_TIME, ALARM_STATE) ";
-		sql += "values(?, ?, ?, ?, ?, ?, ?)";
-
-		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-
-		Begin();
-
-		const int VEC_SIZE = vec_event.size();
-		for ( int i = 0; i < VEC_SIZE; ++i )
-		{
-			AlarmEvent& ref_event = vec_event[i];
-
-			int index = 1;
-			rs.Parameter(index++) = ref_event.eventID;
-			rs.Parameter(index++) = ref_event.eventCont.c_str();
-			rs.Parameter(index++) = ref_event.eventDesc.c_str();
-			rs.Parameter(index++) = AlarmEvent::TransAlarmLevel(ref_event.alarmLevel).c_str();
-			rs.Parameter(index++) = ref_event.alarmID.c_str();
-			rs.Parameter(index++) = ref_event.alarmTime.c_str();
-			rs.Parameter(index++) = AlarmEvent::TransAlarmState(ref_event.alarmState);
-
-			rs.Execute();
-
-			// 每达到最大值提交一次
-			if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
-			{
-				Commit();
-			}
-		}
-
-		Commit();
-
-		rs.Close();
-	}
-	catch ( const XDBO2::CDBException& ex )
-	{
-		throw base::Exception(ANAERR_INS_ALARMEVENT, "[DB2] Insert alarm event to %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmEvent.c_str(), ex.what(), __FILE__, __LINE__);
-	}
-
-	m_pLog->Output("[DB2] Insert alarm event to [%s]: %lu", m_tabAlarmEvent.c_str(), vec_event.size());
-}
-
 void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
@@ -1320,59 +1181,6 @@ void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
 
 	m_pLog->Output("[DB2] Select %s: [ANALYSIS_ID:%s] [ANALYSIS_NAME:%s] [ANALYSIS_TYPE:%s] [ANALYSIS_EXPRESSION:%s] [Record:%d]", 
 		m_tabAnaRule.c_str(), ana.AnaID.c_str(), ana.AnaName.c_str(), ana_type.c_str(), ana.AnaExpress.c_str(), counter);
-}
-
-void CAnaDB2::SelectAlarmRule(AlarmRule& alarm) throw(base::Exception)
-{
-	XDBO2::CRecordset rs(&m_CDB);
-	rs.EnableWarning(true);
-
-	std::string alarm_type;
-	int counter = 0;
-
-	try
-	{
-		std::string sql = "select ALARM_NAME, ALARM_TYPE, ALARM_EXPRESSION, ALARM_EVENT, SEND_AMS, SEND_SMS from ";
-		sql += m_tabAlarmRule + " where ALARM_ID = ?";
-
-		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(1) = alarm.AlarmID.c_str();
-		rs.Execute();
-
-		while ( !rs.IsEOF() )
-		{
-			++counter;
-
-			int index = 1;
-
-			alarm.AlarmName    = (const char*)rs[index++];
-			alarm_type         = (const char*)rs[index++];
-			alarm.AlarmExpress = (const char*)rs[index++];
-			alarm.AlarmEvent   = (const char*)rs[index++];
-			alarm.SendAms      = (const char*)rs[index++];
-			alarm.SendSms      = (const char*)rs[index++];
-
-			if ( !alarm.SetAlarmType(alarm_type) )
-			{
-				throw base::Exception(ANAERR_SEL_ALARM_RULE, "[DB2] Select %s failed! (ALARM_ID:%s) 无法识别的告警类型：%s [FILE:%s, LINE:%d]", m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), alarm_type.c_str(), __FILE__, __LINE__);
-			}
-
-			rs.MoveNext();
-		}
-		rs.Close();
-	}
-	catch ( const XDBO2::CDBException& ex )
-	{
-		throw base::Exception(ANAERR_SEL_ALARM_RULE, "[DB2] Select %s failed! (ALARM_ID:%s) [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), ex.what(), __FILE__, __LINE__);
-	}
-
-	if ( 0 == counter )
-	{
-		throw base::Exception(ANAERR_SEL_ALARM_RULE, "[DB2] Select %s failed! No record! (ALARM_ID:%s) [FILE:%s, LINE:%d]", m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), __FILE__, __LINE__);
-	}
-
-	m_pLog->Output("[DB2] Select %s: [ALARM_ID:%s] [ALARM_NAME:%s] [ALARM_TYPE:%s] [Record:%d]", 
-		m_tabAlarmRule.c_str(), alarm.AlarmID.c_str(), alarm.AlarmName.c_str(), alarm_type.c_str(), counter);
 }
 
 void CAnaDB2::SelectCompareResultDesc(const std::string& kpi_id, const std::string& comp_res_name, std::vector<std::string>& vec_comresdesc)

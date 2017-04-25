@@ -299,12 +299,6 @@ void Analyse_YC::DropEtlTargetTable()
 	m_pAnaHive->ExecuteAnaSQL(drop_sql);
 }
 
-void Analyse_YC::AlarmJudgement() throw(base::Exception)
-{
-	// 业财稽核统计，暂不生成告警！
-	m_pLog->Output("[Analyse_YC] 暂不生成告警！");
-}
-
 void Analyse_YC::UpdateDimValue()
 {
 	// 业财稽核统计，无需更新维度取值范围！

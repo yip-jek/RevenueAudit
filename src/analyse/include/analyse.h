@@ -15,7 +15,6 @@ class SQLTranslator;
 
 class CAnaDB2;
 class CAnaHive;
-class AlarmEvent;
 
 // 分析模块
 class Analyse : public base::BaseFrameApp
@@ -133,18 +132,6 @@ protected:
 	// 删除旧数据
 	virtual void RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception);
 
-	// 告警判断: 如果达到告警阀值，则生成告警
-	virtual void AlarmJudgement() throw(base::Exception);
-
-	// 波动告警
-	void FluctuateAlarm(AlarmRule& alarm_rule) throw(base::Exception);
-
-	// 对比告警
-	void RatioAlarm(AlarmRule& alarm_rule) throw(base::Exception);
-
-	// 处理告警事件
-	void HandleAlarmEvent(std::vector<AlarmEvent>& vec_event) throw(base::Exception);
-
 	// 更新维度取值范围
 	virtual void UpdateDimValue();
 
@@ -180,8 +167,6 @@ protected:
 	std::string m_tabEtlDim;			// 采集维度规则表
 	std::string m_tabEtlVal;			// 采集值规则表
 	std::string m_tabAnaRule;			// 分析规则表
-	std::string m_tabAlarmRule;			// 告警规则表
-	std::string m_tabAlarmEvent;		// 告警事件表
 	std::string m_tabDictChannel;		// 渠道统一编码表
 	std::string m_tabDictCity;			// 地市统一编码表
 
