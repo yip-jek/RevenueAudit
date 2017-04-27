@@ -2,15 +2,15 @@
 
 namespace base
 {
+
 class Log;
-}
 
 typedef void sgl_fun(int);
 
 class GSignal
 {
 public:
-	static bool Init(base::Log* pLog);
+	static bool Init(Log* pLog);
 	static bool IsRunning();
 
 private:
@@ -18,7 +18,9 @@ private:
 	static void SglFuncQuit(int sig);
 
 private:
-	static base::Log* s_pLog;
-	static bool       s_bQuit;
+	static Log* s_pLog;
+	static bool s_bQuit;
 };
+
+}	// namespace base
 

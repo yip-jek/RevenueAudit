@@ -28,7 +28,7 @@ Task::~Task()
 
 std::string Task::Version()
 {
-	return ("Version 3.0028.20170420 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Version 3.0029.20170426 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Task::Run() throw(base::Exception)
@@ -90,7 +90,7 @@ bool Task::Running()
 		break;
 	case TS_RUNNING:		// 状态：运行中
 		// 收到退出信号？
-		if ( !GSignal::IsRunning() )
+		if ( !base::GSignal::IsRunning() )
 		{
 			m_state = TS_END;
 		}
@@ -114,7 +114,7 @@ bool Task::Running()
 void Task::DealTasks() throw(base::Exception)
 {
 	// 设置退出信号捕获
-	if ( !GSignal::Init(m_pLog) )
+	if ( !base::GSignal::Init(m_pLog) )
 	{
 		throw base::Exception(TERR_DEAL_TASKS, "Init setting signal failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}

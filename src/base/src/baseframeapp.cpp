@@ -90,16 +90,19 @@ int main(int argc, char* argv[])
 	}
 
 	// Daemon process ?
-	if ( strcmp(argv[1], "1") == 0 )
+	bool daemon_proc = (strcmp(argv[1], "1") == 0);
+	if ( daemon_proc )
 	{
 		pid_t fpid = fork();
 		if ( fpid < 0 )			// fork error!
 		{
-			std::cerr << "fork error: " << fpid << std::endl;
+			std::cerr << "Process fork error: " << fpid << std::endl;
 			return -1;
 		}
 		else if ( fpid > 0 )	// Parent process end
 		{
+			std::cout << "[DAEMON] Parent process [pid=" << getpid() << "] end" << std::endl;
+			std::cout << "[DAEMON] Child process [pid=" << fpid << "] start" << std::endl;
 			return 0;
 		}
 	}
@@ -112,7 +115,7 @@ int main(int argc, char* argv[])
 	}
 	if ( !Log::SetLogID(log_id) )
 	{
-		std::cerr << "[LOG] Set log ID failed !" << std::endl;
+		std::cerr << "[ERROR] [LOG] Set log ID failed !" << std::endl;
 		return -1;
 	}
 
@@ -144,6 +147,7 @@ int main(int argc, char* argv[])
 		{
 			pLog->SetPath(pApp->GetLogPathConfig());
 			pLog->Init();
+			pLog->Output("%s: PID=[%d]", (daemon_proc?"守护进程":"一般进程"), getpid());
 
 			std::cout << pApp->Version() << std::endl;
 			pLog->Output(pApp->Version());

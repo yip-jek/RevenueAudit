@@ -3,10 +3,13 @@
 #include <signal.h>
 #include "log.h"
 
-base::Log* GSignal::s_pLog = NULL;
+namespace base
+{
+
+Log* GSignal::s_pLog  = NULL;
 bool GSignal::s_bQuit = false;
 
-bool GSignal::Init(base::Log* pLog)
+bool GSignal::Init(Log* pLog)
 {
 	if ( NULL == pLog )
 	{
@@ -98,4 +101,6 @@ void GSignal::SglFuncQuit(int sig)
 		s_pLog->Output("Unknown signal (%d) received! Ready to quit ...", sig);
 	}
 }
+
+}	// namespace base
 

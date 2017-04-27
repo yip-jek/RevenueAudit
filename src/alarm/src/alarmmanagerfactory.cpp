@@ -1,6 +1,6 @@
 #include "alarmmanagerfactory.h"
 #include "pubstr.h"
-#include "alarmmanager.h"
+#include "ydalarmmanager.h"
 
 
 AlarmManagerFactory gAlarmMgrFactory;
@@ -23,7 +23,7 @@ base::BaseFrameApp* AlarmManagerFactory::CreateApp(const std::string& mode, std:
 	const std::string ANA_MODE = base::PubStr::TrimUpperB(mode);
 	if ( S_MODE_YDJH == ANA_MODE )
 	{
-		pApp = new AlarmManager();
+		pApp = new YDAlarmManager();
 	}
 	else
 	{
