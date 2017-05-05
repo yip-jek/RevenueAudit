@@ -16,9 +16,6 @@ public:
 	// 初始化
 	virtual void Init() throw(base::Exception);
 
-	// 任务执行
-	virtual void Run() throw(base::Exception);
-
 protected:
 	// 载入扩展配置
 	virtual void LoadExtendedConfig() throw(base::Exception);

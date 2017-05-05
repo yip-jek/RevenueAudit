@@ -35,7 +35,3 @@ void YDAlarmManager::Init() throw(base::Exception)
 	m_pLog->Output("[YDAlarmManager] Init OK.");
 }
 
-void YDAlarmManager::Run() throw(base::Exception)
-{
-}
-
