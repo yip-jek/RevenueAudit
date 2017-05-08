@@ -3,6 +3,8 @@
 #include "gsignal.h"
 
 AlarmManager::AlarmManager()
+:m_timeInterval(0)
+,m_AMState(AMS_BEGIN)
 {
 }
 
@@ -12,7 +14,7 @@ AlarmManager::~AlarmManager()
 
 const char* AlarmManager::Version()
 {
-	return ("AlarmManager: Version 2.0003.20170503 released. Compiled at "__TIME__" on "__DATE__);
+	return ("AlarmManager: Version 2.0004.20170505 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void AlarmManager::LoadConfig() throw(base::Exception)
@@ -60,10 +62,53 @@ void AlarmManager::Run() throw(base::Exception)
 		throw base::Exception(ALMERR_ALARMMGR_RUN, "Init setting signal failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
+	while ( Running() )
+	{
+		AlarmProcessing();
+
+		WaitForNext();
+	}
 }
 
 void AlarmManager::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
 {
 	m_pLog->Output("[AlarmManager] END: MSG=[%s], CODE={%d]", err_msg.c_str(), err_code);
+}
+
+bool AlarmManager::Running()
+{
+	switch ( m_AMState )
+	{
+	case AMS_BEGIN:			// 状态：开始
+		// 改变状态为运行中
+		m_AMState = AMS_RUNNING;
+		break;
+	case AMS_RUNNING:		// 状态：运行
+		// 收到退出信号？
+		if ( !base::GSignal::IsRunning() )
+		{
+			m_AMState = AMS_END;
+		}
+		break;
+	case AMS_END:			// 状态：结束（收到退出信号）
+		// 确认退出？
+		if ( ConfirmQuit() )
+		{
+			m_AMState = AMS_QUIT;
+		}
+		break;
+	case AMS_QUIT:			// 状态：退出
+	default:				// 状态：未知
+		// Do nothing !
+		break;
+	}
+
+	return (AMS_QUIT != m_AMState);
+}
+
+void AlarmManager::WaitForNext()
+{
+	// 休眠
+	::sleep(m_timeInterval);
 }
 

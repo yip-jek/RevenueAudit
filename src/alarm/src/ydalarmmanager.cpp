@@ -30,6 +30,11 @@ void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
 	m_pLog->Output("[YDAlarmManager] Load configuration OK.");
 }
 
+bool YDAlarmManager::ConfirmQuit()
+{
+	return true;
+}
+
 void YDAlarmManager::Init() throw(base::Exception)
 {
 	m_pLog->Output("[YDAlarmManager] Init OK.");
