@@ -31,6 +31,9 @@ public:
 	// 设置统计因子规则表
 	void SetTabYCStatRule(const std::string& t_statrule);
 
+	// 设置地市统一编码表
+	void SetTabYCDictCity(const std::string& t_dictcity);
+
 	// 查询采集规则任务信息
 	void SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception);
 
@@ -49,6 +52,9 @@ public:
 
 	// 查询任务请求表的地市信息
 	void SelectYCTaskReqCity(int seq, std::string& city) throw(base::Exception);
+
+	// 查询任务地市的中文名称
+	bool SelectYCTaskCityCN(const std::string& task_city, std::string& city_cn) throw(base::Exception);
 
 	// 更新任务请求表
 	void UpdateYCTaskReq(int seq, const std::string& state, const std::string& state_desc, const std::string& task_desc) throw(base::Exception);
@@ -80,5 +86,6 @@ private:
 
 	std::string m_tabYCTaskReq;			// （业财）任务请求表
 	std::string m_tabYCStatRule;		// （业财）统计因子规则表
+	std::string m_tabYCDictCity;		// （业财）地市统一编码表
 };
 

@@ -47,6 +47,11 @@ void CAcqDB2::SetTabYCStatRule(const std::string& t_statrule)
 	m_tabYCStatRule = t_statrule;
 }
 
+void CAcqDB2::SetTabYCDictCity(const std::string& t_dictcity)
+{
+	m_tabYCDictCity = t_dictcity;
+}
+
 void CAcqDB2::SetTabYCTaskReq(const std::string& t_yc_taskreq)
 {
 	m_tabYCTaskReq = t_yc_taskreq;
@@ -85,6 +90,37 @@ void CAcqDB2::SelectYCTaskReqCity(int seq, std::string& city) throw(base::Except
 	catch ( const XDBO2::CDBException& ex )
 	{
 		throw base::Exception(ACQERR_SEL_YCTASKREQ_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d, REC:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, counter, ex.what(), __FILE__, __LINE__);
+	}
+}
+
+bool CAcqDB2::SelectYCTaskCityCN(const std::string& task_city, std::string& city_cn) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "SELECT CITYNAME FROM " + m_tabYCDictCity + " WHERE CITYALIAS = '" + task_city + "'";
+	m_pLog->Output("[DB2] %s", sql.c_str());
+
+	bool sel_success = false;
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			sel_success = true;
+
+			city_cn = (const char*)rs[1];
+			rs.MoveNext();
+		}
+
+		rs.Close();
+		return sel_success;
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ACQERR_SEL_YCTASKCITY_CN, "[DB2] Select task city CN from YC dictory city table '%s' failed! [TASK_CITY:%s] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCDictCity.c_str(), task_city.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 

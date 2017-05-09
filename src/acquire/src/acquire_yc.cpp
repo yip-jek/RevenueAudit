@@ -7,7 +7,8 @@
 
 const char* const Acquire_YC::S_YC_ETLRULE_TYPE = "YCRA";				// 业财稽核-采集规则类型
 const char* const Acquire_YC::S_NO_NEED_EXTEND  = "[NO_NEED_EXTEND]";	// 不需要进行扩展SQL语句的条件的标记
-const char* const Acquire_YC::S_CITY_MARK       = "[CITY_MARK]";		// 地市标记
+const char* const Acquire_YC::S_CITY_MARK       = "[CITY_MARK]";		// 地市标记（编码）
+const char* const Acquire_YC::S_CN_CITY_MARK    = "[CN_CITY_MARK]";		// 地市标记（中文名称）
 
 Acquire_YC::Acquire_YC()
 :m_ycSeqID(0)
@@ -25,6 +26,7 @@ void Acquire_YC::LoadConfig() throw(base::Exception)
 
 	m_cfg.RegisterItem("TABLE", "TAB_YC_TASK_REQ");
 	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
+	m_cfg.RegisterItem("TABLE", "TAB_DICT_CITY");
 	m_cfg.RegisterItem("FIELD", "SRC_FIELD_PERIOD");
 	m_cfg.RegisterItem("FIELD", "SRC_FIELD_CITY");
 	m_cfg.RegisterItem("FIELD", "SRC_FIELD_BATCH");
@@ -33,6 +35,7 @@ void Acquire_YC::LoadConfig() throw(base::Exception)
 
 	m_tabYCTaskReq = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
 	m_tabStatRule  = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
+	m_tabDictCity  = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
 	m_fieldPeriod  = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_PERIOD");
 	m_fieldCity    = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_CITY");
 	m_fieldBatch   = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_BATCH");
@@ -100,6 +103,15 @@ void Acquire_YC::FetchTaskInfo() throw(base::Exception)
 	m_pAcqDB2->SelectYCTaskReqCity(m_ycSeqID, m_taskCity);
 	base::PubStr::Trim(m_taskCity);
 	m_pLog->Output("[Acquire_YC] Get task request city: [%s]", m_taskCity.c_str());
+
+	if ( m_pAcqDB2->SelectYCTaskCityCN(m_taskCity, m_taskCityCN) )
+	{
+		m_pLog->Output("[Acquire_YC] Get task city CN: [%s]", m_taskCityCN.c_str());
+	}
+	else
+	{
+		m_pLog->Output("<WARNING> [Acquire_YC] Get task city CN failed !!!");
+	}
 
 	m_pLog->Output("[Acquire_YC] 获取业财稽核因子规则信息 ...");
 	m_pAcqDB2->SelectYCStatRule(m_taskInfo.KpiID, m_vecYCInfo);
@@ -343,14 +355,27 @@ bool Acquire_YC::NoNeedExtendSQL(const std::string& sql)
 
 void Acquire_YC::CityMarkExchange(std::string& sql)
 {
-	const std::string F_CITY_MARK = S_CITY_MARK;
-	const size_t F_CTMK_SIZE      = F_CITY_MARK.size();
-	std::string up_sql            = base::PubStr::UpperB(sql);
+	const std::string F_CITY_MARK    = S_CITY_MARK;
+	const std::string F_CN_CITY_MARK = S_CN_CITY_MARK;
 
-	size_t pos = 0;
+	const size_t F_CTMK_SIZE    = F_CITY_MARK.size();
+	const size_t F_CN_CTMK_SIZE = F_CN_CITY_MARK.size();
+
+	// 任务标记（编码）转换
+	size_t      pos    = 0;
+	std::string up_sql = base::PubStr::UpperB(sql);
 	while ( (pos = up_sql.find(F_CITY_MARK)) != std::string::npos )
 	{
 		sql.replace(pos, F_CTMK_SIZE, m_taskCity);
+		up_sql = base::PubStr::UpperB(sql);
+	}
+
+	// 任务标记（中文名称）转换
+	pos    = 0;
+	up_sql = base::PubStr::UpperB(sql);
+	while ( (pos = up_sql.find(F_CN_CITY_MARK)) != std::string::npos )
+	{
+		sql.replace(pos, F_CN_CTMK_SIZE, m_taskCityCN);
 		up_sql = base::PubStr::UpperB(sql);
 	}
 }
