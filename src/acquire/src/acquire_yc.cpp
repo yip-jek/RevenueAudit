@@ -54,6 +54,7 @@ void Acquire_YC::Init() throw(base::Exception)
 
 	m_pAcqDB2->SetTabYCTaskReq(m_tabYCTaskReq);
 	m_pAcqDB2->SetTabYCStatRule(m_tabStatRule);
+	m_pAcqDB2->SetTabYCDictCity(m_tabDictCity);
 
 	// 更新任务状态为："11"（正在采集）
 	m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "11", "正在采集", "采集开始时间："+base::SimpleTime::Now().TimeStamp());
