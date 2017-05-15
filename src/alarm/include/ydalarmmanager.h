@@ -23,6 +23,9 @@ protected:
 	// 是否确认退出
 	virtual bool ConfirmQuit();
 
+	// 告警处理
+	virtual void AlarmProcessing() throw(base::Exception);
+
 private:
 	std::string m_tabAlarmRequest;				// 告警请求表
 	std::string m_tabAlarmThreshold;			// 告警阈值表

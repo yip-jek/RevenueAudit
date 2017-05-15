@@ -1,6 +1,8 @@
 #include "alarmmanager.h"
+#include "alarmerror.h"
 #include "log.h"
 #include "gsignal.h"
+#include "sectimer.h"
 
 AlarmManager::AlarmManager()
 :m_timeInterval(0)
@@ -14,7 +16,7 @@ AlarmManager::~AlarmManager()
 
 const char* AlarmManager::Version()
 {
-	return ("AlarmManager: Version 2.0004.20170505 released. Compiled at "__TIME__" on "__DATE__);
+	return ("AlarmManager: Version 2.0005.20170515 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void AlarmManager::LoadConfig() throw(base::Exception)
@@ -62,17 +64,22 @@ void AlarmManager::Run() throw(base::Exception)
 		throw base::Exception(ALMERR_ALARMMGR_RUN, "Init setting signal failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
+	// 设置计时
+	SecTimer st_wait(m_timeInterval);
+	st_wait.Start();
+
 	while ( Running() )
 	{
 		AlarmProcessing();
 
-		WaitForNext();
+		// 等待下一次的任务执行
+		st_wait.WaitForTimeUp();
 	}
 }
 
 void AlarmManager::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
 {
-	m_pLog->Output("[AlarmManager] END: MSG=[%s], CODE={%d]", err_msg.c_str(), err_code);
+	m_pLog->Output("[AlarmManager] END: MSG=[%s], CODE=[%d]", err_msg.c_str(), err_code);
 }
 
 bool AlarmManager::Running()
@@ -104,11 +111,5 @@ bool AlarmManager::Running()
 	}
 
 	return (AMS_QUIT != m_AMState);
-}
-
-void AlarmManager::WaitForNext()
-{
-	// 休眠
-	::sleep(m_timeInterval);
 }
 

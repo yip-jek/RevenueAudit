@@ -14,6 +14,11 @@ std::string YDAlarmManager::GetLogFilePrefix()
 	return ("YDAlarmManager");
 }
 
+void YDAlarmManager::Init() throw(base::Exception)
+{
+	m_pLog->Output("[YDAlarmManager] Init OK.");
+}
+
 void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
 {
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_REQUEST");
@@ -35,8 +40,8 @@ bool YDAlarmManager::ConfirmQuit()
 	return true;
 }
 
-void YDAlarmManager::Init() throw(base::Exception)
+void YDAlarmManager::AlarmProcessing() throw(base::Exception)
 {
-	m_pLog->Output("[YDAlarmManager] Init OK.");
+	m_pLog->Output("[YDAlarmManager] AlarmProcessing()");
 }
 

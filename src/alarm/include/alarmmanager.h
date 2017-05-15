@@ -52,9 +52,6 @@ private:
 	// 是否保持运行
 	bool Running();
 
-	// 等待下一次执行
-	void WaitForNext();
-
 protected:
 	DBInfo m_dbinfo;					// 数据库信息
 
