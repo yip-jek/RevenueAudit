@@ -1,12 +1,15 @@
 #include "ydalarmmanager.h"
 #include "log.h"
+#include "ydalarmdb.h"
 
 YDAlarmManager::YDAlarmManager()
+:m_pAlarmDB(NULL)
 {
 }
 
 YDAlarmManager::~YDAlarmManager()
 {
+	ReleaseDBConnection();
 }
 
 std::string YDAlarmManager::GetLogFilePrefix()
@@ -16,6 +19,8 @@ std::string YDAlarmManager::GetLogFilePrefix()
 
 void YDAlarmManager::Init() throw(base::Exception)
 {
+	InitDBConnection();
+
 	m_pLog->Output("[YDAlarmManager] Init OK.");
 }
 
@@ -43,5 +48,30 @@ bool YDAlarmManager::ConfirmQuit()
 void YDAlarmManager::AlarmProcessing() throw(base::Exception)
 {
 	m_pLog->Output("[YDAlarmManager] AlarmProcessing()");
+}
+
+void YDAlarmManager::ReleaseDBConnection()
+{
+	if ( m_pAlarmDB != NULL )
+	{
+		delete m_pAlarmDB;
+		m_pAlarmDB = NULL;
+	}
+}
+
+void YDAlarmManager::InitDBConnection() throw(base::Exception)
+{
+	ReleaseDBConnection();
+
+	m_pAlarmDB = new YDAlarmDB(m_dbinfo);
+	if ( NULL == m_pAlarmDB )
+	{
+		throw base::Exception(ALMERR_INIT_DB_CONN, "Operator new YDAlarmDB failed: 无法申请到内存空间！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	m_pAlarmDB->Connect();
+	m_pAlarmDB->SetTabAlarmRequest(m_tabAlarmRequest);
+	m_pAlarmDB->SetTabAlarmThreshold(m_tabAlarmThreshold);
+	m_pAlarmDB->SetTabAlarmInfo(m_tabAlarmInfo);
 }
 

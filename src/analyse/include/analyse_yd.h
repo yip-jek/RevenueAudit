@@ -26,8 +26,13 @@ protected:
 	// 获取后续参数任务信息
 	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
 
-protected:
+private:
+	// 生成告警请求
+	void AlarmRequest();
+
+private:
 	int         m_taskScheLogID;			// 任务日程日志ID
 	std::string m_tabTaskScheLog;			// 任务日程日志表
+	std::string m_tabAlarmRequest;			// 告警请求表
 };
 

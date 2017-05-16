@@ -603,6 +603,7 @@ public:
 	,KpiCycle(info.KpiCycle)
 	,ResultType(info.ResultType)
 	,TableName(info.TableName)
+	,AlarmID(info.AlarmID)
 	,AnaRule(info.AnaRule)
 	,vecEtlRule(info.vecEtlRule)
 	,vecKpiDimCol(info.vecKpiDimCol)
@@ -617,12 +618,13 @@ public:
 	{
 		if ( this != &info )
 		{
-			this->KpiID       = info.KpiID     ;
+			this->KpiID       = info.KpiID      ;
 			this->DataSrcType = info.DataSrcType;
-			this->KpiCycle    = info.KpiCycle  ;
-			this->ResultType  = info.ResultType;
-			this->TableName   = info.TableName ;
-			this->AnaRule     = info.AnaRule   ;
+			this->KpiCycle    = info.KpiCycle   ;
+			this->ResultType  = info.ResultType ;
+			this->TableName   = info.TableName  ;
+			this->AlarmID     = info.AlarmID    ;
+			this->AnaRule     = info.AnaRule    ;
 
 			this->vecEtlRule     = info.vecEtlRule;
 			this->vecKpiDimCol   = info.vecKpiDimCol;
@@ -690,6 +692,7 @@ public:
 	std::string     KpiCycle;				// 指标周期
 	ResultTableType ResultType;				// 结果表类型
 	std::string     TableName;				// 分析结果表
+	std::string     AlarmID;				// 告警信息
 	AnalyseRule     AnaRule;				// 分析规则
 
 	std::vector<OneEtlRule> vecEtlRule;				// 采集规则集

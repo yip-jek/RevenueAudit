@@ -48,6 +48,9 @@ public:
 	// 设置任务日程日志表
 	void SetTabTaskScheLog(const std::string& t_tslog);
 
+	// 设置告警请求表
+	void SetTabAlarmRequest(const std::string& t_alarmreq);
+
 	// 设置统计因子规则表
 	void SetTabYCStatRule(const std::string& t_statrule);
 
@@ -170,6 +173,7 @@ private:
 	std::string m_tabDictChannel;		// 渠道统一编码表
 	std::string m_tabDictCity;			// 地市统一编码表
 	std::string m_tabTaskScheLog;		// 任务日程日志表
+	std::string m_tabAlarmRequest;		// 告警请求表
 
 	std::string m_tabYCStatRule;		// （业财）统计因子规则表
 	std::string m_tabStatLog;			// （业财）稽核记录日志表

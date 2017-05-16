@@ -23,10 +23,13 @@ void Analyse_YD::LoadConfig() throw(base::Exception)
 {
 	Analyse::LoadConfig();
 
-	// 读取任务日程日志表配置
-	m_cfg.RegisterItem("TABLE", "TAB_TASK_SCHE_LOG");
+	m_cfg.RegisterItem("TABLE", "TAB_TASK_SCHE_LOG");		// 读取任务日程日志表配置
+	m_cfg.RegisterItem("TABLE", "TAB_ALARM_REQUEST");
+
 	m_cfg.ReadConfig();
-	m_tabTaskScheLog = m_cfg.GetCfgValue("TABLE", "TAB_TASK_SCHE_LOG");
+
+	m_tabTaskScheLog  = m_cfg.GetCfgValue("TABLE", "TAB_TASK_SCHE_LOG");
+	m_tabAlarmRequest = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_REQUEST");
 
 	m_pLog->Output("[Analyse_YD] Load configuration OK.");
 }
@@ -36,6 +39,7 @@ void Analyse_YD::Init() throw(base::Exception)
 	Analyse::Init();
 
 	m_pAnaDB2->SetTabTaskScheLog(m_tabTaskScheLog);
+	m_pAnaDB2->SetTabAlarmRequest(m_tabAlarmRequest);
 
 	m_pLog->Output("[Analyse_YD] Init OK.");
 }
@@ -45,6 +49,9 @@ void Analyse_YD::End(int err_code, const std::string& err_msg /*= std::string()*
 	// 更新任务日程日志状态
 	if ( 0 == err_code )	// 分析成功
 	{
+		// 只有分析成功才生成告警请求
+		AlarmRequest();
+
 		// 更新任务日志状态为："ANA_SUCCEED"（分析成功）
 		m_pAnaDB2->UpdateTaskScheLogState(m_taskScheLogID, base::SimpleTime::Now().Time14(), "ANA_SUCCEED", "分析成功完成", "");
 	}
@@ -72,5 +79,14 @@ void Analyse_YD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(
 		throw base::Exception(ANAERR_TASKINFO_ERROR, "无效的任务日程日志ID：%s [FILE:%s, LINE:%d]", ref_str.c_str(), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[Analyse_YD] 任务日程日志ID：%d", m_taskScheLogID);
+}
+
+void Analyse_YD::AlarmRequest()
+{
+	// 只有告警标记"1"时，才生成告警请求
+	std::string alarm_flag = base::PubStr::TrimB(m_taskInfo.AlarmID);
+	if ( "1" == alarm_flag )
+	{
+	}
 }
 

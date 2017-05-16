@@ -65,6 +65,11 @@ void CAnaDB2::SetTabTaskScheLog(const std::string& t_tslog)
 	m_tabTaskScheLog = t_tslog;
 }
 
+void CAnaDB2::SetTabAlarmRequest(const std::string& t_alarmreq)
+{
+	m_tabAlarmRequest = t_alarmreq;
+}
+
 void CAnaDB2::SetTabYCStatRule(const std::string& t_statrule)
 {
 	m_tabYCStatRule = t_statrule;
@@ -431,7 +436,7 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 
 	try
 	{
-		std::string sql = "select DATA_SOURCE, ETLRULE_ID, KPI_CYCLE, RESULT_TYPE, KPI_TABLENAME from ";
+		std::string sql = "select DATA_SOURCE, ETLRULE_ID, KPI_CYCLE, RESULT_TYPE, KPI_TABLENAME, ALARM_ID from ";
 		sql += m_tabKpiRule + " where KPI_ID = ?";
 
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -451,6 +456,7 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 			info.KpiCycle      = (const char*)rs[index++];
 			result_type        = (const char*)rs[index++];
 			info.TableName     = (const char*)rs[index++];
+			info.AlarmID       = (const char*)rs[index++];
 
 			if ( !info.SetTableType(result_type) )
 			{
