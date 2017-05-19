@@ -21,6 +21,7 @@ public:
 		TSTS_AnalyseBegin     = 3,				// 开始分析
 		TSTS_AnalyseException = 4,				// 分析异常
 		TSTS_End              = 5,				// 任务完成
+		TSTS_Fail             = 6,				// 任务失败
 	};
 
 	// 任务错误代码
@@ -115,6 +116,7 @@ private:
 	std::string m_stateAnaBeg;				// 任务开始分析
 	std::string m_stateAnaException;		// 任务分析异常
 	std::string m_stateTaskEnd;				// 任务完成
+	std::string m_stateTaskFail;			// 任务失败
 	std::string m_etlStateEnd;				// 采集完成状态
 	std::string m_etlStateError;			// 采集异常状态
 	std::string m_anaStateEnd;				// 分析完成状态

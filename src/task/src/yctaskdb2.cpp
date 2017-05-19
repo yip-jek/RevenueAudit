@@ -206,7 +206,7 @@ void YCTaskDB2::SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info) thr
 
 		if ( kpi_info.etl_id.empty() || kpi_info.ana_id.empty() )
 		{
-			throw base::Exception(TDB_ERR_SEL_KPI_INFO, "[DB2] Select kpi rule info from table '%s' failed! [KPI_ID:%s, ETL_ID:%s, ANA_ID:%s] [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), kpi.c_str(), kpi_info.etl_id.c_str(), kpi_info.ana_id.c_str(), __FILE__, __LINE__);
+			throw base::Exception(TDB_ERR_SEL_KPI_INFO, "[DB2] Select kpi rule info from table '%s' failed: NO result! [KPI_ID:%s, ETL_ID:%s, ANA_ID:%s] [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), kpi.c_str(), kpi_info.etl_id.c_str(), kpi_info.ana_id.c_str(), __FILE__, __LINE__);
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )

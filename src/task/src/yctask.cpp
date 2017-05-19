@@ -67,6 +67,7 @@ void YCTask::LoadConfig() throw(base::Exception)
 	m_pCfg->RegisterItem("STATE", "STATE_TASK_ANA_BEG");
 	m_pCfg->RegisterItem("STATE", "STATE_TASK_ANA_EXP");
 	m_pCfg->RegisterItem("STATE", "STATE_TASK_END");
+	m_pCfg->RegisterItem("STATE", "STATE_TASK_FAIL");
 	m_pCfg->RegisterItem("STATE", "ETL_END_STATE");
 	m_pCfg->RegisterItem("STATE", "ETL_ERROR_STATE");
 	m_pCfg->RegisterItem("STATE", "ANA_END_STATE");
@@ -96,6 +97,7 @@ void YCTask::LoadConfig() throw(base::Exception)
 	m_stateAnaBeg       = m_pCfg->GetCfgValue("STATE", "STATE_TASK_ANA_BEG");
 	m_stateAnaException = m_pCfg->GetCfgValue("STATE", "STATE_TASK_ANA_EXP");
 	m_stateTaskEnd      = m_pCfg->GetCfgValue("STATE", "STATE_TASK_END");
+	m_stateTaskFail     = m_pCfg->GetCfgValue("STATE", "STATE_TASK_FAIL");
 	m_etlStateEnd       = m_pCfg->GetCfgValue("STATE", "ETL_END_STATE");
 	m_etlStateError     = m_pCfg->GetCfgValue("STATE", "ETL_ERROR_STATE");
 	m_anaStateEnd       = m_pCfg->GetCfgValue("STATE", "ANA_END_STATE");
@@ -228,6 +230,11 @@ void YCTask::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) thr
 		task_req_info.desc        = "任务结束";
 		task_req_info.finishtime  = base::SimpleTime::Now().Time14();
 		break;
+	case TSTS_Fail:								// 任务失败
+		task_req_info.status      = m_stateTaskFail;
+		task_req_info.status_desc = "任务失败";
+		task_req_info.finishtime  = base::SimpleTime::Now().Time14();
+		break;
 	case TSTS_Unknown:							// 未知状态
 	default:
 		throw base::Exception(YCTERR_UPD_TASK_REQ, "Unknown tasksche task state: %d [FILE:%s, LINE:%d]", ts, __FILE__, __LINE__);
@@ -273,16 +280,27 @@ void YCTask::HandleEtlTask() throw(base::Exception)
 				ref_ti.task_id  = GenerateTaskID();
 				ref_ti.kpi_id   = ref_tri.kpi_id;
 				//ref_ti.etl_time = EtlTimeTransform(ref_tri.stat_cycle);
-				if ( !GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Analyse, ref_ti.sub_id) )
+
+				if ( GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Analyse, ref_ti.sub_id) )
 				{
-					throw base::Exception(YCTERR_HDL_ETL_TASK, "Can not find the analyse rule ID! (KPI_ID:%s) [FILE:%s, LINE:%d]", ref_tri.kpi_id.c_str(), __FILE__, __LINE__);
+					// 开始分析任务
+					m_pLog->Output("[YC_TASK] Analyse: TASK_ID=[%ld], KPI_ID=[%s], ANA_ID=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_tri.stat_city.c_str());
+					CreateTask(ref_ti);
+
+					m_vecAnaTaskInfo.push_back(ref_ti);
 				}
+				else	// 找不到分析ID
+				{
+					// 任务失败：不进行分析任务的下发
+					base::PubStr::SetFormatString(ref_tri.desc, "[ERROR] Can not find the analyse rule ID (KPI_ID:%s), please check the configuration!", ref_tri.kpi_id.c_str());
+					m_pLog->Output("[YC_TASK] Get the analyse rule ID failed: %s", ref_tri.desc.c_str());
 
-				// 开始分析任务
-				m_pLog->Output("[YC_TASK] Analyse: TASK_ID=[%ld], KPI_ID=[%s], ANA_ID=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_tri.stat_city.c_str());
-				CreateTask(ref_ti);
+					TaskRequestUpdate(TSTS_Fail, ref_tri);
+					m_pLog->Output("[YC_TASK] Task failed: SEQ=[%d], KPI=[%s], CITY=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_city.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
 
-				m_vecAnaTaskInfo.push_back(ref_ti);
+					// 任务删除
+					m_mTaskReqInfo.erase(t_state.seq_id);
+				}
 			}
 			else if ( m_etlStateError == t_state.state )	// 采集报错
 			{
@@ -431,14 +449,23 @@ void YCTask::BuildNewTask() throw(base::Exception)
 		task_info.task_id  = GenerateTaskID();
 		task_info.kpi_id   = ref_tri.kpi_id;
 		task_info.etl_time = EtlTimeTransform(ref_tri.stat_cycle);
-		GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Acquire, task_info.sub_id);
 
-		// 开始采集任务
-		m_pLog->Output("[YC_TASK] Acquire: TASK_ID=[%ld], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], CITY=[%s]", task_info.task_id, task_info.kpi_id.c_str(), task_info.sub_id.c_str(), task_info.etl_time.c_str(), ref_tri.stat_city.c_str());
-		CreateTask(task_info);
+		if ( GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Acquire, task_info.sub_id) )
+		{
+			// 开始采集任务
+			m_pLog->Output("[YC_TASK] Acquire: TASK_ID=[%ld], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], CITY=[%s]", task_info.task_id, task_info.kpi_id.c_str(), task_info.sub_id.c_str(), task_info.etl_time.c_str(), ref_tri.stat_city.c_str());
+			CreateTask(task_info);
 
-		m_vecEtlTaskInfo.push_back(task_info);
-		m_mTaskReqInfo[ref_tri.seq_id] = ref_tri;
+			m_vecEtlTaskInfo.push_back(task_info);
+			m_mTaskReqInfo[ref_tri.seq_id] = ref_tri;
+		}
+		else	// 找不到
+		{
+			// 任务失败：不进行采集任务的下发
+			base::PubStr::SetFormatString(ref_tri.desc, "[ERROR] The KPI_ID (%s) does not exist, please check the configuration!", ref_tri.kpi_id.c_str());
+			TaskRequestUpdate(TSTS_Fail, ref_tri);
+			m_pLog->Output("[YC_TASK] Task failed: SEQ=[%d], KPI=[%s], CITY=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_city.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
+		}
 	}
 }
 
@@ -487,7 +514,16 @@ bool YCTask::GetSubRuleID(const std::string& kpi_id, TaskInfo::TASK_TYPE t_type,
 	{
 		// 更新指标规则信息
 		KpiRuleInfo kpi_info;
-		m_pTaskDB->SelectKpiRule(kpi_id, kpi_info);
+		try
+		{
+			m_pTaskDB->SelectKpiRule(kpi_id, kpi_info);
+		}
+		catch ( const base::Exception& ex )
+		{
+			m_pLog->Output("[YC_TASK] Get the acquire rule ID failed! Exception: %s", ex.What().c_str());
+			return false;
+		}
+
 		m_mKpiRuleInfo[kpi_id] = kpi_info;
 
 		sub_id = kpi_info.etl_id;

@@ -83,9 +83,10 @@ void Analyse_YD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(
 
 void Analyse_YD::AlarmRequest()
 {
-	// 只有告警标记"1"时，才生成告警请求
-	std::string alarm_flag = base::PubStr::TrimB(m_taskInfo.AlarmID);
-	if ( "1" == alarm_flag )
+	// >>>>> 告警标记 <<<<<
+	// ALARM_REQ: 告警请求
+	std::string alarm_flag = base::PubStr::TrimUpperB(m_taskInfo.AlarmID);
+	if ( "ALARM_REQ" == alarm_flag )
 	{
 	}
 }
