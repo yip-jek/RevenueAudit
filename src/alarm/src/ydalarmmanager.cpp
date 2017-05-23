@@ -1,6 +1,8 @@
 #include "ydalarmmanager.h"
 #include "log.h"
+#include "alarmerror.h"
 #include "ydalarmdb.h"
+#include "ydstruct.h"
 
 YDAlarmManager::YDAlarmManager()
 :m_pAlarmDB(NULL)
@@ -47,7 +49,9 @@ bool YDAlarmManager::ConfirmQuit()
 
 void YDAlarmManager::AlarmProcessing() throw(base::Exception)
 {
-	m_pLog->Output("[YDAlarmManager] AlarmProcessing()");
+	ResponseAlarmRequest();
+	DataAnalysis();
+	GenerateAlarm();
 }
 
 void YDAlarmManager::ReleaseDBConnection()
@@ -73,5 +77,18 @@ void YDAlarmManager::InitDBConnection() throw(base::Exception)
 	m_pAlarmDB->SetTabAlarmRequest(m_tabAlarmRequest);
 	m_pAlarmDB->SetTabAlarmThreshold(m_tabAlarmThreshold);
 	m_pAlarmDB->SetTabAlarmInfo(m_tabAlarmInfo);
+}
+
+void YDAlarmManager::ResponseAlarmRequest()
+{
+	m_pAlarmDB->SelectAlarmRequest(m_vAlarmReq);
+}
+
+void YDAlarmManager::DataAnalysis()
+{
+}
+
+void YDAlarmManager::GenerateAlarm()
+{
 }
 

@@ -1,8 +1,10 @@
 #pragma once
 
+#include <vector>
 #include "alarmmanager.h"
 
 class YDAlarmDB;
+struct YDAlarmReq;
 
 // 一点稽核告警管理
 class YDAlarmManager : public AlarmManager
@@ -35,12 +37,22 @@ private:
 	// 初始化数据库连接
 	void InitDBConnection() throw(base::Exception);
 
+	// 响应告警请求
+	void ResponseAlarmRequest();
+
+	// 数据分析
+	void DataAnalysis();
+
+	// 告警生成
+	void GenerateAlarm();
+
 private:
 	std::string m_tabAlarmRequest;				// 告警请求表
 	std::string m_tabAlarmThreshold;			// 告警阈值表
 	std::string m_tabAlarmInfo;					// 告警信息表
 
 private:
-	YDAlarmDB*  m_pAlarmDB;
+	YDAlarmDB*              m_pAlarmDB;
+	std::vector<YDAlarmReq> m_vAlarmReq;		// 告警请求列表
 };
 

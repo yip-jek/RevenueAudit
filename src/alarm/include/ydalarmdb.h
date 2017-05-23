@@ -1,8 +1,17 @@
 #pragma once
 
+#include <vector>
 #include "basedb2.h"
 
+namespace base
+{
+
+class Exception;
+
+}
+
 struct DBInfo;
+struct YDAlarmReq;
 
 // 一点稽核数据库类
 class YDAlarmDB : public base::BaseDB2
@@ -20,6 +29,10 @@ public:
 
 	// 设置告警信息表
 	void SetTabAlarmInfo(const std::string& tab_alarminfo);
+
+public:
+	// 获取告警请求
+	void SelectAlarmRequest(std::vector<YDAlarmReq>& vecAlarmReq) throw(base::Exception);
 
 private:
 	std::string m_tabAlarmRequest;				// 告警请求表
