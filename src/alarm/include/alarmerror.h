@@ -12,5 +12,6 @@ enum ALARM_ERROR
 
 	// 一点稽核数据库模块
 	ALMERR_SEL_ALARM_REQ  = -4002001,				// 获取告警请求记录出错
+	ALMERR_UPD_ALARM_REQ  = -4002002,				// 更新告警请求记录出错
 };
 

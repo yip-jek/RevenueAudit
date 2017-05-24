@@ -34,6 +34,9 @@ public:
 	// 获取告警请求
 	void SelectAlarmRequest(std::vector<YDAlarmReq>& vecAlarmReq) throw(base::Exception);
 
+	// 更新告警请求
+	void UpdateAlarmRequest(const YDAlarmReq& alarm_req) throw(base::Exception);
+
 private:
 	std::string m_tabAlarmRequest;				// 告警请求表
 	std::string m_tabAlarmThreshold;			// 告警阈值表
