@@ -1,4 +1,5 @@
 #include "ydalarmmanager.h"
+#include "basedir.h"
 #include "log.h"
 #include "simpletime.h"
 #include "alarmerror.h"
@@ -24,6 +25,18 @@ void YDAlarmManager::Init() throw(base::Exception)
 {
 	InitDBConnection();
 
+	// 存放告警短信文件的路径是否存在
+	if ( !base::BaseDir::IsDirExist(m_alarmMsgFilePath) )
+	{
+		// 路径不存在，则尝试创建
+		if ( !base::BaseDir::CreateFullPath(m_alarmMsgFilePath) )
+		{
+			throw base::Exception(ALMERR_INIT, "Try to create alarm msg file path failed: PATH=[%s] [FILE:%s, LINE:%d]", m_alarmMsgFilePath.c_str(), __FILE__, __LINE__);
+		}
+
+		m_pLog->Output("[YDAlarmManager] Created alarm msg file path: [%s]", m_alarmMsgFilePath.c_str());
+	}
+
 	m_pLog->Output("[YDAlarmManager] Init OK.");
 }
 
@@ -34,6 +47,9 @@ void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_INFO");
 	m_cfg.RegisterItem("TABLE", "TAB_SRC_DATA");
 
+	m_cfg.RegisterItem("ALARM", "ALARM_MSG_PATH");
+	m_cfg.RegisterItem("ALARM", "ALARM_MSG_FILE_FMT");
+
 	m_cfg.ReadConfig();
 
 	// 库表配置
@@ -41,6 +57,9 @@ void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
 	m_tabAlarmThreshold = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_THRESHOLD");
 	m_tabAlarmInfo      = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_INFO");
 	m_tabSrcData        = m_cfg.GetCfgValue("TABLE", "TAB_SRC_DATA");
+
+	m_alarmMsgFilePath   = m_cfg.GetCfgValue("ALARM", "ALARM_MSG_PATH");
+	m_alarmMsgFileFormat = m_cfg.GetCfgValue("ALARM", "ALARM_MSG_FILE_FMT");
 
 	m_pLog->Output("[YDAlarmManager] Load configuration OK.");
 }
@@ -108,9 +127,34 @@ bool YDAlarmManager::ResponseAlarmRequest()
 
 void YDAlarmManager::DataAnalysis()
 {
+	UpdateAlarmThreshold();
+	CollectData();
+	AnalyzeThreshold();
 }
 
 void YDAlarmManager::GenerateAlarm()
+{
+	YieldAlarmInformation();
+	ProduceAlarmMessage();
+}
+
+void YDAlarmManager::UpdateAlarmThreshold()
+{
+}
+
+void YDAlarmManager::CollectData()
+{
+}
+
+void YDAlarmManager::AnalyzeThreshold()
+{
+}
+
+void YDAlarmManager::YieldAlarmInformation()
+{
+}
+
+void YDAlarmManager::ProduceAlarmMessage()
 {
 }
 
