@@ -29,7 +29,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 4.0013.20170511 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Acquire: Version 4.0014.20170525 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -637,7 +637,7 @@ void Acquire::TaskInfo2TargetFields(std::vector<std::string>& vec_field) throw(b
 		// 忽略无效维度
 		if ( one.EtlDimSeq < 0 )
 		{
-			m_pLog->Output("[目标表字段] 忽略维度: DIM_ID[%s], DIM_SEQ[%d], DIM_NAME[%s], DIM_SRCNAME[%s], DIM_MEMO[%s]",
+			m_pLog->Output("[目标表字段] 忽略维度: DIM_ID=[%s], DIM_SEQ=[%d], DIM_NAME=[%s], DIM_SRCNAME=[%s], DIM_MEMO=[%s]",
 				one.EtlDimID.c_str(), one.EtlDimSeq, one.EtlDimName.c_str(), one.EtlDimSrcName.c_str(), one.GetDimMemoTypeStr().c_str());
 			continue;
 		}
@@ -661,7 +661,7 @@ void Acquire::TaskInfo2TargetFields(std::vector<std::string>& vec_field) throw(b
 		// 忽略无效值
 		if ( one.EtlValSeq < 0 )
 		{
-			m_pLog->Output("[目标表字段] 忽略值: VAL_ID[%s], VAL_SEQ[%d], VAL_NAME[%s], VAL_SRCNAME[%s], VAL_MEMO[%s]",
+			m_pLog->Output("[目标表字段] 忽略值: VAL_ID=[%s], VAL_SEQ=[%d], VAL_NAME=[%s], VAL_SRCNAME=[%s], VAL_MEMO=[%s]",
 				one.EtlValID.c_str(), one.EtlValSeq, one.EtlValName.c_str(), one.EtlValSrcName.c_str(), one.GetValMemoTypeStr().c_str());
 			continue;
 		}

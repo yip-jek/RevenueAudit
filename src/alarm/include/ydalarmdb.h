@@ -30,6 +30,9 @@ public:
 	// 设置告警信息表
 	void SetTabAlarmInfo(const std::string& tab_alarminfo);
 
+	// 设置数据源表
+	void SetTabSrcData(const std::string& tab_srcdata);
+
 public:
 	// 获取告警请求
 	void SelectAlarmRequest(std::vector<YDAlarmReq>& vecAlarmReq) throw(base::Exception);
@@ -41,5 +44,6 @@ private:
 	std::string m_tabAlarmRequest;				// 告警请求表
 	std::string m_tabAlarmThreshold;			// 告警阈值表
 	std::string m_tabAlarmInfo;					// 告警信息表
+	std::string m_tabSrcData;					// 数据源表
 };
 

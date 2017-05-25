@@ -30,6 +30,11 @@ void YDAlarmDB::SetTabAlarmInfo(const std::string& tab_alarminfo)
 	m_tabAlarmInfo = tab_alarminfo;
 }
 
+void YDAlarmDB::SetTabSrcData(const std::string& tab_srcdata)
+{
+	m_tabSrcData = tab_srcdata;
+}
+
 void YDAlarmDB::SelectAlarmRequest(std::vector<YDAlarmReq>& vecAlarmReq) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);

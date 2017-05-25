@@ -38,7 +38,8 @@ private:
 	void InitDBConnection() throw(base::Exception);
 
 	// 响应告警请求
-	void ResponseAlarmRequest();
+	// 有新请求则返回true，否则返回false
+	bool ResponseAlarmRequest();
 
 	// 数据分析
 	void DataAnalysis();
@@ -46,10 +47,13 @@ private:
 	// 告警生成
 	void GenerateAlarm();
 
+	// 
+
 private:
 	std::string m_tabAlarmRequest;				// 告警请求表
 	std::string m_tabAlarmThreshold;			// 告警阈值表
 	std::string m_tabAlarmInfo;					// 告警信息表
+	std::string m_tabSrcData;					// 数据源表
 
 private:
 	YDAlarmDB*              m_pAlarmDB;

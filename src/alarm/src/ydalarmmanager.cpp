@@ -32,6 +32,7 @@ void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_REQUEST");
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_THRESHOLD");
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_INFO");
+	m_cfg.RegisterItem("TABLE", "TAB_SRC_DATA");
 
 	m_cfg.ReadConfig();
 
@@ -39,6 +40,7 @@ void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
 	m_tabAlarmRequest   = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_REQUEST");
 	m_tabAlarmThreshold = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_THRESHOLD");
 	m_tabAlarmInfo      = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_INFO");
+	m_tabSrcData        = m_cfg.GetCfgValue("TABLE", "TAB_SRC_DATA");
 
 	m_pLog->Output("[YDAlarmManager] Load configuration OK.");
 }
@@ -50,9 +52,11 @@ bool YDAlarmManager::ConfirmQuit()
 
 void YDAlarmManager::AlarmProcessing() throw(base::Exception)
 {
-	ResponseAlarmRequest();
-	DataAnalysis();
-	GenerateAlarm();
+	if ( ResponseAlarmRequest() )
+	{
+		DataAnalysis();
+		GenerateAlarm();
+	}
 }
 
 void YDAlarmManager::ReleaseDBConnection()
@@ -78,38 +82,28 @@ void YDAlarmManager::InitDBConnection() throw(base::Exception)
 	m_pAlarmDB->SetTabAlarmRequest(m_tabAlarmRequest);
 	m_pAlarmDB->SetTabAlarmThreshold(m_tabAlarmThreshold);
 	m_pAlarmDB->SetTabAlarmInfo(m_tabAlarmInfo);
+	m_pAlarmDB->SetTabSrcData(m_tabSrcData);
 }
 
-void YDAlarmManager::ResponseAlarmRequest()
+bool YDAlarmManager::ResponseAlarmRequest()
 {
 	m_pAlarmDB->SelectAlarmRequest(m_vAlarmReq);
 
 	const int VEC_SIZE = m_vAlarmReq.size();
-	for ( int i = 0; i < VEC_SIZE; ++i )
+	if ( VEC_SIZE > 0 )
 	{
-		if ( 0 == i )
+		m_pLog->Output("[YDAlarmManager] Get alarm requests: %d", VEC_SIZE);
+
+		for ( int i = 0; i < VEC_SIZE; ++i )
 		{
-			m_pLog->Output("[YDAlarmManager] Alarm request: %d", VEC_SIZE);
+			YDAlarmReq& ref_req = m_vAlarmReq[i];
+			m_pLog->Output("[YDAlarmManager] Alarm request [%d]: SEQ=[%d], DATE=[%s], REGION=[%s]", (i+1), ref_req.seq, ref_req.alarm_date.c_str(), ref_req.region.c_str());
 		}
 
-		YDAlarmReq& ref_req = m_vAlarmReq[i];
-		m_pLog->Output("[YDAlarmManager] >>>>>>>>>>>> [%d]", (i+1));
-		m_pLog->Output("[YDAlarmManager] SEQ         :[%d]", ref_req.seq);
-		m_pLog->Output("[YDAlarmManager] ALARM_DATE  :[%s]", ref_req.alarm_date.c_str());
-		m_pLog->Output("[YDAlarmManager] REGION      :[%s]", ref_req.region.c_str());
-		m_pLog->Output("[YDAlarmManager] CHANNEL_TYPE:[%s]", ref_req.channel_type.c_str());
-		m_pLog->Output("[YDAlarmManager] CHANNEL_NAME:[%s]", ref_req.channel_name.c_str());
-		m_pLog->Output("[YDAlarmManager] BUSI_TYPE   :[%s]", ref_req.busi_type.c_str());
-		m_pLog->Output("[YDAlarmManager] PAY_TYPE    :[%s]", ref_req.pay_type.c_str());
-		m_pLog->Output("[YDAlarmManager] ALARM_STATUS:[%s]", ref_req.GetReqStatus().c_str());
-		m_pLog->Output("[YDAlarmManager] REQ_TIME    :[%s]", ref_req.req_time.c_str());
-		m_pLog->Output("[YDAlarmManager] FINISH_TIME :[%s]", ref_req.finish_time.c_str());
-		m_pLog->Output("[YDAlarmManager] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
-
-		ref_req.SetReqStatus("1");
-		ref_req.finish_time = base::SimpleTime::Now().Time14();
-		m_pAlarmDB->UpdateAlarmRequest(ref_req);
+		return true;
 	}
+
+	return false;
 }
 
 void YDAlarmManager::DataAnalysis()
