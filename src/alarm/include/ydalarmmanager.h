@@ -1,10 +1,12 @@
 #pragma once
 
-#include <vector>
 #include "alarmmanager.h"
+#include <vector>
+#include <map>
 
 class YDAlarmDB;
 struct YDAlarmReq;
+struct YDAlarmThreshold;
 
 // 一点稽核告警管理
 class YDAlarmManager : public AlarmManager
@@ -47,20 +49,23 @@ private:
 	// 告警生成
 	void GenerateAlarm();
 
+	// 处理告警请求
+	void HandleRequest();
+
 	// 更新告警阈值
 	void UpdateAlarmThreshold();
 
 	// 采集分析数据
-	void CollectData();
-
-	// 计算阈值
-	void AnalyzeThreshold();
+	void DataCollectionAnalysis();
 
 	// 产生告警信息
 	void YieldAlarmInformation();
 
 	// 生成告警短信
 	void ProduceAlarmMessage();
+
+	// 告警数据采集
+	double CollectData(const YDAlarmReq& req);
 
 private:
 	std::string m_tabAlarmRequest;				// 告警请求表
@@ -73,7 +78,9 @@ private:
 	std::string m_alarmMsgFileFormat;			// 告警短信文件格式
 
 private:
-	YDAlarmDB*              m_pAlarmDB;
-	std::vector<YDAlarmReq> m_vAlarmReq;		// 告警请求列表
+	YDAlarmDB*                    m_pAlarmDB;
+	std::vector<YDAlarmReq>       m_vAlarmReq;			// 告警请求列表
+	std::vector<YDAlarmThreshold> m_vAlarmThres;		// 告警阈值列表
+	std::map<int, double>         m_mAlarmSrcData;		// 告警源数据列表
 };
 

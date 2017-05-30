@@ -66,7 +66,7 @@ void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
 
 bool YDAlarmManager::ConfirmQuit()
 {
-	return true;
+	return m_vAlarmReq.empty();
 }
 
 void YDAlarmManager::AlarmProcessing() throw(base::Exception)
@@ -75,6 +75,7 @@ void YDAlarmManager::AlarmProcessing() throw(base::Exception)
 	{
 		DataAnalysis();
 		GenerateAlarm();
+		HandleRequest();
 	}
 }
 
@@ -128,8 +129,7 @@ bool YDAlarmManager::ResponseAlarmRequest()
 void YDAlarmManager::DataAnalysis()
 {
 	UpdateAlarmThreshold();
-	CollectData();
-	AnalyzeThreshold();
+	DataCollectionAnalysis();
 }
 
 void YDAlarmManager::GenerateAlarm()
@@ -138,16 +138,28 @@ void YDAlarmManager::GenerateAlarm()
 	ProduceAlarmMessage();
 }
 
+void YDAlarmManager::HandleRequest()
+{
+	// 清理源数据
+	m_mAlarmSrcData.clear();
+}
+
 void YDAlarmManager::UpdateAlarmThreshold()
 {
+	m_pAlarmDB->SelectAlarmThreshold(m_vAlarmThres);
+	m_pLog->Output("[YDAlarmManager] Refresh alarm thresholds: %lu", m_vAlarmThres.size());
 }
 
-void YDAlarmManager::CollectData()
+void YDAlarmManager::DataCollectionAnalysis()
 {
-}
+	const int VEC_SIZE = m_vAlarmReq.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		YDAlarmReq& ref_req = m_vAlarmReq[i];
 
-void YDAlarmManager::AnalyzeThreshold()
-{
+		CollectData(src_data);
+
+	}
 }
 
 void YDAlarmManager::YieldAlarmInformation()
@@ -156,5 +168,13 @@ void YDAlarmManager::YieldAlarmInformation()
 
 void YDAlarmManager::ProduceAlarmMessage()
 {
+}
+
+double YDAlarmManager::CollectData(const YDAlarmReq& req)
+{
+	std::string sql_cond = ;
+
+	double dat_val = 0.0;
+	m_pAlarmDB->SelectAlarmSrcData(sql_cond, dat_val);
 }
 

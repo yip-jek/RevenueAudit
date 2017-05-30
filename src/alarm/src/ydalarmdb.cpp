@@ -69,6 +69,7 @@ void YDAlarmDB::SelectAlarmRequest(std::vector<YDAlarmReq>& vecAlarmReq) throw(b
 
 			rs.MoveNext();
 		}
+
 		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
@@ -103,6 +104,79 @@ void YDAlarmDB::UpdateAlarmRequest(const YDAlarmReq& alarm_req) throw(base::Exce
 	catch ( const XDBO2::CDBException& ex )
 	{
 		throw base::Exception(ALMERR_UPD_ALARM_REQ, "[DB2] Update alarm request to table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmRequest.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void YDAlarmDB::SelectAlarmThreshold(std::vector<YDAlarmThreshold>& vecAlarmThres) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "SELECT SEQ, CITY, CHANNELTYPE, CHANNELNAME, RESPONSER, CALLNO";
+	sql += ", PAYTYPE, THRESOLD, OFFSET, TEMPLATE FROM " + m_tabAlarmThreshold;
+
+	YDAlarmThreshold alarm_thres;
+	std::vector<YDAlarmThreshold> vecThres;
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			int index = 1;
+
+			alarm_thres.seq          = (int)rs[index++];
+			alarm_thres.region       = (const char*)rs[index++];
+			alarm_thres.channel_type = (const char*)rs[index++];
+			alarm_thres.channel_name = (const char*)rs[index++];
+			alarm_thres.responser    = (const char*)rs[index++];
+			alarm_thres.call_no      = (const char*)rs[index++];
+			alarm_thres.pay_type     = (const char*)rs[index++];
+			alarm_thres.threshold    = (double)rs[index++];
+			alarm_thres.offset       = (int)rs[index++];
+			alarm_thres.msg_template = (const char*)rs[index++];
+			vecThres.push_back(alarm_thres);
+
+			rs.MoveNext();
+		}
+
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ALMERR_UPD_ALARM_THRES, "[DB2] Select alarm threshold from table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmThreshold.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	vecThres.swap(vecAlarmThres);
+}
+
+void YDAlarmDB::SelectAlarmSrcData(const std::string& condition, double& val) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "SELECT (SUM(receiveFee) - SUM(realFee) - SUM(preferFee)) FROM ";
+	sql += m_tabSrcData + " WHERE " + condition;
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			val = (double)rs[1];
+
+			rs.MoveNext();
+		}
+
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ALMERR_SEL_ALARM_SRCDAT, "[DB2] Select alarm source data from table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabSrcData.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 

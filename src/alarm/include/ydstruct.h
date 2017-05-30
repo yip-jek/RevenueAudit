@@ -38,3 +38,33 @@ public:
 	std::string finish_time;			// 完成时间
 };
 
+// 告警阈值
+struct YDAlarmThreshold
+{
+public:
+	YDAlarmThreshold();
+	~YDAlarmThreshold() {}
+
+public:
+	int         seq;					// 流水号
+	std::string region;					// 地市
+	std::string channel_type;			// 渠道属性
+	std::string channel_name;			// 渠道名称
+	std::string responser;				// 告警负责人
+	std::string call_no;				// 告警负责人联系方式
+	std::string pay_type;				// 支付方式
+	double      threshold;				// 阈值
+	int         offset;					// 计划完成日期偏移量
+	std::string msg_template;			// 短信模板
+};
+
+// 告警采集数据
+struct YDAlarmSrcData
+{
+public:
+
+public:
+	int         seq;
+	std::string 
+};
+

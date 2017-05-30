@@ -2,7 +2,8 @@
 #include "pubstr.h"
 
 YDAlarmReq::YDAlarmReq()
-:seq(0), status(RS_Unknown)
+:seq(0)
+,status(RS_Unknown)
 {
 }
 
@@ -44,5 +45,12 @@ std::string YDAlarmReq::GetReqStatus() const
 	default:
 		return "<UNKNOWN>";
 	}
+}
+
+YDAlarmThreshold::YDAlarmThreshold()
+:seq(0)
+,threshold(0.0)
+,offset(0)
+{
 }
 
