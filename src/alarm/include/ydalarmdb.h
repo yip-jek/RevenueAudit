@@ -13,6 +13,7 @@ class Exception;
 struct DBInfo;
 struct YDAlarmReq;
 struct YDAlarmThreshold;
+struct YDAlarmData;
 
 // 一点稽核数据库类
 class YDAlarmDB : public base::BaseDB2
@@ -44,8 +45,8 @@ public:
 	// 获取告警阈值
 	void SelectAlarmThreshold(std::vector<YDAlarmThreshold>& vecAlarmThres) throw(base::Exception);
 
-	// 采集告警源数据
-	void SelectAlarmSrcData(const std::string& condition, double& val) throw(base::Exception);
+	// 采集告警数据
+	void SelectAlarmData(int seq, const std::string& condition, std::vector<YDAlarmData>& vecData) throw(base::Exception);
 
 private:
 	std::string m_tabAlarmRequest;				// 告警请求表

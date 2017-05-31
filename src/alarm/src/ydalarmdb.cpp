@@ -152,13 +152,17 @@ void YDAlarmDB::SelectAlarmThreshold(std::vector<YDAlarmThreshold>& vecAlarmThre
 	vecThres.swap(vecAlarmThres);
 }
 
-void YDAlarmDB::SelectAlarmSrcData(const std::string& condition, double& val) throw(base::Exception)
+void YDAlarmDB::SelectAlarmData(int seq, const std::string& condition, std::vector<YDAlarmData>& vecData) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT (SUM(receiveFee) - SUM(realFee) - SUM(preferFee)) FROM ";
-	sql += m_tabSrcData + " WHERE " + condition;
+	std::string sql = "SELECT DATE, MANAGELEVEL, CHANNELATTR, CHANNELNAME, BUSSORT, PAYCODE, ";
+	sql += "(SUM(receiveFee) - SUM(realFee) - SUM(preferFee)) as FEE FROM " + m_tabSrcData;
+	sql += " WHERE " + condition + " GROUP BY DATE, MANAGELEVEL, CHANNELATTR, CHANNELNAME, BUSSORT, PAYCODE";
+
+	YDAlarmData alarm_dat;
+	alarm_dat.seq = seq;
 
 	try
 	{
@@ -167,7 +171,16 @@ void YDAlarmDB::SelectAlarmSrcData(const std::string& condition, double& val) th
 
 		while ( !rs.IsEOF() )
 		{
-			val = (double)rs[1];
+			int index = 1;
+
+			alarm_dat.alarm_date   = (const char*)rs[index++];
+			alarm_dat.manage_level = (const char*)rs[index++];
+			alarm_dat.channel_attr = (const char*)rs[index++];
+			alarm_dat.channel_name = (const char*)rs[index++];
+			alarm_dat.bus_sort     = (const char*)rs[index++];
+			alarm_dat.pay_code     = (const char*)rs[index++];
+			alarm_dat.arrears      = (double)rs[index++];
+			vecData.push_back(alarm_dat);
 
 			rs.MoveNext();
 		}

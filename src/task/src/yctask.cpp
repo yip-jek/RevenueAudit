@@ -12,6 +12,7 @@
 
 YCTask::YCTask(base::Config& cfg)
 :Task(cfg)
+,m_taskFinished(0)
 ,m_pTaskDB(NULL)
 {
 	// 日志文件前缀
@@ -194,7 +195,7 @@ void YCTask::ShowTasksInfo()
 	m_pLog->Output("[YC_TASK] 执行任务数: %llu", m_mTaskReqInfo.size());
 	m_pLog->Output("[YC_TASK] 采集任务数: %llu", m_vecEtlTaskInfo.size());
 	m_pLog->Output("[YC_TASK] 分析任务数: %llu", m_vecAnaTaskInfo.size());
-	m_pLog->Output("[YC_TASK] 完成任务数: %llu", m_vecEndTask.size());
+	m_pLog->Output("[YC_TASK] 完成任务数: %d", m_taskFinished);
 	m_pLog->Output("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 }
 
@@ -558,6 +559,9 @@ void YCTask::FinishTask() throw(base::Exception)
 		TaskRequestUpdate(TSTS_End, ref_tri);
 		m_pLog->Output("[YC_TASK] Finish task: SEQ=[%d], KPI=[%s], CITY=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_city.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
 	}
+
+	// 统计任务完成数
+	m_taskFinished += VEC_END_TASK_SIZE;
 
 	// 清空已完成任务列表
 	std::vector<TaskReqInfo>().swap(m_vecEndTask);

@@ -100,6 +100,7 @@ private:
 private:
 	int              m_minRunTimeInterval;			// 任务运行的最小时间间隔（分钟）
 	int              m_maxTaskScheLogID;			// 最大的任务日程日志ID
+	int              m_taskFinished;				// 任务完成数统计
 	base::SimpleTime m_stLastTaskBuild;				// 上一次创建任务的时间
 
 private:

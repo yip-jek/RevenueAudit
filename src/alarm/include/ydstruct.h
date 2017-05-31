@@ -9,6 +9,8 @@ public:
 	YDAlarmReq();
 	~YDAlarmReq() {}
 
+	static const char* const MARK_ANY;			// 任意值标志：*
+
 	// 请求状态
 	enum REQ_STATUS
 	{
@@ -58,13 +60,25 @@ public:
 	std::string msg_template;			// 短信模板
 };
 
-// 告警采集数据
-struct YDAlarmSrcData
+// 告警数据
+struct YDAlarmData
 {
 public:
+	YDAlarmData();
+	~YDAlarmData() {}
 
 public:
-	int         seq;
-	std::string 
+	// 日志打印信息
+	std::string LogPrintInfo();
+
+public:
+	int         seq;					// 流水号
+	std::string alarm_date;				// 告警日期
+	std::string manage_level;			// 管理级别（地市）
+	std::string channel_attr;			// 渠道属性
+	std::string channel_name;			// 渠道名称
+	std::string bus_sort;				// 业务分类
+	std::string pay_code;				// 支付方式
+	double      arrears;				// 欠费
 };
 

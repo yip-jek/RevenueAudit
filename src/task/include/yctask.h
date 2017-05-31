@@ -97,6 +97,7 @@ private:
 	bool GetSubRuleID(const std::string& kpi_id, TaskInfo::TASK_TYPE t_type, std::string& sub_id);
 
 private:
+	int        m_taskFinished;			// 任务完成数统计
 	DBInfo     m_dbInfo;				// 数据库信息
 	YCTaskDB2* m_pTaskDB;				// 数据库连接
 

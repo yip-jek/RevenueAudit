@@ -2,6 +2,7 @@
 #include "basedir.h"
 #include "log.h"
 #include "simpletime.h"
+#include "pubstr.h"
 #include "alarmerror.h"
 #include "ydalarmdb.h"
 #include "ydstruct.h"
@@ -129,40 +130,30 @@ bool YDAlarmManager::ResponseAlarmRequest()
 void YDAlarmManager::DataAnalysis()
 {
 	UpdateAlarmThreshold();
-	DataCollectionAnalysis();
+	CollectData();
+	DetermineAlarm();
 }
 
 void YDAlarmManager::GenerateAlarm()
 {
-	YieldAlarmInformation();
+	MakeAlarmInformation();
 	ProduceAlarmMessage();
 }
 
 void YDAlarmManager::HandleRequest()
 {
-	// 清理源数据
-	m_mAlarmSrcData.clear();
+	// 清理缓存数据
+	std::vector<YDAlarmData>().swap(m_vAlarmData);
+	std::vector<YDAlarmData>().swap(m_vAlarmInfo);
 }
 
 void YDAlarmManager::UpdateAlarmThreshold()
 {
-	m_pAlarmDB->SelectAlarmThreshold(m_vAlarmThres);
-	m_pLog->Output("[YDAlarmManager] Refresh alarm thresholds: %lu", m_vAlarmThres.size());
+	m_pAlarmDB->SelectAlarmThreshold(m_vAlarmThreshold);
+	m_pLog->Output("[YDAlarmManager] Refreshed alarm thresholds: %lu", m_vAlarmThreshold.size());
 }
 
-void YDAlarmManager::DataCollectionAnalysis()
-{
-	const int VEC_SIZE = m_vAlarmReq.size();
-	for ( int i = 0; i < VEC_SIZE; ++i )
-	{
-		YDAlarmReq& ref_req = m_vAlarmReq[i];
-
-		CollectData(src_data);
-
-	}
-}
-
-void YDAlarmManager::YieldAlarmInformation()
+void YDAlarmManager::MakeAlarmInformation()
 {
 }
 
@@ -170,11 +161,96 @@ void YDAlarmManager::ProduceAlarmMessage()
 {
 }
 
-double YDAlarmManager::CollectData(const YDAlarmReq& req)
+void YDAlarmManager::CollectData()
 {
-	std::string sql_cond = ;
+	int prev_size = 0;
+	int curr_size = 0;
 
-	double dat_val = 0.0;
-	m_pAlarmDB->SelectAlarmSrcData(sql_cond, dat_val);
+	const int VEC_SIZE = m_vAlarmReq.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		YDAlarmReq& ref_req = m_vAlarmReq[i];
+		m_pAlarmDB->SelectAlarmData(req.seq, AssembleSQLCondition(ref_req), m_vAlarmData);
+
+		curr_size = m_vAlarmData.size();
+		m_pLog->Output("[YDAlarmManager] Collected source data: SEQ=[%d], SIZE=[%d]", (curr_size-prev_size));
+		prev_size = curr_size;
+	}
+}
+
+std::string YDAlarmManager::AssembleSQLCondition(const YDAlarmReq& req)
+{
+	std::string sql_cond = "DATE = '" + base::PubStr::TrimB(req.alarm_date);
+	sql_cond += "' AND MANAGELEVEL = '" + base::PubStr::TrimB(req.region) + "'";
+
+	// 条件：渠道属性
+	std::string str_tmp = base::PubStr::TrimB(req.channel_type);
+	if ( str_tmp != YDAlarmReq::MARK_ANY )
+	{
+		sql_cond += " AND CHANNELATTR = '" + str_tmp + "'";
+	}
+
+	// 条件：渠道名称
+	str_tmp = base::PubStr::TrimB(req.channel_name);
+	if ( str_tmp != YDAlarmReq::MARK_ANY )
+	{
+		sql_cond += " AND CHANNELNAME = '" + str_tmp + "'";
+	}
+
+	// 条件：业务分类
+	str_tmp = base::PubStr::TrimB(req.busi_type);
+	if ( str_tmp != YDAlarmReq::MARK_ANY )
+	{
+		sql_cond += " AND BUSSORT = '" + str_tmp + "'";
+	}
+
+	// 条件：支付方式
+	str_tmp = base::PubStr::TrimB(req.pay_type);
+	if ( str_tmp != YDAlarmReq::MARK_ANY )
+	{
+		sql_cond += " AND PAYCODE = '" + str_tmp + "'";
+	}
+
+	return sql_cond;
+}
+
+void YDAlarmManager::DetermineAlarm()
+{
+	double threshold = 0.0;
+	const int VEC_SIZE = m_vAlarmData.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		YDAlarmData& ref_dat = m_vAlarmData[i];
+		if ( GetAlarmThreshold(ref_dat, threshold) )	// 获取到阈值
+		{
+		}
+		else	// 无对应阈值
+		{
+			m_pLog->Output("[YDAlarmManager] No match alarm threshold: %s", ref_dat.LogPrintInfo().c_str());
+		}
+	}
+}
+
+bool YDAlarmManager::GetAlarmThreshold(const YDAlarmData& alarm_data, double& threshold)
+{
+	const int VEC_SIZE = m_vAlarmThreshold.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		YDAlarmThreshold& ref_threshold = m_vAlarmThreshold[i];
+
+		// 地市不匹配
+		if ( alarm_data.manage_level != ref_threshold.region )
+		{
+			continue;
+		}
+
+		// 渠道属性不匹配
+		// 渠道名称不匹配
+		// 支付方式不匹配
+
+		return true;
+	}
+
+	return false;
 }
 

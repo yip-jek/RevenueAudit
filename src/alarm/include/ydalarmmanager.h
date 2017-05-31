@@ -2,11 +2,11 @@
 
 #include "alarmmanager.h"
 #include <vector>
-#include <map>
 
 class YDAlarmDB;
 struct YDAlarmReq;
 struct YDAlarmThreshold;
+struct YDAlarmData;
 
 // 一点稽核告警管理
 class YDAlarmManager : public AlarmManager
@@ -55,17 +55,23 @@ private:
 	// 更新告警阈值
 	void UpdateAlarmThreshold();
 
-	// 采集分析数据
-	void DataCollectionAnalysis();
+	// 告警数据采集
+	void CollectData();
+
+	// 组织 SQL 条件
+	std::string AssembleSQLCondition(const YDAlarmReq& req);
+
+	// 告警判断
+	void DetermineAlarm();
+
+	// 获取对比阈值
+	bool GetAlarmThreshold(const YDAlarmData& alarm_data, double& threshold);
 
 	// 产生告警信息
-	void YieldAlarmInformation();
+	void MakeAlarmInformation();
 
 	// 生成告警短信
 	void ProduceAlarmMessage();
-
-	// 告警数据采集
-	double CollectData(const YDAlarmReq& req);
 
 private:
 	std::string m_tabAlarmRequest;				// 告警请求表
@@ -79,8 +85,9 @@ private:
 
 private:
 	YDAlarmDB*                    m_pAlarmDB;
-	std::vector<YDAlarmReq>       m_vAlarmReq;			// 告警请求列表
-	std::vector<YDAlarmThreshold> m_vAlarmThres;		// 告警阈值列表
-	std::map<int, double>         m_mAlarmSrcData;		// 告警源数据列表
+	std::vector<YDAlarmReq>       m_vAlarmReq;				// 告警请求列表
+	std::vector<YDAlarmThreshold> m_vAlarmThreshold;		// 告警阈值列表
+	std::vector<YDAlarmData>      m_vAlarmData;				// 告警数据列表
+	std::vector<YDAlarmData>      m_vAlarmInfo;				// 告警信息列表
 };
 

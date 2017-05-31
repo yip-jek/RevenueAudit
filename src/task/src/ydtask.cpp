@@ -10,6 +10,7 @@ YDTask::YDTask(base::Config& cfg)
 :Task(cfg)
 ,m_minRunTimeInterval(0)
 ,m_maxTaskScheLogID(0)
+,m_taskFinished(0)
 ,m_pTaskDB2(NULL)
 {
 	// 日志文件前缀
@@ -352,7 +353,7 @@ void YDTask::ShowTasksInfo()
 	m_pLog->Output("[YD_TASK] 任务暂停数: %llu", m_listTaskPause.size());
 	m_pLog->Output("[YD_TASK] 采集任务数: %llu", m_mEtlTaskRun.size());
 	m_pLog->Output("[YD_TASK] 分析任务数: %llu", m_mAnaTaskRun.size());
-	m_pLog->Output("[YD_TASK] 任务完成数: %llu", m_mTaskEnd.size());
+	m_pLog->Output("[YD_TASK] 任务完成数: %d", m_taskFinished);
 	m_pLog->Output("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 }
 
@@ -907,6 +908,9 @@ void YDTask::FinishTask() throw(base::Exception)
 			m_mTaskWait[ref_rat.seq_id] = ref_rat;
 		}
 	}
+
+	// 统计任务完成数
+	m_taskFinished += m_mTaskEnd.size();
 
 	// 清空任务完成队列
 	m_mTaskEnd.clear();
