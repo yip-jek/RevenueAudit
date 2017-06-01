@@ -6,16 +6,19 @@
 #include "pubtime.h"
 #include "alarmerror.h"
 #include "ydalarmdb.h"
+#include "ydalarmfile.h"
 #include "ydstruct.h"
 
 YDAlarmManager::YDAlarmManager()
 :m_pAlarmDB(NULL)
+,m_pAlarmSMSFile(NULL)
 {
 }
 
 YDAlarmManager::~YDAlarmManager()
 {
 	ReleaseDBConnection();
+	ReleaseAlarmSMSFile();
 }
 
 std::string YDAlarmManager::GetLogFilePrefix()
@@ -26,18 +29,7 @@ std::string YDAlarmManager::GetLogFilePrefix()
 void YDAlarmManager::Init() throw(base::Exception)
 {
 	InitDBConnection();
-
-	// 存放告警短信文件的路径是否存在
-	if ( !base::BaseDir::IsDirExist(m_alarmMsgFilePath) )
-	{
-		// 路径不存在，则尝试创建
-		if ( !base::BaseDir::CreateFullPath(m_alarmMsgFilePath) )
-		{
-			throw base::Exception(ALMERR_INIT, "Try to create alarm msg file path failed: PATH=[%s] [FILE:%s, LINE:%d]", m_alarmMsgFilePath.c_str(), __FILE__, __LINE__);
-		}
-
-		m_pLog->Output("[YDAlarmManager] Created alarm msg file path: [%s]", m_alarmMsgFilePath.c_str());
-	}
+	InitAlarmSMSFile();
 
 	m_pLog->Output("[YDAlarmManager] Init OK.");
 }
@@ -90,6 +82,15 @@ void YDAlarmManager::ReleaseDBConnection()
 	}
 }
 
+void YDAlarmManager::ReleaseAlarmSMSFile()
+{
+	if ( m_pAlarmSMSFile != NULL )
+	{
+		delete m_pAlarmSMSFile;
+		m_pAlarmSMSFile = NULL;
+	}
+}
+
 void YDAlarmManager::InitDBConnection() throw(base::Exception)
 {
 	ReleaseDBConnection();
@@ -105,6 +106,20 @@ void YDAlarmManager::InitDBConnection() throw(base::Exception)
 	m_pAlarmDB->SetTabAlarmThreshold(m_tabAlarmThreshold);
 	m_pAlarmDB->SetTabAlarmInfo(m_tabAlarmInfo);
 	m_pAlarmDB->SetTabSrcData(m_tabSrcData);
+}
+
+void YDAlarmManager::InitAlarmSMSFile() throw(base::Exception)
+{
+	ReleaseAlarmSMSFile();
+
+	m_pAlarmSMSFile = new YDAlarmFile();
+	if ( NULL == m_pAlarmSMSFile )
+	{
+		throw base::Exception(ALMERR_INIT_ALARM_SMSFILE, "Operator new YDAlarmFile failed: 无法申请到内存空间！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	m_pAlarmSMSFile->SetPath(m_alarmMsgFilePath);
+	m_pAlarmSMSFile->SetFileFormat(m_alarmMsgFileFormat);
 }
 
 bool YDAlarmManager::ResponseAlarmRequest()

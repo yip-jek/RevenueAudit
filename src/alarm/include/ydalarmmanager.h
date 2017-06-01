@@ -4,6 +4,7 @@
 #include <vector>
 
 class YDAlarmDB;
+class YDAlarmFile;
 struct YDAlarmReq;
 struct YDAlarmThreshold;
 struct YDAlarmData;
@@ -37,8 +38,14 @@ private:
 	// 释放数据库连接
 	void ReleaseDBConnection();
 
+	// 释放告警短信文件
+	void ReleaseAlarmSMSFile();
+
 	// 初始化数据库连接
 	void InitDBConnection() throw(base::Exception);
+
+	// 初始化告警短信文件
+	void InitAlarmSMSFile() throw(base::Exception);
 
 	// 响应告警请求
 	// 有新请求则返回true，否则返回false
@@ -89,6 +96,7 @@ private:
 
 private:
 	YDAlarmDB*                    m_pAlarmDB;
+	YDAlarmFile*                  m_pAlarmSMSFile;			// 告警短信文件
 	std::vector<YDAlarmReq>       m_vAlarmReq;				// 告警请求列表
 	std::vector<YDAlarmThreshold> m_vAlarmThreshold;		// 告警阈值列表
 	std::vector<YDAlarmData>      m_vAlarmData;				// 告警数据列表
