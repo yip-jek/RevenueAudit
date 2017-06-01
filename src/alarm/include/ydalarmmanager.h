@@ -7,6 +7,7 @@ class YDAlarmDB;
 struct YDAlarmReq;
 struct YDAlarmThreshold;
 struct YDAlarmData;
+struct YDAlarmInfo;
 
 // 一点稽核告警管理
 class YDAlarmManager : public AlarmManager
@@ -65,10 +66,13 @@ private:
 	void DetermineAlarm();
 
 	// 获取对比阈值
-	bool GetAlarmThreshold(const YDAlarmData& alarm_data, double& threshold);
+	bool GetAlarmThreshold(const YDAlarmData& alarm_data, YDAlarmThreshold*& pThreshold);
+
+	// 是否达到告警阈值
+	bool IsReachThreshold(const YDAlarmData& alarm_data, const YDAlarmThreshold& alarm_threshold);
 
 	// 产生告警信息
-	void MakeAlarmInformation();
+	void MakeAlarmInformation(const YDAlarmData& alarm_data, const YDAlarmThreshold& alarm_threshold);
 
 	// 生成告警短信
 	void ProduceAlarmMessage();
@@ -88,6 +92,6 @@ private:
 	std::vector<YDAlarmReq>       m_vAlarmReq;				// 告警请求列表
 	std::vector<YDAlarmThreshold> m_vAlarmThreshold;		// 告警阈值列表
 	std::vector<YDAlarmData>      m_vAlarmData;				// 告警数据列表
-	std::vector<YDAlarmData>      m_vAlarmInfo;				// 告警信息列表
+	std::vector<YDAlarmInfo>      m_vAlarmInfo;				// 告警信息列表
 };
 

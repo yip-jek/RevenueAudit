@@ -3,6 +3,7 @@
 #include "log.h"
 #include "simpletime.h"
 #include "pubstr.h"
+#include "pubtime.h"
 #include "alarmerror.h"
 #include "ydalarmdb.h"
 #include "ydstruct.h"
@@ -136,7 +137,6 @@ void YDAlarmManager::DataAnalysis()
 
 void YDAlarmManager::GenerateAlarm()
 {
-	MakeAlarmInformation();
 	ProduceAlarmMessage();
 }
 
@@ -144,17 +144,13 @@ void YDAlarmManager::HandleRequest()
 {
 	// 清理缓存数据
 	std::vector<YDAlarmData>().swap(m_vAlarmData);
-	std::vector<YDAlarmData>().swap(m_vAlarmInfo);
+	std::vector<YDAlarmInfo>().swap(m_vAlarmInfo);
 }
 
 void YDAlarmManager::UpdateAlarmThreshold()
 {
 	m_pAlarmDB->SelectAlarmThreshold(m_vAlarmThreshold);
 	m_pLog->Output("[YDAlarmManager] Refreshed alarm thresholds: %lu", m_vAlarmThreshold.size());
-}
-
-void YDAlarmManager::MakeAlarmInformation()
-{
 }
 
 void YDAlarmManager::ProduceAlarmMessage()
@@ -176,6 +172,8 @@ void YDAlarmManager::CollectData()
 		m_pLog->Output("[YDAlarmManager] Collected source data: SEQ=[%d], SIZE=[%d]", (curr_size-prev_size));
 		prev_size = curr_size;
 	}
+
+	m_pLog->Output("[YDAlarmManager] Collected all source data size: [%d]", curr_size);
 }
 
 std::string YDAlarmManager::AssembleSQLCondition(const YDAlarmReq& req)
@@ -216,22 +214,30 @@ std::string YDAlarmManager::AssembleSQLCondition(const YDAlarmReq& req)
 
 void YDAlarmManager::DetermineAlarm()
 {
-	double threshold = 0.0;
+	YDAlarmThreshold* pAlarmThreshold = NULL;
 	const int VEC_SIZE = m_vAlarmData.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
 		YDAlarmData& ref_dat = m_vAlarmData[i];
-		if ( GetAlarmThreshold(ref_dat, threshold) )	// 获取到阈值
+		if ( GetAlarmThreshold(ref_dat, pAlarmThreshold) )	// 获取到阈值
 		{
+			// 是否达到告警阈值
+			if ( IsReachThreshold(ref_dat, *pAlarmThreshold) )
+			{
+				m_pLog->Output("[YDAlarmManager] Reached alarm threshold [%s]: %s", base::PubStr::Double2FormatStr(pAlarmThreshold->threshold).c_str(), ref_dat.LogPrintInfo().c_str());
+				MakeAlarmInformation(ref_dat, *pAlarmThreshold);
+			}
 		}
 		else	// 无对应阈值
 		{
 			m_pLog->Output("[YDAlarmManager] No match alarm threshold: %s", ref_dat.LogPrintInfo().c_str());
 		}
 	}
+
+	m_pLog->Output("[YDAlarmManager] Maked alarm info size: [%lu]", m_vAlarmInfo.size());
 }
 
-bool YDAlarmManager::GetAlarmThreshold(const YDAlarmData& alarm_data, double& threshold)
+bool YDAlarmManager::GetAlarmThreshold(const YDAlarmData& alarm_data, YDAlarmThreshold*& pThreshold)
 {
 	const int VEC_SIZE = m_vAlarmThreshold.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
@@ -245,12 +251,58 @@ bool YDAlarmManager::GetAlarmThreshold(const YDAlarmData& alarm_data, double& th
 		}
 
 		// 渠道属性不匹配
-		// 渠道名称不匹配
-		// 支付方式不匹配
+		if ( ref_threshold.channel_type != YDAlarmReq::MARK_ANY 
+			&& alarm_data.channel_attr != ref_threshold.channel_type )
+		{
+			continue;
+		}
 
+		// 渠道名称不匹配
+		if ( ref_threshold.channel_name != YDAlarmReq::MARK_ANY 
+			&& alarm_data.channel_name != ref_threshold.channel_name )
+		{
+			continue;
+		}
+
+		// 支付方式不匹配
+		if ( ref_threshold.pay_type != YDAlarmReq::MARK_ANY 
+			&& alarm_data.pay_code != ref_threshold.pay_type )
+		{
+			continue;
+		}
+
+		pThreshold = &ref_threshold;
 		return true;
 	}
 
+	pThreshold = NULL;
 	return false;
+}
+
+bool YDAlarmManager::IsReachThreshold(const YDAlarmData& alarm_data, const YDAlarmThreshold& alarm_threshold)
+{
+	return (alarm_data.arrears >= alarm_threshold.threshold);
+}
+
+void YDAlarmManager::MakeAlarmInformation(const YDAlarmData& alarm_data, const YDAlarmThreshold& alarm_threshold)
+{
+	YDAlarmInfo alarm_info;
+	alarm_info.alarm_date    = alarm_data.alarm_date;
+	alarm_info.region        = alarm_data.manage_level;
+	alarm_info.channel_type  = alarm_data.channel_attr;
+	alarm_info.channel_name  = alarm_data.channel_name;
+	alarm_info.busi_type     = alarm_data.bus_sort;
+	alarm_info.pay_type      = alarm_data.pay_code;
+	alarm_info.responser     = alarm_threshold.responser;
+	alarm_info.call_no       = alarm_threshold.call_no;
+	alarm_info.generate_time = base::SimpleTime::Now().Time14();
+
+	// 告警计划完成时间：告警生成时间+计划完成日期偏移量
+	alarm_info.plan_time  = base::PubTime::DateNowPlusDays(alarm_threshold.offset);
+	alarm_info.plan_time += alarm_info.generate_time.substr(8);
+
+	m_vAlarmInfo.push_back(alarm_info);
+
+	m_pAlarmDB->InsertAlarmInfo(alarm_info);
 }
 

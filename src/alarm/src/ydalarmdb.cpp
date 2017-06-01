@@ -193,3 +193,35 @@ void YDAlarmDB::SelectAlarmData(int seq, const std::string& condition, std::vect
 	}
 }
 
+void YDAlarmDB::InsertAlarmInfo(const YDAlarmInfo& alarm_info) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "INSERT INTO " + m_tabAlarmInfo + "(WARNDATE, CITY, CHANNELTYPE, CHANNELNAME, ";
+	sql += "BUSITYPE, PAYTYPE, RESPONSER, GENDATE, PLANDATE) values(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		int index = 1;
+		rs.Parameter(index++) = alarm_info.alarm_date.c_str();
+		rs.Parameter(index++) = alarm_info.region.c_str();
+		rs.Parameter(index++) = alarm_info.channel_type.c_str();
+		rs.Parameter(index++) = alarm_info.channel_name.c_str();
+		rs.Parameter(index++) = alarm_info.busi_type.c_str();
+		rs.Parameter(index++) = alarm_info.pay_type.c_str();
+		rs.Parameter(index++) = alarm_info.responser.c_str();
+		rs.Parameter(index++) = alarm_info.generate_time.c_str();
+		rs.Parameter(index++) = alarm_info.plan_time.c_str();
+		rs.Execute();
+
+		Commit();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ALMERR_INS_ALARM_INFO, "[DB2] Insert alarm info to table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmInfo.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+

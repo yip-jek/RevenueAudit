@@ -16,5 +16,6 @@ enum ALARM_ERROR
 	ALMERR_UPD_ALARM_REQ     = -4002002,				// 更新告警请求记录出错
 	ALMERR_UPD_ALARM_THRES   = -4002003,				// 获取告警阈值记录出错
 	ALMERR_SEL_ALARM_SRCDAT  = -4002004,				// 采集告警源数据出错
+	ALMERR_INS_ALARM_INFO    = -4002005,				// 存储告警信息出错
 };
 

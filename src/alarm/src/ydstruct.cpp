@@ -65,7 +65,7 @@ YDAlarmData::YDAlarmData()
 std::string YDAlarmData::LogPrintInfo()
 {
 	std::string log_info;
-	base::PubStr::SetFormatString(log_info, "SEQ=[%d], ALARM_DATE=[%s], MANAGE_LV=[%s], CHANN_ATTR=[%s], CHANN_NAME=[%s], BUS_SORT=[%s], PAY_CODE=[%s], ARREARS=[%s]", seq, alarm_date.c_str(), manage_level.c_str(), channel_attr.c_str(), channel_name.c_str(), bus_sort.c_str(), pay_code.c_str(), PubStr::Double2FormatStr(arrears).c_str());
+	base::PubStr::SetFormatString(log_info, "SEQ=[%d], ALARM_DATE=[%s], MANAGE_LV=[%s], CHANN_ATTR=[%s], CHANN_NAME=[%s], BUS_SORT=[%s], PAY_CODE=[%s], ARREARS=[%s]", seq, alarm_date.c_str(), manage_level.c_str(), channel_attr.c_str(), channel_name.c_str(), bus_sort.c_str(), pay_code.c_str(), base::PubStr::Double2FormatStr(arrears).c_str());
 	return log_info;
 }
 

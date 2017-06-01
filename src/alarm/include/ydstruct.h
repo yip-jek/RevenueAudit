@@ -56,7 +56,7 @@ public:
 	std::string call_no;				// 告警负责人联系方式
 	std::string pay_type;				// 支付方式
 	double      threshold;				// 阈值
-	int         offset;					// 计划完成日期偏移量
+	int         offset;					// 计划完成日期偏移量（单位：天）
 	std::string msg_template;			// 短信模板
 };
 
@@ -80,5 +80,21 @@ public:
 	std::string bus_sort;				// 业务分类
 	std::string pay_code;				// 支付方式
 	double      arrears;				// 欠费
+};
+
+// 告警信息
+struct YDAlarmInfo
+{
+public:
+	std::string alarm_date;				// 告警日期
+	std::string region;					// 地市
+	std::string channel_type;			// 渠道属性
+	std::string channel_name;			// 渠道名称
+	std::string busi_type;				// 业务分类
+	std::string pay_type;				// 支付方式
+	std::string responser;				// 告警负责人
+	std::string call_no;				// 告警负责人联系方式
+	std::string generate_time;			// 告警生成时间
+	std::string plan_time;				// 告警计划完成时间
 };
 
