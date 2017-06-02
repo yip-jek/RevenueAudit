@@ -3,13 +3,6 @@
 #include <vector>
 #include "basedb2.h"
 
-namespace base
-{
-
-class Exception;
-
-}
-
 struct DBInfo;
 struct YDAlarmReq;
 struct YDAlarmThreshold;

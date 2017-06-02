@@ -28,6 +28,9 @@ protected:
 	// 载入扩展配置
 	virtual void LoadExtendedConfig() throw(base::Exception);
 
+	// 输出扩展配置信息
+	virtual void OutputExtendedConfig();
+
 	// 是否确认退出
 	virtual bool ConfirmQuit();
 
@@ -93,6 +96,7 @@ private:
 private:
 	std::string m_alarmMsgFilePath;				// 告警短信文件路径
 	std::string m_alarmMsgFileFormat;			// 告警短信文件格式
+	int         m_alarmMsgFileMaxLine;			// 告警短信文件最大行数
 
 private:
 	YDAlarmDB*                    m_pAlarmDB;

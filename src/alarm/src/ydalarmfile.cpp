@@ -1,12 +1,12 @@
 #include "ydalarmfile.h"
 #include "basedir.h"
 #include "basefile.h"
-#include "exception.h"
 #include "log.h"
 #include "alarmerror.h"
 
 YDAlarmFile::YDAlarmFile()
 :m_pLog(base::Log::Instance())
+,m_maxLine(0)
 {
 }
 
@@ -42,7 +42,20 @@ void YDAlarmFile::SetFileFormat(const std::string& file_fmt) throw(base::Excepti
 {
 	if ( file_fmt.empty() )
 	{
-		throw base::Exception(ALMERR_AFILE_SET_FILE_FMT, "The file format is a blank! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ALMERR_AFILE_SET_FILE_FMT, "The alarm file format is a blank! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+}
+
+void YDAlarmFile::SetMaxLine(int max_line) throw(base::Exception)
+{
+	if ( max_line > 0 )
+	{
+		m_maxLine = max_line;
+	}
+	else
+	{
+		throw base::Exception(ALMERR_AFILE_SET_MAX_LINE, "The alarm file max line is invalid: %d [FILE:%s, LINE:%d]", max_line, __FILE__, __LINE__);
 	}
 }
 

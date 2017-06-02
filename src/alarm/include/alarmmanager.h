@@ -39,6 +39,9 @@ protected:
 	// 载入扩展配置
 	virtual void LoadExtendedConfig() throw(base::Exception) = 0;
 
+	// 输出扩展配置信息
+	virtual void OutputExtendedConfig() = 0;
+
 	// 是否确认退出
 	virtual bool ConfirmQuit() = 0;
 
@@ -48,6 +51,9 @@ protected:
 private:
 	// 载入基础配置
 	void LoadBasicConfig() throw(base::Exception);
+
+	// 输出基础配置信息
+	void OutputBasicConfig();
 
 	// 是否保持运行
 	bool Running();

@@ -16,13 +16,16 @@ AlarmManager::~AlarmManager()
 
 const char* AlarmManager::Version()
 {
-	return ("AlarmManager: Version 2.0012.20170601 released. Compiled at "__TIME__" on "__DATE__);
+	return ("AlarmManager: Version 2.0013.20170602 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void AlarmManager::LoadConfig() throw(base::Exception)
 {
 	LoadBasicConfig();
+	OutputBasicConfig();
+
 	LoadExtendedConfig();
+	OutputExtendedConfig();
 }
 
 void AlarmManager::LoadBasicConfig() throw(base::Exception)
@@ -49,6 +52,16 @@ void AlarmManager::LoadBasicConfig() throw(base::Exception)
 	m_dbinfo.db_pwd  = m_cfg.GetCfgValue("DATABASE", "PASSWORD");
 
 	m_pLog->Output("[AlarmManager] Load configuration OK.");
+}
+
+void AlarmManager::OutputBasicConfig()
+{
+	m_pLog->Output("================================================================================");
+	m_pLog->Output("[AlarmManager] (BASIC_CONFIG) [SYS]->[TIME_INTERVAL] : [%d]", m_timeInterval);
+	m_pLog->Output("[AlarmManager] (BASIC_CONFIG) [DATABASE]->[DB_NAME]  : [%s]", m_dbinfo.db_inst.c_str());
+	m_pLog->Output("[AlarmManager] (BASIC_CONFIG) [DATABASE]->[USER_NAME]: [%s]", m_dbinfo.db_user.c_str());
+	m_pLog->Output("[AlarmManager] (BASIC_CONFIG) [DATABASE]->[PASSWORD] : [%s]", m_dbinfo.db_pwd.c_str());
+	m_pLog->Output("================================================================================");
 }
 
 void AlarmManager::Init() throw(base::Exception)

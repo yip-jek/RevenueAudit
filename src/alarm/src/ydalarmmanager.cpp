@@ -10,7 +10,8 @@
 #include "ydstruct.h"
 
 YDAlarmManager::YDAlarmManager()
-:m_pAlarmDB(NULL)
+:m_alarmMsgFileMaxLine(0)
+,m_pAlarmDB(NULL)
 ,m_pAlarmSMSFile(NULL)
 {
 }
@@ -43,6 +44,7 @@ void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
 
 	m_cfg.RegisterItem("ALARM", "ALARM_MSG_PATH");
 	m_cfg.RegisterItem("ALARM", "ALARM_MSG_FILE_FMT");
+	m_cfg.RegisterItem("ALARM", "ALARM_MSG_FILE_MAX_LINE");
 
 	m_cfg.ReadConfig();
 
@@ -52,10 +54,24 @@ void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
 	m_tabAlarmInfo      = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_INFO");
 	m_tabSrcData        = m_cfg.GetCfgValue("TABLE", "TAB_SRC_DATA");
 
-	m_alarmMsgFilePath   = m_cfg.GetCfgValue("ALARM", "ALARM_MSG_PATH");
-	m_alarmMsgFileFormat = m_cfg.GetCfgValue("ALARM", "ALARM_MSG_FILE_FMT");
+	m_alarmMsgFilePath    = m_cfg.GetCfgValue("ALARM", "ALARM_MSG_PATH");
+	m_alarmMsgFileFormat  = m_cfg.GetCfgValue("ALARM", "ALARM_MSG_FILE_FMT");
+	m_alarmMsgFileMaxLine = m_cfg.GetCfgLongVal("ALARM", "ALARM_MSG_FILE_MAX_LINE");
 
 	m_pLog->Output("[YDAlarmManager] Load configuration OK.");
+}
+
+void YDAlarmManager::OutputExtendedConfig()
+{
+	m_pLog->Output(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+	m_pLog->Output("[YDAlarmManager] (EXTENDED_CONFIG) [TABLE]->[TAB_ALARM_REQUEST]      : [%s]", m_tabAlarmRequest.c_str());
+	m_pLog->Output("[YDAlarmManager] (EXTENDED_CONFIG) [TABLE]->[TAB_ALARM_THRESHOLD]    : [%s]", m_tabAlarmThreshold.c_str());
+	m_pLog->Output("[YDAlarmManager] (EXTENDED_CONFIG) [TABLE]->[TAB_ALARM_INFO]         : [%s]", m_tabAlarmInfo.c_str());
+	m_pLog->Output("[YDAlarmManager] (EXTENDED_CONFIG) [TABLE]->[TAB_SRC_DATA]           : [%s]", m_tabSrcData.c_str());
+	m_pLog->Output("[YDAlarmManager] (EXTENDED_CONFIG) [ALARM]->[ALARM_MSG_PATH]         : [%s]", m_alarmMsgFilePath.c_str());
+	m_pLog->Output("[YDAlarmManager] (EXTENDED_CONFIG) [ALARM]->[ALARM_MSG_FILE_FMT]     : [%s]", m_alarmMsgFileFormat.c_str());
+	m_pLog->Output("[YDAlarmManager] (EXTENDED_CONFIG) [ALARM]->[ALARM_MSG_FILE_MAX_LINE]: [%d]", m_alarmMsgFileMaxLine);
+	m_pLog->Output("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 }
 
 bool YDAlarmManager::ConfirmQuit()
@@ -115,11 +131,12 @@ void YDAlarmManager::InitAlarmSMSFile() throw(base::Exception)
 	m_pAlarmSMSFile = new YDAlarmFile();
 	if ( NULL == m_pAlarmSMSFile )
 	{
-		throw base::Exception(ALMERR_INIT_ALARM_SMSFILE, "Operator new YDAlarmFile failed: 无法申请到内存空间！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ALMERR_INIT_ALARM_FILE, "Operator new YDAlarmFile failed: 无法申请到内存空间！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
 	m_pAlarmSMSFile->SetPath(m_alarmMsgFilePath);
 	m_pAlarmSMSFile->SetFileFormat(m_alarmMsgFileFormat);
+	m_pAlarmSMSFile->SetMaxLine(m_alarmMsgFileMaxLine);
 }
 
 bool YDAlarmManager::ResponseAlarmRequest()
@@ -181,7 +198,7 @@ void YDAlarmManager::CollectData()
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
 		YDAlarmReq& ref_req = m_vAlarmReq[i];
-		m_pAlarmDB->SelectAlarmData(req.seq, AssembleSQLCondition(ref_req), m_vAlarmData);
+		m_pAlarmDB->SelectAlarmData(ref_req.seq, AssembleSQLCondition(ref_req), m_vAlarmData);
 
 		curr_size = m_vAlarmData.size();
 		m_pLog->Output("[YDAlarmManager] Collected source data: SEQ=[%d], SIZE=[%d]", (curr_size-prev_size));
