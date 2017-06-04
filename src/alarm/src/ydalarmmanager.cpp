@@ -95,6 +95,7 @@ bool YDAlarmManager::ConfirmQuit()
 
 void YDAlarmManager::AlarmProcessing() throw(base::Exception)
 {
+	// 是否有告警请求
 	if ( ResponseAlarmRequest() )
 	{
 		DataAnalysis();
@@ -104,6 +105,11 @@ void YDAlarmManager::AlarmProcessing() throw(base::Exception)
 		ShowAlarmState();
 
 		HandleRequest();
+	}
+	else
+	{
+		// 没有告警请求，也输出告警状态
+		ShowAlarmState();
 	}
 }
 

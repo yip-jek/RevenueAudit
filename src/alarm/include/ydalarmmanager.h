@@ -65,7 +65,7 @@ private:
 	// 告警生成
 	void GenerateAlarm();
 
-	// 告警日志输出
+	// 输出告警状态
 	void ShowAlarmState();
 
 	// 处理告警请求
