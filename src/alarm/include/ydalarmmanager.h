@@ -1,6 +1,7 @@
 #pragma once
 
 #include "alarmmanager.h"
+#include <map>
 #include <vector>
 
 class YDAlarmDB;
@@ -85,7 +86,7 @@ private:
 	void MakeAlarmInformation(const YDAlarmData& alarm_data, const YDAlarmThreshold& alarm_threshold);
 
 	// 生成告警短信
-	void ProduceAlarmMessage();
+	std::string ProduceAlarmMessage(const YDAlarmInfo& alarm_info);
 
 private:
 	std::string m_tabAlarmRequest;				// 告警请求表
@@ -101,7 +102,7 @@ private:
 private:
 	YDAlarmDB*                    m_pAlarmDB;
 	YDAlarmFile*                  m_pAlarmSMSFile;			// 告警短信文件
-	std::vector<YDAlarmReq>       m_vAlarmReq;				// 告警请求列表
+	std::map<int, YDAlarmReq>     m_mAlarmReq;				// 告警请求列表
 	std::vector<YDAlarmThreshold> m_vAlarmThreshold;		// 告警阈值列表
 	std::vector<YDAlarmData>      m_vAlarmData;				// 告警数据列表
 	std::vector<YDAlarmInfo>      m_vAlarmInfo;				// 告警信息列表

@@ -35,12 +35,12 @@ void YDAlarmDB::SetTabSrcData(const std::string& tab_srcdata)
 	m_tabSrcData = tab_srcdata;
 }
 
-void YDAlarmDB::SelectAlarmRequest(std::vector<YDAlarmReq>& vecAlarmReq) throw(base::Exception)
+void YDAlarmDB::SelectAlarmRequest(std::map<int, YDAlarmReq>& mapAlarmReq) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::vector<YDAlarmReq> vecReq;
+	std::map<int, YDAlarmReq> mapReq;
 	std::string sql = "SELECT SEQ, WARNDATE, CITY, CHANNELTYPE, CHANNELNAME, BUSITYPE, ";
 	sql += "PAYTYPE, REQTIME, FINISHTIME FROM " + m_tabAlarmRequest + " WHERE STATUS = '0'";
 
@@ -63,9 +63,9 @@ void YDAlarmDB::SelectAlarmRequest(std::vector<YDAlarmReq>& vecAlarmReq) throw(b
 			alarm_req.channel_name = (const char*)rs[index++];
 			alarm_req.busi_type    = (const char*)rs[index++];
 			alarm_req.pay_type     = (const char*)rs[index++];
-			alarm_req.req_time     = (const char*)rs[index++];
+			alarm_req.request_time = (const char*)rs[index++];
 			alarm_req.finish_time  = (const char*)rs[index++];
-			vecReq.push_back(alarm_req);
+			mapReq[alarm_req.seq] = alarm_req;
 
 			rs.MoveNext();
 		}
@@ -77,7 +77,7 @@ void YDAlarmDB::SelectAlarmRequest(std::vector<YDAlarmReq>& vecAlarmReq) throw(b
 		throw base::Exception(ALMERR_SEL_ALARM_REQ, "[DB2] Select alarm request from table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabAlarmRequest.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 
-	vecReq.swap(vecAlarmReq);
+	mapReq.swap(mapAlarmReq);
 }
 
 void YDAlarmDB::UpdateAlarmRequest(const YDAlarmReq& alarm_req) throw(base::Exception)

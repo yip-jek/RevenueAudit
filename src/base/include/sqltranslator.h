@@ -24,13 +24,14 @@ public:
 	static const char* const S_LAST_DAY_LAST_PM;		// 上个账期月最后一天
 
 public:
+	// 获取标记
+	static bool GetMark(const std::string& src, std::string& mark, size_t& pos);
+
+public:
 	// 转换
 	bool Translate(std::string& sql, std::string* pError);
 
 private:
-	// 获取标记
-	bool GetMark(const std::string& sql, std::string& mark, size_t& pos);
-
 	// 标志计算
 	bool CalcMark(const std::string& mark, bool is_plus, std::string& val, std::string* pError);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <vector>
 #include "basedb2.h"
 
@@ -31,7 +32,7 @@ public:
 
 public:
 	// 获取告警请求
-	void SelectAlarmRequest(std::vector<YDAlarmReq>& vecAlarmReq) throw(base::Exception);
+	void SelectAlarmRequest(std::map<int, YDAlarmReq>& mapAlarmReq) throw(base::Exception);
 
 	// 更新告警请求
 	void UpdateAlarmRequest(const YDAlarmReq& alarm_req) throw(base::Exception);

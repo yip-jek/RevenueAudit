@@ -4,6 +4,7 @@
 #include "simpletime.h"
 #include "pubstr.h"
 #include "pubtime.h"
+#include "sqltranslator.h"
 #include "alarmerror.h"
 #include "ydalarmdb.h"
 #include "ydalarmfile.h"
@@ -18,8 +19,8 @@ YDAlarmManager::YDAlarmManager()
 
 YDAlarmManager::~YDAlarmManager()
 {
-	ReleaseDBConnection();
 	ReleaseAlarmSMSFile();
+	ReleaseDBConnection();
 }
 
 std::string YDAlarmManager::GetLogFilePrefix()
@@ -76,7 +77,7 @@ void YDAlarmManager::OutputExtendedConfig()
 
 bool YDAlarmManager::ConfirmQuit()
 {
-	return m_vAlarmReq.empty();
+	return m_mAlarmReq.empty();
 }
 
 void YDAlarmManager::AlarmProcessing() throw(base::Exception)
@@ -141,17 +142,16 @@ void YDAlarmManager::InitAlarmSMSFile() throw(base::Exception)
 
 bool YDAlarmManager::ResponseAlarmRequest()
 {
-	m_pAlarmDB->SelectAlarmRequest(m_vAlarmReq);
+	m_pAlarmDB->SelectAlarmRequest(m_mAlarmReq);
 
-	const int VEC_SIZE = m_vAlarmReq.size();
-	if ( VEC_SIZE > 0 )
+	if ( !m_mAlarmReq.empty() )
 	{
-		m_pLog->Output("[YDAlarmManager] Get alarm requests: %d", VEC_SIZE);
+		m_pLog->Output("[YDAlarmManager] Get alarm requests: %lu", m_mAlarmReq.size());
 
-		for ( int i = 0; i < VEC_SIZE; ++i )
+		std::map<int, YDAlarmReq>::iterator it = m_mAlarmReq.begin();
+		for ( int i = 1; it != m_mAlarmReq.end(); ++it )
 		{
-			YDAlarmReq& ref_req = m_vAlarmReq[i];
-			m_pLog->Output("[YDAlarmManager] Alarm request [%d]: SEQ=[%d], DATE=[%s], REGION=[%s]", (i+1), ref_req.seq, ref_req.alarm_date.c_str(), ref_req.region.c_str());
+			m_pLog->Output("[YDAlarmManager] Alarm request [%d]: %s", (i++), it->second.LogPrintInfo().c_str());
 		}
 
 		return true;
@@ -169,11 +169,42 @@ void YDAlarmManager::DataAnalysis()
 
 void YDAlarmManager::GenerateAlarm()
 {
-	ProduceAlarmMessage();
+	m_pAlarmSMSFile->OpenNewAlarmFile();
+
+	std::string alarm_msg;
+	const int VEC_SIZE = m_vAlarmInfo.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		YDAlarmInfo& ref_info = m_vAlarmInfo[i];
+
+		m_pLog->Output("[YDAlarmManager] 登记告警信息 (%d): %s", (i+1), ref_info.LogPrintInfo().c_str());
+		m_pAlarmDB->InsertAlarmInfo(ref_info);
+
+		alarm_msg = ProduceAlarmMessage(ref_info);
+		m_pAlarmSMSFile->WriteAlarmData(alarm_msg);
+	}
+
+	m_pLog->Output("[YDAlarmManager] 总共写入告警信息 %d 条.", VEC_SIZE);
+	m_pAlarmSMSFile->CloseAlarmFile();
 }
 
 void YDAlarmManager::HandleRequest()
 {
+	// 更新告警请求状态
+	for ( std::map<int, YDAlarmReq>::iterator it = m_mAlarmReq.begin(); it != m_mAlarmReq.end(); ++it )
+	{
+		YDAlarmReq& ref_req = it->second;
+
+		// 若状态不为异常，则设置为完成
+		if ( ref_req.status != YDAlarmReq::RS_Error )
+		{
+			ref_req.status      = YDAlarmReq::RS_Finish;
+			ref_req.finish_time = base::SimpleTime::Now().Time14();
+		}
+
+		m_pAlarmDB->UpdateAlarmRequest(ref_req);
+	}
+
 	// 清理缓存数据
 	std::vector<YDAlarmData>().swap(m_vAlarmData);
 	std::vector<YDAlarmInfo>().swap(m_vAlarmInfo);
@@ -185,23 +216,50 @@ void YDAlarmManager::UpdateAlarmThreshold()
 	m_pLog->Output("[YDAlarmManager] Refreshed alarm thresholds: %lu", m_vAlarmThreshold.size());
 }
 
-void YDAlarmManager::ProduceAlarmMessage()
+std::string YDAlarmManager::ProduceAlarmMessage(const YDAlarmInfo& alarm_info)
 {
+	std::string sms_msg = alarm_info.msg_template;
+	std::string mark;
+	size_t      pos = 0;
+
+	// 短信模板（举例）：
+	// $(ALARM_DATE)，$(REGION)$(CHANN_NAME)$(PAY_TYPE)产生欠费$(ARREARS)（元），请及时追缴！
+	while ( base::SQLTranslator::GetMark(sms_msg, mark, pos) )
+	{
+		mark = alarm_info.GetInfoByMark(mark);
+		sms_msg.replace(pos, mark.size()+3, mark);
+	}
+
+	// 短信记录格式：短信接收号码|发送短信文本信息
+	std::string alarm_msg = base::PubStr::TrimB(alarm_info.call_no) + "|" + sms_msg;
+	return alarm_msg;
 }
 
 void YDAlarmManager::CollectData()
 {
+	std::string sql_cond;
 	int prev_size = 0;
 	int curr_size = 0;
+	int diff_size = 0;
 
-	const int VEC_SIZE = m_vAlarmReq.size();
-	for ( int i = 0; i < VEC_SIZE; ++i )
+	for ( std::map<int, YDAlarmReq>::iterator it = m_mAlarmReq.begin(); it != m_mAlarmReq.end(); ++it )
 	{
-		YDAlarmReq& ref_req = m_vAlarmReq[i];
-		m_pAlarmDB->SelectAlarmData(ref_req.seq, AssembleSQLCondition(ref_req), m_vAlarmData);
+		YDAlarmReq& ref_req = it->second;
+		sql_cond = AssembleSQLCondition(ref_req);
+		m_pAlarmDB->SelectAlarmData(ref_req.seq, sql_cond, m_vAlarmData);
 
 		curr_size = m_vAlarmData.size();
-		m_pLog->Output("[YDAlarmManager] Collected source data: SEQ=[%d], SIZE=[%d]", (curr_size-prev_size));
+		diff_size = curr_size - prev_size;
+		m_pLog->Output("[YDAlarmManager] Collected source data: SEQ=[%d], SIZE=[%d]", it->first, diff_size);
+
+		// 更新告警请求状态：采集不到告警源数据，状态异常
+		if ( diff_size <= 0 )
+		{
+			m_pLog->Output("[YDAlarmManager] 采集不到告警源数据，告警请求状态异常：SEQ=[%d]", it->first);
+			ref_req.status      = YDAlarmReq::RS_Error;
+			ref_req.finish_time = base::SimpleTime::Now().Time14();
+		}
+
 		prev_size = curr_size;
 	}
 
@@ -215,28 +273,28 @@ std::string YDAlarmManager::AssembleSQLCondition(const YDAlarmReq& req)
 
 	// 条件：渠道属性
 	std::string str_tmp = base::PubStr::TrimB(req.channel_type);
-	if ( str_tmp != YDAlarmReq::MARK_ANY )
+	if ( str_tmp != YDAlarmReq::S_MARK_ANY )
 	{
 		sql_cond += " AND CHANNELATTR = '" + str_tmp + "'";
 	}
 
 	// 条件：渠道名称
 	str_tmp = base::PubStr::TrimB(req.channel_name);
-	if ( str_tmp != YDAlarmReq::MARK_ANY )
+	if ( str_tmp != YDAlarmReq::S_MARK_ANY )
 	{
 		sql_cond += " AND CHANNELNAME = '" + str_tmp + "'";
 	}
 
 	// 条件：业务分类
 	str_tmp = base::PubStr::TrimB(req.busi_type);
-	if ( str_tmp != YDAlarmReq::MARK_ANY )
+	if ( str_tmp != YDAlarmReq::S_MARK_ANY )
 	{
 		sql_cond += " AND BUSSORT = '" + str_tmp + "'";
 	}
 
 	// 条件：支付方式
 	str_tmp = base::PubStr::TrimB(req.pay_type);
-	if ( str_tmp != YDAlarmReq::MARK_ANY )
+	if ( str_tmp != YDAlarmReq::S_MARK_ANY )
 	{
 		sql_cond += " AND PAYCODE = '" + str_tmp + "'";
 	}
@@ -263,6 +321,14 @@ void YDAlarmManager::DetermineAlarm()
 		else	// 无对应阈值
 		{
 			m_pLog->Output("[YDAlarmManager] No match alarm threshold: %s", ref_dat.LogPrintInfo().c_str());
+
+			YDAlarmReq& ref_req = m_mAlarmReq[ref_dat.seq];
+			if ( ref_req.status != YDAlarmReq::RS_Error )
+			{
+				m_pLog->Output("[YDAlarmManager] 无对应匹配的告警阈值，告警请求状态异常：SEQ=[%d]", ref_req.seq);
+				ref_req.status = YDAlarmReq::RS_Error;
+				ref_req.finish_time = base::SimpleTime::Now().Time14();
+			}
 		}
 	}
 
@@ -283,21 +349,21 @@ bool YDAlarmManager::GetAlarmThreshold(const YDAlarmData& alarm_data, YDAlarmThr
 		}
 
 		// 渠道属性不匹配
-		if ( ref_threshold.channel_type != YDAlarmReq::MARK_ANY 
+		if ( ref_threshold.channel_type != YDAlarmReq::S_MARK_ANY 
 			&& alarm_data.channel_attr != ref_threshold.channel_type )
 		{
 			continue;
 		}
 
 		// 渠道名称不匹配
-		if ( ref_threshold.channel_name != YDAlarmReq::MARK_ANY 
+		if ( ref_threshold.channel_name != YDAlarmReq::S_MARK_ANY 
 			&& alarm_data.channel_name != ref_threshold.channel_name )
 		{
 			continue;
 		}
 
 		// 支付方式不匹配
-		if ( ref_threshold.pay_type != YDAlarmReq::MARK_ANY 
+		if ( ref_threshold.pay_type != YDAlarmReq::S_MARK_ANY 
 			&& alarm_data.pay_code != ref_threshold.pay_type )
 		{
 			continue;
@@ -319,6 +385,7 @@ bool YDAlarmManager::IsReachThreshold(const YDAlarmData& alarm_data, const YDAla
 void YDAlarmManager::MakeAlarmInformation(const YDAlarmData& alarm_data, const YDAlarmThreshold& alarm_threshold)
 {
 	YDAlarmInfo alarm_info;
+	alarm_info.seq           = alarm_data.seq;
 	alarm_info.alarm_date    = alarm_data.alarm_date;
 	alarm_info.region        = alarm_data.manage_level;
 	alarm_info.channel_type  = alarm_data.channel_attr;
@@ -328,13 +395,13 @@ void YDAlarmManager::MakeAlarmInformation(const YDAlarmData& alarm_data, const Y
 	alarm_info.responser     = alarm_threshold.responser;
 	alarm_info.call_no       = alarm_threshold.call_no;
 	alarm_info.generate_time = base::SimpleTime::Now().Time14();
+	alarm_info.msg_template  = alarm_threshold.msg_template;
+	alarm_info.arrears       = alarm_data.arrears;
 
 	// 告警计划完成时间：告警生成时间+计划完成日期偏移量
 	alarm_info.plan_time  = base::PubTime::DateNowPlusDays(alarm_threshold.offset);
 	alarm_info.plan_time += alarm_info.generate_time.substr(8);
 
 	m_vAlarmInfo.push_back(alarm_info);
-
-	m_pAlarmDB->InsertAlarmInfo(alarm_info);
 }
 

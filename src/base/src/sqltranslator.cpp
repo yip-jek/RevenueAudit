@@ -63,12 +63,12 @@ bool SQLTranslator::Translate(std::string& sql, std::string* pError)
 	return true;
 }
 
-bool SQLTranslator::GetMark(const std::string& sql, std::string& mark, size_t& pos)
+bool SQLTranslator::GetMark(const std::string& src, std::string& mark, size_t& pos)
 {
-	size_t pos_mark_beg = sql.find("$(");
+	size_t pos_mark_beg = src.find("$(");
 	if ( pos_mark_beg != std::string::npos )
 	{
-		size_t pos_mark_end = sql.find(")", pos_mark_beg+2);
+		size_t pos_mark_end = src.find(")", pos_mark_beg+2);
 		// Not find a pair "$(...)"
 		if ( std::string::npos == pos_mark_end )
 		{
@@ -76,7 +76,7 @@ bool SQLTranslator::GetMark(const std::string& sql, std::string& mark, size_t& p
 		}
 
 		pos  = pos_mark_beg;
-		mark = sql.substr(pos_mark_beg+2, pos_mark_end-pos_mark_beg-2);
+		mark = src.substr(pos_mark_beg+2, pos_mark_end-pos_mark_beg-2);
 		return true;
 	}
 	else	// Not find "$("

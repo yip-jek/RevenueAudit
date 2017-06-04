@@ -9,7 +9,7 @@ public:
 	YDAlarmReq();
 	~YDAlarmReq() {}
 
-	static const char* const MARK_ANY;			// 任意值标志：*
+	static const char* const S_MARK_ANY;		// 任意值标志：*
 
 	// 请求状态
 	enum REQ_STATUS
@@ -21,6 +21,9 @@ public:
 	};
 
 public:
+	// 日志打印信息
+	std::string LogPrintInfo();
+
 	// 设置请求状态
 	bool SetReqStatus(const std::string& rs);
 
@@ -36,7 +39,7 @@ public:
 	std::string busi_type;				// 业务分类
 	std::string pay_type;				// 支付方式
 	REQ_STATUS  status;					// 请求状态
-	std::string req_time;				// 请求时间
+	std::string request_time;			// 请求时间
 	std::string finish_time;			// 完成时间
 };
 
@@ -86,6 +89,29 @@ public:
 struct YDAlarmInfo
 {
 public:
+	YDAlarmInfo();
+	~YDAlarmInfo() {}
+
+	static const char* const S_ALARM_DATE;			// 标记：告警日期
+	static const char* const S_REGION;				// 标记：地市
+	static const char* const S_CHANN_TYPE;			// 标记：渠道属性
+	static const char* const S_CHANN_NAME;			// 标记：渠道名称
+	static const char* const S_BUSI_TYPE;			// 标记：业务分类
+	static const char* const S_PAY_TYPE;			// 标记：支付方式
+	static const char* const S_RESPONSER;			// 标记：告警负责人
+	static const char* const S_GENE_TIME;			// 标记：告警生成时间
+	static const char* const S_PLAN_TIME;			// 标记：告警计划完成时间
+	static const char* const S_ARREARS;				// 标记：欠费
+
+public:
+	// 日志打印信息
+	std::string LogPrintInfo();
+
+	// 通过特定标记获得信息内容
+	std::string GetInfoByMark(const std::string& mark) const;
+
+public:
+	int         seq;					// 流水号
 	std::string alarm_date;				// 告警日期
 	std::string region;					// 地市
 	std::string channel_type;			// 渠道属性
@@ -96,5 +122,7 @@ public:
 	std::string call_no;				// 告警负责人联系方式
 	std::string generate_time;			// 告警生成时间
 	std::string plan_time;				// 告警计划完成时间
+	std::string msg_template;			// 短信模板
+	double      arrears;				// 欠费
 };
 

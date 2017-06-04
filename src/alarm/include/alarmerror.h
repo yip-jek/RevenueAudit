@@ -23,5 +23,6 @@ enum ALARM_ERROR
 	ALMERR_AFILE_SET_PATH     = -4003001,				// 设置文件路径出错
 	ALMERR_AFILE_SET_FILE_FMT = -4003002,				// 设置文件名格式出错
 	ALMERR_AFILE_SET_MAX_LINE = -4003003,				// 设置文件最大行数出错
+	ALMERR_AFILE_OPEN_NEWFILE = -4003004,				// 打开新告警文件出错
 };
 

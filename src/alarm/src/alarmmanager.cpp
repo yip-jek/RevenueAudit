@@ -16,7 +16,7 @@ AlarmManager::~AlarmManager()
 
 const char* AlarmManager::Version()
 {
-	return ("AlarmManager: Version 2.0013.20170602 released. Compiled at "__TIME__" on "__DATE__);
+	return ("AlarmManager: Version 2.0015.20170604 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void AlarmManager::LoadConfig() throw(base::Exception)
