@@ -11,7 +11,10 @@
 #include "ydstruct.h"
 
 YDAlarmManager::YDAlarmManager()
-:m_alarmMsgFileMaxLine(0)
+:m_totalAlarmRequests(0)
+,m_alarmShowTime(0)
+,m_stAlarmShow(0)
+,m_alarmMsgFileMaxLine(0)
 ,m_pAlarmDB(NULL)
 ,m_pAlarmSMSFile(NULL)
 {
@@ -30,6 +33,9 @@ std::string YDAlarmManager::GetLogFilePrefix()
 
 void YDAlarmManager::Init() throw(base::Exception)
 {
+	AlarmManager::Init();
+
+	InitAlarmShowTime();
 	InitDBConnection();
 	InitAlarmSMSFile();
 
@@ -38,6 +44,8 @@ void YDAlarmManager::Init() throw(base::Exception)
 
 void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
 {
+	m_cfg.RegisterItem("SYS", "ALARM_SHOW_TIME");
+
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_REQUEST");
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_THRESHOLD");
 	m_cfg.RegisterItem("TABLE", "TAB_ALARM_INFO");
@@ -49,12 +57,16 @@ void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
 
 	m_cfg.ReadConfig();
 
+	// 告警日志输出时间配置
+	m_alarmShowTime = m_cfg.GetCfgLongVal("SYS", "ALARM_SHOW_TIME");
+
 	// 库表配置
 	m_tabAlarmRequest   = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_REQUEST");
 	m_tabAlarmThreshold = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_THRESHOLD");
 	m_tabAlarmInfo      = m_cfg.GetCfgValue("TABLE", "TAB_ALARM_INFO");
 	m_tabSrcData        = m_cfg.GetCfgValue("TABLE", "TAB_SRC_DATA");
 
+	// 告警短信文件配置
 	m_alarmMsgFilePath    = m_cfg.GetCfgValue("ALARM", "ALARM_MSG_PATH");
 	m_alarmMsgFileFormat  = m_cfg.GetCfgValue("ALARM", "ALARM_MSG_FILE_FMT");
 	m_alarmMsgFileMaxLine = m_cfg.GetCfgLongVal("ALARM", "ALARM_MSG_FILE_MAX_LINE");
@@ -65,6 +77,7 @@ void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
 void YDAlarmManager::OutputExtendedConfig()
 {
 	m_pLog->Output(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+	m_pLog->Output("[YDAlarmManager] (EXTENDED_CONFIG) [SYS]->[ALARM_SHOW_TIME]          : [%d]", m_alarmShowTime);
 	m_pLog->Output("[YDAlarmManager] (EXTENDED_CONFIG) [TABLE]->[TAB_ALARM_REQUEST]      : [%s]", m_tabAlarmRequest.c_str());
 	m_pLog->Output("[YDAlarmManager] (EXTENDED_CONFIG) [TABLE]->[TAB_ALARM_THRESHOLD]    : [%s]", m_tabAlarmThreshold.c_str());
 	m_pLog->Output("[YDAlarmManager] (EXTENDED_CONFIG) [TABLE]->[TAB_ALARM_INFO]         : [%s]", m_tabAlarmInfo.c_str());
@@ -85,7 +98,11 @@ void YDAlarmManager::AlarmProcessing() throw(base::Exception)
 	if ( ResponseAlarmRequest() )
 	{
 		DataAnalysis();
+
 		GenerateAlarm();
+
+		ShowAlarmState();
+
 		HandleRequest();
 	}
 }
@@ -105,6 +122,24 @@ void YDAlarmManager::ReleaseAlarmSMSFile()
 	{
 		delete m_pAlarmSMSFile;
 		m_pAlarmSMSFile = NULL;
+	}
+}
+
+void YDAlarmManager::InitAlarmShowTime() throw(base::Exception)
+{
+	if ( m_alarmShowTime <= 0 )
+	{
+		throw base::Exception(ALMERR_INIT_ALARM_SHOW, "The alarm show time is invalid: %d [FILE:%s, LINE:%d]", m_alarmShowTime, __FILE__, __LINE__);
+	}
+
+	if ( !m_stAlarmShow.Set(m_alarmShowTime) )
+	{
+		throw base::Exception(ALMERR_INIT_ALARM_SHOW, "Set the alarm show timer failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	if ( !m_stAlarmShow.Start() )
+	{
+		throw base::Exception(ALMERR_INIT_ALARM_SHOW, "Turn on the alarm show timer failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 }
 
@@ -163,7 +198,9 @@ bool YDAlarmManager::ResponseAlarmRequest()
 void YDAlarmManager::DataAnalysis()
 {
 	UpdateAlarmThreshold();
+
 	CollectData();
+
 	DetermineAlarm();
 }
 
@@ -188,22 +225,26 @@ void YDAlarmManager::GenerateAlarm()
 	m_pAlarmSMSFile->CloseAlarmFile();
 }
 
+void YDAlarmManager::ShowAlarmState()
+{
+	if ( m_stAlarmShow.IsTimeUp() )
+	{
+		m_pLog->Output("####################################################");
+		m_pLog->Output("[YDAlarmManager] ALARM REQUEST SIZE      ：[%lu]", m_mAlarmReq.size());
+		m_pLog->Output("[YDAlarmManager] ALARM THRESHOLD SIZE    ：[%lu]", m_vAlarmThreshold.size());
+		m_pLog->Output("[YDAlarmManager] ALARM DATA SIZE         ：[%lu]", m_vAlarmData.size());
+		m_pLog->Output("[YDAlarmManager] ALARM INFO SIZE         ：[%lu]", m_vAlarmInfo.size());
+		m_pLog->Output("[YDAlarmManager] TOTAL ALARM REQUEST SIZE：[%d]" , m_totalAlarmRequests);
+		m_pLog->Output("####################################################");
+	}
+}
+
 void YDAlarmManager::HandleRequest()
 {
-	// 更新告警请求状态
-	for ( std::map<int, YDAlarmReq>::iterator it = m_mAlarmReq.begin(); it != m_mAlarmReq.end(); ++it )
-	{
-		YDAlarmReq& ref_req = it->second;
+	UpdateRequestStatus();
 
-		// 若状态不为异常，则设置为完成
-		if ( ref_req.status != YDAlarmReq::RS_Error )
-		{
-			ref_req.status      = YDAlarmReq::RS_Finish;
-			ref_req.finish_time = base::SimpleTime::Now().Time14();
-		}
-
-		m_pAlarmDB->UpdateAlarmRequest(ref_req);
-	}
+	// 记录告警请求数
+	m_totalAlarmRequests += m_mAlarmReq.size();
 
 	// 清理缓存数据
 	std::vector<YDAlarmData>().swap(m_vAlarmData);
@@ -326,7 +367,7 @@ void YDAlarmManager::DetermineAlarm()
 			if ( ref_req.status != YDAlarmReq::RS_Error )
 			{
 				m_pLog->Output("[YDAlarmManager] 无对应匹配的告警阈值，告警请求状态异常：SEQ=[%d]", ref_req.seq);
-				ref_req.status = YDAlarmReq::RS_Error;
+				ref_req.status      = YDAlarmReq::RS_Error;
 				ref_req.finish_time = base::SimpleTime::Now().Time14();
 			}
 		}
@@ -403,5 +444,23 @@ void YDAlarmManager::MakeAlarmInformation(const YDAlarmData& alarm_data, const Y
 	alarm_info.plan_time += alarm_info.generate_time.substr(8);
 
 	m_vAlarmInfo.push_back(alarm_info);
+}
+
+void YDAlarmManager::UpdateRequestStatus()
+{
+	// 更新告警请求状态
+	for ( std::map<int, YDAlarmReq>::iterator it = m_mAlarmReq.begin(); it != m_mAlarmReq.end(); ++it )
+	{
+		YDAlarmReq& ref_req = it->second;
+
+		// 若状态不为异常，则设置为完成
+		if ( ref_req.status != YDAlarmReq::RS_Error )
+		{
+			ref_req.status      = YDAlarmReq::RS_Finish;
+			ref_req.finish_time = base::SimpleTime::Now().Time14();
+		}
+
+		m_pAlarmDB->UpdateAlarmRequest(ref_req);
+	}
 }
 

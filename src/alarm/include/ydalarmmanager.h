@@ -1,8 +1,9 @@
 #pragma once
 
-#include "alarmmanager.h"
 #include <map>
 #include <vector>
+#include "alarmmanager.h"
+#include "sectimer.h"
 
 class YDAlarmDB;
 class YDAlarmFile;
@@ -45,6 +46,9 @@ private:
 	// 释放告警短信文件
 	void ReleaseAlarmSMSFile();
 
+	// 初始化告警日志输出计时
+	void InitAlarmShowTime() throw(base::Exception);
+
 	// 初始化数据库连接
 	void InitDBConnection() throw(base::Exception);
 
@@ -60,6 +64,9 @@ private:
 
 	// 告警生成
 	void GenerateAlarm();
+
+	// 告警日志输出
+	void ShowAlarmState();
 
 	// 处理告警请求
 	void HandleRequest();
@@ -88,13 +95,19 @@ private:
 	// 生成告警短信
 	std::string ProduceAlarmMessage(const YDAlarmInfo& alarm_info);
 
+	// 更新告警请求状态
+	void UpdateRequestStatus();
+
+private:
+	int         m_totalAlarmRequests;			// 总处理告警请求数
+	int         m_alarmShowTime;				// 告警日志输出时间间隔（单位：秒）
+	SecTimer    m_stAlarmShow;					// 告警日志输出计时器
+
 private:
 	std::string m_tabAlarmRequest;				// 告警请求表
 	std::string m_tabAlarmThreshold;			// 告警阈值表
 	std::string m_tabAlarmInfo;					// 告警信息表
 	std::string m_tabSrcData;					// 数据源表
-
-private:
 	std::string m_alarmMsgFilePath;				// 告警短信文件路径
 	std::string m_alarmMsgFileFormat;			// 告警短信文件格式
 	int         m_alarmMsgFileMaxLine;			// 告警短信文件最大行数

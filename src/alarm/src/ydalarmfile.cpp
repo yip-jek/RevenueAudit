@@ -13,6 +13,7 @@ const char* const YDAlarmFile::S_SERIAL_NUM    = "SERIAL";				// 序号，从 0 
 YDAlarmFile::YDAlarmFile()
 :m_pLog(base::Log::Instance())
 ,m_maxLine(0)
+,m_lineCount(0)
 {
 }
 
@@ -131,7 +132,9 @@ void YDAlarmFile::OpenNewAlarmFile() throw(base::Exception)
 	CloseAlarmFile();
 
 	std::string new_file_name = GetNewAlarmFileName();
-	if ( !m_alarmFile.Open(new_file_name) )
+	m_pLog->Output("[YDAlarmFile] Open alarm file: [%s]", new_file_name.c_str());
+
+	if ( !m_alarmFile.Open(new_file_name, true) )
 	{
 		throw base::Exception(ALMERR_AFILE_OPEN_NEWFILE, "Open alarm file failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
@@ -141,7 +144,7 @@ void YDAlarmFile::OpenNewAlarmFile() throw(base::Exception)
 		throw base::Exception(ALMERR_AFILE_OPEN_NEWFILE, "Ready to write alarm file failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	m_pLog->Output("[YDAlarmFile] Open alarm file: [%s]", new_file_name.c_str());
+	m_lineCount = 0;
 }
 
 void YDAlarmFile::CloseAlarmFile()
@@ -156,6 +159,14 @@ void YDAlarmFile::CloseAlarmFile()
 void YDAlarmFile::WriteAlarmData(const std::string& alarm_data)
 {
 	m_alarmFile.Write(alarm_data+"\r");
+
+	// 累计行数，并判断是否达到最大行数
+	// 若达到最大行数，则打开新的文件
+	if ( (++m_lineCount) >= m_maxLine )
+	{
+		m_pLog->Output("[YDAlarmFile] 告警文件行数达到最大值上限：[%d]", m_lineCount);
+		OpenNewAlarmFile();
+	}
 }
 
 std::string YDAlarmFile::GetNewAlarmFileName()

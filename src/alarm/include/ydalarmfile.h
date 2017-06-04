@@ -55,5 +55,6 @@ private:
 	std::string m_filePath;			// 文件所在路径
 	std::string m_fileFmt;			// 文件名格式
 	int         m_maxLine;			// 文件最大行数
+	int         m_lineCount;		// 文件行计数
 };
 

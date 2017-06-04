@@ -16,7 +16,7 @@ AlarmManager::~AlarmManager()
 
 const char* AlarmManager::Version()
 {
-	return ("AlarmManager: Version 2.0015.20170604 released. Compiled at "__TIME__" on "__DATE__);
+	return ("AlarmManager: Version 2.0016.20170604 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void AlarmManager::LoadConfig() throw(base::Exception)
@@ -41,10 +41,6 @@ void AlarmManager::LoadBasicConfig() throw(base::Exception)
 
 	// 处理时间间隔
 	m_timeInterval = m_cfg.GetCfgLongVal("SYS", "TIME_INTERVAL");
-	if ( m_timeInterval <= 0 )
-	{
-		throw base::Exception(ALMERR_LOAD_BASIC_CFG, "Invalid time interval seconds: %d [FILE:%s, LINE:%d]", m_timeInterval, __FILE__, __LINE__);
-	}
 
 	// 数据库配置
 	m_dbinfo.db_inst = m_cfg.GetCfgValue("DATABASE", "DB_NAME");
@@ -66,6 +62,11 @@ void AlarmManager::OutputBasicConfig()
 
 void AlarmManager::Init() throw(base::Exception)
 {
+	if ( m_timeInterval <= 0 )
+	{
+		throw base::Exception(ALMERR_INIT, "The time interval is invalid: %d [FILE:%s, LINE:%d]", m_timeInterval, __FILE__, __LINE__);
+	}
+
 	m_pLog->Output("[AlarmManager] Init OK.");
 }
 
