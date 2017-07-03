@@ -81,6 +81,15 @@ void Analyse_YD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(
 	m_pLog->Output("[Analyse_YD] 任务日程日志ID：%d", m_taskScheLogID);
 }
 
+void Analyse_YD::AnalyseSourceData() throw(base::Exception)
+{
+	Analyse::AnalyseSourceData();
+
+	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == m_taskInfo.AnaRule.AnaType )		// 报表统计
+	{
+	}
+}
+
 void Analyse_YD::AlarmRequest()
 {
 	// >>>>> 告警标记 <<<<<

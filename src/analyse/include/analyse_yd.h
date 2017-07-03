@@ -26,6 +26,9 @@ protected:
 	// 获取后续参数任务信息
 	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
 
+	// 分析源数据，生成结果数据
+	virtual void AnalyseSourceData() throw(base::Exception);
+
 private:
 	// 生成告警请求
 	void AlarmRequest();
