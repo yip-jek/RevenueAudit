@@ -87,6 +87,14 @@ void Analyse_YD::AnalyseSourceData() throw(base::Exception)
 
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == m_taskInfo.AnaRule.AnaType )		// 报表统计
 	{
+		// 是否有地市字段？
+		const int DIM_REGION_INDEX  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_REGION);
+		if ( DIM_REGION_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在地市维度
+		{
+			int region_count = 0;
+
+			m_pLog->Output("[Analyse_YD] 报表数据地市补全：共补充地市 %d 个", region_count);
+		}
 	}
 }
 
