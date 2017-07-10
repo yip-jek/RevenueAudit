@@ -83,6 +83,8 @@ void Analyse_YD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(
 
 void Analyse_YD::AnalyseSourceData() throw(base::Exception)
 {
+	const int VAL_COL_SIZE = m_v3HiveSrcData.size();		// 值列的数目
+
 	Analyse::AnalyseSourceData();
 
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == m_taskInfo.AnaRule.AnaType )		// 报表统计
