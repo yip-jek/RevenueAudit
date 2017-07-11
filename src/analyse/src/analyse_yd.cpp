@@ -3,6 +3,9 @@
 #include "simpletime.h"
 #include "log.h"
 #include "canadb2.h"
+#include "taskinfoutil.h"
+
+const char* const Analyse_YD::S_CHANNEL_MARK = "CHANNEL";			// 渠道标识
 
 Analyse_YD::Analyse_YD()
 :m_taskScheLogID(0)
@@ -83,12 +86,18 @@ void Analyse_YD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(
 
 void Analyse_YD::AnalyseSourceData() throw(base::Exception)
 {
-	const int VAL_COL_SIZE = m_v3HiveSrcData.size();		// 值列的数目
+	const int VAL_COL_SIZE = m_v3HiveSrcData.size();								// 值列的数目
+	const int DIM_COL_SIZE = TaskInfoUtil::TheFirstDataColSize(m_v3HiveSrcData) - 1;// 维度列的数目
 
 	Analyse::AnalyseSourceData();
 
 	if ( AnalyseRule::ANATYPE_REPORT_STATISTICS == m_taskInfo.AnaRule.AnaType )		// 报表统计
 	{
+		// 是否指定渠道？
+		// 若指定渠道，则只保留该渠道的报表数据
+		const std::string THE_CHANNEL = TryGetTheChannel();
+		KeepChannelDataOnly(THE_CHANNEL);
+
 		// 是否有地市字段？
 		const int DIM_REGION_INDEX  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_REGION);
 		if ( DIM_REGION_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在地市维度
@@ -97,6 +106,45 @@ void Analyse_YD::AnalyseSourceData() throw(base::Exception)
 
 			m_pLog->Output("[Analyse_YD] 报表数据地市补全：共补充地市 %d 个", region_count);
 		}
+	}
+}
+
+std::string Analyse_YD::TryGetTheChannel()
+{
+	std::string exp = base::PubStr::TrimUpperB(m_taskInfo.AnaRule.AnaExpress);
+	if ( exp.empty() )
+	{
+		return "";
+	}
+
+	std::vector<std::string> vec_str;
+	base::PubStr::Str2StrVector(exp, "=", vec_str);
+	if ( vec_str.size() == 2 && S_CHANNEL_MARK == vec_str[0] )
+	{
+		return vec_str[1];
+	}
+
+	return "";
+}
+
+void Analyse_YD::KeepChannelDataOnly(const std::string& channel)
+{
+	const int DIM_CHANNEL_INDEX  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_CHANNEL);
+	if ( !channel.empty() && DIM_CHANNEL_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )
+	{
+		std::vector<std::vector<std::string> > v2_report;
+		const int VEC2_REPORT_SIZE = m_v2ReportStatData.size();
+		for ( int i = 0; i < VEC2_REPORT_SIZE; ++i )
+		{
+			std::vector<std::string>& ref_vec = m_v2ReportStatData[i];
+
+			if ( channel == ref_vec[DIM_CHANNEL_INDEX] )
+			{
+				base::PubStr::VVectorSwapPushBack(v2_report, ref_vec);
+			}
+		}
+
+		v2_report.swap(m_v2ReportStatData);
 	}
 }
 

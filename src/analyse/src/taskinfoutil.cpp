@@ -60,6 +60,16 @@ int TaskInfoUtil::CheckPluralEtlRule(std::vector<OneEtlRule>& vec_etlrule)
 	return 0;
 }
 
+size_t TaskInfoUtil::TheFirstDataColSize(const std::vector<std::vector<std::vector<std::string> > >& vec3_data)
+{
+	if ( vec3_data.size() > 0 && vec3_data[0].size() > 0 )
+	{
+		return vec3_data[0][0].size();
+	}
+
+	return 0;
+}
+
 std::string TaskInfoUtil::GetOneDim(std::vector<OneEtlDim>& vec_dim, const std::string& prefix)
 {
 	std::string dim_sql;

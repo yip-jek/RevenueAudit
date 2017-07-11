@@ -9,6 +9,8 @@ public:
 	Analyse_YD();
 	virtual ~Analyse_YD();
 
+	static const char* const S_CHANNEL_MARK;			// 渠道标识
+
 public:
 	// 载入参数配置信息
 	virtual void LoadConfig() throw(base::Exception);
@@ -30,6 +32,12 @@ protected:
 	virtual void AnalyseSourceData() throw(base::Exception);
 
 private:
+	// 尝试从分析表达式中获取指定渠道标识
+	std::string TryGetTheChannel();
+
+	// 只保留指定渠道的报表数据
+	void KeepChannelDataOnly(const std::string& channel);
+
 	// 生成告警请求
 	void AlarmRequest();
 
