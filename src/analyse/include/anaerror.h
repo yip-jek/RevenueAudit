@@ -45,21 +45,22 @@ enum ANALYSE_ERROR
 	ANAERR_SEL_REPORT_DATA        = -3002009,			// 统计报表统计数据出错
 	ANAERR_SEL_CHANN_UNICODE      = -3002010,			// 获取渠道统一编码数据出错
 	ANAERR_SEL_CITY_UNICODE       = -3002011,			// 获取地市统一编码数据出错
-	ANAERR_SEL_MAX_EVENTID        = -3002012,			// 获取最大告警事件 ID 出错
-	ANAERR_SEL_COM_RES_DESC       = -3002013,			// 查询对比结果描述出错
-	ANAERR_ALTER_EMPTY_TAB        = -3002014,			// 清空结果表数据出错
-	ANAERR_DEL_FROM_TAB           = -3002015,			// 删除结果表数据出错
-	ANAERR_INS_RESULT_DATA        = -3002016,			// 插入结果数据出错
-	ANAERR_SEL_YC_STATRULE        = -3002017,			// 查询业财稽核因子规则信息出错
-	ANAERR_UPD_YC_TASK_REQ        = -3002018,			// 更新任务请求表出错
-	ANAERR_SEL_SEQUENCE           = -3002019,			// 获取数据库序列出错
-	ANAERR_SEL_YC_TASK_CITY       = -3002020,			// 获取任务请求的地市信息出错
-	ANAERR_SEL_RS_MAX_BATCH       = -3002021,			// 获取统计结果表的最新批次出错
-	ANAERR_INS_YC_STAT_LOG        = -3002022,			// 入库业财稽核记录日志出错
-	ANAERR_SEL_SRC_MAX_BATCH      = -3002023,			// 获取业财数据源表最新批次出错
-	ANAERR_UPD_TSLOG_STATE        = -3002024,			// 更新任务日程日志表状态出错
-	ANAERR_EXECUTE_SQL            = -3002025,			// 直接执行 SQL 出错
-	ANAERR_UPD_INS_DIFFSUMMARY    = -3002026,			// (业财) 更新或插入差异汇总结果数据出错
+	ANAERR_SEL_ALL_CITY           = -3002012,			// 获取全量地市（唯一）出错
+	ANAERR_SEL_MAX_EVENTID        = -3002013,			// 获取最大告警事件 ID 出错
+	ANAERR_SEL_COM_RES_DESC       = -3002014,			// 查询对比结果描述出错
+	ANAERR_ALTER_EMPTY_TAB        = -3002015,			// 清空结果表数据出错
+	ANAERR_DEL_FROM_TAB           = -3002016,			// 删除结果表数据出错
+	ANAERR_INS_RESULT_DATA        = -3002017,			// 插入结果数据出错
+	ANAERR_SEL_YC_STATRULE        = -3002018,			// 查询业财稽核因子规则信息出错
+	ANAERR_UPD_YC_TASK_REQ        = -3002019,			// 更新任务请求表出错
+	ANAERR_SEL_SEQUENCE           = -3002020,			// 获取数据库序列出错
+	ANAERR_SEL_YC_TASK_CITY       = -3002021,			// 获取任务请求的地市信息出错
+	ANAERR_SEL_RS_MAX_BATCH       = -3002022,			// 获取统计结果表的最新批次出错
+	ANAERR_INS_YC_STAT_LOG        = -3002023,			// 入库业财稽核记录日志出错
+	ANAERR_SEL_SRC_MAX_BATCH      = -3002024,			// 获取业财数据源表最新批次出错
+	ANAERR_UPD_TSLOG_STATE        = -3002025,			// 更新任务日程日志表状态出错
+	ANAERR_EXECUTE_SQL            = -3002026,			// 直接执行 SQL 出错
+	ANAERR_UPD_INS_DIFFSUMMARY    = -3002027,			// (业财) 更新或插入差异汇总结果数据出错
 
 	// 编码转换错误码
 	ANAERR_INPUT_CHANN_UNICODE    = -3003001,			// 录入渠道统一编码信息失败

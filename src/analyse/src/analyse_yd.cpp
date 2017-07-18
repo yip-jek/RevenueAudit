@@ -102,9 +102,9 @@ void Analyse_YD::AnalyseSourceData() throw(base::Exception)
 		const int DIM_REGION_INDEX  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_REGION);
 		if ( DIM_REGION_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在地市维度
 		{
-			int region_count = 0;
-
-			m_pLog->Output("[Analyse_YD] 报表数据地市补全：共补充地市 %d 个", region_count);
+			std::set<std::string> set_city;
+			FilterTheMissingCity(set_city);
+			MakeCityCompleted(set_city, DIM_COL_SIZE, VAL_COL_SIZE);
 		}
 	}
 }
@@ -146,6 +146,15 @@ void Analyse_YD::KeepChannelDataOnly(const std::string& channel)
 
 		v2_report.swap(m_v2ReportStatData);
 	}
+}
+
+void Analyse_YD::FilterTheMissingCity(std::set<std::string>& set_city)
+{
+}
+
+void Analyse_YD::MakeCityCompleted(const std::set<std::string>& set_city, int dim_size, int col_size)
+{
+	m_pLog->Output("[Analyse_YD] 报表数据地市补全：共补充地市 %d 个", region_count);
 }
 
 void Analyse_YD::AlarmRequest()

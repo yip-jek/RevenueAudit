@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include "analyse.h"
 
 // 一点稽核-分析模块
@@ -37,6 +38,12 @@ private:
 
 	// 只保留指定渠道的报表数据
 	void KeepChannelDataOnly(const std::string& channel);
+
+	// 筛选需要补全的地市
+	void FilterTheMissingCity(std::set<std::string>& set_city);
+
+	// 补全地市
+	void MakeCityCompleted(const std::set<std::string>& set_city, int dim_size, int col_size);
 
 	// 生成告警请求
 	void AlarmRequest();

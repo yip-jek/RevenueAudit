@@ -66,6 +66,9 @@ public:
 	// 获取地市统一编码数据
 	void SelectCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode) throw(base::Exception);
 
+	// 获取全量地市（唯一）
+	void SelectAllCity(std::vector<std::string>& vec_city) throw(base::Exception);
+
 	// 查询维度取值表
 	void SelectDimValue(const std::string& kpi_id, DimValDiffer& differ) throw(base::Exception);
 

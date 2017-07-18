@@ -426,6 +426,25 @@ void CAnaDB2::SelectCityUniformCode(std::vector<CityUniformCode>& vec_cityunicod
 	v_city_uc.swap(vec_cityunicode);
 }
 
+void CAnaDB2::SelectAllCity(std::vector<std::string>& vec_city) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::vector<std::string> v_city;
+	std::string sql = "SELECT DISTINCT CITYID FROM " + m_tabDictCity;
+
+	try
+	{
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ANAERR_SEL_ALL_CITY, "[DB2] Select %s failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabDictCity.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+
+	v_city.swap(vec_city);
+}
+
 void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
