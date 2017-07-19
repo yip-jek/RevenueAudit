@@ -436,6 +436,16 @@ void CAnaDB2::SelectAllCity(std::vector<std::string>& vec_city) throw(base::Exce
 
 	try
 	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		while ( !rs.IsEOF() )
+		{
+			v_city.push_back((const char*)rs[1]);
+
+			rs.MoveNext();
+		}
+		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{

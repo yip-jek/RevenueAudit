@@ -40,10 +40,10 @@ private:
 	void KeepChannelDataOnly(const std::string& channel);
 
 	// 筛选需要补全的地市
-	void FilterTheMissingCity(std::set<std::string>& set_city);
+	void FilterTheMissingCity(std::set<std::string>& set_city, int dim_region_index);
 
 	// 补全地市
-	void MakeCityCompleted(const std::set<std::string>& set_city, int dim_size, int col_size);
+	void MakeCityCompleted(const std::set<std::string>& set_city, const std::string& channel, int dim_size, int col_size);
 
 	// 生成告警请求
 	void AlarmRequest();

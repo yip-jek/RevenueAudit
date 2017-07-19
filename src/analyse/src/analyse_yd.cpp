@@ -103,8 +103,8 @@ void Analyse_YD::AnalyseSourceData() throw(base::Exception)
 		if ( DIM_REGION_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在地市维度
 		{
 			std::set<std::string> set_city;
-			FilterTheMissingCity(set_city);
-			MakeCityCompleted(set_city, DIM_COL_SIZE, VAL_COL_SIZE);
+			FilterTheMissingCity(set_city, DIM_REGION_INDEX);
+			MakeCityCompleted(set_city, THE_CHANNEL, DIM_COL_SIZE, VAL_COL_SIZE);
 		}
 	}
 }
@@ -148,13 +148,41 @@ void Analyse_YD::KeepChannelDataOnly(const std::string& channel)
 	}
 }
 
-void Analyse_YD::FilterTheMissingCity(std::set<std::string>& set_city)
+void Analyse_YD::FilterTheMissingCity(std::set<std::string>& set_city, int dim_region_index)
 {
+	// 已有地市
+	std::set<std::string> set_ex_city;
+	int vec_size = m_v2ReportStatData.size();
+	for ( int i = 0; i < vec_size; ++i )
+	{
+		set_ex_city.insert(m_v2ReportStatData[i][dim_region_index]);
+	}
+	m_pLog->Output("[Analyse_YD] 报表数据中，已存在 %d 个地市", (int)set_ex_city.size());
+
+	// 全部地市
+	std::vector<std::string> vec_all_city;
+	m_pAnaDB2->SelectAllCity(vec_all_city);
+
+	// 找出缺少的地市
+	set_city.clear();
+	vec_size = vec_all_city.size();
+	for ( int j = 0; j < vec_size; ++j )
+	{
+		std::string& ref_vec = vec_all_city[j];
+		if ( set_ex_city.find(ref_vec) == set_ex_city.end() )
+		{
+			set_city.insert(ref_vec);
+		}
+	}
+	m_pLog->Output("[Analyse_YD] 全部地市共 %d 个，需要补全 %d 个地市", vec_size, (int)set_city.size());
 }
 
-void Analyse_YD::MakeCityCompleted(const std::set<std::string>& set_city, int dim_size, int col_size)
+void Analyse_YD::MakeCityCompleted(const std::set<std::string>& set_city, const std::string& channel, int dim_size, int col_size)
 {
-	m_pLog->Output("[Analyse_YD] 报表数据地市补全：共补充地市 %d 个", region_count);
+	if ( !set_city.empty() )
+	{
+		//m_pLog->Output("[Analyse_YD] 报表数据地市补全：共补充地市 %d 个", region_count);
+	}
 }
 
 void Analyse_YD::AlarmRequest()
