@@ -1,6 +1,8 @@
 #pragma once
 
-#include "exception.h"
+#include <string>
+#include <map>
+#include <vector>
 
 class ReportInput;
 class ReportOutput;
@@ -13,8 +15,14 @@ public:
 	virtual ~ReportConverter();
 
 public:
-	// 源数据转换为报表数据
-	void ConvertToReportStatData(const ReportInput* pRInput, ReportOutput* pROutput);
+	// 报表数据转换
+	void ReportStatDataConvertion(const ReportInput* pInput, ReportOutput* pOutput);
 
+private:
+	// 导出报表数据
+	void ExportReportData(ReportOutput* pOutput);
+
+private:
+	std::map<std::string, std::vector<std::string> > m_mReportStatData;			// 报表中间数据
 };
 

@@ -1,4 +1,5 @@
 #include "reportconverter.h"
+#include "pubstr.h"
 #include "reportinput.h"
 #include "reportoutput.h"
 
@@ -10,11 +11,30 @@ ReportConverter::~ReportConverter()
 {
 }
 
-void ReportConverter::ConvertToReportStatData(const ReportInput* pRInput, ReportOutput* pROutput)
+void ReportConverter::ReportStatDataConvertion(const ReportInput* pInput, ReportOutput* pOutput)
 {
-	std::map<std::string, std::vector<std::string> > mReportStatData;
-	std::map<std::string, std::vector<std::string> >::iterator it = mReportStatData.end();
+	if ( pInput != NULL && pOutput != NULL )
+	{
+		std::string key;
 
+		m_mReportStatData.clear();
+		std::map<std::string, std::vector<std::string> >::iterator it = m_mReportStatData.end();
+
+		const int GROUP_SIZE = pInput->GetDataGroupSize();
+		for ( int i = 0; i < GROUP_SIZE; ++i )
+		{
+			const int DATA_SIZE = pInput->GetDataSize(i);
+			for ( int j = 0; j < DATA_SIZE; ++j )
+			{
+				key = pInput->GetKey(i, j);
+
+			}
+		}
+
+		ExportReportData(pOutput);
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////
 	std::string str_tmp;
 	std::string m_key;
 
@@ -66,15 +86,17 @@ void ReportConverter::ConvertToReportStatData(const ReportInput* pRInput, Report
 			}
 		}
 	}
+}
 
+void ReportConverter::ExportReportData(ReportOutput* pOutput)
+{
 	std::vector<std::vector<std::string> > vec2_reportdata;
-	for ( it = mReportStatData.begin(); it != mReportStatData.end(); ++it )
+	std::map<std::string, std::vector<std::string> >::iterator it = m_mReportStatData.begin();
+	while ( it != m_mReportStatData.end() )
 	{
-		base::PubStr::VVectorSwapPushBack(vec2_reportdata, it->second);
+		base::PubStr::VVectorSwapPushBack(vec2_reportdata, (it++)->second);
 	}
-	vec2_reportdata.swap(m_v2ReportStatData);
 
-	// 释放Hive源数据
-	std::vector<std::vector<std::vector<std::string> > >().swap(m_v3HiveSrcData);
+	pOutput->ImportData(vec2_reportdata);
 }
 
