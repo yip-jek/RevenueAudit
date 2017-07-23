@@ -137,6 +137,8 @@ void Analyse_YD::KeepChannelDataOnly(const std::string& channel)
 	{
 		std::vector<std::vector<std::string> > v2_report;
 		const int VEC2_REPORT_SIZE = m_v2ReportStatData.size();
+		m_pLog->Output("[Analyse_YD] 原报表数据大小为：%d", VEC2_REPORT_SIZE);
+
 		for ( int i = 0; i < VEC2_REPORT_SIZE; ++i )
 		{
 			std::vector<std::string>& ref_vec = m_v2ReportStatData[i];
@@ -148,6 +150,7 @@ void Analyse_YD::KeepChannelDataOnly(const std::string& channel)
 		}
 
 		v2_report.swap(m_v2ReportStatData);
+		m_pLog->Output("[Analyse_YD] 只保留指定渠道 [%s] 报表数据后，剩余大小为：%llu", channel.c_str(), m_v2ReportStatData.size());
 	}
 }
 

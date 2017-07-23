@@ -10,6 +10,9 @@
 #include "taskinfoutil.h"
 #include "sqltranslator.h"
 //#include "compareresult.h"
+#include "reportconverter.h"
+#include "reportinput.h"
+#include "reportoutput.h"
 
 
 Analyse::Analyse()
@@ -778,11 +781,9 @@ void Analyse::GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) thr
 
 	// 格式样例: A-B
 	// 暂时只支持这一种表达式："A-B"
-	std::string& ana_exp = m_taskInfo.AnaRule.AnaExpress;
-
 	int first_index  = -1;
 	int second_index = -1;
-	DetermineDataGroup(ana_exp, first_index, second_index);
+	DetermineDataGroup(m_taskInfo.AnaRule.AnaExpress, first_index, second_index);
 
 	std::vector<int> vec_col;
 	std::vector<std::string> v_hive_sql;
@@ -875,8 +876,7 @@ void Analyse::GetStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) throw(
 	// 当有多份采集结果数据时，采用联合语句
 	bool is_union_all = (m_taskInfo.vecEtlRule.size() > 1);
 
-	std::string& ana_exp = m_taskInfo.AnaRule.AnaExpress;
-	if ( ana_exp.empty() )	// 没有指定表达式，则取全量数据
+	if ( m_taskInfo.AnaRule.AnaExpress.empty() )	// 没有指定表达式，则取全量数据
 	{
 		TaskInfoUtil::GetEtlStatisticsSQLs(m_taskInfo.vecEtlRule, vec_hivesql, is_union_all);
 	}
@@ -912,25 +912,14 @@ void Analyse::GetReportStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) 
 		throw base::Exception(ANAERR_GET_REPORT_STAT_FAILED, "采集规则的值不唯一，无法进行报表统计! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
-	std::string& ana_exp = m_taskInfo.AnaRule.AnaExpress;
-	if ( ana_exp.empty() )	// 没有指定表达式，则取全量数据
-	{
-		TaskInfoUtil::GetEtlStatisticsSQLs(m_taskInfo.vecEtlRule, vec_hivesql, false);
-	}
-	else
-	{
-		GetStatisticsHiveSQLBySet(vec_hivesql, false);
-	}
-
+	TaskInfoUtil::GetEtlStatisticsSQLs(m_taskInfo.vecEtlRule, vec_hivesql, false);
 	//AddAnalysisCondition(m_taskInfo.AnaRule, vec_hivesql);
 }
 
 void Analyse::GetStatisticsHiveSQLBySet(std::vector<std::string>& vec_hivesql, bool union_all) throw(base::Exception)
 {
-	std::string& ana_exp = m_taskInfo.AnaRule.AnaExpress;
-
 	std::set<int> set_int;
-	const int RESULT = base::PubStr::Express2IntSet(ana_exp, set_int);
+	const int RESULT = base::PubStr::Express2IntSet(m_taskInfo.AnaRule.AnaExpress, set_int);
 
 	if ( -1 == RESULT )		// 转换失败
 	{
@@ -1124,9 +1113,9 @@ void Analyse::AnalyseSourceData() throw(base::Exception)
 	{
 		m_pLog->Output("[Analyse] 报表统计类型数据转换 ...");
 
-		m_pLog->Output("[Analyse] 转换前, 数据大小为: %llu", base::PubStr::CalcVVVectorStr(m_v3HiveSrcData));
-		TransSrcDataToReportStatData();
-		m_pLog->Output("[Analyse] 转换后, 数据大小为: %llu", m_v2ReportStatData.size());
+		m_pLog->Output("[Analyse] (转换前) 源数据大小为: %llu", base::PubStr::CalcVVVectorStr(m_v3HiveSrcData));
+		GenerateReportStatData();
+		m_pLog->Output("[Analyse] (转换后) 报表数据大小为: %llu", m_v2ReportStatData.size());
 
 		// 将源数据中的空值字符串("NULL")转换为("0")
 		base::PubStr::ReplaceInStrVector2(m_v2ReportStatData, "NULL", "0", false, true);
@@ -1224,6 +1213,19 @@ void Analyse::SrcDataUnifiedCoding() throw(base::Exception)
 	{
 		m_pLog->Output("<WARNING> [Analyse] 不存在对应渠道统一编码的渠道别名：[%s]", s_it->c_str());
 	}
+}
+
+void Analyse::GenerateReportStatData()
+{
+	YDReportInput  input(&m_v3HiveSrcData);
+	YDReportOutput output(&m_v2ReportStatData);
+
+	// 将 HIVE 源数据转换为报表统计类型数据
+	ReportConverter rc;
+	rc.ReportStatDataConvertion(&input, &output);
+
+	// 释放源数据占用的资源
+	input.ReleaseSourceData();
 }
 
 //void Analyse::CompareResultData() throw(base::Exception)

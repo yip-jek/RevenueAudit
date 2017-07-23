@@ -24,6 +24,8 @@ public:
 	virtual void ExportData(size_t group_index, size_t data_index, std::vector<std::string>& vec_dat) const = 0;
 };
 
+
+////////////////////////////////////////////////////////////////////////////////
 // 一点稽核-报表输入
 class YDReportInput : public ReportInput
 {

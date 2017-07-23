@@ -15,6 +15,8 @@ public:
 	virtual void ImportData(std::vector<std::vector<std::string> >& vec2_dat) = 0;
 };
 
+
+////////////////////////////////////////////////////////////////////////////////
 // 一点稽核-报表输出
 class YDReportOutput : public ReportOutput
 {

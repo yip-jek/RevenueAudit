@@ -1,5 +1,6 @@
 #include "reportinput.h"
 
+// 一点稽核-报表输入
 YDReportInput::YDReportInput(std::vector<std::vector<std::vector<std::string> > >* pV3SrcData)
 :m_pV3SrcData(pV3SrcData)
 {
