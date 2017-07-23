@@ -276,7 +276,7 @@ void Acquire_YC::ExtendSQLCondition(std::string& sql) throw(base::Exception)
 	const std::string EX_SUB_COND;
 	const std::string EXTEND_SQL_COND;
 	base::PubStr::SetFormatString(const_cast<std::string&>(EX_SUB_COND), "%s = '%s' and %s = '%s'", m_fieldPeriod.c_str(), m_acqDate.c_str(), m_fieldCity.c_str(), m_taskCity.c_str());
-	base::PubStr::SetFormatString(const_cast<std::string&>(EXTEND_SQL_COND), "%s and %s in (select max(%s) from ", EX_SUB_COND.c_str(), m_fieldBatch.c_str(), m_fieldBatch.c_str());
+	base::PubStr::SetFormatString(const_cast<std::string&>(EXTEND_SQL_COND), "%s and decimal(%s,12,2) in (select max(decimal(%s,12,2)) from ", EX_SUB_COND.c_str(), m_fieldBatch.c_str(), m_fieldBatch.c_str());
 
 	const std::string MARK_FROM  = " FROM ";
 	const std::string MARK_WHERE = "WHERE ";

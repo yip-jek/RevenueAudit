@@ -114,6 +114,7 @@ std::string Analyse_YD::TryGetTheChannel()
 	std::string exp = base::PubStr::TrimUpperB(m_taskInfo.AnaRule.AnaExpress);
 	if ( exp.empty() )
 	{
+		m_pLog->Output("[Analyse_YD] 没有指定渠道");
 		return "";
 	}
 
@@ -121,9 +122,11 @@ std::string Analyse_YD::TryGetTheChannel()
 	base::PubStr::Str2StrVector(exp, "=", vec_str);
 	if ( vec_str.size() == 2 && S_CHANNEL_MARK == vec_str[0] )
 	{
+		m_pLog->Output("[Analyse_YD] 指定渠道: [%s]", vec_str[1].c_str());
 		return vec_str[1];
 	}
 
+	m_pLog->Output("[Analyse_YD] 指定渠道: [未明]");
 	return "";
 }
 
@@ -177,11 +180,40 @@ void Analyse_YD::FilterTheMissingCity(std::set<std::string>& set_city, int dim_r
 	m_pLog->Output("[Analyse_YD] 全部地市共 %d 个，需要补全 %d 个地市", vec_size, (int)set_city.size());
 }
 
-void Analyse_YD::MakeCityCompleted(const std::set<std::string>& set_city, const std::string& channel, int dim_size, int col_size)
+void Analyse_YD::MakeCityCompleted(const std::set<std::string>& set_city, const std::string& channel, int dim_size, int val_size)
 {
 	if ( !set_city.empty() )
 	{
-		//m_pLog->Output("[Analyse_YD] 报表数据地市补全：共补充地市 %d 个", region_count);
+		const int DIM_ETLDAY_INDEX = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_ETLDAY);
+		const int DIM_NOWDAY_INDEX = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_NOWDAY);
+		const int DIM_REGION_INDEX = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_REGION);
+		const int DIM_CHANN_INDEX  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_CHANNEL);
+
+		// 初始化：维度列初始为空，值列初始为“0”
+		std::vector<std::string> vec_sup(dim_size, "");
+		vec_sup.insert(vec_sup.end(), val_size, "0");
+
+		// 初始化：时间列、渠道列
+		if ( DIM_ETLDAY_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在采集时间
+		{
+			vec_sup[DIM_ETLDAY_INDEX] = m_dbinfo.GetEtlDay();
+		}
+		if ( DIM_NOWDAY_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在当前时间
+		{
+			vec_sup[DIM_NOWDAY_INDEX] = base::SimpleTime::Now().DayTime8();
+		}
+		if ( DIM_CHANN_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在渠道
+		{
+			vec_sup[DIM_CHANN_INDEX] = channel;
+		}
+
+		for ( std::set<std::string>::iterator it = set_city.begin(); it != set_city.end(); ++it )
+		{
+			vec_sup[DIM_REGION_INDEX] = *it;
+			m_v2ReportStatData.push_back(vec_sup);
+
+			m_pLog->Output("[Analyse_YD] 报表数据补全地市: [%s]", it->c_str());
+		}
 	}
 }
 
