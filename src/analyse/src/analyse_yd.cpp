@@ -9,6 +9,10 @@ const char* const Analyse_YD::S_CHANNEL_MARK = "CHANNEL";			// 渠道标识
 
 Analyse_YD::Analyse_YD()
 :m_taskScheLogID(0)
+,m_dimEtlDayIndex(0)
+,m_dimNowDayIndex(0)
+,m_dimRegionIndex(0)
+,m_dimChannelIndex(0)
 {
 	m_sType = "一点稽核";
 }
@@ -86,6 +90,8 @@ void Analyse_YD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(
 
 void Analyse_YD::AnalyseSourceData() throw(base::Exception)
 {
+	GetDimIndex();
+
 	const int VAL_COL_SIZE = m_v3HiveSrcData.size();								// 值列的数目
 	const int DIM_COL_SIZE = TaskInfoUtil::TheFirstDataColSize(m_v3HiveSrcData) - 1;// 维度列的数目
 
@@ -102,14 +108,21 @@ void Analyse_YD::AnalyseSourceData() throw(base::Exception)
 		}
 
 		// 是否有地市字段？
-		const int DIM_REGION_INDEX  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_REGION);
-		if ( DIM_REGION_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在地市维度
+		if ( m_dimRegionIndex != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在地市维度
 		{
 			std::map<std::string, std::set<std::string> > mapset_city;
-			FilterTheMissingCity(vec_channel, DIM_REGION_INDEX, mapset_city);
-			MakeCityCompleted(set_city, DIM_COL_SIZE, VAL_COL_SIZE);
+			FilterTheMissingCity(vec_channel, mapset_city);
+			MakeCityCompleted(mapset_city, DIM_COL_SIZE, VAL_COL_SIZE);
 		}
 	}
+}
+
+void Analyse_YD::GetDimIndex()
+{
+	m_dimEtlDayIndex  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_ETLDAY);
+	m_dimNowDayIndex  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_NOWDAY);
+	m_dimRegionIndex  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_REGION);
+	m_dimChannelIndex = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_CHANNEL);
 }
 
 bool Analyse_YD::TryGetTheChannel(std::vector<std::string>& vec_channel)
@@ -151,8 +164,7 @@ bool Analyse_YD::TryGetTheChannel(std::vector<std::string>& vec_channel)
 
 void Analyse_YD::KeepChannelDataOnly(const std::vector<std::string>& vec_channel)
 {
-	const int DIM_CHANNEL_INDEX  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_CHANNEL);
-	if ( DIM_CHANNEL_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )
+	if ( m_dimChannelIndex != AnaTaskInfo::INVALID_DIM_INDEX )
 	{
 		std::vector<std::vector<std::string> > v2_report;
 		const int VEC2_REPORT_SIZE = m_v2ReportStatData.size();
@@ -165,7 +177,7 @@ void Analyse_YD::KeepChannelDataOnly(const std::vector<std::string>& vec_channel
 
 			for ( int j = 0; j < VEC_SIZE; ++j )
 			{
-				if ( vec_channel[j] == ref_vec[DIM_CHANNEL_INDEX] )
+				if ( vec_channel[j] == ref_vec[m_dimChannelIndex] )
 				{
 					base::PubStr::VVectorSwapPushBack(v2_report, ref_vec);
 				}
@@ -173,72 +185,113 @@ void Analyse_YD::KeepChannelDataOnly(const std::vector<std::string>& vec_channel
 		}
 
 		v2_report.swap(m_v2ReportStatData);
-		m_pLog->Output("[Analyse_YD] 只保留指定渠道的报表数据后，剩余大小为：%llu", m_v2ReportStatData.size());
+		m_pLog->Output("[Analyse_YD] 只保留指定渠道的报表数据后，剩余大小为：%lu", m_v2ReportStatData.size());
 	}
 }
 
-void Analyse_YD::FilterTheMissingCity(const std::vector<std::string>& vec_channel, int dim_region_index, std::map<std::string, std::set<std::string> >& mapset_city)
+void Analyse_YD::FilterTheMissingCity(const std::vector<std::string>& vec_channel, std::map<std::string, std::set<std::string> >& mapset_city)
 {
 	// 已有地市
-	std::set<std::string> set_ex_city;
-	int vec_size = m_v2ReportStatData.size();
-	for ( int i = 0; i < vec_size; ++i )
+	int vec_size = 0;
+	std::map<std::string, std::set<std::string> > mapset_ex_city
+	if ( vec_channel.empty() || AnaTaskInfo::INVALID_DIM_INDEX == m_dimChannelIndex )	// 无指定渠道 或者 渠道索引位置无效
 	{
-		set_ex_city.insert(m_v2ReportStatData[i][dim_region_index]);
+		vec_size = m_v2ReportStatData.size();
+		for ( int i = 0; i < vec_size; ++i )
+		{
+			mapset_ex_city[""].insert(m_v2ReportStatData[i][m_dimRegionIndex]);
+		}
+
+		m_pLog->Output("[Analyse_YD] 报表数据中，已存在 [%lu] 个地市", mapset_ex_city[""].size());
 	}
-	m_pLog->Output("[Analyse_YD] 报表数据中，已存在 %d 个地市", (int)set_ex_city.size());
+	else	// 有指定渠道 且 渠道索引位置有效
+	{
+		// 登记所有指定渠道
+		vec_size = vec_channel.size();
+		for ( int i = 0; i < vec_size; ++i )
+		{
+			mapset_ex_city[vec_channel[i]];
+		}
+
+		vec_size = m_v2ReportStatData.size();
+		for ( int i = 0; i < vec_size; ++i )
+		{
+			mapset_ex_city[m_v2ReportStatData[i][m_dimChannelIndex]].insert(m_v2ReportStatData[i][m_dimRegionIndex]);
+		}
+
+		for ( std::map<std::string, std::set<std::string> >::iterator it = mapset_ex_city.begin(); it != mapset_ex_city.end(); ++it )
+		{
+			m_pLog->Output("[Analyse_YD] 在渠道 [%s] 的报表数据中，已存在 [%lu] 个地市", it->first.c_str(), it->second.size());
+		}
+	}
 
 	// 全部地市
 	std::vector<std::string> vec_all_city;
 	m_pAnaDB2->SelectAllCity(vec_all_city);
 
 	// 找出缺少的地市
-	set_city.clear();
+	std::string str_chann;
 	vec_size = vec_all_city.size();
-	for ( int j = 0; j < vec_size; ++j )
+	for ( std::map<std::string, std::set<std::string> >::iterator it = mapset_ex_city.begin(); it != mapset_ex_city.end(); ++it )
 	{
-		std::string& ref_vec = vec_all_city[j];
-		if ( set_ex_city.find(ref_vec) == set_ex_city.end() )
+		for ( int i = 0; i < vec_size; ++i )
 		{
-			set_city.insert(ref_vec);
+			std::string& ref_vec = vec_all_city[i];
+			if ( it->second.find(ref_vec) == it->second.end() )
+			{
+				mapset_city[it->first].insert(ref_vec);
+			}
 		}
+
+		str_chann.clear();
+		if ( !it->first.empty() )
+		{
+			base::PubStr::SetFormatString(str_chann, "渠道 [%s] 的", it->first.c_str());
+		}
+
+		m_pLog->Output("[Analyse_YD] 全部共 [%d] 个地市，需要补全%s [%lu] 个地市", vec_size, str_chann.c_str(), mapset_city[it->first].size());
 	}
-	m_pLog->Output("[Analyse_YD] 全部地市共 %d 个，需要补全 %d 个地市", vec_size, (int)set_city.size());
 }
 
 void Analyse_YD::MakeCityCompleted(const std::map<std::string, std::set<std::string> >& mapset_city, int dim_size, int val_size)
 {
-	if ( !set_city.empty() )
+	if ( !mapset_city.empty() )
 	{
-		const int DIM_ETLDAY_INDEX = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_ETLDAY);
-		const int DIM_NOWDAY_INDEX = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_NOWDAY);
-		const int DIM_REGION_INDEX = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_REGION);
-		const int DIM_CHANN_INDEX  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_CHANNEL);
-
 		// 初始化：维度列初始为空，值列初始为“0”
 		std::vector<std::string> vec_sup(dim_size, "");
 		vec_sup.insert(vec_sup.end(), val_size, "0");
 
-		// 初始化：时间列、渠道列
-		if ( DIM_ETLDAY_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在采集时间
+		// 初始化：时间列
+		if ( m_dimEtlDayIndex != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在采集时间
 		{
-			vec_sup[DIM_ETLDAY_INDEX] = m_dbinfo.GetEtlDay();
+			vec_sup[m_dimEtlDayIndex] = m_dbinfo.GetEtlDay();
 		}
-		if ( DIM_NOWDAY_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在当前时间
+		if ( m_dimNowDayIndex != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在当前时间
 		{
-			vec_sup[DIM_NOWDAY_INDEX] = base::SimpleTime::Now().DayTime8();
-		}
-		if ( DIM_CHANN_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在渠道
-		{
-			vec_sup[DIM_CHANN_INDEX] = channel;
+			vec_sup[m_dimNowDayIndex] = base::SimpleTime::Now().DayTime8();
 		}
 
-		for ( std::set<std::string>::iterator it = set_city.begin(); it != set_city.end(); ++it )
+		std::string str_chann;
+		for ( std::map<std::string, std::set<std::string> >::iterator it = mapset_city.begin(); it != mapset_city.end(); ++it )
 		{
-			vec_sup[DIM_REGION_INDEX] = *it;
-			m_v2ReportStatData.push_back(vec_sup);
+			if ( m_dimChannelIndex != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在渠道
+			{
+				vec_sup[m_dimChannelIndex] = it->first;
+			}
 
-			m_pLog->Output("[Analyse_YD] 报表数据补全地市: [%s]", it->c_str());
+			str_chann.clear();
+			if ( !it->first.empty() )
+			{
+				base::PubStr::SetFormatString(str_chann, "渠道 [%s] 的", it->first.c_str());
+			}
+
+			for ( std::set<std::string>::iterator s_it = it->second.begin(); s_it != it->second.end(); ++s_it )
+			{
+				vec_sup[DIM_REGION_INDEX] = *s_it;
+				m_v2ReportStatData.push_back(vec_sup);
+
+				m_pLog->Output("[Analyse_YD] 报表数据补全%s地市: [%s]", str_chann.c_str(), s_it->c_str());
+			}
 		}
 	}
 }

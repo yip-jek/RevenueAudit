@@ -33,6 +33,9 @@ protected:
 	virtual void AnalyseSourceData() throw(base::Exception);
 
 private:
+	// 获取维度索引位置
+	void GetDimIndex();
+
 	// 尝试从分析表达式中获取指定渠道标识
 	bool TryGetTheChannel(std::vector<std::string>& vec_channel);
 
@@ -40,7 +43,7 @@ private:
 	void KeepChannelDataOnly(const std::vector<std::string>& vec_channel);
 
 	// 筛选需要补全的地市
-	void FilterTheMissingCity(const std::vector<std::string>& vec_channel, int dim_region_index, std::map<std::string, std::set<std::string> >& mapset_city);
+	void FilterTheMissingCity(const std::vector<std::string>& vec_channel, std::map<std::string, std::set<std::string> >& mapset_city);
 
 	// 补全地市
 	void MakeCityCompleted(const std::map<std::string, std::set<std::string> >& mapset_city, int dim_size, int val_size);
@@ -52,5 +55,11 @@ private:
 	int         m_taskScheLogID;			// 任务日程日志ID
 	std::string m_tabTaskScheLog;			// 任务日程日志表
 	std::string m_tabAlarmRequest;			// 告警请求表
+
+private:
+	int m_dimEtlDayIndex;				// 采集时间维度索引位置
+	int m_dimNowDayIndex;				// 当前时间维度索引位置
+	int m_dimRegionIndex;				// 地市维度索引位置
+	int m_dimChannelIndex;				// 渠道维度索引位置
 };
 
