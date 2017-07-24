@@ -95,66 +95,89 @@ void Analyse_YD::AnalyseSourceData() throw(base::Exception)
 	{
 		// 是否指定渠道？
 		// 若指定渠道，则只保留该渠道的报表数据
-		const std::string THE_CHANNEL = TryGetTheChannel();
-		KeepChannelDataOnly(THE_CHANNEL);
+		std::vector<std::string> vec_channel;
+		if ( TryGetTheChannel(vec_channel) )
+		{
+			KeepChannelDataOnly(vec_channel);
+		}
 
 		// 是否有地市字段？
 		const int DIM_REGION_INDEX  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_REGION);
 		if ( DIM_REGION_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在地市维度
 		{
-			std::set<std::string> set_city;
-			FilterTheMissingCity(set_city, DIM_REGION_INDEX);
-			MakeCityCompleted(set_city, THE_CHANNEL, DIM_COL_SIZE, VAL_COL_SIZE);
+			std::map<std::string, std::set<std::string> > mapset_city;
+			FilterTheMissingCity(vec_channel, DIM_REGION_INDEX, mapset_city);
+			MakeCityCompleted(set_city, DIM_COL_SIZE, VAL_COL_SIZE);
 		}
 	}
 }
 
-std::string Analyse_YD::TryGetTheChannel()
+bool Analyse_YD::TryGetTheChannel(std::vector<std::string>& vec_channel)
 {
 	std::string exp = base::PubStr::TrimUpperB(m_taskInfo.AnaRule.AnaExpress);
 	if ( exp.empty() )
 	{
 		m_pLog->Output("[Analyse_YD] 没有指定渠道");
-		return "";
+		return false;
 	}
 
 	std::vector<std::string> vec_str;
 	base::PubStr::Str2StrVector(exp, "=", vec_str);
 	if ( vec_str.size() == 2 && S_CHANNEL_MARK == vec_str[0] )
 	{
-		m_pLog->Output("[Analyse_YD] 指定渠道: [%s]", vec_str[1].c_str());
-		return vec_str[1];
+		// 指定多个渠道？(多个渠道间用逗号分隔)
+		base::PubStr::Str2StrVector(vec_str[1], ",", vec_str);
+		if ( vec_str.empty() )
+		{
+			m_pLog->Output("[Analyse_YD] 指定渠道: [空]");
+			return false;
+		}
+		else
+		{
+			const int VEC_SIZE = vec_str.size();
+			for ( int i = 0; i < VEC_SIZE; ++i )
+			{
+				m_pLog->Output("[Analyse_YD] 指定渠道: [%s]", vec_str[i].c_str());
+			}
+
+			vec_str.swap(vec_channel);
+			return true;
+		}
 	}
 
 	m_pLog->Output("[Analyse_YD] 指定渠道: [未明]");
-	return "";
+	return false;
 }
 
-void Analyse_YD::KeepChannelDataOnly(const std::string& channel)
+void Analyse_YD::KeepChannelDataOnly(const std::vector<std::string>& vec_channel)
 {
 	const int DIM_CHANNEL_INDEX  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_CHANNEL);
-	if ( !channel.empty() && DIM_CHANNEL_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )
+	if ( DIM_CHANNEL_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )
 	{
 		std::vector<std::vector<std::string> > v2_report;
 		const int VEC2_REPORT_SIZE = m_v2ReportStatData.size();
 		m_pLog->Output("[Analyse_YD] 原报表数据大小为：%d", VEC2_REPORT_SIZE);
 
+		const int VEC_SIZE = vec_channel.size();
 		for ( int i = 0; i < VEC2_REPORT_SIZE; ++i )
 		{
 			std::vector<std::string>& ref_vec = m_v2ReportStatData[i];
 
-			if ( channel == ref_vec[DIM_CHANNEL_INDEX] )
+			for ( int j = 0; j < VEC_SIZE; ++j )
 			{
-				base::PubStr::VVectorSwapPushBack(v2_report, ref_vec);
+				if ( vec_channel[j] == ref_vec[DIM_CHANNEL_INDEX] )
+				{
+					base::PubStr::VVectorSwapPushBack(v2_report, ref_vec);
+				}
 			}
 		}
 
 		v2_report.swap(m_v2ReportStatData);
-		m_pLog->Output("[Analyse_YD] 只保留指定渠道 [%s] 报表数据后，剩余大小为：%llu", channel.c_str(), m_v2ReportStatData.size());
+		m_pLog->Output("[Analyse_YD] 只保留指定渠道的报表数据后，剩余大小为：%llu", m_v2ReportStatData.size());
 	}
 }
 
-void Analyse_YD::FilterTheMissingCity(std::set<std::string>& set_city, int dim_region_index)
+void Analyse_YD::FilterTheMissingCity(const std::vector<std::string>& vec_channel, int dim_region_index, std::map<std::string, std::set<std::string> >& mapset_city)
 {
 	// 已有地市
 	std::set<std::string> set_ex_city;
@@ -183,7 +206,7 @@ void Analyse_YD::FilterTheMissingCity(std::set<std::string>& set_city, int dim_r
 	m_pLog->Output("[Analyse_YD] 全部地市共 %d 个，需要补全 %d 个地市", vec_size, (int)set_city.size());
 }
 
-void Analyse_YD::MakeCityCompleted(const std::set<std::string>& set_city, const std::string& channel, int dim_size, int val_size)
+void Analyse_YD::MakeCityCompleted(const std::map<std::string, std::set<std::string> >& mapset_city, int dim_size, int val_size)
 {
 	if ( !set_city.empty() )
 	{

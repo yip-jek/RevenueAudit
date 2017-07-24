@@ -51,8 +51,10 @@ void ReportConverter::MergeData(const std::string& key, const std::vector<std::s
 		vec_all.insert(vec_all.end(), val_size-1, "0");
 
 		// 将当前值，移到正确的位置
-		vec_all[VAL_INDEX] = vec_all[DIM_SIZE];
-		vec_all[DIM_SIZE]  = "0";
+		// 考虑到 DIM_SIZE 与 VAL_INDEX 相等的情况，因此增加临时变量
+		std::string curr_val = vec_all[DIM_SIZE];
+		vec_all[DIM_SIZE]    = "0";
+		vec_all[VAL_INDEX]   = curr_val;
 
 		m_mReportStatData[key].swap(vec_all);
 	}
