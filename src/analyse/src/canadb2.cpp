@@ -80,6 +80,11 @@ void CAnaDB2::SetTabYCStatLog(const std::string& t_statlog)
 	m_tabStatLog = t_statlog;
 }
 
+void CAnaDB2::SetTabYCReportStat(const std::string& t_reportstat)
+{
+	m_tabReportStat = t_reportstat;
+}
+
 void CAnaDB2::SetTabYCTaskReq(const std::string& t_yc_taskreq)
 {
 	m_tabYCTaskReq = t_yc_taskreq;
@@ -1529,5 +1534,9 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatRe
 	{
 		throw base::Exception(ANAERR_UPD_INS_DIFFSUMMARY, "[DB2] Update or insert diff summary result in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
 	}
+}
+
+void CAnaDB2::UpdateReportState() throw(base::Exception)
+{
 }
 

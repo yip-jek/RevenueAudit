@@ -57,6 +57,9 @@ public:
 	// 设置稽核记录日志表
 	void SetTabYCStatLog(const std::string& t_statlog);
 
+	// 设置报表状态表
+	void SetTabYCReportStat(const std::string& t_reportstat);
+
 	// 查询分析规则任务信息
 	void SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
 
@@ -128,6 +131,9 @@ public:
 	// (业财) 更新或插入差异汇总结果数据
 	void UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatResult& ycsr) throw(base::Exception);
 
+	// (业财) 更新报表状态表的状态
+	void UpdateReportState() throw(base::Exception);
+
 private:
 	// 查询指标规则信息
 	void SelectKpiRule(AnaTaskInfo& info) throw(base::Exception);
@@ -178,8 +184,9 @@ private:
 	std::string m_tabTaskScheLog;		// 任务日程日志表
 	std::string m_tabAlarmRequest;		// 告警请求表
 
+	std::string m_tabYCTaskReq;			// （业财-任务调度）任务请求表
 	std::string m_tabYCStatRule;		// （业财）统计因子规则表
 	std::string m_tabStatLog;			// （业财）稽核记录日志表
-	std::string m_tabYCTaskReq;			// （业财-任务调度）任务请求表
+	std::string m_tabReportStat;		// （业财）报表状态表
 };
 

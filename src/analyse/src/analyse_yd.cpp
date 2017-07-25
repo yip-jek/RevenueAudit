@@ -193,7 +193,7 @@ void Analyse_YD::FilterTheMissingCity(const std::vector<std::string>& vec_channe
 {
 	// 已有地市
 	int vec_size = 0;
-	std::map<std::string, std::set<std::string> > mapset_ex_city
+	std::map<std::string, std::set<std::string> > mapset_ex_city;
 	if ( vec_channel.empty() || AnaTaskInfo::INVALID_DIM_INDEX == m_dimChannelIndex )	// 无指定渠道 或者 渠道索引位置无效
 	{
 		vec_size = m_v2ReportStatData.size();
@@ -234,12 +234,13 @@ void Analyse_YD::FilterTheMissingCity(const std::vector<std::string>& vec_channe
 	vec_size = vec_all_city.size();
 	for ( std::map<std::string, std::set<std::string> >::iterator it = mapset_ex_city.begin(); it != mapset_ex_city.end(); ++it )
 	{
+		std::set<std::string>& ref_set = mapset_city[it->first];
 		for ( int i = 0; i < vec_size; ++i )
 		{
 			std::string& ref_vec = vec_all_city[i];
 			if ( it->second.find(ref_vec) == it->second.end() )
 			{
-				mapset_city[it->first].insert(ref_vec);
+				ref_set.insert(ref_vec);
 			}
 		}
 
@@ -249,7 +250,7 @@ void Analyse_YD::FilterTheMissingCity(const std::vector<std::string>& vec_channe
 			base::PubStr::SetFormatString(str_chann, "渠道 [%s] 的", it->first.c_str());
 		}
 
-		m_pLog->Output("[Analyse_YD] 全部共 [%d] 个地市，需要补全%s [%lu] 个地市", vec_size, str_chann.c_str(), mapset_city[it->first].size());
+		m_pLog->Output("[Analyse_YD] 全部共 [%d] 个地市，需要补全%s [%lu] 个地市", vec_size, str_chann.c_str(), ref_set.size());
 	}
 }
 
@@ -272,25 +273,25 @@ void Analyse_YD::MakeCityCompleted(const std::map<std::string, std::set<std::str
 		}
 
 		std::string str_chann;
-		for ( std::map<std::string, std::set<std::string> >::iterator it = mapset_city.begin(); it != mapset_city.end(); ++it )
+		for ( std::map<std::string, std::set<std::string> >::const_iterator c_it = mapset_city.begin(); c_it != mapset_city.end(); ++c_it )
 		{
 			if ( m_dimChannelIndex != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在渠道
 			{
-				vec_sup[m_dimChannelIndex] = it->first;
+				vec_sup[m_dimChannelIndex] = c_it->first;
 			}
 
 			str_chann.clear();
-			if ( !it->first.empty() )
+			if ( !c_it->first.empty() )
 			{
-				base::PubStr::SetFormatString(str_chann, "渠道 [%s] 的", it->first.c_str());
+				base::PubStr::SetFormatString(str_chann, "渠道 [%s] 的", c_it->first.c_str());
 			}
 
-			for ( std::set<std::string>::iterator s_it = it->second.begin(); s_it != it->second.end(); ++s_it )
+			for ( std::set<std::string>::iterator it = c_it->second.begin(); it != c_it->second.end(); ++it )
 			{
-				vec_sup[DIM_REGION_INDEX] = *s_it;
+				vec_sup[m_dimRegionIndex] = *it;
 				m_v2ReportStatData.push_back(vec_sup);
 
-				m_pLog->Output("[Analyse_YD] 报表数据补全%s地市: [%s]", str_chann.c_str(), s_it->c_str());
+				m_pLog->Output("[Analyse_YD] 报表数据补全%s地市: [%s]", str_chann.c_str(), it->c_str());
 			}
 		}
 	}
