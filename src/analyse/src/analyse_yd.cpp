@@ -180,6 +180,7 @@ void Analyse_YD::KeepChannelDataOnly(const std::vector<std::string>& vec_channel
 				if ( vec_channel[j] == ref_vec[m_dimChannelIndex] )
 				{
 					base::PubStr::VVectorSwapPushBack(v2_report, ref_vec);
+					break;
 				}
 			}
 		}
