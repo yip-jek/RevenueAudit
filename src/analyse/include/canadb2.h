@@ -60,6 +60,9 @@ public:
 	// 设置报表状态表
 	void SetTabYCReportStat(const std::string& t_reportstat);
 
+	// 设置流程记录日志表
+	void SetTabYCProcessLog(const std::string& t_processlog);
+
 	// 查询分析规则任务信息
 	void SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception);
 
@@ -188,5 +191,6 @@ private:
 	std::string m_tabYCStatRule;		// （业财）统计因子规则表
 	std::string m_tabStatLog;			// （业财）稽核记录日志表
 	std::string m_tabReportStat;		// （业财）报表状态表
+	std::string m_tabProcessLog;		// （业财）流程记录日志表
 };
 

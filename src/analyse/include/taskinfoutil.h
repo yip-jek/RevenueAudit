@@ -16,9 +16,6 @@ public:
 	// 返回值: 0-成功, -1-没有采集规则, -2-维度不一致, -3-值不一致
 	static int CheckPluralEtlRule(std::vector<OneEtlRule>& vec_etlrule);
 
-	// 返回第一组数据的列数
-	static size_t TheFirstDataColSize(const std::vector<std::vector<std::vector<std::string> > >& vec3_data);
-
 	// 获取一个采集规则的维度SQL (外部保证正确性)
 	static std::string GetOneDim(std::vector<OneEtlDim>& vec_dim, const std::string& prefix);
 

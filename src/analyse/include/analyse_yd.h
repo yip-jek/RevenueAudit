@@ -46,7 +46,7 @@ private:
 	void FilterTheMissingCity(const std::vector<std::string>& vec_channel, std::map<std::string, std::set<std::string> >& mapset_city);
 
 	// 补全地市
-	void MakeCityCompleted(const std::map<std::string, std::set<std::string> >& mapset_city, int dim_size, int val_size);
+	void MakeCityCompleted(const std::map<std::string, std::set<std::string> >& mapset_city, int group_size);
 
 	// 生成告警请求
 	void AlarmRequest();

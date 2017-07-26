@@ -66,6 +66,7 @@ protected:
 	std::string  m_tabStatRule;				// （业财）统计因子规则表
 	std::string  m_tabStatLog;				// （业财）稽核记录日志表
 	std::string  m_tabReportStat;			// （业财）报表状态表
+	std::string  m_tabProcessLog;			// （业财）流程记录日志表
 	std::string  m_fieldPeriod;				// 账期字段名
 	std::string  m_fieldCity;				// 地市字段名
 	std::string  m_fieldBatch;				// 批次字段名

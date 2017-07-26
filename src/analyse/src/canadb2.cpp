@@ -85,6 +85,11 @@ void CAnaDB2::SetTabYCReportStat(const std::string& t_reportstat)
 	m_tabReportStat = t_reportstat;
 }
 
+void CAnaDB2::SetTabYCProcessLog(const std::string& t_processlog)
+{
+	m_tabProcessLog = t_processlog;
+}
+
 void CAnaDB2::SetTabYCTaskReq(const std::string& t_yc_taskreq)
 {
 	m_tabYCTaskReq = t_yc_taskreq;

@@ -3,7 +3,6 @@
 #include "simpletime.h"
 #include "log.h"
 #include "canadb2.h"
-#include "taskinfoutil.h"
 
 const char* const Analyse_YD::S_CHANNEL_MARK = "CHANNEL";			// 渠道标识
 
@@ -92,8 +91,7 @@ void Analyse_YD::AnalyseSourceData() throw(base::Exception)
 {
 	GetDimIndex();
 
-	const int VAL_COL_SIZE = m_v3HiveSrcData.size();								// 值列的数目
-	const int DIM_COL_SIZE = TaskInfoUtil::TheFirstDataColSize(m_v3HiveSrcData) - 1;// 维度列的数目
+	const int GROUP_SIZE = m_v3HiveSrcData.size();				// 数据组数目
 
 	Analyse::AnalyseSourceData();
 
@@ -112,7 +110,7 @@ void Analyse_YD::AnalyseSourceData() throw(base::Exception)
 		{
 			std::map<std::string, std::set<std::string> > mapset_city;
 			FilterTheMissingCity(vec_channel, mapset_city);
-			MakeCityCompleted(mapset_city, DIM_COL_SIZE, VAL_COL_SIZE);
+			MakeCityCompleted(mapset_city, GROUP_SIZE);
 		}
 	}
 }
@@ -255,13 +253,20 @@ void Analyse_YD::FilterTheMissingCity(const std::vector<std::string>& vec_channe
 	}
 }
 
-void Analyse_YD::MakeCityCompleted(const std::map<std::string, std::set<std::string> >& mapset_city, int dim_size, int val_size)
+void Analyse_YD::MakeCityCompleted(const std::map<std::string, std::set<std::string> >& mapset_city, int group_size)
 {
 	if ( !mapset_city.empty() )
 	{
+		/// 维度个数
+		// 报表所有数据源的维度数都是一致的，因此只取第1组
+		// 加上时间列（采集时间、当前时间）
+		const int DIM_COUNT = m_taskInfo.vecEtlRule[0].vecEtlDim.size() 
+			+ (m_dimEtlDayIndex != AnaTaskInfo::INVALID_DIM_INDEX) 
+			+ (m_dimNowDayIndex != AnaTaskInfo::INVALID_DIM_INDEX);
+
 		// 初始化：维度列初始为空，值列初始为“0”
-		std::vector<std::string> vec_sup(dim_size, "");
-		vec_sup.insert(vec_sup.end(), val_size, "0");
+		std::vector<std::string> vec_sup(DIM_COUNT, "");
+		vec_sup.insert(vec_sup.end(), group_size, "0");
 
 		// 初始化：时间列
 		if ( m_dimEtlDayIndex != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在采集时间

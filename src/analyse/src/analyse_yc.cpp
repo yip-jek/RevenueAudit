@@ -25,6 +25,7 @@ void Analyse_YC::LoadConfig() throw(base::Exception)
 	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
 	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATLOG");
 	m_cfg.RegisterItem("TABLE", "TAB_YCRA_REPORTSTAT");
+	m_cfg.RegisterItem("TABLE", "TAB_YCRA_PROCESSLOG");
 	m_cfg.RegisterItem("FIELD", "SRC_FIELD_PERIOD");
 	m_cfg.RegisterItem("FIELD", "SRC_FIELD_CITY");
 	m_cfg.RegisterItem("FIELD", "SRC_FIELD_BATCH");
@@ -35,6 +36,7 @@ void Analyse_YC::LoadConfig() throw(base::Exception)
 	m_tabStatRule   = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
 	m_tabStatLog    = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATLOG");
 	m_tabReportStat = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_REPORTSTAT");
+	m_tabProcessLog = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_PROCESSLOG");
 	m_fieldPeriod   = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_PERIOD");
 	m_fieldCity     = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_CITY");
 	m_fieldBatch    = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_BATCH");
@@ -55,6 +57,7 @@ void Analyse_YC::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabYCStatRule(m_tabStatRule);
 	m_pAnaDB2->SetTabYCStatLog(m_tabStatLog);
 	m_pAnaDB2->SetTabYCReportStat(m_tabReportStat);
+	m_pAnaDB2->SetTabYCProcessLog(m_tabProcessLog);
 
 	// 更新任务状态为："21"（正在分析）
 	YCTaskReq task_req;
