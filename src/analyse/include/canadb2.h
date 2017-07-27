@@ -134,8 +134,11 @@ public:
 	// (业财) 更新或插入差异汇总结果数据
 	void UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatResult& ycsr) throw(base::Exception);
 
-	// (业财) 更新报表状态表的状态
-	void UpdateReportState() throw(base::Exception);
+	// (业财) 更新或插入报表状态表的状态
+	void UpdateInsertReportState() throw(base::Exception);
+
+	// (业财) 更新或插入流程记录日志表的状态
+	void UpdateInsertProcessLogState() throw(base::Exception);
 
 private:
 	// 查询指标规则信息

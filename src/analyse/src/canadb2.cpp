@@ -1541,7 +1541,11 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatRe
 	}
 }
 
-void CAnaDB2::UpdateReportState() throw(base::Exception)
+void CAnaDB2::UpdateInsertReportState() throw(base::Exception)
+{
+}
+
+void CAnaDB2::UpdateInsertProcessLogState() throw(base::Exception)
 {
 }
 

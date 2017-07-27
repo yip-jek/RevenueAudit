@@ -29,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 4.0027.20170726 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 4.0028.20170727 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -1352,9 +1352,7 @@ void Analyse::CollectDimVal()
 	DimVal dv;
 	dv.KpiID = m_sKpiID;
 
-	std::vector<KpiColumn>& v_dimcol = m_taskInfo.vecKpiDimCol;
-	const int VEC_SIZE = v_dimcol.size();
-
+	const int VEC_SIZE = m_taskInfo.vecKpiDimCol.size();
 	const int VEC3_SIZE = m_v3HiveSrcData.size();
 	for ( int i = 0; i < VEC3_SIZE; ++i )
 	{
@@ -1367,7 +1365,7 @@ void Analyse::CollectDimVal()
 
 			for ( int k = 0; k < VEC_SIZE; ++k )
 			{
-				KpiColumn& ref_col = v_dimcol[k];
+				KpiColumn& ref_col = m_taskInfo.vecKpiDimCol[k];
 
 				// 只收集列表显示类型
 				if ( KpiColumn::DTYPE_LIST == ref_col.DisType )

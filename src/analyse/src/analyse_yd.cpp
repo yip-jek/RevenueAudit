@@ -257,15 +257,8 @@ void Analyse_YD::MakeCityCompleted(const std::map<std::string, std::set<std::str
 {
 	if ( !mapset_city.empty() )
 	{
-		/// 维度个数
-		// 报表所有数据源的维度数都是一致的，因此只取第1组
-		// 加上时间列（采集时间、当前时间）
-		const int DIM_COUNT = m_taskInfo.vecEtlRule[0].vecEtlDim.size() 
-			+ (m_dimEtlDayIndex != AnaTaskInfo::INVALID_DIM_INDEX) 
-			+ (m_dimNowDayIndex != AnaTaskInfo::INVALID_DIM_INDEX);
-
 		// 初始化：维度列初始为空，值列初始为“0”
-		std::vector<std::string> vec_sup(DIM_COUNT, "");
+		std::vector<std::string> vec_sup(m_taskInfo.vecKpiDimCol.size(), "");
 		vec_sup.insert(vec_sup.end(), group_size, "0");
 
 		// 初始化：时间列
