@@ -72,9 +72,7 @@ protected:
 	std::string  m_fieldBatch;				// 批次字段名
 
 protected:
-	int          m_ycSeqID;					// 任务流水号
-	int          m_statBatch;				// 统计结果的批次
-	std::string  m_taskCity;				// 任务地市
+	YCTaskReq    m_taskReq;					// 任务请求信息
 	YCStatFactor m_statFactor;				// 稽核规则因子类
 
 protected:

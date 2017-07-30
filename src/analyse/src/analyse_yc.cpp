@@ -7,8 +7,6 @@
 
 
 Analyse_YC::Analyse_YC()
-:m_ycSeqID(0)
-,m_statBatch(0)
 {
 	m_sType = "业财稽核";
 }
@@ -60,13 +58,11 @@ void Analyse_YC::Init() throw(base::Exception)
 	m_pAnaDB2->SetTabYCProcessLog(m_tabProcessLog);
 
 	// 更新任务状态为："21"（正在分析）
-	YCTaskReq task_req;
-	task_req.seq        = m_ycSeqID;
-	task_req.state      = "21";
-	task_req.state_desc = "正在分析";
-	task_req.task_batch = -1;
-	task_req.task_desc  = "分析开始时间：" + base::SimpleTime::Now().TimeStamp();
-	m_pAnaDB2->UpdateYCTaskReq(task_req);
+	m_taskReq.state      = "21";
+	m_taskReq.state_desc = "正在分析";
+	m_taskReq.task_batch = -1;
+	m_taskReq.task_desc  = "分析开始时间：" + base::SimpleTime::Now().TimeStamp();
+	m_pAnaDB2->UpdateYCTaskReq(m_taskReq);
 
 	m_pLog->Output("[Analyse_YC] Init OK.");
 }
@@ -74,25 +70,22 @@ void Analyse_YC::Init() throw(base::Exception)
 void Analyse_YC::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
 {
 	// 更新任务状态
-	YCTaskReq task_req;
-	task_req.seq        = m_ycSeqID;
 	if ( 0 == err_code )	// 正常退出
 	{
 		// 更新任务状态为："22"（分析完成）
-		task_req.state      = "22";
-		task_req.state_desc = "分析完成";
-		task_req.task_batch = m_statBatch;
-		task_req.task_desc  = "分析结束时间：" + base::SimpleTime::Now().TimeStamp();
+		m_taskReq.state      = "22";
+		m_taskReq.state_desc = "分析完成";
+		m_taskReq.task_desc  = "分析结束时间：" + base::SimpleTime::Now().TimeStamp();
 	}
 	else	// 异常退出
 	{
 		// 更新任务状态为："23"（分析失败）
-		task_req.state      = "23";
-		task_req.state_desc = "分析失败";
-		task_req.task_batch = -1;
-		base::PubStr::SetFormatString(task_req.task_desc, "[ERROR] %s, ERROR_CODE: %d", err_msg.c_str(), err_code);
+		m_taskReq.state      = "23";
+		m_taskReq.state_desc = "分析失败";
+		m_taskReq.task_batch = -1;
+		base::PubStr::SetFormatString(m_taskReq.task_desc, "[ERROR] %s, ERROR_CODE: %d", err_msg.c_str(), err_code);
 	}
-	m_pAnaDB2->UpdateYCTaskReq(task_req);
+	m_pAnaDB2->UpdateYCTaskReq(m_taskReq);
 
 	Analyse::End(err_code, err_msg);
 }
@@ -104,11 +97,11 @@ void Analyse_YC::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(
 		throw base::Exception(ANAERR_TASKINFO_ERROR, "任务参数信息异常(split size:%lu), 无法拆分出业财任务流水号! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
 	}
 
-	if ( !base::PubStr::Str2Int(vec_str[3], m_ycSeqID) )
+	if ( !base::PubStr::Str2Int(vec_str[3], m_taskReq.seq) )
 	{
 		throw base::Exception(ANAERR_TASKINFO_ERROR, "无效的业财任务流水号：%s [FILE:%s, LINE:%d]", vec_str[3].c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[Analyse_YC] 业财稽核任务流水号：%d", m_ycSeqID);
+	m_pLog->Output("[Analyse_YC] 业财稽核任务流水号：%d", m_taskReq.seq);
 }
 
 void Analyse_YC::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception)
@@ -128,8 +121,8 @@ void Analyse_YC::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base:
 	// 业财稽核只有一个采集与一个分析
 	// 重设采集 (HIVE) 目标表名：加上地市与账期
 	std::string& ref_target = m_taskInfo.vecEtlRule[0].TargetPatch;
-	base::PubStr::SetFormatString(ref_target, "%s_%s_%s", ref_target.c_str(), m_taskCity.c_str(), m_dbinfo.GetEtlDay().c_str());
-	m_pLog->Output("[Analyse_YC] 重设采集 (HIVE) 目标表名为: %s", ref_target.c_str());
+	base::PubStr::SetFormatString(ref_target, "%s_%s_%s", ref_target.c_str(), m_taskReq.task_city.c_str(), m_dbinfo.GetEtlDay().c_str());
+	m_pLog->Output("[Analyse_YC] 重置采集 (HIVE) 目标表名为: %s", ref_target.c_str());
 
 	GetStatisticsHiveSQL(vec_hivesql);
 }
@@ -139,9 +132,9 @@ void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 	Analyse::FetchTaskInfo();
 
 	// 获取任务地市信息
-	m_pAnaDB2->SelectYCTaskReqCity(m_ycSeqID, m_taskCity);
-	base::PubStr::Trim(m_taskCity);
-	m_pLog->Output("[Analyse_YC] Get task request city: [%s]", m_taskCity.c_str());
+	m_pAnaDB2->SelectYCTaskReq(m_taskReq);
+	base::PubStr::Trim(m_taskReq.task_city);
+	m_pLog->Output("[Analyse_YC] Get task request: %s", m_taskReq.LogPrintInfo().c_str());
 
 	m_pLog->Output("[Analyse_YC] 获取业财稽核因子规则信息 ...");
 	std::vector<YCStatInfo> vec_ycsinfo;
@@ -168,14 +161,14 @@ void Analyse_YC::GenerateNewBatch()
 	st_batch.stat_report = m_statFactor.GetStatReport();
 	st_batch.stat_id     = m_statFactor.GetStatID();
 	st_batch.stat_date   = m_dbinfo.GetEtlDay();
-	st_batch.stat_city   = m_taskCity;
+	st_batch.stat_city   = m_taskReq.task_city;
 	st_batch.stat_batch  = 0;
 	m_pAnaDB2->SelectStatResultMaxBatch(m_dbinfo.target_table, st_batch);
 	m_pLog->Output("[Analyse_YC] 统计结果表的最新批次: %d", st_batch.stat_batch);
 
 	// 生成当前统计结果的批次
-	m_statBatch = st_batch.stat_batch + 1;
-	m_pLog->Output("[Analyse_YC] 因此，当前统计结果的批次为: %d", m_statBatch);
+	m_taskReq.task_batch = st_batch.stat_batch + 1;
+	m_pLog->Output("[Analyse_YC] 因此，当前统计结果的批次为: %d", m_taskReq.task_batch);
 }
 
 void Analyse_YC::ConvertStatFactor() throw(base::Exception)
@@ -195,7 +188,7 @@ void Analyse_YC::ConvertStatFactor() throw(base::Exception)
 void Analyse_YC::GenerateResultData() throw(base::Exception)
 {
 	std::vector<std::vector<std::string> > vec_yc_data;
-	m_statFactor.GenerateResult(m_statBatch, m_taskCity, vec_yc_data);
+	m_statFactor.GenerateResult(m_taskReq.task_batch, m_taskReq.task_city, vec_yc_data);
 	if ( vec_yc_data.empty() )
 	{
 		throw base::Exception(ANAERR_GENERATE_YCDATA_FAILED, "生成报表结果数据失败！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
@@ -206,7 +199,7 @@ void Analyse_YC::GenerateResultData() throw(base::Exception)
 
 	// (2) 生成业财稽核差异汇总结果数据
 	// 不一定有差异汇总数据，因此不判断是否为空！
-	m_statFactor.GenerateDiffSummaryResult(m_taskCity, m_vec2DiffSummary);
+	m_statFactor.GenerateDiffSummaryResult(m_taskReq.task_city, m_vec2DiffSummary);
 }
 
 void Analyse_YC::StoreResult() throw(base::Exception)
@@ -256,8 +249,8 @@ void Analyse_YC::RecordStatisticsLog()
 {
 	YCStatLog yc_log;
 	yc_log.stat_report     = m_statFactor.GetStatReport();
-	yc_log.stat_batch      = m_statBatch;
-	yc_log.stat_city       = m_taskCity;
+	yc_log.stat_batch      = m_taskReq.task_batch;
+	yc_log.stat_city       = m_taskReq.task_city;
 	yc_log.stat_cycle      = m_dbinfo.GetEtlDay();
 	yc_log.stat_time       = base::SimpleTime::Now().Time14();	// 当前时间
 
@@ -268,7 +261,7 @@ void Analyse_YC::RecordStatisticsLog()
 	yc_srcinfo.field_period = m_fieldPeriod;
 	yc_srcinfo.period       = yc_log.stat_cycle;
 	yc_srcinfo.field_city   = m_fieldCity;
-	yc_srcinfo.city         = m_taskCity;
+	yc_srcinfo.city         = m_taskReq.task_city;
 	yc_srcinfo.field_batch  = m_fieldBatch;
 	yc_srcinfo.batch        = 0;
 
@@ -280,7 +273,7 @@ void Analyse_YC::RecordStatisticsLog()
 		yc_srcinfo.src_tab = ref_src;
 
 		m_pAnaDB2->SelectYCSrcMaxBatch(yc_srcinfo);
-		m_pLog->Output("[Analyse_YC] 取得数据源表(%d): %s, 地市: %s, 最新批次: %d", (i+1), ref_src.c_str(), m_taskCity.c_str(), yc_srcinfo.batch);
+		m_pLog->Output("[Analyse_YC] 取得数据源表(%d): %s, 地市: %s, 最新批次: %d", (i+1), ref_src.c_str(), m_taskReq.task_city.c_str(), yc_srcinfo.batch);
 
 		if ( i != 0 )	// Not first
 		{

@@ -11,12 +11,40 @@ public:
 	YCTaskReq(): seq(0), task_batch(0)
 	{}
 
+	std::string LogPrintInfo() const
+	{
+		std::string info;
+		base::PubStr::SetFormatString(info, "SEQ=[%d], "
+											"STATE=[%s], "
+											"STATE_DESC=[%s], "
+											"TASK_CITY=[%s], "
+											"TASK_BATCH=[%d], "
+											"TASK_DESC=[%s], "
+											"ACTOR=[%s], "
+											"OPER=[%s], "
+											"REQ_TYPE=[%s]", 
+											seq, 
+											state.c_str(), 
+											state_desc.c_str(), 
+											task_city.c_str(), 
+											task_batch, 
+											task_desc.c_str(), 
+											actor.c_str(), 
+											oper.c_str(), 
+											req_type.c_str());
+		return info;
+	}
+
 public:
 	int         seq;				// 任务流水号
 	std::string state;				// 任务状态
 	std::string state_desc;			// 任务状态说明
+	std::string task_city;			// 任务地市
 	int         task_batch;			// 任务批次
 	std::string task_desc;			// 备注
+	std::string actor;				// 角色
+	std::string oper;				// 操作员
+	std::string req_type;			// 请求类型
 };
 
 // 统计结果批次信息

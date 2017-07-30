@@ -110,8 +110,8 @@ public:
 	// 设置任务请求表
 	void SetTabYCTaskReq(const std::string& t_yc_taskreq);
 
-	// 查询任务请求表的地市信息
-	void SelectYCTaskReqCity(int seq, std::string& city) throw(base::Exception);
+	// 查询任务请求表信息
+	void SelectYCTaskReq(YCTaskReq& task_req) throw(base::Exception);
 
 	// 更新任务请求表
 	void UpdateYCTaskReq(const YCTaskReq& t_req) throw(base::Exception);

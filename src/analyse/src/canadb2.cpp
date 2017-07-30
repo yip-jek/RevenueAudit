@@ -95,39 +95,47 @@ void CAnaDB2::SetTabYCTaskReq(const std::string& t_yc_taskreq)
 	m_tabYCTaskReq = t_yc_taskreq;
 }
 
-void CAnaDB2::SelectYCTaskReqCity(int seq, std::string& city) throw(base::Exception)
+void CAnaDB2::SelectYCTaskReq(YCTaskReq& task_req) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT TASK_CITY FROM " + m_tabYCTaskReq + " WHERE SEQ_ID = ?";
-	m_pLog->Output("[DB2] Select city from YC task request table: %s (SEQ:%d)", m_tabYCTaskReq.c_str(), seq);
+	std::string sql = "SELECT TASK_STATUS, STATUS_DESC, TASK_CITY, TASK_DESC, ACTOR";
+	sql += ", OPERATOR, REQ_TYPE FROM " + m_tabYCTaskReq + " WHERE SEQ_ID = ?";
+	m_pLog->Output("[DB2] Select task request from table: [%s] (SEQ:%d)", m_tabYCTaskReq.c_str(), task_req.seq);
 
-	int counter = 0;
 	try
 	{
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(1) = seq;
+		rs.Parameter(1) = task_req.seq;
 		rs.Execute();
 
+		int counter = 0;
 		while ( !rs.IsEOF() )
 		{
 			++counter;
 
-			city = (const char*)rs[1];
+			int index = 1;
+			task_req.state      = (const char*)rs[index++];
+			task_req.state_desc = (const char*)rs[index++];
+			task_req.task_city  = (const char*)rs[index++];
+			task_req.task_desc  = (const char*)rs[index++];
+			task_req.actor      = (const char*)rs[index++];
+			task_req.oper       = (const char*)rs[index++];
+			task_req.req_type   = (const char*)rs[index++];
+
 			rs.MoveNext();
 		}
-
 		rs.Close();
 
 		if ( 0 == counter )
 		{
-			throw base::Exception(ANAERR_SEL_YC_TASK_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d] NO Record! [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, __FILE__, __LINE__);
+			throw base::Exception(ANAERR_SEL_YC_TASK_CITY, "[DB2] Select task request from table '%s' failed! NO record of seq: [%d] [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), task_req.seq, __FILE__, __LINE__);
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ANAERR_SEL_YC_TASK_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d, REC:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, counter, ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_YC_TASK_CITY, "[DB2] Select task request from table '%s' failed! (SEQ:%d) [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), task_req.seq, ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -145,7 +153,7 @@ void CAnaDB2::UpdateYCTaskReq(const YCTaskReq& t_req) throw(base::Exception)
 	{
 		sql += ", TASK_NUM = ? WHERE SEQ_ID = ?";
 	}
-	m_pLog->Output("[DB2] Update task request: STATE=%s, STATE_DESC=%s, TASK_BATCH=%d (SEQ:%d)", t_req.state.c_str(), t_req.state_desc.c_str(), t_req.task_batch, t_req.seq);
+	m_pLog->Output("[DB2] Update task request state: %s", t_req.LogPrintInfo().c_str());
 
 	try
 	{
@@ -165,12 +173,11 @@ void CAnaDB2::UpdateYCTaskReq(const YCTaskReq& t_req) throw(base::Exception)
 		rs.Execute();
 
 		Commit();
-
 		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ANAERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), t_req.seq, ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_UPD_YC_TASK_REQ, "[DB2] Update task request state to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), t_req.seq, ex.what(), __FILE__, __LINE__);
 	}
 }
 
