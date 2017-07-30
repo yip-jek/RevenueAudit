@@ -167,6 +167,25 @@ public:
 struct YCReportState
 {
 public:
+	std::string LogPrintInfo() const
+	{
+		std::string info;
+		base::PubStr::SetFormatString(info, "REPORT_ID=[%s], "
+											"BILL_MON=[%s], "
+											"CITY=[%s], "
+											"STATUS=[%s], "
+											"TYPE=[%d], "
+											"ACTOR=[%s]", 
+											report_id.c_str(), 
+											bill_month.c_str(), 
+											city.c_str(), 
+											status.c_str(), 
+											type.c_str(), 
+											actor.c_str());
+		return info;
+	}
+
+public:
 	std::string report_id;				// 报表 ID
 	std::string bill_month;				// 账期
 	std::string city;					// 地市
@@ -180,6 +199,30 @@ struct YCProcessLog
 {
 public:
 	YCProcessLog(): version(0) {}
+
+	std::string LogPrintInfo() const
+	{
+		std::string info;
+		base::PubStr::SetFormatString(info, "REPORT_ID=[%s], "
+											"BILL_MON=[%s], "
+											"CITY=[%s], "
+											"STATUS=[%s], "
+											"TYPE=[%d], "
+											"ACTOR=[%s], "
+											"OPER=[%s], "
+											"VER=[%d], "
+											"UPTIME=[%s]", 
+											report_id.c_str(), 
+											bill_month.c_str(), 
+											city.c_str(), 
+											status.c_str(), 
+											type.c_str(), 
+											actor.c_str(), 
+											oper.c_str(), 
+											version, 
+											uptime.c_str());
+		return info;
+	}
 
 public:
 	std::string report_id;				// 报表 ID
