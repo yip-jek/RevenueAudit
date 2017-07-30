@@ -1541,11 +1541,71 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatRe
 	}
 }
 
-void CAnaDB2::UpdateInsertReportState() throw(base::Exception)
+void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(base::Exception)
 {
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "SELECT COUNT(0) FROM " + m_tabReportStat + " WHERE REPORTNAME = ? AND BILLMONTH = ? AND CITY = ? AND ACTOR = ?";
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		int index = 1;
+		rs.Parameter(index++) = report_state.report_id.c_str();
+		rs.Parameter(index++) = report_state.bill_month.c_str();
+		rs.Parameter(index++) = report_state.city.c_str();
+		rs.Parameter(index++) = report_state.actor.c_str();
+		rs.Execute();
+
+		int record_count = 0;
+		while ( !rs.IsEOF() )
+		{
+			record_count = (int)rs[1];
+
+			rs.MoveNext();
+		}
+		rs.Close();
+
+		m_pLog->Output("[DB2] Record count in report state: [%d]", record_count);
+		if ( record_count > 0 )		// 已存在
+		{
+			sql  = "UPDATE " + m_tabReportStat + " SET STATUS = ?, TYPE = ? WHERE ";
+			sql += "REPORTNAME = ? AND BILLMONTH = ? AND CITY = ? AND ACTOR = ?";
+			m_pLog->Output("[DB2] UPDATE REPORT STATE: REPORT=[%s], STAT_ID=[%s], STAT_NAME=[%s], CITY=[%s], BATCH=[%d], ETL_DAY=[%s], NOW_DAY=[%s], DIM=[%s], VALUE=[%s]", ycsr.stat_report.c_str(), ycsr.stat_id.c_str(), ycsr.stat_name.c_str(), ycsr.stat_city.c_str(), ycsr.stat_batch, ETL_DAY.c_str(), NOW_DAY.c_str(), ycsr.statdim_id.c_str(), ycsr.stat_value.c_str());
+/*
+	std::string report_id;				// 报表 ID
+	std::string bill_month;				// 账期
+	std::string city;					// 地市
+	std::string status;					// 状态
+	std::string type;					// 类型
+	std::string actor;					// 角色*/
+
+		}
+		else	// 不存在
+		{
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ANAERR_UPD_INS_REPORTSTATE, "[DB2] Update or insert report state to table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabReportStat.c_str(), ex.what(), __FILE__, __LINE__);
+	}
 }
 
-void CAnaDB2::UpdateInsertProcessLogState() throw(base::Exception)
+void CAnaDB2::UpdateInsertProcessLogState(const YCProcessLog& proc_log) throw(base::Exception)
 {
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = ;
+
+	try
+	{
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ANAERR_UPD_INS_PROCESSLOG, "[DB2] Update or insert process log to table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabProcessLog.c_str(), ex.what(), __FILE__, __LINE__);
+	}
 }
 

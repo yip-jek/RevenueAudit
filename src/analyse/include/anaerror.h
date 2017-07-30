@@ -61,6 +61,8 @@ enum ANALYSE_ERROR
 	ANAERR_UPD_TSLOG_STATE        = -3002025,			// 更新任务日程日志表状态出错
 	ANAERR_EXECUTE_SQL            = -3002026,			// 直接执行 SQL 出错
 	ANAERR_UPD_INS_DIFFSUMMARY    = -3002027,			// (业财) 更新或插入差异汇总结果数据出错
+	ANAERR_UPD_INS_REPORTSTATE    = -3002028,			// (业财) 更新或插入报表状态表的状态出错
+	ANAERR_UPD_INS_PROCESSLOG     = -3002029,			// (业财) 更新或插入流程记录日志表的状态出错
 
 	// 编码转换错误码
 	ANAERR_INPUT_CHANN_UNICODE    = -3003001,			// 录入渠道统一编码信息失败

@@ -33,7 +33,7 @@ public:
 	int         stat_batch;				// 统计批次
 };
 
-// （业财稽核）分类维度因子对
+// (业财稽核) 分类维度因子对
 struct YCCategoryFactor
 {
 public:
@@ -42,7 +42,7 @@ public:
 	std::string value;					// 维度值
 };
 
-// （业财稽核）两个分类维度因子对
+// (业财稽核) 两个分类维度因子对
 struct YCPairCategoryFactor
 {
 public:
@@ -55,7 +55,7 @@ public:
 	YCCategoryFactor cf_B;				// （右B）分类维度因子对
 };
 
-// （业财稽核）因子规则信息
+// (业财稽核) 因子规则信息
 struct YCStatInfo
 {
 public:
@@ -72,7 +72,7 @@ public:
 	std::string stat_report;			// 关联报表
 };
 
-// （业财稽核）因子结果信息
+// (业财稽核) 因子结果信息
 struct YCStatResult
 {
 public:
@@ -132,7 +132,7 @@ public:
 	std::string stat_value;					// 统计维度值
 };
 
-// （业财稽核）日志信息
+// (业财稽核) 日志信息
 struct YCStatLog
 {
 public:
@@ -147,7 +147,7 @@ public:
 	std::string stat_time;					// 稽核时间
 };
 
-// （业财稽核）数据源信息
+// (业财稽核) 数据源信息
 struct YCSrcInfo
 {
 public:
@@ -161,5 +161,35 @@ public:
 	std::string city;					// 地市
 	std::string field_batch;			// 批次字段名
 	int         batch;					// 批次
+};
+
+// (业财稽核) 报表状态
+struct YCReportState
+{
+public:
+	std::string report_id;				// 报表 ID
+	std::string bill_month;				// 账期
+	std::string city;					// 地市
+	std::string status;					// 状态
+	std::string type;					// 类型
+	std::string actor;					// 角色
+};
+
+// (业财稽核) 流程记录日志
+struct YCProcessLog
+{
+public:
+	YCProcessLog(): version(0) {}
+
+public:
+	std::string report_id;				// 报表 ID
+	std::string bill_month;				// 账期
+	std::string city;					// 地市
+	std::string status;					// 状态
+	std::string type;					// 类型
+	std::string actor;					// 角色
+	std::string oper;					// 操作员
+	int         version;				// 版本号
+	std::string uptime;					// 更新时间
 };
 
