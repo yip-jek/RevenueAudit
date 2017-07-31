@@ -31,6 +31,9 @@ protected:
 	// 解析分析规则，生成Hive取数逻辑
 	virtual void AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception);
 
+	// 检查：是否为业财稽核类型。输出中文描述
+	bool CheckYCAnalyseType(std::string& cn_type) const;
+
 	// 获取任务信息
 	virtual void FetchTaskInfo() throw(base::Exception);
 
@@ -39,6 +42,12 @@ protected:
 
 	// 生成最新的批次
 	void GenerateNewBatch();
+
+	// 设置核对表稽核的最新批次
+	void SetNewBatch_HDB();
+
+	// 设置详情表稽核的最新批次
+	void SetNewBatch_XQB();
 
 	// 统计因子转换
 	void ConvertStatFactor() throw(base::Exception);

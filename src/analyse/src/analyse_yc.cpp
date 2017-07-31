@@ -106,13 +106,15 @@ void Analyse_YC::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(
 
 void Analyse_YC::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception)
 {
-	if ( m_taskInfo.AnaRule.AnaType != AnalyseRule::ANATYPE_YC_STAT )	// 业财稽核统计类型
+	// 是否为业财稽核类型
+	std::string cn_anatype;
+	if ( !CheckYCAnalyseType(cn_anatype) )
 	{
 		throw base::Exception(ANAERR_ANA_RULE_FAILED, "不支持的业财稽核分析规则类型: %d (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.AnaRule.AnaType, m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
 	const std::string ANA_EXP = base::PubStr::TrimB(m_taskInfo.AnaRule.AnaExpress);
-	m_pLog->Output("[Analyse_YC] 分析规则类型：业财稽核统计 (KPI_ID:%s, ANA_ID:%s)", m_sKpiID.c_str(), m_sAnaID.c_str());
+	m_pLog->Output("[Analyse_YC] 分析规则类型：%s (KPI_ID:%s, ANA_ID:%s)", cn_anatype.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str());
 	m_pLog->Output("[Analyse_YC] 分析规则表达式：%s", ANA_EXP.c_str());
 
 	// 生成数据库[DB2]信息
@@ -125,6 +127,27 @@ void Analyse_YC::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base:
 	m_pLog->Output("[Analyse_YC] 重置采集 (HIVE) 目标表名为: %s", ref_target.c_str());
 
 	GetStatisticsHiveSQL(vec_hivesql);
+}
+
+bool Analyse_YC::CheckYCAnalyseType(std::string& cn_type) const
+{
+	switch ( m_taskInfo.AnaRule.AnaType )
+	{
+	case AnalyseRule::ANATYPE_YCHDB:
+		cn_type = "业财核对表稽核";
+		return true;
+	case AnalyseRule::ANATYPE_YCXQB_YW:
+		cn_type = "业财详情表（业务侧）稽核";
+		return true;
+	case AnalyseRule::ANATYPE_YCXQB_CW:
+		cn_type = "业财详情表（财务侧）稽核";
+		return true;
+	case AnalyseRule::ANATYPE_YCXQB_GD:
+		cn_type = "业财详情表（省）稽核";
+		return true;
+	default:
+		return false;
+	}
 }
 
 void Analyse_YC::FetchTaskInfo() throw(base::Exception)
@@ -147,7 +170,9 @@ void Analyse_YC::AnalyseSourceData() throw(base::Exception)
 	//Analyse::AnalyseSourceData();
 
 	GenerateNewBatch();
+
 	ConvertStatFactor();
+
 	GenerateResultData();
 
 	// 生成了业财稽核的统计数据，再进行数据补全
@@ -155,6 +180,18 @@ void Analyse_YC::AnalyseSourceData() throw(base::Exception)
 }
 
 void Analyse_YC::GenerateNewBatch()
+{
+	if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )
+	{
+		SetNewBatch_HDB();
+	}
+	else
+	{
+		SetNewBatch_XQB();
+	}
+}
+
+void Analyse_YC::SetNewBatch_HDB()
 {
 	// 查询统计结果表已存在的最新批次
 	YCStatBatch st_batch;
@@ -169,6 +206,10 @@ void Analyse_YC::GenerateNewBatch()
 	// 生成当前统计结果的批次
 	m_taskReq.task_batch = st_batch.stat_batch + 1;
 	m_pLog->Output("[Analyse_YC] 因此，当前统计结果的批次为: %d", m_taskReq.task_batch);
+}
+
+void Analyse_YC::SetNewBatch_XQB()
+{
 }
 
 void Analyse_YC::ConvertStatFactor() throw(base::Exception)

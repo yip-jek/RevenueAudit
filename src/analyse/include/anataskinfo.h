@@ -455,7 +455,10 @@ public:
 		ANATYPE_HIVE_SQL  = 99,
 
 		// 业财稽核
-		ANATYPE_YC_STAT   = 1001,				// 业财稽核统计类型
+		ANATYPE_YCHDB    = 1001,				// 业财核对表稽核类型
+		ANATYPE_YCXQB_YW = 1002,				// 业财详情表（业务侧）稽核类型
+		ANATYPE_YCXQB_CW = 1003,				// 业财详情表（财务侧）稽核类型
+		ANATYPE_YCXQB_GD = 1004,				// 业财详情表（省）稽核类型
 
 		// 话单稽核
 		ANATYPE_HDJH_STAT = 2001,				// 话单稽核统计类型
@@ -524,9 +527,21 @@ public:
 		{
 			AnaType = ANATYPE_HIVE_SQL;
 		}
-		else if ( "STATISTICS_YC" == TYPE )		// 业财稽核统计类型
+		else if ( "STATISTICS_YCHDB" == TYPE )		// 业财核对表稽核类型
 		{
-			AnaType = ANATYPE_YC_STAT;
+			AnaType = ANATYPE_YCHDB;
+		}
+		else if ( "STATISTICS_YCXQB_YW" == TYPE )	// 业财详情表（业务侧）稽核类型
+		{
+			AnaType = ANATYPE_YCXQB_YW;
+		}
+		else if ( "STATISTICS_YCXQB_CW" == TYPE )	// 业财详情表（财务侧）稽核类型
+		{
+			AnaType = ANATYPE_YCXQB_CW;
+		}
+		else if ( "STATISTICS_YCXQB_GD" == TYPE )	// 业财详情表（省）稽核类型
+		{
+			AnaType = ANATYPE_YCXQB_GD;
 		}
 		else if ( "STATISTICS_HDJH" == TYPE )	// 话单稽核统计类型
 		{
