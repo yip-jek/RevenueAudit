@@ -47,11 +47,11 @@ public:
 	std::string req_type;			// 请求类型
 };
 
-// 统计结果批次信息
-struct YCStatBatch
+// 地市核对表批次信息
+struct YCHDBBatch
 {
 public:
-	YCStatBatch(): stat_batch(0) {}
+	YCHDBBatch(): stat_batch(0) {}
 
 public:
 	std::string stat_report;			// 关联报表
@@ -189,6 +189,33 @@ public:
 	std::string city;					// 地市
 	std::string field_batch;			// 批次字段名
 	int         batch;					// 批次
+};
+
+// 地市详情表批次信息
+struct YCXQBBatch
+{
+public:
+	YCXQBBatch(): busi_batch(0) {}
+
+	std::string LogPrintInfo() const
+	{
+		std::string info;
+		base::PubStr::SetFormatString(info, "BILL_MON=[%s], "
+											"CITY=[%s], "
+											"TYPE=[%s], "
+											"BUSI_BATCH=[%d]", 
+											bill_month.c_str(), 
+											city.c_str(), 
+											type.c_str(), 
+											busi_batch);
+		return info;
+	}
+
+public:
+	std::string bill_month;				// 账期
+	std::string city;					// 地市
+	std::string type;					// 类型
+	int         busi_batch;				// 业务版本号
 };
 
 // (业财稽核) 报表状态

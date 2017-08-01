@@ -181,46 +181,74 @@ void CAnaDB2::UpdateYCTaskReq(const YCTaskReq& t_req) throw(base::Exception)
 	}
 }
 
-void CAnaDB2::SelectStatResultMaxBatch(const std::string& tab_result, YCStatBatch& st_batch) throw(base::Exception)
+void CAnaDB2::SelectHDBMaxBatch(const std::string& tab_hdb, YCHDBBatch& hd_batch) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT NVL(MAX(STAT_NUM), 0) FROM " + tab_result;
+	std::string sql = "SELECT NVL(MAX(STAT_NUM), 0) FROM " + tab_hdb;
 	sql += " WHERE STAT_REPORT = ? AND STAT_ID = ? AND STAT_DATE = ? AND STAT_CITY = ?";
-	m_pLog->Output("[DB2] Select max batch from result table: %s [REPORT:%s, STAT_ID:%s, DATE:%s, CITY:%s]", tab_result.c_str(), st_batch.stat_report.c_str(), st_batch.stat_id.c_str(), st_batch.stat_date.c_str(), st_batch.stat_city.c_str());
+	m_pLog->Output("[DB2] Select max batch from HDB table: %s [REPORT:%s, STAT_ID:%s, DATE:%s, CITY:%s]", tab_hdb.c_str(), hd_batch.stat_report.c_str(), hd_batch.stat_id.c_str(), hd_batch.stat_date.c_str(), hd_batch.stat_city.c_str());
 
 	try
 	{
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		int index = 1;
-		rs.Parameter(index++) = st_batch.stat_report.c_str();
-		rs.Parameter(index++) = st_batch.stat_id.c_str();
-		rs.Parameter(index++) = st_batch.stat_date.c_str();
-		rs.Parameter(index++) = st_batch.stat_city.c_str();
-
+		rs.Parameter(index++) = hd_batch.stat_report.c_str();
+		rs.Parameter(index++) = hd_batch.stat_id.c_str();
+		rs.Parameter(index++) = hd_batch.stat_date.c_str();
+		rs.Parameter(index++) = hd_batch.stat_city.c_str();
 		rs.Execute();
 
 		int counter = 0;
 		while ( !rs.IsEOF() )
 		{
 			++counter;
-			st_batch.stat_batch = (int)rs[1];
+			hd_batch.stat_batch = (int)rs[1];
 
 			rs.MoveNext();
 		}
-
 		rs.Close();
-
-		if ( 0 == counter )
-		{
-			throw base::Exception(ANAERR_SEL_RS_MAX_BATCH, "[DB2] Select max batch from result table '%s' failed! NO Record! [FILE:%s, LINE:%d]", tab_result.c_str(), __FILE__, __LINE__);
-		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ANAERR_SEL_RS_MAX_BATCH, "[DB2] Select max batch from result table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_result.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_SEL_HDB_MAX_BATCH, "[DB2] Select max batch from HDB table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_hdb.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void CAnaDB2::SelectXQBMaxBatch(const std::string& tab_xqb, YCXQBBatch& xq_batch) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "SELECT NVL(MAX(BUSIVERSION), 0) FROM " + tab_xqb;
+	sql += " WHERE BILLMONTH = ? AND CITY = ? AND TYPE = ?";
+	m_pLog->Output("[DB2] Select max batch from XQB table: %s (%s)", tab_xqb.c_str(), xq_batch.LogPrintInfo().c_str());
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		int index = 1;
+		rs.Parameter(index++) = xq_batch.bill_month.c_str();
+		rs.Parameter(index++) = xq_batch.city.c_str();
+		rs.Parameter(index++) = xq_batch.type.c_str();
+		rs.Execute();
+
+		int counter = 0;
+		while ( !rs.IsEOF() )
+		{
+			++counter;
+			xq_batch.busi_batch = (int)rs[1];
+
+			rs.MoveNext();
+		}
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ANAERR_SEL_XQB_MAX_BATCH, "[DB2] Select max batch from XQB table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_xqb.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -268,7 +296,7 @@ void CAnaDB2::SelectYCSrcMaxBatch(YCSrcInfo& yc_info) throw(base::Exception)
 	rs.EnableWarning(true);
 
 	std::string sql;
-	base::PubStr::SetFormatString(sql, "select max(%s) from %s where %s = '%s' and %s = '%s'", yc_info.field_batch.c_str(), yc_info.src_tab.c_str(), yc_info.field_period.c_str(), yc_info.period.c_str(), yc_info.field_city.c_str(), yc_info.city.c_str());
+	base::PubStr::SetFormatString(sql, "select max(decimal(%s,12,2)) from %s where %s = '%s' and %s = '%s'", yc_info.field_batch.c_str(), yc_info.src_tab.c_str(), yc_info.field_period.c_str(), yc_info.period.c_str(), yc_info.field_city.c_str(), yc_info.city.c_str());
 
 	try
 	{

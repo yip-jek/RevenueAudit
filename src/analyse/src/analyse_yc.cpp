@@ -181,11 +181,11 @@ void Analyse_YC::AnalyseSourceData() throw(base::Exception)
 
 void Analyse_YC::GenerateNewBatch()
 {
-	if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )
+	if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )	// 核对表
 	{
 		SetNewBatch_HDB();
 	}
-	else
+	else	// 详情表
 	{
 		SetNewBatch_XQB();
 	}
@@ -193,23 +193,51 @@ void Analyse_YC::GenerateNewBatch()
 
 void Analyse_YC::SetNewBatch_HDB()
 {
-	// 查询统计结果表已存在的最新批次
-	YCStatBatch st_batch;
-	st_batch.stat_report = m_statFactor.GetStatReport();
-	st_batch.stat_id     = m_statFactor.GetStatID();
-	st_batch.stat_date   = m_dbinfo.GetEtlDay();
-	st_batch.stat_city   = m_taskReq.task_city;
-	st_batch.stat_batch  = 0;
-	m_pAnaDB2->SelectStatResultMaxBatch(m_dbinfo.target_table, st_batch);
-	m_pLog->Output("[Analyse_YC] 统计结果表的最新批次: %d", st_batch.stat_batch);
+	// 查询地市核对表的最新批次
+	YCHDBBatch hd_batch;
+	hd_batch.stat_report = m_statFactor.GetStatReport();
+	hd_batch.stat_id     = m_statFactor.GetStatID();
+	hd_batch.stat_date   = m_dbinfo.GetEtlDay();
+	hd_batch.stat_city   = m_taskReq.task_city;
+	hd_batch.stat_batch  = 0;
+	m_pAnaDB2->SelectHDBMaxBatch(m_dbinfo.target_table, hd_batch);
+	m_pLog->Output("[Analyse_YC] 地市核对表的最新批次: %d", hd_batch.stat_batch);
 
 	// 生成当前统计结果的批次
-	m_taskReq.task_batch = st_batch.stat_batch + 1;
+	m_taskReq.task_batch = hd_batch.stat_batch + 1;
 	m_pLog->Output("[Analyse_YC] 因此，当前统计结果的批次为: %d", m_taskReq.task_batch);
 }
 
-void Analyse_YC::SetNewBatch_XQB()
+void Analyse_YC::SetNewBatch_XQB() throw(base::Exception)
 {
+	// 查询地市详情表的最新批次
+	YCXQBBatch xq_batch;
+	xq_batch.bill_month = m_dbinfo.GetEtlDay().substr(0, 6);
+	xq_batch.city       = m_taskReq.task_city;
+	xq_batch.type       = "0";			// 类型：0-固定项，1-浮动项
+	xq_batch.busi_batch = 0;
+	m_pAnaDB2->SelectXQBMaxBatch(m_dbinfo.target_table, xq_batch);
+	m_pLog->Output("[Analyse_YC] 地市详情表的最新批次: %d", xq_batch.busi_batch);
+
+	// 生成当前统计结果的批次
+	if ( AnalyseRule::ANATYPE_YCXQB_CW == m_taskInfo.AnaRule.AnaType )	
+	{
+		// 财务侧批次与业务侧批次保持一致
+		if ( xq_batch.busi_batch > 0 )		// 有效批次
+		{
+			m_taskReq.task_batch = xq_batch.busi_batch;
+			m_pLog->Output("[Analyse_YC] 与业务侧批次保持一致，因此当前财务侧批次为: %d", m_taskReq.task_batch);
+		}
+		else	// 无效批次
+		{
+			throw base::Exception(ANAERR_SET_NEWBATCH_XQB, "没有详情表业务侧的批次信息：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", xq_batch.LogPrintInfo().c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+		}
+	}
+	else
+	{
+		m_taskReq.task_batch = xq_batch.busi_batch + 1;
+		m_pLog->Output("[Analyse_YC] 因此，当前统计结果的批次为: %d", m_taskReq.task_batch);
+	}
 }
 
 void Analyse_YC::ConvertStatFactor() throw(base::Exception)
@@ -261,8 +289,8 @@ void Analyse_YC::StoreResult() throw(base::Exception)
 	m_pLog->Output("[Analyse_YC] 准备入库：(2) 业财稽核差异汇总结果数据");
 	StoreDiffSummaryResult();
 
-	// 记录业财稽核日志
-	RecordStatisticsLog();
+	// 登记信息：日志信息、报表状态、流程记录 等
+	RecordInformation();
 
 	// 删除采集 (HIVE) 目标表
 	DropEtlTargetTable();
@@ -286,14 +314,30 @@ void Analyse_YC::StoreDiffSummaryResult() throw(base::Exception)
 	m_pLog->Output("[Analyse_YC] Store diff summary result data, size: %d", VEC2_SIZE);
 }
 
+void Analyse_YC::RecordInformation()
+{
+	if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )	// 核对表
+	{
+		// 记录业财稽核日志
+		RecordStatisticsLog();
+	}
+
+	// 登记报表状态
+	YCReportState report_state;
+	RecordReportState(report_state);
+
+	// 登记流程记录日志
+	RecordProcessLog(report_state);
+}
+
 void Analyse_YC::RecordStatisticsLog()
 {
 	YCStatLog yc_log;
-	yc_log.stat_report     = m_statFactor.GetStatReport();
-	yc_log.stat_batch      = m_taskReq.task_batch;
-	yc_log.stat_city       = m_taskReq.task_city;
-	yc_log.stat_cycle      = m_dbinfo.GetEtlDay();
-	yc_log.stat_time       = base::SimpleTime::Now().Time14();	// 当前时间
+	yc_log.stat_report = m_statFactor.GetStatReport();
+	yc_log.stat_batch  = m_taskReq.task_batch;
+	yc_log.stat_city   = m_taskReq.task_city;
+	yc_log.stat_cycle  = m_dbinfo.GetEtlDay();
+	yc_log.stat_time   = base::SimpleTime::Now().Time14();	// 当前时间
 
 	std::vector<std::string> vec_datasrc;
 	base::PubStr::Str2StrVector(m_taskInfo.vecEtlRule[0].DataSource, ",", vec_datasrc);
@@ -328,6 +372,52 @@ void Analyse_YC::RecordStatisticsLog()
 
 	m_pLog->Output("[Analyse_YC] 更新业财稽核记录日志表");
 	m_pAnaDB2->InsertYCStatLog(yc_log);
+}
+
+void Analyse_YC::RecordReportState(YCReportState& report_state)
+{
+	report_state.report_id  = m_statFactor.GetStatReport();
+	report_state.bill_month = m_dbinfo.GetEtlDay().substr(0, 6);
+	report_state.status     = "00";			// 状态：00-待审核
+	report_state.actor      = m_taskReq.actor;
+
+	// 业财详情表（省）稽核：地市指定为"GD"
+	if ( AnalyseRule::ANATYPE_YCXQB_GD == m_taskInfo.AnaRule.AnaType )
+	{
+		report_state.city = "GD";
+	}
+	else
+	{
+		report_state.city = m_taskReq.task_city;
+	}
+
+	// 类型：00-核对表，01-地市账务业务详情表，02-监控表，03-地市财务对账详情表
+	if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )	// 核对表
+	{
+		report_state.type = "00";
+	}
+	else	// 详情表
+	{
+		report_state.type = "01";
+	}
+
+	m_pAnaDB2->UpdateInsertReportState(report_state);
+}
+
+void Analyse_YC::RecordProcessLog(const YCReportState& report_state)
+{
+	YCProcessLog proc_log;
+	proc_log.report_id  = report_state.report_id;
+	proc_log.bill_month = report_state.bill_month;
+	proc_log.city       = report_state.city;
+	proc_log.status     = report_state.status;
+	proc_log.type       = report_state.type;
+	proc_log.actor      = report_state.actor;
+	proc_log.oper       = m_taskReq.oper;
+	proc_log.version    = m_taskReq.task_batch;
+	proc_log.uptime     = base::SimpleTime::Now().Time14();
+
+	m_pAnaDB2->UpdateInsertProcessLogState(proc_log);
 }
 
 void Analyse_YC::DropEtlTargetTable()

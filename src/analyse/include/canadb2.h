@@ -116,8 +116,11 @@ public:
 	// 更新任务请求表
 	void UpdateYCTaskReq(const YCTaskReq& t_req) throw(base::Exception);
 
-	// 获取业财稽核统计结果表的最新批次
-	void SelectStatResultMaxBatch(const std::string& tab_result, YCStatBatch& st_batch) throw(base::Exception);
+	// 获取业财稽核地市核对表的最新批次
+	void SelectHDBMaxBatch(const std::string& tab_hdb, YCHDBBatch& hd_batch) throw(base::Exception);
+
+	// 获取业财稽核地市详情表的最新批次
+	void SelectXQBMaxBatch(const std::string& tab_xqb, YCXQBBatch& xq_batch) throw(base::Exception);
 
 	// 获取数据库序列值 (NEXTVAL)
 	void SelectSequence(const std::string& seq_name, size_t size, std::vector<std::string>& vec_seq) throw(base::Exception);

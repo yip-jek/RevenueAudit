@@ -47,7 +47,7 @@ protected:
 	void SetNewBatch_HDB();
 
 	// 设置详情表稽核的最新批次
-	void SetNewBatch_XQB();
+	void SetNewBatch_XQB() throw(base::Exception);
 
 	// 统计因子转换
 	void ConvertStatFactor() throw(base::Exception);
@@ -61,8 +61,17 @@ protected:
 	// 入库差异汇总结果数据
 	void StoreDiffSummaryResult() throw(base::Exception);
 
+	// 登记信息
+	void RecordInformation();
+
 	// 登记稽核记录日志
 	void RecordStatisticsLog();
+
+	// 登记报表状态
+	void RecordReportState(YCReportState& report_state);
+
+	// 登记流程记录日志
+	void RecordProcessLog(const YCReportState& report_state);
 
 	// 删除采集目标表
 	void DropEtlTargetTable();
