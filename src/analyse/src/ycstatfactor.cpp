@@ -82,11 +82,11 @@ void YCStatFactor::LoadStatInfo(std::vector<YCStatInfo>& vec_statinfo) throw(bas
 	m_pLog->Output("[YCStatFactor] 载入规则因子信息成功.");
 }
 
-int YCStatFactor::LoadDimFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception)
+int YCStatFactor::LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception)
 {
-	if ( !m_mDimFactor.empty() )
+	if ( !m_mFactor.empty() )
 	{
-		m_mDimFactor.clear();
+		m_mFactor.clear();
 	}
 
 	int              counter = 0;
@@ -104,22 +104,30 @@ int YCStatFactor::LoadDimFactor(std::vector<std::vector<std::vector<std::string>
 			std::vector<std::string>& ref_vec = ref_vec2[j];
 
 			const int VEC_SIZE = ref_vec.size();
+			if ( VEC_SIZE > 0 )
+			{
+			}
+			else
+			{
+				throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，无效数据 SIZE: [%lu] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
+			}
+
 			if ( VEC_SIZE == S_BASE_COLUMN_SIZE )
 			{
 				dim = base::PubStr::TrimUpperB(ref_vec[0]);
-				if ( m_mDimFactor.find(dim) != m_mDimFactor.end() )
+				if ( m_mFactor.find(dim) != m_mFactor.end() )
 				{
-					throw base::Exception(ANAERR_LOAD_DIM_FACTOR, "重复的维度因子：[%s] [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
+					throw base::Exception(ANAERR_LOAD_FACTOR, "重复的维度因子：[%s] [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
 				}
 
-				m_mDimFactor[dim] = base::PubStr::StringDoubleFormat(ref_vec[1]);
+				m_mFactor[dim] = base::PubStr::StringDoubleFormat(ref_vec[1]);
 			}
 			else if ( VEC_SIZE == S_CATEGORY_COLUMN_SIZE )
 			{
 				dim = base::PubStr::TrimUpperB(ref_vec[0]);
 				if ( !IsCategoryDim(dim) )
 				{
-					throw base::Exception(ANAERR_LOAD_DIM_FACTOR, "业财采集结果数据错误，数据 SIZE 不匹配：[%lu] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
+					throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，数据 SIZE 不匹配：[%lu] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
 				}
 
 				ctgFactor.dim_id = dim;
@@ -129,14 +137,14 @@ int YCStatFactor::LoadDimFactor(std::vector<std::vector<std::vector<std::string>
 			}
 			else
 			{
-				throw base::Exception(ANAERR_LOAD_DIM_FACTOR, "业财采集结果数据错误，数据 SIZE 不匹配：[%lu] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
+				throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，数据 SIZE 不匹配：[%lu] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
 			}
 
 			++counter;
 		}
 	}
 
-	m_pLog->Output("[YCStatFactor] 载入维度因子对成功.");
+	m_pLog->Output("[YCStatFactor] 载入因子对成功.");
 	return counter;
 }
 
@@ -215,7 +223,7 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 			{
 				return CalcCategoryFactor(ref_fmt);
 			}
-			else if ( (m_it = m_mDimFactor.find(ref_fmt)) != m_mDimFactor.end() )
+			else if ( (m_it = m_mFactor.find(ref_fmt)) != m_mFactor.end() )
 			{
 				OperateOneFactor(cmplx_fctr_result, "+", m_it->second);
 				return cmplx_fctr_result;
@@ -251,7 +259,7 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 	{
 		OperateOneFactor(cmplx_fctr_result, "+", CalcCategoryFactor(ref_first));
 	}
-	else if ( (m_it = m_mDimFactor.find(ref_first)) != m_mDimFactor.end() )
+	else if ( (m_it = m_mFactor.find(ref_first)) != m_mFactor.end() )
 	{
 		OperateOneFactor(cmplx_fctr_result, "+", m_it->second);
 	}
@@ -268,7 +276,7 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 		{
 			OperateOneFactor(cmplx_fctr_result, "+", CalcCategoryFactor(ref_fmt));
 		}
-		else if ( (m_it = m_mDimFactor.find(ref_fmt)) != m_mDimFactor.end() )
+		else if ( (m_it = m_mFactor.find(ref_fmt)) != m_mFactor.end() )
 		{
 			OperateOneFactor(cmplx_fctr_result, vec_fmt_right[i-1], m_it->second);
 		}
@@ -334,8 +342,8 @@ std::string YCStatFactor::ExtendCategoryDim(const std::string& dim, int index)
 
 bool YCStatFactor::GetCategoryFactorValue(const std::string& ctg_fmt, int index, std::string& val)
 {
-	std::map<std::string, std::string>::iterator m_it = m_mDimFactor.find(ExtendCategoryDim(ctg_fmt, index));
-	if ( m_it != m_mDimFactor.end() )
+	std::map<std::string, std::string>::iterator m_it = m_mFactor.find(ExtendCategoryDim(ctg_fmt, index));
+	if ( m_it != m_mFactor.end() )
 	{
 		val = m_it->second;
 		return true;
@@ -443,13 +451,13 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 			}
 
 			// 记录分类因子结果
-			if ( m_mDimFactor.find(yc_sr.statdim_id) != m_mDimFactor.end() )
+			if ( m_mFactor.find(yc_sr.statdim_id) != m_mFactor.end() )
 			{
 				throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "重复的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", ref_cf.dim_id.c_str(), __FILE__, __LINE__);
 			}
 			else
 			{
-				m_mDimFactor[yc_sr.statdim_id] = yc_sr.stat_value;
+				m_mFactor[yc_sr.statdim_id] = yc_sr.stat_value;
 			}
 
 			if ( agg )
@@ -472,19 +480,19 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 			yc_sr.stat_value = CalcComplexFactor(st_info.stat_sql);
 
 			// 记录组合因子结果
-			if ( m_mDimFactor.find(yc_sr.statdim_id) != m_mDimFactor.end() )
+			if ( m_mFactor.find(yc_sr.statdim_id) != m_mFactor.end() )
 			{
 				throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "重复的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", st_info.statdim_id.c_str(), __FILE__, __LINE__);
 			}
 			else
 			{
-				m_mDimFactor[yc_sr.statdim_id] = yc_sr.stat_value;
+				m_mFactor[yc_sr.statdim_id] = yc_sr.stat_value;
 			}
 		}
 		else	// 一般因子
 		{
-			std::map<std::string, std::string>::iterator m_it = m_mDimFactor.find(base::PubStr::TrimUpperB(st_info.statdim_id));
-			if ( m_it != m_mDimFactor.end() )
+			std::map<std::string, std::string>::iterator m_it = m_mFactor.find(base::PubStr::TrimUpperB(st_info.statdim_id));
+			if ( m_it != m_mFactor.end() )
 			{
 				yc_sr.stat_value = m_it->second;
 			}

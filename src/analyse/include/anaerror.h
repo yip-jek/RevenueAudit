@@ -76,7 +76,7 @@ enum ANALYSE_ERROR
 
 	// （业财）规则因子类错误码
 	ANAERR_LOAD_STAT_INFO         = -3005001,			// 载入规则因子信息失败
-	ANAERR_LOAD_DIM_FACTOR        = -3005002,			// 载入维度因子对失败
+	ANAERR_LOAD_FACTOR            = -3005002,			// 载入因子对失败
 	ANAERR_MAKE_STATINFO_RESULT   = -3005003,			// 由因子规则生成结果数据失败
 	ANAERR_CALC_COMPLEX_FACTOR    = -3005004,			// 计算业财稽核组合因子失败
 	ANAERR_OPERATE_ONE_FACTOR     = -3005005,			// 计算单个因子失败

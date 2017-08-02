@@ -61,7 +61,7 @@ public:
 	int         stat_batch;				// 统计批次
 };
 
-// (业财稽核) 分类维度因子对
+// (业财稽核) 分类因子对
 struct YCCategoryFactor
 {
 public:
@@ -70,7 +70,7 @@ public:
 	std::string value;					// 维度值
 };
 
-// (业财稽核) 两个分类维度因子对
+// (业财稽核) 两个分类因子对
 struct YCPairCategoryFactor
 {
 public:
@@ -79,8 +79,37 @@ public:
 
 public:
 	int              index;				// 序号
-	YCCategoryFactor cf_A;				// （左A）分类维度因子对
-	YCCategoryFactor cf_B;				// （右B）分类维度因子对
+	YCCategoryFactor cf_A;				// （左A）分类因子对
+	YCCategoryFactor cf_B;				// （右B）分类因子对
+};
+
+// (业财稽核) 因子对
+struct YCFactor
+{
+public:
+	YCFactor& operator = (const std::vector<std::string>& v_dat)
+	{
+		vecData = v_dat;
+		return *this;
+	}
+
+	void SetData(const std::vector<std::string>& v_dat)
+	{
+		vecData = v_dat;
+	}
+
+	std::string GetVal() const
+	{
+		if ( size > 0 )
+		{
+			return vecData[size-1];
+		}
+
+		return "";
+	}
+
+private:
+	std::vector<std::string> vecData;
 };
 
 // (业财稽核) 因子规则信息

@@ -58,6 +58,9 @@ protected:
 	// 结果数据入库 [DB2]
 	virtual void StoreResult() throw(base::Exception);
 
+	// 入库报表结果数据
+	void StoreReportResult();
+
 	// 入库差异汇总结果数据
 	void StoreDiffSummaryResult() throw(base::Exception);
 

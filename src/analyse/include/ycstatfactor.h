@@ -29,8 +29,8 @@ public:
 	// 载入规则因子信息
 	void LoadStatInfo(std::vector<YCStatInfo>& vec_statinfo) throw(base::Exception);
 
-	// 载入维度因子对
-	int LoadDimFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception);
+	// 载入因子对
+	int LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception);
 
 	// 生成报表结果
 	void GenerateResult(int batch, const std::string& city, std::vector<std::vector<std::string> >& v2_result) throw(base::Exception);
@@ -72,11 +72,11 @@ private:
 	std::string                             m_statReport;				// 关联报表
 
 private:
-	std::map<std::string, std::string>      m_mDimFactor;				// 维度因子对
+	std::map<std::string, YCFactor>         m_mFactor;					// 因子对
 	std::map<int, std::vector<YCStatInfo> > m_mvStatInfo;				// 规则因子信息列表
 	std::vector<YCStatInfo>                 m_vTopStatInfo;				// （最高优先级）规则因子信息列表
 
 private:
-	std::map<std::string, std::vector<YCCategoryFactor> > m_mvCategoryFactor;		// 分类维度因子对
+	std::map<std::string, std::vector<YCCategoryFactor> > m_mvCategoryFactor;		// 分类因子对
 };
 

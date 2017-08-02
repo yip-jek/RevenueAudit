@@ -242,7 +242,7 @@ void Analyse_YC::SetNewBatch_XQB() throw(base::Exception)
 
 void Analyse_YC::ConvertStatFactor() throw(base::Exception)
 {
-	int conv_size = m_statFactor.LoadDimFactor(m_v3HiveSrcData);
+	int conv_size = m_statFactor.LoadFactor(m_v3HiveSrcData);
 	m_pLog->Output("[Analyse_YC] 统计因子转换大小：%d", conv_size);
 
 	if ( conv_size < 1 )
@@ -282,11 +282,9 @@ void Analyse_YC::StoreResult() throw(base::Exception)
 	}
 
 	// (1）入库业财稽核报表结果数据
-	m_pLog->Output("[Analyse_YC] 准备入库：(1) 业财稽核报表结果数据");
-	m_pAnaDB2->InsertResultData(m_dbinfo, m_v3HiveSrcData[0]);
+	StoreReportResult();
 
 	// (2）入库业财稽核差异汇总结果数据
-	m_pLog->Output("[Analyse_YC] 准备入库：(2) 业财稽核差异汇总结果数据");
 	StoreDiffSummaryResult();
 
 	// 登记信息：日志信息、报表状态、流程记录 等
@@ -296,8 +294,24 @@ void Analyse_YC::StoreResult() throw(base::Exception)
 	DropEtlTargetTable();
 }
 
+void Analyse_YC::StoreReportResult()
+{
+	// 详情表（财务侧）结果数据更新到数据库
+	if ( AnalyseRule::ANATYPE_YCXQB_CW == m_taskInfo.AnaRule.AnaType )
+	{
+		m_pLog->Output("[Analyse_YC] 准备入库：(1) 业财稽核详情表（财务侧）结果数据");
+	}
+	else	// 非详情表（财务侧）数据
+	{
+		m_pLog->Output("[Analyse_YC] 准备入库：(1) 业财稽核报表结果数据");
+		m_pAnaDB2->InsertResultData(m_dbinfo, m_v3HiveSrcData[0]);
+	}
+}
+
 void Analyse_YC::StoreDiffSummaryResult() throw(base::Exception)
 {
+	m_pLog->Output("[Analyse_YC] 准备入库：(2) 业财稽核差异汇总结果数据");
+
 	YCStatResult yc_sr;
 	const int VEC2_SIZE = m_vec2DiffSummary.size();
 	for ( int i = 0; i < VEC2_SIZE; ++i )
