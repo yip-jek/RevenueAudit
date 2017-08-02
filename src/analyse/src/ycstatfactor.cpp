@@ -26,7 +26,7 @@ std::string YCStatFactor::GetStatReport() const
 	return m_statReport;
 }
 
-void YCStatFactor::LoadStatInfo(std::vector<YCStatInfo>& vec_statinfo) throw(base::Exception)
+void YCStatFactor::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception)
 {
 	m_statID.clear();
 	m_statReport.clear();
@@ -37,7 +37,7 @@ void YCStatFactor::LoadStatInfo(std::vector<YCStatInfo>& vec_statinfo) throw(bas
 	}
 	if ( !m_vTopStatInfo.empty() )
 	{
-		std::vector<YCStatInfo>().swap(m_vTopStatInfo);
+		VEC_STATINFO().swap(m_vTopStatInfo);
 	}
 
 	const int VEC_SIZE = vec_statinfo.size();
@@ -90,7 +90,7 @@ int YCStatFactor::LoadFactor(std::vector<std::vector<std::vector<std::string> > 
 	}
 
 	int              counter = 0;
-	std::string      dim;
+	std::string      dim_id;
 	YCCategoryFactor ctgFactor;
 
 	const int VEC3_SIZE = v3_data.size();
@@ -106,38 +106,36 @@ int YCStatFactor::LoadFactor(std::vector<std::vector<std::vector<std::string> > 
 			const int VEC_SIZE = ref_vec.size();
 			if ( VEC_SIZE > 0 )
 			{
+				// 维度ID 在第一列
+				dim_id = base::PubStr::TrimUpperB(ref_vec[0]);
+
+				if ( IsCategoryDim(dim_id) )	// 分类因子
+				{
+					if ( S_CATEGORY_COLUMN_SIZE == VEC_SIZE )
+					{
+						ctgFactor.dim_id = dim_id;
+						ctgFactor.item   = base::PubStr::TrimB(ref_vec[1]);
+						ctgFactor.value  = base::PubStr::StringDoubleFormat(ref_vec[2]);
+						m_mvCategoryFactor[dim_id].push_back(ctgFactor);
+					}
+					else
+					{
+						throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，分类因子数据 SIZE 不匹配：[%lu] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
+					}
+				}
+				else	// 一般因子
+				{
+					if ( m_mFactor.find(dim_id) != m_mFactor.end() )
+					{
+						throw base::Exception(ANAERR_LOAD_FACTOR, "重复的维度因子ID：[%s] [FILE:%s, LINE:%d]", dim_id.c_str(), __FILE__, __LINE__);
+					}
+
+					m_mFactor[dim_id] = ref_vec;
+				}
 			}
 			else
 			{
 				throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，无效数据 SIZE: [%lu] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
-			}
-
-			if ( VEC_SIZE == S_BASE_COLUMN_SIZE )
-			{
-				dim = base::PubStr::TrimUpperB(ref_vec[0]);
-				if ( m_mFactor.find(dim) != m_mFactor.end() )
-				{
-					throw base::Exception(ANAERR_LOAD_FACTOR, "重复的维度因子：[%s] [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
-				}
-
-				m_mFactor[dim] = base::PubStr::StringDoubleFormat(ref_vec[1]);
-			}
-			else if ( VEC_SIZE == S_CATEGORY_COLUMN_SIZE )
-			{
-				dim = base::PubStr::TrimUpperB(ref_vec[0]);
-				if ( !IsCategoryDim(dim) )
-				{
-					throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，数据 SIZE 不匹配：[%lu] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
-				}
-
-				ctgFactor.dim_id = dim;
-				ctgFactor.item   = base::PubStr::TrimB(ref_vec[1]);
-				ctgFactor.value  = base::PubStr::StringDoubleFormat(ref_vec[2]);
-				m_mvCategoryFactor[dim].push_back(ctgFactor);
-			}
-			else
-			{
-				throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，数据 SIZE 不匹配：[%lu] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
 			}
 
 			++counter;
@@ -153,7 +151,7 @@ void YCStatFactor::GenerateResult(int batch, const std::string& city, std::vecto
 	std::vector<std::vector<std::string> > vec2_result;
 
 	// 生成一般因子与组合因子的结果数据
-	for ( std::map<int, std::vector<YCStatInfo> >::iterator m_it = m_mvStatInfo.begin(); m_it != m_mvStatInfo.end(); ++m_it )
+	for ( MAP_VEC_STATINFO::iterator m_it = m_mvStatInfo.begin(); m_it != m_mvStatInfo.end(); ++m_it )
 	{
 		const int VEC_SIZE = m_it->second.size();
 
@@ -209,7 +207,7 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 	m_pLog->Output("[YCStatFactor] 组合因子表达式：%s", cmplx_fctr_fmt.c_str());
 
 	std::string cmplx_fctr_result;
-	std::map<std::string, std::string>::iterator m_it;
+	MAP_FACTOR::iterator m_it;
 
 	// 组合因子格式：[ A1, A2, A3, ...|+, -, ... ]
 	std::vector<std::string> vec_fmt_left;
@@ -225,7 +223,7 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 			}
 			else if ( (m_it = m_mFactor.find(ref_fmt)) != m_mFactor.end() )
 			{
-				OperateOneFactor(cmplx_fctr_result, "+", m_it->second);
+				OperateOneFactor(cmplx_fctr_result, "+", m_it->second.GetVal());
 				return cmplx_fctr_result;
 			}
 			else
@@ -261,7 +259,7 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 	}
 	else if ( (m_it = m_mFactor.find(ref_first)) != m_mFactor.end() )
 	{
-		OperateOneFactor(cmplx_fctr_result, "+", m_it->second);
+		OperateOneFactor(cmplx_fctr_result, "+", m_it->second.GetVal());
 	}
 	else
 	{
@@ -278,7 +276,7 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 		}
 		else if ( (m_it = m_mFactor.find(ref_fmt)) != m_mFactor.end() )
 		{
-			OperateOneFactor(cmplx_fctr_result, vec_fmt_right[i-1], m_it->second);
+			OperateOneFactor(cmplx_fctr_result, vec_fmt_right[i-1], m_it->second.GetVal());
 		}
 		else
 		{
@@ -342,10 +340,10 @@ std::string YCStatFactor::ExtendCategoryDim(const std::string& dim, int index)
 
 bool YCStatFactor::GetCategoryFactorValue(const std::string& ctg_fmt, int index, std::string& val)
 {
-	std::map<std::string, std::string>::iterator m_it = m_mFactor.find(ExtendCategoryDim(ctg_fmt, index));
+	MAP_FACTOR::iterator m_it = m_mFactor.find(ExtendCategoryDim(ctg_fmt, index));
 	if ( m_it != m_mFactor.end() )
 	{
-		val = m_it->second;
+		val = m_it->second.GetVal();
 		return true;
 	}
 
@@ -403,7 +401,7 @@ bool YCStatFactor::IsCategoryDim(const std::string& dim)
 		}
 	}
 
-	for ( std::map<int, std::vector<YCStatInfo> >::iterator m_it = m_mvStatInfo.begin(); m_it != m_mvStatInfo.end(); ++m_it )
+	for ( MAP_VEC_STATINFO::iterator m_it = m_mvStatInfo.begin(); m_it != m_mvStatInfo.end(); ++m_it )
 	{
 		const int VEC_SIZE = m_it->second.size();
 		for ( int j = 0; j < VEC_SIZE; ++j )
@@ -433,7 +431,7 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 	std::vector<std::string> vec_data;
 	if ( st_info.category )		// 分类因子
 	{
-		std::vector<YCCategoryFactor> vec_ctg_factor;
+		VEC_CATEGORYFACTOR vec_ctg_factor;
 		ExpandCategoryStatInfo(st_info, agg, vec_ctg_factor);
 
 		// 由分类因子信息生成结果数据
@@ -491,7 +489,7 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 		}
 		else	// 一般因子
 		{
-			std::map<std::string, std::string>::iterator m_it = m_mFactor.find(base::PubStr::TrimUpperB(st_info.statdim_id));
+			MAP_FACTOR::iterator m_it = m_mFactor.find(base::PubStr::TrimUpperB(st_info.statdim_id));
 			if ( m_it != m_mFactor.end() )
 			{
 				yc_sr.stat_value = m_it->second;
@@ -508,10 +506,10 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 	}
 }
 
-void YCStatFactor::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, std::vector<YCCategoryFactor>& vec_ctgfctr) throw(base::Exception)
+void YCStatFactor::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, VEC_CATEGORYFACTOR& vec_ctgfctr) throw(base::Exception)
 {
-	std::vector<YCCategoryFactor> vec_cf;
-	std::vector<std::string>      vec_fmt;
+	VEC_CATEGORYFACTOR       vec_cf;
+	std::vector<std::string> vec_fmt;
 
 	if ( agg )	// 组合因子
 	{
@@ -616,10 +614,10 @@ void YCStatFactor::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, s
 	vec_cf.swap(vec_ctgfctr);
 }
 
-void YCStatFactor::MatchCategoryFactor(const std::string& dim, const std::string& dim_a, const std::string& dim_b, std::vector<YCCategoryFactor>& vec_ctgfctr)
+void YCStatFactor::MatchCategoryFactor(const std::string& dim, const std::string& dim_a, const std::string& dim_b, VEC_CATEGORYFACTOR& vec_ctgfctr)
 {
-	std::vector<YCCategoryFactor> vec_cf_A;
-	std::map<std::string, std::vector<YCCategoryFactor> >::iterator m_it = m_mvCategoryFactor.find(dim);
+	VEC_CATEGORYFACTOR vec_cf_A;
+	MAP_VEC_CATEGORYFACTOR::iterator m_it = m_mvCategoryFactor.find(dim);
 	if ( m_it != m_mvCategoryFactor.end() )
 	{
 		vec_cf_A.assign(m_it->second.begin(), m_it->second.end());
@@ -628,7 +626,7 @@ void YCStatFactor::MatchCategoryFactor(const std::string& dim, const std::string
 	YCCategoryFactor ctg_factor;
 	if ( dim_b != "0" )		// 包含辅助因子，匹配关系 A<->B
 	{
-		std::vector<YCCategoryFactor> vec_cf_B;
+		VEC_CATEGORYFACTOR vec_cf_B;
 		m_it = m_mvCategoryFactor.find(dim_b);
 		if ( m_it != m_mvCategoryFactor.end() )
 		{
@@ -637,7 +635,7 @@ void YCStatFactor::MatchCategoryFactor(const std::string& dim, const std::string
 
 		int index = 1;
 		YCPairCategoryFactor pcf;
-		std::map<std::string, YCPairCategoryFactor> mItemPairCF;
+		MAP_PAIRCATEGORYFACTOR mItemPairCF;
 		int vec_size = vec_cf_A.size();
 		for ( int i = 0; i < vec_size; ++i )
 		{
@@ -657,7 +655,7 @@ void YCStatFactor::MatchCategoryFactor(const std::string& dim, const std::string
 		}
 
 		std::set<std::string> sItemRep;
-		std::map<std::string, YCPairCategoryFactor>::iterator it;
+		MAP_PAIRCATEGORYFACTOR::iterator it;
 		vec_size = vec_cf_B.size();
 		for ( int j = 0; j < vec_size; ++j )
 		{

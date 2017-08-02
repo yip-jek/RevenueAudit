@@ -87,6 +87,9 @@ public:
 struct YCFactor
 {
 public:
+	YCFactor() {}
+	YCFactor(const std::vector<std::string>& v_dat): vecData(v_dat) {}
+
 	YCFactor& operator = (const std::vector<std::string>& v_dat)
 	{
 		vecData = v_dat;
@@ -98,11 +101,13 @@ public:
 		vecData = v_dat;
 	}
 
+	// 获取值：值在最后一列
 	std::string GetVal() const
 	{
-		if ( size > 0 )
+		const int VEC_SIZE = vecData.size();
+		if ( VEC_SIZE > 0 )
 		{
-			return vecData[size-1];
+			return vecData[VEC_SIZE-1];
 		}
 
 		return "";
