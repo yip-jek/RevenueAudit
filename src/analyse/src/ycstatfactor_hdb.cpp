@@ -81,15 +81,18 @@ int YCStatFactor_HDB::LoadFactor(std::vector<std::vector<std::vector<std::string
 
 void YCStatFactor_HDB::MakeResult(std::vector<std::vector<std::vector<std::string> > >& v3_result) throw(base::Exception)
 {
-	std::vector<std::vector<std::string> > vec2_result;
+	std::vector<std::vector<std::string> >                vec2_result;
 	std::vector<std::vector<std::vector<std::string> > >& vec3_result;
 
-	m_pLog->Output("[YCStatFactor_HDB] 载入因子对成功.");
-		//m_pLog->Output("[Analyse_YC] 准备入库：(1) 业财稽核报表结果数据");
+	m_pLog->Output("[YCStatFactor_HDB] (1) 生成业财稽核地市核对表结果数据");
 	GenerateStatResult(vec2_result);
+	base::PubStr::VVVectorSwapPushBack(vec3_result, vec2_result);
 
+	m_pLog->Output("[YCStatFactor_HDB] (2) 生成业财稽核地市核对表差异汇总数据");
 	GenerateDiffSummaryResult(vec2_result);
-	vec2_result.swap(v2_result);
+	base::PubStr::VVVectorSwapPushBack(vec3_result, vec2_result);
+
+	vec3_result.swap(v3_result);
 }
 
 void YCStatFactor_HDB::GenerateStatResult(std::vector<std::vector<std::string> >& v2_result) throw(base::Exception)
@@ -294,44 +297,6 @@ bool YCStatFactor_HDB::GetCategoryFactorValue(const std::string& ctg_fmt, int in
 	}
 
 	return false;
-}
-
-void YCStatFactor_HDB::OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception)
-{
-	double dou_res = 0.0;
-	if ( !result.empty() && !base::PubStr::Str2Double(result, dou_res) )
-	{
-		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "结果值无法转化为精度型：%s [FILE:%s, LINE:%d]", result.c_str(), __FILE__, __LINE__);
-	}
-
-	double dou_fctr = 0.0;
-	if ( factor.empty() || !base::PubStr::Str2Double(factor, dou_fctr) )
-	{
-		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "非有效因子值：%s [FILE:%s, LINE:%d]", factor.c_str(), __FILE__, __LINE__);
-	}
-
-	if ( "+" == op )
-	{
-		dou_res += dou_fctr;
-	}
-	else if ( "-" == op )
-	{
-		dou_res -= dou_fctr;
-	}
-	else if ( "*" == op )
-	{
-		dou_res *= dou_fctr;
-	}
-	else if ( "/" == op )
-	{
-		dou_res /= dou_fctr;
-	}
-	else
-	{
-		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "无法识别的因子运算符：%s [FILE:%s, LINE:%d]", op.c_str(), __FILE__, __LINE__);
-	}
-
-	result = base::PubStr::Double2FormatStr(dou_res);
 }
 
 bool YCStatFactor_HDB::IsCategoryDim(const std::string& dim)

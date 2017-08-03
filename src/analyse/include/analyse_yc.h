@@ -33,8 +33,14 @@ protected:
 	// 检查：是否为业财稽核类型。输出中文描述
 	bool CheckYCAnalyseType(std::string& cn_type) const;
 
+	// 释放稽核统计因子资源
+	void ReleaseStatFactor();
+
 	// 获取任务信息
 	virtual void FetchTaskInfo() throw(base::Exception);
+
+	// 创建稽核统计因子
+	void CreateStatFactor() throw(base::Exception);
 
 	// 分析业财稽核源数据，生成结果数据
 	virtual void AnalyseSourceData() throw(base::Exception);
@@ -57,10 +63,10 @@ protected:
 	// 结果数据入库 [DB2]
 	virtual void StoreResult() throw(base::Exception);
 
-	// 入库报表结果数据
+	// 入库报表稽核统计结果
 	void StoreReportResult();
 
-	// 入库差异汇总结果数据
+	// 入库差异汇总结果
 	void StoreDiffSummaryResult() throw(base::Exception);
 
 	// 登记信息
@@ -94,8 +100,5 @@ protected:
 protected:
 	YCTaskReq     m_taskReq;				// 任务请求信息
 	YCStatFactor* m_pStatFactor;			// 稽核统计因子
-
-protected:
-	std::vector<std::vector<std::string> > m_vec2DiffSummary;			// 差异汇总结果数据
 };
 

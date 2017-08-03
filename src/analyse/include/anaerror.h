@@ -29,6 +29,7 @@ enum ANALYSE_ERROR
 	ANAERR_GENE_DELTIME_FAILED    = -3000023,			// 生成数据删除的时间失败
 	ANAERR_STORE_RESULT_FAILED    = -3000024,			// 结果数据入库失败
 	ANAERR_SET_NEWBATCH_XQB       = -3000025,			// 设置详情表稽核的最新批次失败
+	ANAERR_CREATE_STATFACTOR      = -3000026,			// 创建稽核统计因子失败
 
 	// HIVE类错误码
 	ANAERR_FETCH_SRCDATA_FAILED   = -3001001,			// 获取源数据失败

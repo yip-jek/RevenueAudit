@@ -254,7 +254,7 @@ void PubStr::Str2StrVector(const std::string& src_str, const std::string& delim,
 	v_str.swap(vec_str);
 }
 
-size_t PubStr::CalcVVVectorStr(std::vector<std::vector<std::vector<std::string> > >& vec3_str)
+size_t PubStr::CalcVVVectorStr(const std::vector<std::vector<std::vector<std::string> > >& vec3_str)
 {
 	size_t calc_size = 0;
 

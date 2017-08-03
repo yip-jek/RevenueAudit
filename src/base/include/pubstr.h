@@ -68,7 +68,7 @@ public:
 	static void Str2StrVector(const std::string& src_str, const std::string& delim, std::vector<std::string>& vec_str);
 
 	// 计算std::vector<std::string>数量
-	static size_t CalcVVVectorStr(std::vector<std::vector<std::vector<std::string> > >& vec3_str);
+	static size_t CalcVVVectorStr(const std::vector<std::vector<std::vector<std::string> > >& vec3_str);
 
 	// 表达式转换为数值集合
 	// 如将 “1-3, 4, 6” 转换为: set[] = 1, 2, 3, 4, 6

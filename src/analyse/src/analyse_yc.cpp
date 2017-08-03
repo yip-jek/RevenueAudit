@@ -15,6 +15,7 @@ Analyse_YC::Analyse_YC()
 
 Analyse_YC::~Analyse_YC()
 {
+	ReleaseStatFactor();
 }
 
 void Analyse_YC::LoadConfig() throw(base::Exception)
@@ -152,6 +153,15 @@ bool Analyse_YC::CheckYCAnalyseType(std::string& cn_type) const
 	}
 }
 
+void Analyse_YC::ReleaseStatFactor()
+{
+	if ( m_pStatFactor != NULL )
+	{
+		delete m_pStatFactor;
+		m_pStatFactor = NULL;
+	}
+}
+
 void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 {
 	Analyse::FetchTaskInfo();
@@ -164,7 +174,28 @@ void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 	m_pLog->Output("[Analyse_YC] 获取业财稽核因子规则信息 ...");
 	std::vector<YCStatInfo> vec_ycsinfo;
 	m_pAnaDB2->SelectYCStatRule(m_sKpiID, vec_ycsinfo);
+
+	CreateStatFactor();
 	m_pStatFactor->LoadStatInfo(vec_ycsinfo);
+}
+
+void Analyse_YC::CreateStatFactor() throw(base::Exception)
+{
+	ReleaseStatFactor();
+
+	if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )	// 核对表
+	{
+		m_pStatFactor = new YCStatFactor_HDB(m_taskReq);
+	}
+	else	// 详情表
+	{
+		m_pStatFactor = new YCStatFactor_XQB(m_taskReq);
+	}
+
+	if ( NULL == m_pStatFactor )
+	{
+		throw base::Exception(ANAERR_CREATE_STATFACTOR, "Operator new YCStatFactor failed: 无法申请到内存空间！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
 }
 
 void Analyse_YC::AnalyseSourceData() throw(base::Exception)
@@ -251,26 +282,16 @@ void Analyse_YC::ConvertStatFactor() throw(base::Exception)
 	{
 		throw base::Exception(ANAERR_TRANS_YCFACTOR_FAILED, "缺少业财稽核统计源数据! (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
-
-	// 释放Hive源数据
-	std::vector<std::vector<std::vector<std::string> > >().swap(m_v3HiveSrcData);
 }
 
 void Analyse_YC::GenerateResultData() throw(base::Exception)
 {
-	std::vector<std::vector<std::string> > vec_yc_data;
-	m_pStatFactor->GenerateResult(m_taskReq.task_batch, m_taskReq.task_city, vec_yc_data);
-	if ( vec_yc_data.empty() )
+	m_pStatFactor->MakeResult(m_v3HiveSrcData);
+
+	if ( base::PubStr::CalcVVVectorStr(m_v3HiveSrcData) == 0 )
 	{
 		throw base::Exception(ANAERR_GENERATE_YCDATA_FAILED, "生成报表结果数据失败！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
-
-	// (1) 插入业财稽核报表结果数据
-	base::PubStr::VVVectorSwapPushBack(m_v3HiveSrcData, vec_yc_data);
-
-	// (2) 生成业财稽核差异汇总结果数据
-	// 不一定有差异汇总数据，因此不判断是否为空！
-	m_pStatFactor->GenerateDiffSummaryResult(m_taskReq.task_city, m_vec2DiffSummary);
 }
 
 void Analyse_YC::StoreResult() throw(base::Exception)
@@ -280,14 +301,11 @@ void Analyse_YC::StoreResult() throw(base::Exception)
 
 	if ( m_v3HiveSrcData.empty() )
 	{
-		throw base::Exception(ANAERR_STORE_RESULT_FAILED, "无法完成入库：业财稽核结果数据不全！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_STORE_RESULT_FAILED, "无法完成入库：缺少业财稽核结果数据！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
-	// (1）入库业财稽核报表结果数据
+	// 入库业财报表稽核结果
 	StoreReportResult();
-
-	// (2）入库业财稽核差异汇总结果数据
-	StoreDiffSummaryResult();
 
 	// 登记信息：日志信息、报表状态、流程记录 等
 	RecordInformation();
@@ -301,24 +319,30 @@ void Analyse_YC::StoreReportResult()
 	// 详情表（财务侧）结果数据更新到数据库
 	if ( AnalyseRule::ANATYPE_YCXQB_CW == m_taskInfo.AnaRule.AnaType )
 	{
-		m_pLog->Output("[Analyse_YC] 准备入库：(1) 业财稽核详情表（财务侧）结果数据");
+		m_pLog->Output("[Analyse_YC] 准备入库：业财稽核详情表（财务侧）结果数据");
 	}
 	else	// 非详情表（财务侧）数据
 	{
-		m_pLog->Output("[Analyse_YC] 准备入库：(1) 业财稽核报表结果数据");
+		m_pLog->Output("[Analyse_YC] 准备入库：业财报表稽核统计结果数据");
 		m_pAnaDB2->InsertResultData(m_dbinfo, m_v3HiveSrcData[0]);
+
+		if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )	// 核对表
+		{
+			m_pLog->Output("[Analyse_YC] 准备入库：业财稽核差异汇总结果数据");
+			StoreDiffSummaryResult();
+		}
 	}
 }
 
 void Analyse_YC::StoreDiffSummaryResult() throw(base::Exception)
 {
-	m_pLog->Output("[Analyse_YC] 准备入库：(2) 业财稽核差异汇总结果数据");
-
 	YCStatResult yc_sr;
-	const int VEC2_SIZE = m_vec2DiffSummary.size();
+	std::vector<std::vector<std::string> >& ref_vec2DiffSummary = m_v3HiveSrcData[1];
+
+	const int VEC2_SIZE = ref_vec2DiffSummary.size();
 	for ( int i = 0; i < VEC2_SIZE; ++i )
 	{
-		std::vector<std::string>& ref_vec = m_vec2DiffSummary[i];
+		std::vector<std::string>& ref_vec = ref_vec2DiffSummary[i];
 		if ( !yc_sr.LoadFromVector(ref_vec) )
 		{
 			throw base::Exception(ANAERR_STORE_DIFF_SUMMARY, "差异汇总结果数据还原失败！[INDEX:%d] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", (i+1), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
@@ -327,7 +351,7 @@ void Analyse_YC::StoreDiffSummaryResult() throw(base::Exception)
 		m_pAnaDB2->UpdateInsertYCDIffSummary(m_dbinfo, yc_sr);
 	}
 
-	m_pLog->Output("[Analyse_YC] Store diff summary result data, size: %d", VEC2_SIZE);
+	m_pLog->Output("[Analyse_YC] Store diff summary result data size: %d", VEC2_SIZE);
 }
 
 void Analyse_YC::RecordInformation()

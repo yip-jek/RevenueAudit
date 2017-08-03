@@ -36,6 +36,8 @@ public:
 	virtual void MakeResult(std::vector<std::vector<std::vector<std::string> > >& v3_result) throw(base::Exception) = 0;
 
 protected:
+	// 计算单个因子
+	virtual void OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception);
 
 protected:
 	base::Log*       m_pLog;

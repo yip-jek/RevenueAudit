@@ -44,9 +44,6 @@ private:
 	// 获取指定组合分类因子的维度值
 	bool GetCategoryFactorValue(const std::string& ctg_fmt, int index, std::string& val);
 
-	// 计算单个因子
-	void OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception);
-
 	// 是否存在于分类因子列表中
 	bool IsCategoryDim(const std::string& dim);
 
