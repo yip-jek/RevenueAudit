@@ -1,51 +1,37 @@
 #pragma once
 
-#include <map>
-#include "ycinfo.h"
-
-namespace base
-{
-class Log;
-}
+#include "ycstatfactor.h"
 
 // （业财）核对表统计因子类
-class YCStatFactor_HDB
+class YCStatFactor_HDB : public YCStatFactor
 {
-	typedef std::vector<YCStatInfo>						VEC_STATINFO;
+public:
 	typedef std::vector<YCCategoryFactor>				VEC_CATEGORYFACTOR;
-
 	typedef std::map<std::string, std::string>			MAP_STRING;
 	typedef std::map<std::string, YCPairCategoryFactor> MAP_PAIRCATEGORYFACTOR;
-	typedef std::map<int, VEC_STATINFO>					MAP_VEC_STATINFO;
 	typedef std::map<std::string, VEC_CATEGORYFACTOR>	MAP_VEC_CATEGORYFACTOR;
 
 public:
-	YCStatFactor_HDB();
+	YCStatFactor_HDB(YCTaskReq& task_req);
 	virtual ~YCStatFactor_HDB();
 
 	static const char* const S_TOP_PRIORITY;			// 最高优先级 (差异汇总)
 	static const int S_CATEGORY_COLUMN_SIZE = 3;		// 分列数据列数
 
 public:
-	// 获取统计指标ID
-	std::string GetStatID() const;
-
-	// 获取关联报表
-	std::string GetStatReport() const;
-
-	// 载入规则因子信息
-	void LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception);
-
 	// 载入因子对
-	int LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception);
+	virtual int LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception);
 
-	// 生成报表结果
-	void GenerateResult(int batch, const std::string& city, std::vector<std::vector<std::string> >& v2_result) throw(base::Exception);
-
-	// 生成差异汇总结果
-	void GenerateDiffSummaryResult(const std::string& city, std::vector<std::vector<std::string> >& v2_result) throw(base::Exception);
+	// 生成稽核统计结果
+	virtual void MakeResult(std::vector<std::vector<std::vector<std::string> > >& v3_result) throw(base::Exception);
 
 private:
+	// 生成统计结果
+	void GenerateStatResult(std::vector<std::vector<std::string> >& v2_result) throw(base::Exception);
+
+	// 生成差异汇总结果
+	void GenerateDiffSummaryResult(std::vector<std::vector<std::string> >& v2_result) throw(base::Exception);
+
 	// 计算组合因子的维度值
 	std::string CalcComplexFactor(const std::string& cmplx_fctr_fmt) throw(base::Exception);
 
@@ -65,7 +51,7 @@ private:
 	bool IsCategoryDim(const std::string& dim);
 
 	// 由因子规则生成结果数据
-	void MakeStatInfoResult(int batch, const std::string& city, const YCStatInfo& st_info, bool agg, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception);
+	void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception);
 
 	// 扩展分类因子信息
 	void ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, VEC_CATEGORYFACTOR& vec_ctgfctr) throw(base::Exception);
@@ -74,13 +60,7 @@ private:
 	void MatchCategoryFactor(const std::string& dim, const std::string& dim_a, const std::string& dim_b, VEC_CATEGORYFACTOR& vec_ctgfctr);
 
 private:
-	base::Log*             m_pLog;
-	std::string            m_statID;					// 统计指标ID
-	std::string            m_statReport;				// 关联报表
-
-private:
 	MAP_STRING             m_mFactor;					// 因子对
-	MAP_VEC_STATINFO       m_mvStatInfo;				// 规则因子信息列表
 	VEC_STATINFO           m_vTopStatInfo;				// （最高优先级）规则因子信息列表
 	MAP_VEC_CATEGORYFACTOR m_mvCategoryFactor;			// 分类因子对
 };

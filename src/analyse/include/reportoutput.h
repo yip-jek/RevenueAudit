@@ -21,7 +21,7 @@ public:
 class YDReportOutput : public ReportOutput
 {
 public:
-	YDReportOutput(std::vector<std::vector<std::string> >* pV2ReportData);
+	YDReportOutput(std::vector<std::vector<std::string> >& v2ReportData);
 	virtual ~YDReportOutput();
 
 public:

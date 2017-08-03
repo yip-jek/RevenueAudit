@@ -30,7 +30,7 @@ public:
 class YDReportInput : public ReportInput
 {
 public:
-	YDReportInput(std::vector<std::vector<std::vector<std::string> > >* pV3SrcData);
+	YDReportInput(std::vector<std::vector<std::vector<std::string> > >& v3SrcData);
 	virtual ~YDReportInput();
 
 public:

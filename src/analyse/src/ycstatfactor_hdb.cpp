@@ -6,80 +6,13 @@
 const char* const YCStatFactor_HDB::S_TOP_PRIORITY  = "NN";			// 最高优先级 (差异汇总)
 
 
-YCStatFactor_HDB::YCStatFactor_HDB()
-:m_pLog(base::Log::Instance())
+YCStatFactor_HDB::YCStatFactor_HDB(YCTaskReq& task_req)
+:YCStatFactor(task_req)
 {
 }
 
 YCStatFactor_HDB::~YCStatFactor_HDB()
 {
-	base::Log::Release();
-}
-
-std::string YCStatFactor_HDB::GetStatID() const
-{
-	return m_statID;
-}
-
-std::string YCStatFactor_HDB::GetStatReport() const
-{
-	return m_statReport;
-}
-
-void YCStatFactor_HDB::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception)
-{
-	m_statID.clear();
-	m_statReport.clear();
-
-	if ( !m_mvStatInfo.empty() )
-	{
-		m_mvStatInfo.clear();
-	}
-	if ( !m_vTopStatInfo.empty() )
-	{
-		VEC_STATINFO().swap(m_vTopStatInfo);
-	}
-
-	const int VEC_SIZE = vec_statinfo.size();
-	for ( int i = 0; i < VEC_SIZE; ++i )
-	{
-		YCStatInfo& ref_si = vec_statinfo[i];
-		base::PubStr::TrimUpper(ref_si.statdim_id);
-
-		// 是否为分类因子：维度 ID 包含问号
-		ref_si.category = (ref_si.statdim_id.find('?') != std::string::npos);
-
-		if ( S_TOP_PRIORITY == base::PubStr::TrimUpperB(ref_si.stat_priority) )
-		{
-			m_vTopStatInfo.push_back(ref_si);
-		}
-		else
-		{
-			int level = 0;
-			if ( !base::PubStr::Str2Int(ref_si.stat_priority, level) )
-			{
-				throw base::Exception(ANAERR_LOAD_STAT_INFO, "未知的因子规则优先级：[%s] (STAT_ID=[%s], STAT_NAME=[%s], DIM_ID=[%s], STAT_REPORT=[%s]) [FILE:%s, LINE:%d]", ref_si.stat_priority.c_str(), ref_si.stat_id.c_str(), ref_si.stat_name.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_report.c_str(), __FILE__, __LINE__);
-			}
-			if ( level < 0 )
-			{
-				throw base::Exception(ANAERR_LOAD_STAT_INFO, "无效的因子规则优先级：[%s] (STAT_ID=[%s], STAT_NAME=[%s], DIM_ID=[%s], STAT_REPORT=[%s]) [FILE:%s, LINE:%d]", ref_si.stat_priority.c_str(), ref_si.stat_id.c_str(), ref_si.stat_name.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_report.c_str(), __FILE__, __LINE__);
-			}
-
-			m_mvStatInfo[level].push_back(ref_si);
-		}
-	}
-
-	if ( m_mvStatInfo.find(0) != m_mvStatInfo.end() )
-	{
-		m_statID     = m_mvStatInfo[0][0].stat_id;
-		m_statReport = m_mvStatInfo[0][0].stat_report;
-	}
-	else
-	{
-		throw base::Exception(ANAERR_LOAD_STAT_INFO, "缺少一般规则因子信息！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
-	}
-
-	m_pLog->Output("[YCStatFactor_HDB] 载入规则因子信息成功.");
 }
 
 int YCStatFactor_HDB::LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception)
@@ -146,7 +79,20 @@ int YCStatFactor_HDB::LoadFactor(std::vector<std::vector<std::vector<std::string
 	return counter;
 }
 
-void YCStatFactor_HDB::GenerateResult(int batch, const std::string& city, std::vector<std::vector<std::string> >& v2_result) throw(base::Exception)
+void YCStatFactor_HDB::MakeResult(std::vector<std::vector<std::vector<std::string> > >& v3_result) throw(base::Exception)
+{
+	std::vector<std::vector<std::string> > vec2_result;
+	std::vector<std::vector<std::vector<std::string> > >& vec3_result;
+
+	m_pLog->Output("[YCStatFactor_HDB] 载入因子对成功.");
+		//m_pLog->Output("[Analyse_YC] 准备入库：(1) 业财稽核报表结果数据");
+	GenerateStatResult(vec2_result);
+
+	GenerateDiffSummaryResult(vec2_result);
+	vec2_result.swap(v2_result);
+}
+
+void YCStatFactor_HDB::GenerateStatResult(std::vector<std::vector<std::string> >& v2_result) throw(base::Exception)
 {
 	std::vector<std::vector<std::string> > vec2_result;
 
@@ -163,7 +109,7 @@ void YCStatFactor_HDB::GenerateResult(int batch, const std::string& city, std::v
 
 				m_pLog->Output("[YCStatFactor_HDB] 统计因子类型：组合（合计）因子");
 				m_pLog->Output("[YCStatFactor_HDB] 生成统计因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
-				MakeStatInfoResult(batch, city, ref_si, true, vec2_result);
+				MakeStatInfoResult(m_pTaskReq->task_batch, ref_si, true, vec2_result);
 			}
 		}
 		else	// 一般因子
@@ -174,7 +120,7 @@ void YCStatFactor_HDB::GenerateResult(int batch, const std::string& city, std::v
 
 				m_pLog->Output("[YCStatFactor_HDB] 统计因子类型：一般因子");
 				m_pLog->Output("[YCStatFactor_HDB] 生成统计因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
-				MakeStatInfoResult(batch, city, ref_si, false, vec2_result);
+				MakeStatInfoResult(m_pTaskReq->task_batch, ref_si, false, vec2_result);
 			}
 		}
 	}
@@ -182,7 +128,7 @@ void YCStatFactor_HDB::GenerateResult(int batch, const std::string& city, std::v
 	vec2_result.swap(v2_result);
 }
 
-void YCStatFactor_HDB::GenerateDiffSummaryResult(const std::string& city, std::vector<std::vector<std::string> >& v2_result) throw(base::Exception)
+void YCStatFactor_HDB::GenerateDiffSummaryResult(std::vector<std::vector<std::string> >& v2_result) throw(base::Exception)
 {
 	std::vector<std::vector<std::string> > vec2_result;
 
@@ -196,7 +142,7 @@ void YCStatFactor_HDB::GenerateDiffSummaryResult(const std::string& city, std::v
 		m_pLog->Output("[YCStatFactor_HDB] 生成汇总因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
 
 		// 汇总因子批次锁定为 0
-		MakeStatInfoResult(0, city, ref_si, true, vec2_result);
+		MakeStatInfoResult(0, ref_si, true, vec2_result);
 	}
 
 	vec2_result.swap(v2_result);
@@ -418,10 +364,10 @@ bool YCStatFactor_HDB::IsCategoryDim(const std::string& dim)
 	return false;
 }
 
-void YCStatFactor_HDB::MakeStatInfoResult(int batch, const std::string& city, const YCStatInfo& st_info, bool agg, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception)
+void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception)
 {
 	YCStatResult yc_sr;
-	yc_sr.stat_city   = city;
+	yc_sr.stat_city   = m_pTaskReq->task_city;
 	yc_sr.stat_batch  = batch;
 	yc_sr.stat_report = st_info.stat_report;
 	yc_sr.stat_id     = st_info.stat_id;

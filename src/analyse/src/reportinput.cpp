@@ -1,8 +1,8 @@
 #include "reportinput.h"
 
 // 一点稽核-报表输入
-YDReportInput::YDReportInput(std::vector<std::vector<std::vector<std::string> > >* pV3SrcData)
-:m_pV3SrcData(pV3SrcData)
+YDReportInput::YDReportInput(std::vector<std::vector<std::vector<std::string> > >& v3SrcData)
+:m_pV3SrcData(&v3SrcData)
 {
 }
 
@@ -12,31 +12,20 @@ YDReportInput::~YDReportInput()
 
 void YDReportInput::ReleaseSourceData()
 {
-	if ( m_pV3SrcData != NULL )
-	{
-		// Release std::vector
-		std::vector<std::vector<std::vector<std::string> > >().swap(*m_pV3SrcData);
-	}
+	// Release std::vector
+	std::vector<std::vector<std::vector<std::string> > >().swap(*m_pV3SrcData);
 }
 
 size_t YDReportInput::GetDataGroupSize() const
 {
-	if ( m_pV3SrcData != NULL )
-	{
-		return m_pV3SrcData->size();
-	}
-
-	return 0;
+	return m_pV3SrcData->size();
 }
 
 size_t YDReportInput::GetDataSize(size_t group_index) const
 {
-	if ( m_pV3SrcData != NULL )
+	if ( group_index < m_pV3SrcData->size() )
 	{
-		if ( group_index < m_pV3SrcData->size() )
-		{
-			return (*m_pV3SrcData)[group_index].size();
-		}
+		return (*m_pV3SrcData)[group_index].size();
 	}
 
 	return 0;
@@ -71,12 +60,9 @@ void YDReportInput::ExportData(size_t group_index, size_t data_index, std::vecto
 
 bool YDReportInput::IsIndexValid(size_t group_index, size_t data_index) const
 {
-	if ( m_pV3SrcData != NULL )
+	if ( group_index < m_pV3SrcData->size() )
 	{
-		if ( group_index < m_pV3SrcData->size() )
-		{
-			return (data_index < (*m_pV3SrcData)[group_index].size());
-		}
+		return (data_index < (*m_pV3SrcData)[group_index].size());
 	}
 
 	return false;

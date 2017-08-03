@@ -1217,8 +1217,8 @@ void Analyse::SrcDataUnifiedCoding() throw(base::Exception)
 
 void Analyse::GenerateReportStatData()
 {
-	YDReportInput  input(&m_v3HiveSrcData);
-	YDReportOutput output(&m_v2ReportStatData);
+	YDReportInput  input(m_v3HiveSrcData);
+	YDReportOutput output(m_v2ReportStatData);
 
 	// 将 HIVE 源数据转换为报表统计类型数据
 	ReportConverter rc;

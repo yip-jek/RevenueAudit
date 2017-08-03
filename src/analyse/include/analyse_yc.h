@@ -2,7 +2,6 @@
 
 #include <map>
 #include "analyse.h"
-#include "ycstatfactor_hdb.h"
 
 // 业财稽核-分析模块
 class Analyse_YC : public Analyse
@@ -93,8 +92,8 @@ protected:
 	std::string m_fieldBatch;				// 批次字段名
 
 protected:
-	YCTaskReq        m_taskReq;					// 任务请求信息
-	YCStatFactor_HDB m_statFactorHDB;			// 核对表统计因子
+	YCTaskReq     m_taskReq;				// 任务请求信息
+	YCStatFactor* m_pStatFactor;			// 稽核统计因子
 
 protected:
 	std::vector<std::vector<std::string> > m_vec2DiffSummary;			// 差异汇总结果数据
