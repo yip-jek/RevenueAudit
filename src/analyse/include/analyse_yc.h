@@ -2,7 +2,7 @@
 
 #include <map>
 #include "analyse.h"
-#include "ycstatfactor.h"
+#include "ycstatfactor_hdb.h"
 
 // 业财稽核-分析模块
 class Analyse_YC : public Analyse
@@ -83,18 +83,18 @@ protected:
 	virtual void UpdateDimValue();
 
 protected:
-	std::string  m_tabYCTaskReq;			// （业财）任务请求表
-	std::string  m_tabStatRule;				// （业财）统计因子规则表
-	std::string  m_tabStatLog;				// （业财）稽核记录日志表
-	std::string  m_tabReportStat;			// （业财）报表状态表
-	std::string  m_tabProcessLog;			// （业财）流程记录日志表
-	std::string  m_fieldPeriod;				// 账期字段名
-	std::string  m_fieldCity;				// 地市字段名
-	std::string  m_fieldBatch;				// 批次字段名
+	std::string m_tabYCTaskReq;				// （业财）任务请求表
+	std::string m_tabStatRule;				// （业财）统计因子规则表
+	std::string m_tabStatLog;				// （业财）稽核记录日志表
+	std::string m_tabReportStat;			// （业财）报表状态表
+	std::string m_tabProcessLog;			// （业财）流程记录日志表
+	std::string m_fieldPeriod;				// 账期字段名
+	std::string m_fieldCity;				// 地市字段名
+	std::string m_fieldBatch;				// 批次字段名
 
 protected:
-	YCTaskReq    m_taskReq;					// 任务请求信息
-	YCStatFactor m_statFactor;				// 稽核规则因子类
+	YCTaskReq        m_taskReq;					// 任务请求信息
+	YCStatFactor_HDB m_statFactorHDB;			// 核对表统计因子
 
 protected:
 	std::vector<std::vector<std::string> > m_vec2DiffSummary;			// 差异汇总结果数据

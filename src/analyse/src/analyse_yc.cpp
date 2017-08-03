@@ -162,7 +162,7 @@ void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 	m_pLog->Output("[Analyse_YC] 获取业财稽核因子规则信息 ...");
 	std::vector<YCStatInfo> vec_ycsinfo;
 	m_pAnaDB2->SelectYCStatRule(m_sKpiID, vec_ycsinfo);
-	m_statFactor.LoadStatInfo(vec_ycsinfo);
+	m_statFactorHDB.LoadStatInfo(vec_ycsinfo);
 }
 
 void Analyse_YC::AnalyseSourceData() throw(base::Exception)
@@ -195,8 +195,8 @@ void Analyse_YC::SetNewBatch_HDB()
 {
 	// 查询地市核对表的最新批次
 	YCHDBBatch hd_batch;
-	hd_batch.stat_report = m_statFactor.GetStatReport();
-	hd_batch.stat_id     = m_statFactor.GetStatID();
+	hd_batch.stat_report = m_statFactorHDB.GetStatReport();
+	hd_batch.stat_id     = m_statFactorHDB.GetStatID();
 	hd_batch.stat_date   = m_dbinfo.GetEtlDay();
 	hd_batch.stat_city   = m_taskReq.task_city;
 	hd_batch.stat_batch  = 0;
@@ -242,7 +242,7 @@ void Analyse_YC::SetNewBatch_XQB() throw(base::Exception)
 
 void Analyse_YC::ConvertStatFactor() throw(base::Exception)
 {
-	int conv_size = m_statFactor.LoadFactor(m_v3HiveSrcData);
+	int conv_size = m_statFactorHDB.LoadFactor(m_v3HiveSrcData);
 	m_pLog->Output("[Analyse_YC] 统计因子转换大小：%d", conv_size);
 
 	if ( conv_size < 1 )
@@ -257,7 +257,7 @@ void Analyse_YC::ConvertStatFactor() throw(base::Exception)
 void Analyse_YC::GenerateResultData() throw(base::Exception)
 {
 	std::vector<std::vector<std::string> > vec_yc_data;
-	m_statFactor.GenerateResult(m_taskReq.task_batch, m_taskReq.task_city, vec_yc_data);
+	m_statFactorHDB.GenerateResult(m_taskReq.task_batch, m_taskReq.task_city, vec_yc_data);
 	if ( vec_yc_data.empty() )
 	{
 		throw base::Exception(ANAERR_GENERATE_YCDATA_FAILED, "生成报表结果数据失败！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
@@ -268,7 +268,7 @@ void Analyse_YC::GenerateResultData() throw(base::Exception)
 
 	// (2) 生成业财稽核差异汇总结果数据
 	// 不一定有差异汇总数据，因此不判断是否为空！
-	m_statFactor.GenerateDiffSummaryResult(m_taskReq.task_city, m_vec2DiffSummary);
+	m_statFactorHDB.GenerateDiffSummaryResult(m_taskReq.task_city, m_vec2DiffSummary);
 }
 
 void Analyse_YC::StoreResult() throw(base::Exception)
@@ -347,7 +347,7 @@ void Analyse_YC::RecordInformation()
 void Analyse_YC::RecordStatisticsLog()
 {
 	YCStatLog yc_log;
-	yc_log.stat_report = m_statFactor.GetStatReport();
+	yc_log.stat_report = m_statFactorHDB.GetStatReport();
 	yc_log.stat_batch  = m_taskReq.task_batch;
 	yc_log.stat_city   = m_taskReq.task_city;
 	yc_log.stat_cycle  = m_dbinfo.GetEtlDay();
@@ -390,7 +390,7 @@ void Analyse_YC::RecordStatisticsLog()
 
 void Analyse_YC::RecordReportState(YCReportState& report_state)
 {
-	report_state.report_id  = m_statFactor.GetStatReport();
+	report_state.report_id  = m_statFactorHDB.GetStatReport();
 	report_state.bill_month = m_dbinfo.GetEtlDay().substr(0, 6);
 	report_state.status     = "00";			// 状态：00-待审核
 	report_state.actor      = m_taskReq.actor;

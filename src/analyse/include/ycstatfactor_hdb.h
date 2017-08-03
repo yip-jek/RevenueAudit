@@ -8,20 +8,20 @@ namespace base
 class Log;
 }
 
-// （业财）规则因子类
-class YCStatFactor
+// （业财）核对表统计因子类
+class YCStatFactor_HDB
 {
 	typedef std::vector<YCStatInfo>						VEC_STATINFO;
 	typedef std::vector<YCCategoryFactor>				VEC_CATEGORYFACTOR;
 
-	typedef std::map<std::string, YCFactor>				MAP_FACTOR;
+	typedef std::map<std::string, std::string>			MAP_STRING;
 	typedef std::map<std::string, YCPairCategoryFactor> MAP_PAIRCATEGORYFACTOR;
 	typedef std::map<int, VEC_STATINFO>					MAP_VEC_STATINFO;
 	typedef std::map<std::string, VEC_CATEGORYFACTOR>	MAP_VEC_CATEGORYFACTOR;
 
 public:
-	YCStatFactor();
-	virtual ~YCStatFactor();
+	YCStatFactor_HDB();
+	virtual ~YCStatFactor_HDB();
 
 	static const char* const S_TOP_PRIORITY;			// 最高优先级 (差异汇总)
 	static const int S_CATEGORY_COLUMN_SIZE = 3;		// 分列数据列数
@@ -79,7 +79,7 @@ private:
 	std::string            m_statReport;				// 关联报表
 
 private:
-	MAP_FACTOR             m_mFactor;					// 因子对
+	MAP_STRING             m_mFactor;					// 因子对
 	MAP_VEC_STATINFO       m_mvStatInfo;				// 规则因子信息列表
 	VEC_STATINFO           m_vTopStatInfo;				// （最高优先级）规则因子信息列表
 	MAP_VEC_CATEGORYFACTOR m_mvCategoryFactor;			// 分类因子对

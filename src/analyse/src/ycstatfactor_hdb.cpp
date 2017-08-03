@@ -1,32 +1,32 @@
-#include "ycstatfactor.h"
+#include "ycstatfactor_hdb.h"
 #include "anaerror.h"
 #include "pubstr.h"
 #include "log.h"
 
-const char* const YCStatFactor::S_TOP_PRIORITY  = "NN";			// 最高优先级 (差异汇总)
+const char* const YCStatFactor_HDB::S_TOP_PRIORITY  = "NN";			// 最高优先级 (差异汇总)
 
 
-YCStatFactor::YCStatFactor()
+YCStatFactor_HDB::YCStatFactor_HDB()
 :m_pLog(base::Log::Instance())
 {
 }
 
-YCStatFactor::~YCStatFactor()
+YCStatFactor_HDB::~YCStatFactor_HDB()
 {
 	base::Log::Release();
 }
 
-std::string YCStatFactor::GetStatID() const
+std::string YCStatFactor_HDB::GetStatID() const
 {
 	return m_statID;
 }
 
-std::string YCStatFactor::GetStatReport() const
+std::string YCStatFactor_HDB::GetStatReport() const
 {
 	return m_statReport;
 }
 
-void YCStatFactor::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception)
+void YCStatFactor_HDB::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception)
 {
 	m_statID.clear();
 	m_statReport.clear();
@@ -79,10 +79,10 @@ void YCStatFactor::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exceptio
 		throw base::Exception(ANAERR_LOAD_STAT_INFO, "缺少一般规则因子信息！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
-	m_pLog->Output("[YCStatFactor] 载入规则因子信息成功.");
+	m_pLog->Output("[YCStatFactor_HDB] 载入规则因子信息成功.");
 }
 
-int YCStatFactor::LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception)
+int YCStatFactor_HDB::LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception)
 {
 	if ( !m_mFactor.empty() )
 	{
@@ -104,7 +104,7 @@ int YCStatFactor::LoadFactor(std::vector<std::vector<std::vector<std::string> > 
 			std::vector<std::string>& ref_vec = ref_vec2[j];
 
 			const int VEC_SIZE = ref_vec.size();
-			if ( VEC_SIZE > 0 )
+			if ( VEC_SIZE > 1 )
 			{
 				// 维度ID 在第一列
 				dim_id = base::PubStr::TrimUpperB(ref_vec[0]);
@@ -130,7 +130,7 @@ int YCStatFactor::LoadFactor(std::vector<std::vector<std::vector<std::string> > 
 						throw base::Exception(ANAERR_LOAD_FACTOR, "重复的维度因子ID：[%s] [FILE:%s, LINE:%d]", dim_id.c_str(), __FILE__, __LINE__);
 					}
 
-					m_mFactor[dim_id] = ref_vec;
+					m_mFactor[dim_id] = ref_vec[1];
 				}
 			}
 			else
@@ -142,11 +142,11 @@ int YCStatFactor::LoadFactor(std::vector<std::vector<std::vector<std::string> > 
 		}
 	}
 
-	m_pLog->Output("[YCStatFactor] 载入因子对成功.");
+	m_pLog->Output("[YCStatFactor_HDB] 载入因子对成功.");
 	return counter;
 }
 
-void YCStatFactor::GenerateResult(int batch, const std::string& city, std::vector<std::vector<std::string> >& v2_result) throw(base::Exception)
+void YCStatFactor_HDB::GenerateResult(int batch, const std::string& city, std::vector<std::vector<std::string> >& v2_result) throw(base::Exception)
 {
 	std::vector<std::vector<std::string> > vec2_result;
 
@@ -161,8 +161,8 @@ void YCStatFactor::GenerateResult(int batch, const std::string& city, std::vecto
 			{
 				YCStatInfo& ref_si = (m_it->second)[i];
 
-				m_pLog->Output("[YCStatFactor] 统计因子类型：组合（合计）因子");
-				m_pLog->Output("[YCStatFactor] 生成统计因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
+				m_pLog->Output("[YCStatFactor_HDB] 统计因子类型：组合（合计）因子");
+				m_pLog->Output("[YCStatFactor_HDB] 生成统计因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
 				MakeStatInfoResult(batch, city, ref_si, true, vec2_result);
 			}
 		}
@@ -172,8 +172,8 @@ void YCStatFactor::GenerateResult(int batch, const std::string& city, std::vecto
 			{
 				YCStatInfo& ref_si = (m_it->second)[i];
 
-				m_pLog->Output("[YCStatFactor] 统计因子类型：一般因子");
-				m_pLog->Output("[YCStatFactor] 生成统计因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
+				m_pLog->Output("[YCStatFactor_HDB] 统计因子类型：一般因子");
+				m_pLog->Output("[YCStatFactor_HDB] 生成统计因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
 				MakeStatInfoResult(batch, city, ref_si, false, vec2_result);
 			}
 		}
@@ -182,7 +182,7 @@ void YCStatFactor::GenerateResult(int batch, const std::string& city, std::vecto
 	vec2_result.swap(v2_result);
 }
 
-void YCStatFactor::GenerateDiffSummaryResult(const std::string& city, std::vector<std::vector<std::string> >& v2_result) throw(base::Exception)
+void YCStatFactor_HDB::GenerateDiffSummaryResult(const std::string& city, std::vector<std::vector<std::string> >& v2_result) throw(base::Exception)
 {
 	std::vector<std::vector<std::string> > vec2_result;
 
@@ -192,8 +192,8 @@ void YCStatFactor::GenerateDiffSummaryResult(const std::string& city, std::vecto
 	{
 		YCStatInfo& ref_si = m_vTopStatInfo[n];
 
-		m_pLog->Output("[YCStatFactor] 统计因子类型：汇总因子");
-		m_pLog->Output("[YCStatFactor] 生成汇总因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
+		m_pLog->Output("[YCStatFactor_HDB] 统计因子类型：汇总因子");
+		m_pLog->Output("[YCStatFactor_HDB] 生成汇总因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
 
 		// 汇总因子批次锁定为 0
 		MakeStatInfoResult(0, city, ref_si, true, vec2_result);
@@ -202,12 +202,12 @@ void YCStatFactor::GenerateDiffSummaryResult(const std::string& city, std::vecto
 	vec2_result.swap(v2_result);
 }
 
-std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) throw(base::Exception)
+std::string YCStatFactor_HDB::CalcComplexFactor(const std::string& cmplx_fctr_fmt) throw(base::Exception)
 {
-	m_pLog->Output("[YCStatFactor] 组合因子表达式：%s", cmplx_fctr_fmt.c_str());
+	m_pLog->Output("[YCStatFactor_HDB] 组合因子表达式：%s", cmplx_fctr_fmt.c_str());
 
 	std::string cmplx_fctr_result;
-	MAP_FACTOR::iterator m_it;
+	MAP_STRING::iterator m_it;
 
 	// 组合因子格式：[ A1, A2, A3, ...|+, -, ... ]
 	std::vector<std::string> vec_fmt_left;
@@ -223,7 +223,7 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 			}
 			else if ( (m_it = m_mFactor.find(ref_fmt)) != m_mFactor.end() )
 			{
-				OperateOneFactor(cmplx_fctr_result, "+", m_it->second.GetVal());
+				OperateOneFactor(cmplx_fctr_result, "+", m_it->second);
 				return cmplx_fctr_result;
 			}
 			else
@@ -259,7 +259,7 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 	}
 	else if ( (m_it = m_mFactor.find(ref_first)) != m_mFactor.end() )
 	{
-		OperateOneFactor(cmplx_fctr_result, "+", m_it->second.GetVal());
+		OperateOneFactor(cmplx_fctr_result, "+", m_it->second);
 	}
 	else
 	{
@@ -276,7 +276,7 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 		}
 		else if ( (m_it = m_mFactor.find(ref_fmt)) != m_mFactor.end() )
 		{
-			OperateOneFactor(cmplx_fctr_result, vec_fmt_right[i-1], m_it->second.GetVal());
+			OperateOneFactor(cmplx_fctr_result, vec_fmt_right[i-1], m_it->second);
 		}
 		else
 		{
@@ -287,10 +287,10 @@ std::string YCStatFactor::CalcComplexFactor(const std::string& cmplx_fctr_fmt) t
 	return cmplx_fctr_result;
 }
 
-std::string YCStatFactor::CalcCategoryFactor(const std::string& ctg_fmt) throw(base::Exception)
+std::string YCStatFactor_HDB::CalcCategoryFactor(const std::string& ctg_fmt) throw(base::Exception)
 {
 	std::string fmt = base::PubStr::TrimUpperB(ctg_fmt);
-	m_pLog->Output("[YCStatFactor] 组合分类因子表达式：%s", fmt.c_str());
+	m_pLog->Output("[YCStatFactor_HDB] 组合分类因子表达式：%s", fmt.c_str());
 
 	const int FMT_SIZE = fmt.size();
 	if ( FMT_SIZE > 3 && '{' == fmt[0] && '}' == fmt[FMT_SIZE-1] )
@@ -314,7 +314,7 @@ std::string YCStatFactor::CalcCategoryFactor(const std::string& ctg_fmt) throw(b
 			++ctg_index;
 		}
 
-		m_pLog->Output("[YCStatFactor] 组合分类因子表达式 %s 共包含 [%d] 个分类因子", ctg_fmt.c_str(), (ctg_index-1));
+		m_pLog->Output("[YCStatFactor_HDB] 组合分类因子表达式 %s 共包含 [%d] 个分类因子", ctg_fmt.c_str(), (ctg_index-1));
 		return ctg_result;
 	}
 	else
@@ -323,7 +323,7 @@ std::string YCStatFactor::CalcCategoryFactor(const std::string& ctg_fmt) throw(b
 	}
 }
 
-std::string YCStatFactor::ExtendCategoryDim(const std::string& dim, int index)
+std::string YCStatFactor_HDB::ExtendCategoryDim(const std::string& dim, int index)
 {
 	std::string       new_dim   = dim;
 	const std::string STR_INDEX = base::PubStr::Int2Str(index);
@@ -338,19 +338,19 @@ std::string YCStatFactor::ExtendCategoryDim(const std::string& dim, int index)
 	return new_dim;
 }
 
-bool YCStatFactor::GetCategoryFactorValue(const std::string& ctg_fmt, int index, std::string& val)
+bool YCStatFactor_HDB::GetCategoryFactorValue(const std::string& ctg_fmt, int index, std::string& val)
 {
-	MAP_FACTOR::iterator m_it = m_mFactor.find(ExtendCategoryDim(ctg_fmt, index));
+	MAP_STRING::iterator m_it = m_mFactor.find(ExtendCategoryDim(ctg_fmt, index));
 	if ( m_it != m_mFactor.end() )
 	{
-		val = m_it->second.GetVal();
+		val = m_it->second;
 		return true;
 	}
 
 	return false;
 }
 
-void YCStatFactor::OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception)
+void YCStatFactor_HDB::OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception)
 {
 	double dou_res = 0.0;
 	if ( !result.empty() && !base::PubStr::Str2Double(result, dou_res) )
@@ -388,7 +388,7 @@ void YCStatFactor::OperateOneFactor(std::string& result, const std::string& op, 
 	result = base::PubStr::Double2FormatStr(dou_res);
 }
 
-bool YCStatFactor::IsCategoryDim(const std::string& dim)
+bool YCStatFactor_HDB::IsCategoryDim(const std::string& dim)
 {
 	const int VEC_TOP_SIZE = m_vTopStatInfo.size();
 	for ( int i = 0; i < VEC_TOP_SIZE; ++i )
@@ -418,7 +418,7 @@ bool YCStatFactor::IsCategoryDim(const std::string& dim)
 	return false;
 }
 
-void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const YCStatInfo& st_info, bool agg, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception)
+void YCStatFactor_HDB::MakeStatInfoResult(int batch, const std::string& city, const YCStatInfo& st_info, bool agg, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception)
 {
 	YCStatResult yc_sr;
 	yc_sr.stat_city   = city;
@@ -460,11 +460,11 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 
 			if ( agg )
 			{
-				m_pLog->Output("[YCStatFactor] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
+				m_pLog->Output("[YCStatFactor_HDB] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
 			}
 			else
 			{
-				m_pLog->Output("[YCStatFactor] 因子结果：ITEM=[%s], DIM=[%s], VALUE=[%s]", yc_sr.stat_name.c_str(), yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
+				m_pLog->Output("[YCStatFactor_HDB] 因子结果：ITEM=[%s], DIM=[%s], VALUE=[%s]", yc_sr.stat_name.c_str(), yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
 			}
 
 			yc_sr.Convert2Vector(vec_data);
@@ -489,7 +489,7 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 		}
 		else	// 一般因子
 		{
-			MAP_FACTOR::iterator m_it = m_mFactor.find(base::PubStr::TrimUpperB(st_info.statdim_id));
+			MAP_STRING::iterator m_it = m_mFactor.find(base::PubStr::TrimUpperB(st_info.statdim_id));
 			if ( m_it != m_mFactor.end() )
 			{
 				yc_sr.stat_value = m_it->second;
@@ -500,13 +500,13 @@ void YCStatFactor::MakeStatInfoResult(int batch, const std::string& city, const 
 			}
 		}
 
-		m_pLog->Output("[YCStatFactor] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
+		m_pLog->Output("[YCStatFactor_HDB] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
 		yc_sr.Convert2Vector(vec_data);
 		base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
 	}
 }
 
-void YCStatFactor::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, VEC_CATEGORYFACTOR& vec_ctgfctr) throw(base::Exception)
+void YCStatFactor_HDB::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, VEC_CATEGORYFACTOR& vec_ctgfctr) throw(base::Exception)
 {
 	VEC_CATEGORYFACTOR       vec_cf;
 	std::vector<std::string> vec_fmt;
@@ -607,14 +607,14 @@ void YCStatFactor::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, V
 		}
 		else	// 辅助因子
 		{
-			m_pLog->Output("[YCStatFactor] 一般辅助分类因子：%s [IGNORED]", DIM.c_str());
+			m_pLog->Output("[YCStatFactor_HDB] 一般辅助分类因子：%s [IGNORED]", DIM.c_str());
 		}
 	}
 
 	vec_cf.swap(vec_ctgfctr);
 }
 
-void YCStatFactor::MatchCategoryFactor(const std::string& dim, const std::string& dim_a, const std::string& dim_b, VEC_CATEGORYFACTOR& vec_ctgfctr)
+void YCStatFactor_HDB::MatchCategoryFactor(const std::string& dim, const std::string& dim_a, const std::string& dim_b, VEC_CATEGORYFACTOR& vec_ctgfctr)
 {
 	VEC_CATEGORYFACTOR vec_cf_A;
 	MAP_VEC_CATEGORYFACTOR::iterator m_it = m_mvCategoryFactor.find(dim);

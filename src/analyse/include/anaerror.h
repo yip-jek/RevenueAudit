@@ -74,7 +74,7 @@ enum ANALYSE_ERROR
 	ANAERR_SET_COMPARE_DATA       = -3004001,			// 设置对比数据失败
 	ANAERR_GET_COMPARE_RESULT     = -3004002,			// 获取对比结果数据失败
 
-	// （业财）规则因子类错误码
+	// （业财）统计因子类错误码
 	ANAERR_LOAD_STAT_INFO         = -3005001,			// 载入规则因子信息失败
 	ANAERR_LOAD_FACTOR            = -3005002,			// 载入因子对失败
 	ANAERR_MAKE_STATINFO_RESULT   = -3005003,			// 由因子规则生成结果数据失败
