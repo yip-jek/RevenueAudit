@@ -2,6 +2,9 @@
 
 #include <map>
 #include "analyse.h"
+#include "ycinfo.h"
+
+class YCStatFactor;
 
 // 业财稽核-分析模块
 class Analyse_YC : public Analyse
@@ -100,5 +103,8 @@ protected:
 protected:
 	YCTaskReq     m_taskReq;				// 任务请求信息
 	YCStatFactor* m_pStatFactor;			// 稽核统计因子
+
+protected:
+	std::vector<std::vector<std::string> > m_v2DiffSummary;				// 差异汇总数据
 };
 

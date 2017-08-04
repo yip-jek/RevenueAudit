@@ -90,6 +90,24 @@ public:
 	YCStatInfo(): category(false)
 	{}
 
+	std::string LogPrintInfo() const
+	{
+		std::string info;
+		base::PubStr::SetFormatString(info, "CATEGORY=[%d], "
+				"STAT_ID=[%s], "
+				"STAT_NAME=[%s], "
+				"DIM=[%s], "
+				"PRIORITY=[%s], "
+				"REPORT=[%s]", 
+				category, 
+				stat_id.c_str(), 
+				stat_name.c_str(), 
+				statdim_id.c_str(), 
+				stat_priority.c_str(), 
+				stat_report.c_str());
+		return info;
+	}
+
 public:
 	bool        category;				// 分类因子标志
 	std::string stat_id;				// 统计指标ID
@@ -110,44 +128,44 @@ public:
 	static const int S_NUMBER_OF_MEMBERS = 7;			// 总成员数
 
 public:
-	// 载入数据
-	bool LoadFromVector(std::vector<std::string>& vec_str)
+	// 导入数据
+	bool Import(const std::vector<std::string>& vec_dat)
 	{
-		const int VEC_SIZE = vec_str.size();
+		const int VEC_SIZE = vec_dat.size();
 		if ( VEC_SIZE != S_NUMBER_OF_MEMBERS )
 		{
 			return false;
 		}
-	
+
 		int index = 0;
-		stat_report = vec_str[index++];
-		stat_id     = vec_str[index++];
-		stat_name   = vec_str[index++];
-		statdim_id  = vec_str[index++];
-		stat_city   = vec_str[index++];
+		stat_report = vec_dat[index++];
+		stat_id     = vec_dat[index++];
+		stat_name   = vec_dat[index++];
+		statdim_id  = vec_dat[index++];
+		stat_city   = vec_dat[index++];
 	
-		if ( !base::PubStr::Str2Int(vec_str[index++], stat_batch) )
+		if ( !base::PubStr::Str2Int(vec_dat[index++], stat_batch) )
 		{
 			return false;
 		}
 	
-		stat_value  = vec_str[index++];
+		stat_value  = vec_dat[index++];
 		return true;
 	}
 
-	// 数据转换 -> std::vector<std::string>
-	void Convert2Vector(std::vector<std::string>& vec_str)
+	// 导出数据
+	void Export(std::vector<std::string>& vec_dat)
 	{
-		std::vector<std::string> v_str;
-		v_str.push_back(stat_report);
-		v_str.push_back(stat_id);
-		v_str.push_back(stat_name);
-		v_str.push_back(statdim_id);
-		v_str.push_back(stat_city);
-		v_str.push_back(base::PubStr::Int2Str(stat_batch));
-		v_str.push_back(stat_value);
+		std::vector<std::string> v_dat;
+		v_dat.push_back(stat_report);
+		v_dat.push_back(stat_id);
+		v_dat.push_back(stat_name);
+		v_dat.push_back(statdim_id);
+		v_dat.push_back(stat_city);
+		v_dat.push_back(base::PubStr::Int2Str(stat_batch));
+		v_dat.push_back(stat_value);
 
-		v_str.swap(vec_str);
+		v_dat.swap(vec_dat);
 	}
 
 public:
@@ -200,11 +218,11 @@ public:
 	std::string LogPrintInfo() const
 	{
 		std::string info;
-		base::PubStr::SetFormatString(info, "BILL_MON=[%s], "
+		base::PubStr::SetFormatString(info, "BILL_CYC=[%s], "
 											"CITY=[%s], "
 											"TYPE=[%s], "
 											"BUSI_BATCH=[%d]", 
-											bill_month.c_str(), 
+											bill_cyc.c_str(), 
 											city.c_str(), 
 											type.c_str(), 
 											busi_batch);
@@ -212,7 +230,7 @@ public:
 	}
 
 public:
-	std::string bill_month;				// 账期
+	std::string bill_cyc;				// 账期
 	std::string city;					// 地市
 	std::string type;					// 类型
 	int         busi_batch;				// 业务版本号
@@ -226,13 +244,13 @@ public:
 	{
 		std::string info;
 		base::PubStr::SetFormatString(info, "REPORT_ID=[%s], "
-											"BILL_MON=[%s], "
+											"BILL_CYC=[%s], "
 											"CITY=[%s], "
 											"STATUS=[%s], "
-											"TYPE=[%d], "
+											"TYPE=[%s], "
 											"ACTOR=[%s]", 
 											report_id.c_str(), 
-											bill_month.c_str(), 
+											bill_cyc.c_str(), 
 											city.c_str(), 
 											status.c_str(), 
 											type.c_str(), 
@@ -242,7 +260,7 @@ public:
 
 public:
 	std::string report_id;				// 报表 ID
-	std::string bill_month;				// 账期
+	std::string bill_cyc;				// 账期
 	std::string city;					// 地市
 	std::string status;					// 状态
 	std::string type;					// 类型
@@ -259,16 +277,16 @@ public:
 	{
 		std::string info;
 		base::PubStr::SetFormatString(info, "REPORT_ID=[%s], "
-											"BILL_MON=[%s], "
+											"BILL_CYC=[%s], "
 											"CITY=[%s], "
 											"STATUS=[%s], "
-											"TYPE=[%d], "
+											"TYPE=[%s], "
 											"ACTOR=[%s], "
 											"OPER=[%s], "
 											"VER=[%d], "
 											"UPTIME=[%s]", 
 											report_id.c_str(), 
-											bill_month.c_str(), 
+											bill_cyc.c_str(), 
 											city.c_str(), 
 											status.c_str(), 
 											type.c_str(), 
@@ -281,7 +299,7 @@ public:
 
 public:
 	std::string report_id;				// 报表 ID
-	std::string bill_month;				// 账期
+	std::string bill_cyc;				// 账期
 	std::string city;					// 地市
 	std::string status;					// 状态
 	std::string type;					// 类型

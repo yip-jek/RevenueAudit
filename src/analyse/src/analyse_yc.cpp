@@ -245,7 +245,7 @@ void Analyse_YC::SetNewBatch_XQB() throw(base::Exception)
 {
 	// 查询地市详情表的最新批次
 	YCXQBBatch xq_batch;
-	xq_batch.bill_month = m_dbinfo.GetEtlDay().substr(0, 6);
+	xq_batch.bill_cyc   = m_dbinfo.GetEtlDay().substr(0, 6);
 	xq_batch.city       = m_taskReq.task_city;
 	xq_batch.type       = "0";			// 类型：0-固定项，1-浮动项
 	xq_batch.busi_batch = 0;
@@ -292,6 +292,13 @@ void Analyse_YC::GenerateResultData() throw(base::Exception)
 	{
 		throw base::Exception(ANAERR_GENERATE_YCDATA_FAILED, "生成报表结果数据失败！(KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
+
+	// 提取差异汇总数据
+	if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )	// 核对表
+	{
+		m_v2DiffSummary.swap(m_v3HiveSrcData[1]);
+		m_v3HiveSrcData.erase(m_v3HiveSrcData.begin()+1);
+	}
 }
 
 void Analyse_YC::StoreResult() throw(base::Exception)
@@ -337,13 +344,12 @@ void Analyse_YC::StoreReportResult()
 void Analyse_YC::StoreDiffSummaryResult() throw(base::Exception)
 {
 	YCStatResult yc_sr;
-	std::vector<std::vector<std::string> >& ref_vec2DiffSummary = m_v3HiveSrcData[1];
 
-	const int VEC2_SIZE = ref_vec2DiffSummary.size();
+	const int VEC2_SIZE = m_v2DiffSummary.size();
 	for ( int i = 0; i < VEC2_SIZE; ++i )
 	{
-		std::vector<std::string>& ref_vec = ref_vec2DiffSummary[i];
-		if ( !yc_sr.LoadFromVector(ref_vec) )
+		std::vector<std::string>& ref_vec = m_v2DiffSummary[i];
+		if ( !yc_sr.Import(ref_vec) )
 		{
 			throw base::Exception(ANAERR_STORE_DIFF_SUMMARY, "差异汇总结果数据还原失败！[INDEX:%d] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", (i+1), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
@@ -416,10 +422,10 @@ void Analyse_YC::RecordStatisticsLog()
 
 void Analyse_YC::RecordReportState(YCReportState& report_state)
 {
-	report_state.report_id  = m_pStatFactor->GetStatReport();
-	report_state.bill_month = m_dbinfo.GetEtlDay().substr(0, 6);
-	report_state.status     = "00";			// 状态：00-待审核
-	report_state.actor      = m_taskReq.actor;
+	report_state.report_id = m_pStatFactor->GetStatReport();
+	report_state.bill_cyc  = m_dbinfo.GetEtlDay().substr(0, 6);
+	report_state.status    = "00";			// 状态：00-待审核
+	report_state.actor     = m_taskReq.actor;
 
 	// 业财详情表（省）稽核：地市指定为"GD"
 	if ( AnalyseRule::ANATYPE_YCXQB_GD == m_taskInfo.AnaRule.AnaType )
@@ -447,15 +453,15 @@ void Analyse_YC::RecordReportState(YCReportState& report_state)
 void Analyse_YC::RecordProcessLog(const YCReportState& report_state)
 {
 	YCProcessLog proc_log;
-	proc_log.report_id  = report_state.report_id;
-	proc_log.bill_month = report_state.bill_month;
-	proc_log.city       = report_state.city;
-	proc_log.status     = report_state.status;
-	proc_log.type       = report_state.type;
-	proc_log.actor      = report_state.actor;
-	proc_log.oper       = m_taskReq.oper;
-	proc_log.version    = m_taskReq.task_batch;
-	proc_log.uptime     = base::SimpleTime::Now().Time14();
+	proc_log.report_id = report_state.report_id;
+	proc_log.bill_cyc  = report_state.bill_cyc;
+	proc_log.city      = report_state.city;
+	proc_log.status    = report_state.status;
+	proc_log.type      = report_state.type;
+	proc_log.actor     = report_state.actor;
+	proc_log.oper      = m_taskReq.oper;
+	proc_log.version   = m_taskReq.task_batch;
+	proc_log.uptime    = base::SimpleTime::Now().Time14();
 
 	m_pAnaDB2->UpdateInsertProcessLogState(proc_log);
 }

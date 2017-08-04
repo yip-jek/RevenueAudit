@@ -223,7 +223,7 @@ void CAnaDB2::SelectXQBMaxBatch(const std::string& tab_xqb, YCXQBBatch& xq_batch
 	rs.EnableWarning(true);
 
 	std::string sql = "SELECT NVL(MAX(BUSIVERSION), 0) FROM " + tab_xqb;
-	sql += " WHERE BILLMONTH = ? AND CITY = ? AND TYPE = ?";
+	sql += " WHERE BILLCYC = ? AND CITY = ? AND TYPE = ?";
 	m_pLog->Output("[DB2] Select max batch from XQB table: %s (%s)", tab_xqb.c_str(), xq_batch.LogPrintInfo().c_str());
 
 	try
@@ -231,7 +231,7 @@ void CAnaDB2::SelectXQBMaxBatch(const std::string& tab_xqb, YCXQBBatch& xq_batch
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		int index = 1;
-		rs.Parameter(index++) = xq_batch.bill_month.c_str();
+		rs.Parameter(index++) = xq_batch.bill_cyc.c_str();
 		rs.Parameter(index++) = xq_batch.city.c_str();
 		rs.Parameter(index++) = xq_batch.type.c_str();
 		rs.Execute();
@@ -1581,7 +1581,7 @@ void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(b
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT COUNT(0) FROM " + m_tabReportStat + " WHERE REPORTNAME = ? AND BILLMONTH = ? AND CITY = ? AND ACTOR = ?";
+	std::string sql = "SELECT COUNT(0) FROM " + m_tabReportStat + " WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ? AND ACTOR = ?";
 
 	try
 	{
@@ -1589,7 +1589,7 @@ void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(b
 
 		int index = 1;
 		rs.Parameter(index++) = report_state.report_id.c_str();
-		rs.Parameter(index++) = report_state.bill_month.c_str();
+		rs.Parameter(index++) = report_state.bill_cyc.c_str();
 		rs.Parameter(index++) = report_state.city.c_str();
 		rs.Parameter(index++) = report_state.actor.c_str();
 		rs.Execute();
@@ -1607,7 +1607,7 @@ void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(b
 		if ( record_count > 0 )		// 已存在
 		{
 			sql  = "UPDATE " + m_tabReportStat + " SET STATUS = ?, TYPE = ? WHERE ";
-			sql += "REPORTNAME = ? AND BILLMONTH = ? AND CITY = ? AND ACTOR = ?";
+			sql += "REPORTNAME = ? AND BILLCYC = ? AND CITY = ? AND ACTOR = ?";
 
 			m_pLog->Output("[DB2] UPDATE REPORT STATE: %s", report_state.LogPrintInfo().c_str());
 			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -1616,7 +1616,7 @@ void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(b
 			rs.Parameter(index++) = report_state.status.c_str();
 			rs.Parameter(index++) = report_state.type.c_str();
 			rs.Parameter(index++) = report_state.report_id.c_str();
-			rs.Parameter(index++) = report_state.bill_month.c_str();
+			rs.Parameter(index++) = report_state.bill_cyc.c_str();
 			rs.Parameter(index++) = report_state.city.c_str();
 			rs.Parameter(index++) = report_state.actor.c_str();
 
@@ -1626,14 +1626,14 @@ void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(b
 		}
 		else	// 不存在
 		{
-			sql = "INSERT INTO " + m_tabReportStat + "(REPORTNAME, BILLMONTH, CITY, STATUS, TYPE, ACTOR) VALUES(?, ?, ?, ?, ?, ?)";
+			sql = "INSERT INTO " + m_tabReportStat + "(REPORTNAME, BILLCYC, CITY, STATUS, TYPE, ACTOR) VALUES(?, ?, ?, ?, ?, ?)";
 
 			m_pLog->Output("[DB2] INSERT REPORT STATE: %s", report_state.LogPrintInfo().c_str());
 			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 			index = 1;
 			rs.Parameter(index++) = report_state.report_id.c_str();
-			rs.Parameter(index++) = report_state.bill_month.c_str();
+			rs.Parameter(index++) = report_state.bill_cyc.c_str();
 			rs.Parameter(index++) = report_state.city.c_str();
 			rs.Parameter(index++) = report_state.status.c_str();
 			rs.Parameter(index++) = report_state.type.c_str();
@@ -1655,7 +1655,7 @@ void CAnaDB2::UpdateInsertProcessLogState(const YCProcessLog& proc_log) throw(ba
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT COUNT(0) FROM " + m_tabProcessLog + " WHERE REPORTNAME = ? AND BILLMONTH = ? AND CITY = ? AND ACTOR = ?";
+	std::string sql = "SELECT COUNT(0) FROM " + m_tabProcessLog + " WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ? AND ACTOR = ?";
 
 	try
 	{
@@ -1663,7 +1663,7 @@ void CAnaDB2::UpdateInsertProcessLogState(const YCProcessLog& proc_log) throw(ba
 
 		int index = 1;
 		rs.Parameter(index++) = proc_log.report_id.c_str();
-		rs.Parameter(index++) = proc_log.bill_month.c_str();
+		rs.Parameter(index++) = proc_log.bill_cyc.c_str();
 		rs.Parameter(index++) = proc_log.city.c_str();
 		rs.Parameter(index++) = proc_log.actor.c_str();
 		rs.Execute();
@@ -1681,7 +1681,7 @@ void CAnaDB2::UpdateInsertProcessLogState(const YCProcessLog& proc_log) throw(ba
 		if ( record_count > 0 )		// 已存在
 		{
 			sql  = "UPDATE " + m_tabProcessLog + " SET STATUS = ?, TYPE = ?, OPERATOR = ?, VERSION = ?";
-			sql += ", UPTIME = ? WHERE REPORTNAME = ? AND BILLMONTH = ? AND CITY = ? AND ACTOR = ?";
+			sql += ", UPTIME = ? WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ? AND ACTOR = ?";
 
 			m_pLog->Output("[DB2] UPDATE PROCESS LOG: %s", proc_log.LogPrintInfo().c_str());
 			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
@@ -1693,7 +1693,7 @@ void CAnaDB2::UpdateInsertProcessLogState(const YCProcessLog& proc_log) throw(ba
 			rs.Parameter(index++) = proc_log.version;
 			rs.Parameter(index++) = proc_log.uptime.c_str();
 			rs.Parameter(index++) = proc_log.report_id.c_str();
-			rs.Parameter(index++) = proc_log.bill_month.c_str();
+			rs.Parameter(index++) = proc_log.bill_cyc.c_str();
 			rs.Parameter(index++) = proc_log.city.c_str();
 			rs.Parameter(index++) = proc_log.actor.c_str();
 
@@ -1703,7 +1703,7 @@ void CAnaDB2::UpdateInsertProcessLogState(const YCProcessLog& proc_log) throw(ba
 		}
 		else	// 不存在
 		{
-			sql  = "INSERT INTO " + m_tabProcessLog + "(REPORTNAME, BILLMONTH, CITY, STATUS, ";
+			sql  = "INSERT INTO " + m_tabProcessLog + "(REPORTNAME, BILLCYC, CITY, STATUS, ";
 			sql += "TYPE, ACTOR, OPERATOR, VERSION, UPTIME) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 			m_pLog->Output("[DB2] INSERT PROCESS LOG: %s", proc_log.LogPrintInfo().c_str());
@@ -1711,7 +1711,7 @@ void CAnaDB2::UpdateInsertProcessLogState(const YCProcessLog& proc_log) throw(ba
 
 			index = 1;
 			rs.Parameter(index++) = proc_log.report_id.c_str();
-			rs.Parameter(index++) = proc_log.bill_month.c_str();
+			rs.Parameter(index++) = proc_log.bill_cyc.c_str();
 			rs.Parameter(index++) = proc_log.city.c_str();
 			rs.Parameter(index++) = proc_log.status.c_str();
 			rs.Parameter(index++) = proc_log.type.c_str();

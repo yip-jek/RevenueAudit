@@ -3,9 +3,6 @@
 #include "pubstr.h"
 #include "log.h"
 
-const char* const YCStatFactor_HDB::S_TOP_PRIORITY  = "NN";			// 最高优先级 (差异汇总)
-
-
 YCStatFactor_HDB::YCStatFactor_HDB(YCTaskReq& task_req)
 :YCStatFactor(task_req)
 {
@@ -13,6 +10,29 @@ YCStatFactor_HDB::YCStatFactor_HDB(YCTaskReq& task_req)
 
 YCStatFactor_HDB::~YCStatFactor_HDB()
 {
+}
+
+void YCStatFactor_HDB::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception)
+{
+	YCStatFactor::LoadStatInfo(vec_statinfo);
+
+	if ( !m_vTopStatInfo.empty() )
+	{
+		VEC_STATINFO().swap(m_vTopStatInfo);
+	}
+
+	const int VEC_SIZE = vec_statinfo.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		YCStatInfo& ref_si = vec_statinfo[i];
+
+		if ( S_TOP_PRIORITY == ref_si.stat_priority )
+		{
+			m_vTopStatInfo.push_back(ref_si);
+		}
+	}
+
+	m_pLog->Output("[YCStatFactor_HDB] 载入规则因子信息成功.");
 }
 
 int YCStatFactor_HDB::LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception)
@@ -81,8 +101,8 @@ int YCStatFactor_HDB::LoadFactor(std::vector<std::vector<std::vector<std::string
 
 void YCStatFactor_HDB::MakeResult(std::vector<std::vector<std::vector<std::string> > >& v3_result) throw(base::Exception)
 {
-	std::vector<std::vector<std::string> >                vec2_result;
-	std::vector<std::vector<std::vector<std::string> > >& vec3_result;
+	std::vector<std::vector<std::string> >               vec2_result;
+	std::vector<std::vector<std::vector<std::string> > > vec3_result;
 
 	m_pLog->Output("[YCStatFactor_HDB] (1) 生成业财稽核地市核对表结果数据");
 	GenerateStatResult(vec2_result);
@@ -100,31 +120,29 @@ void YCStatFactor_HDB::GenerateStatResult(std::vector<std::vector<std::string> >
 	std::vector<std::vector<std::string> > vec2_result;
 
 	// 生成一般因子与组合因子的结果数据
+	bool        agg = false;
+	std::string factor_type;
 	for ( MAP_VEC_STATINFO::iterator m_it = m_mvStatInfo.begin(); m_it != m_mvStatInfo.end(); ++m_it )
 	{
-		const int VEC_SIZE = m_it->second.size();
-
 		if ( m_it->first > 0 )		// 组合（合计）因子
 		{
-			for ( int i = 0; i < VEC_SIZE; ++i )
-			{
-				YCStatInfo& ref_si = (m_it->second)[i];
-
-				m_pLog->Output("[YCStatFactor_HDB] 统计因子类型：组合（合计）因子");
-				m_pLog->Output("[YCStatFactor_HDB] 生成统计因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
-				MakeStatInfoResult(m_pTaskReq->task_batch, ref_si, true, vec2_result);
-			}
+			agg         = true;
+			factor_type = "组合（合计）因子";
 		}
 		else	// 一般因子
 		{
-			for ( int i = 0; i < VEC_SIZE; ++i )
-			{
-				YCStatInfo& ref_si = (m_it->second)[i];
+			agg         = false;
+			factor_type = "一般因子";
+		}
 
-				m_pLog->Output("[YCStatFactor_HDB] 统计因子类型：一般因子");
-				m_pLog->Output("[YCStatFactor_HDB] 生成统计因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
-				MakeStatInfoResult(m_pTaskReq->task_batch, ref_si, false, vec2_result);
-			}
+		const int VEC_SIZE = m_it->second.size();
+		for ( int i = 0; i < VEC_SIZE; ++i )
+		{
+			YCStatInfo& ref_si = (m_it->second)[i];
+
+			m_pLog->Output("[YCStatFactor_HDB] 统计因子类型：%s", factor_type.c_str());
+			m_pLog->Output("[YCStatFactor_HDB] 生成统计因子结果数据：%s", ref_si.LogPrintInfo().c_str());
+			MakeStatInfoResult(m_pTaskReq->task_batch, ref_si, agg, vec2_result);
 		}
 	}
 
@@ -142,7 +160,7 @@ void YCStatFactor_HDB::GenerateDiffSummaryResult(std::vector<std::vector<std::st
 		YCStatInfo& ref_si = m_vTopStatInfo[n];
 
 		m_pLog->Output("[YCStatFactor_HDB] 统计因子类型：汇总因子");
-		m_pLog->Output("[YCStatFactor_HDB] 生成汇总因子结果数据：STAT_ID:%s, STATDIM_ID:%s, STAT_PRIORITY:%s", ref_si.stat_id.c_str(), ref_si.statdim_id.c_str(), ref_si.stat_priority.c_str());
+		m_pLog->Output("[YCStatFactor_HDB] 生成汇总因子结果数据：%s", ref_si.LogPrintInfo().c_str());
 
 		// 汇总因子批次锁定为 0
 		MakeStatInfoResult(0, ref_si, true, vec2_result);
@@ -378,7 +396,7 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 				m_pLog->Output("[YCStatFactor_HDB] 因子结果：ITEM=[%s], DIM=[%s], VALUE=[%s]", yc_sr.stat_name.c_str(), yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
 			}
 
-			yc_sr.Convert2Vector(vec_data);
+			yc_sr.Export(vec_data);
 			base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
 		}
 	}
@@ -412,7 +430,7 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 		}
 
 		m_pLog->Output("[YCStatFactor_HDB] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
-		yc_sr.Convert2Vector(vec_data);
+		yc_sr.Export(vec_data);
 		base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
 	}
 }

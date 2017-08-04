@@ -15,6 +15,8 @@ public:
 	typedef std::vector<YCStatInfo>			VEC_STATINFO;
 	typedef std::map<int, VEC_STATINFO>		MAP_VEC_STATINFO;
 
+	static const char* const S_TOP_PRIORITY;			// 最高优先级 (差异汇总)
+
 public:
 	YCStatFactor(YCTaskReq& task_req);
 	virtual ~YCStatFactor();

@@ -11,14 +11,16 @@ public:
 	typedef std::map<std::string, YCPairCategoryFactor> MAP_PAIRCATEGORYFACTOR;
 	typedef std::map<std::string, VEC_CATEGORYFACTOR>	MAP_VEC_CATEGORYFACTOR;
 
+	static const int S_CATEGORY_COLUMN_SIZE = 3;		// 分列数据列数
+
 public:
 	YCStatFactor_HDB(YCTaskReq& task_req);
 	virtual ~YCStatFactor_HDB();
 
-	static const char* const S_TOP_PRIORITY;			// 最高优先级 (差异汇总)
-	static const int S_CATEGORY_COLUMN_SIZE = 3;		// 分列数据列数
-
 public:
+	// 载入规则因子信息
+	virtual void LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception);
+
 	// 载入因子对
 	virtual int LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception);
 
