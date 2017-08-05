@@ -5,6 +5,7 @@
 #include "canadb2.h"
 #include "canahive.h"
 #include "ycstatfactor_hdb.h"
+#include "ycstatfactor_xqb.h"
 
 
 Analyse_YC::Analyse_YC()
@@ -93,7 +94,7 @@ void Analyse_YC::End(int err_code, const std::string& err_msg /*= std::string()*
 	Analyse::End(err_code, err_msg);
 }
 
-void Analyse_YC::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
+void Analyse_YC::GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception)
 {
 	if ( vec_str.size() < 4 )
 	{
@@ -107,7 +108,7 @@ void Analyse_YC::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(
 	m_pLog->Output("[Analyse_YC] 业财稽核任务流水号：%d", m_taskReq.seq);
 }
 
-void Analyse_YC::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse_YC::AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception)
 {
 	// 是否为业财稽核类型
 	std::string cn_anatype;
@@ -275,7 +276,7 @@ void Analyse_YC::SetNewBatch_XQB() throw(base::Exception)
 
 void Analyse_YC::ConvertStatFactor() throw(base::Exception)
 {
-	int conv_size = m_pStatFactor->LoadFactor(m_v3HiveSrcData);
+	int conv_size = m_pStatFactor->LoadFactors(m_v3HiveSrcData);
 	m_pLog->Output("[Analyse_YC] 统计因子转换大小：%d", conv_size);
 
 	if ( conv_size < 1 )
@@ -348,7 +349,7 @@ void Analyse_YC::StoreDiffSummaryResult() throw(base::Exception)
 	const int VEC2_SIZE = m_v2DiffSummary.size();
 	for ( int i = 0; i < VEC2_SIZE; ++i )
 	{
-		std::vector<std::string>& ref_vec = m_v2DiffSummary[i];
+		VEC_STRING& ref_vec = m_v2DiffSummary[i];
 		if ( !yc_sr.Import(ref_vec) )
 		{
 			throw base::Exception(ANAERR_STORE_DIFF_SUMMARY, "差异汇总结果数据还原失败！[INDEX:%d] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", (i+1), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
@@ -385,7 +386,7 @@ void Analyse_YC::RecordStatisticsLog()
 	yc_log.stat_cycle  = m_dbinfo.GetEtlDay();
 	yc_log.stat_time   = base::SimpleTime::Now().Time14();	// 当前时间
 
-	std::vector<std::string> vec_datasrc;
+	VEC_STRING vec_datasrc;
 	base::PubStr::Str2StrVector(m_taskInfo.vecEtlRule[0].DataSource, ",", vec_datasrc);
 
 	YCSrcInfo yc_srcinfo;

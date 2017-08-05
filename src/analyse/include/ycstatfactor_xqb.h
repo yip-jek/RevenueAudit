@@ -6,16 +6,24 @@
 class YCStatFactor_XQB : public YCStatFactor
 {
 public:
+	typedef std::map<std::string, YCFactor_XQB>		MAP_FACTOR;
+
+public:
 	YCStatFactor_XQB(YCTaskReq& task_req);
 	virtual ~YCStatFactor_XQB();
 
 public:
-	// 载入因子对
-	virtual int LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception);
-
 	// 生成稽核统计结果
-	virtual void MakeResult(std::vector<std::vector<std::vector<std::string> > >& v3_result) throw(base::Exception);
+	virtual void MakeResult(VEC3_STRING& v3_result) throw(base::Exception);
+
+protected:
+	// 清空旧因子对
+	virtual void ClearOldFactors();
+
+	// 载入单个因子对
+	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception);
 
 private:
+	MAP_FACTOR m_mFactor;
 };
 

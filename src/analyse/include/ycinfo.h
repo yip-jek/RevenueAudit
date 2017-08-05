@@ -209,6 +209,37 @@ public:
 	int         batch;					// 批次
 };
 
+// (业财稽核) 详情表因子对
+struct YCFactor_XQB
+{
+public:
+	YCFactor_XQB() {}
+	YCFactor_XQB(const std::vector<std::string>& v_dat): vec_data(v_dat) {}
+
+	YCFactor_XQB& operator = (const std::vector<std::string>& v_dat)
+	{
+		vec_data = v_dat;
+		return *this;
+	}
+
+	size_t Size() const
+	{ return vec_data.size(); }
+
+	std::string GetVal() const
+	{
+		const int VEC_SIZE = vec_data.size();
+		if ( VEC_SIZE > 0 )
+		{
+			return vec_data[VEC_SIZE-1];
+		}
+
+		return "";
+	}
+
+public:
+	std::vector<std::string> vec_data;
+};
+
 // 地市详情表批次信息
 struct YCXQBBatch
 {

@@ -20,12 +20,12 @@ std::string Analyse_HD::GetLogFilePrefix()
 	return std::string("Analyse_HD");
 }
 
-void Analyse_HD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
+void Analyse_HD::GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception)
 {
 	// Do nothing !
 }
 
-void Analyse_HD::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse_HD::AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception)
 {
 	if ( m_taskInfo.AnaRule.AnaType != AnalyseRule::ANATYPE_HDJH_STAT )		// 话单稽核统计类型
 	{
@@ -48,7 +48,7 @@ void Analyse_HD::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base:
 	GetExecuteSQL();
 }
 
-void Analyse_HD::GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse_HD::GetExpressHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception)
 {
 	// HIVE SQL 语句就在分析表达式中
 	std::string hive_sql = base::PubStr::TrimB(m_taskInfo.AnaRule.AnaExpress);
@@ -80,7 +80,7 @@ void Analyse_HD::GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(
 		throw base::Exception(ANAERR_GET_EXP_HIVESQL_FAILED, "[HDJH] Illegal hive sql: %s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", hive_sql.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 	}
 
-	std::vector<std::string>().swap(vec_hivesql);
+	VEC_STRING().swap(vec_hivesql);
 	vec_hivesql.push_back(hive_sql);
 }
 
@@ -186,7 +186,7 @@ void Analyse_HD::GenerateDeleteTime() throw(base::Exception)
 		return;
 	}
 
-	std::vector<std::string> vec_str;
+	VEC_STRING vec_str;
 	base::PubStr::Str2StrVector(DEL_TIME_FMT, ",", vec_str);
 	const int VEC_SIZE = vec_str.size();
 	if ( 1 == VEC_SIZE )
@@ -292,7 +292,7 @@ void Analyse_HD::DataSupplement()
 		// 序列补全
 		for ( size_t s = 0; s < SRC_DATA_SIZE; ++s )
 		{
-			std::vector<std::string>& ref_vec = m_v3HiveSrcData[0][s];
+			VEC_STRING& ref_vec = m_v3HiveSrcData[0][s];
 			ref_vec.insert(ref_vec.begin()+ref_sn.index, ref_sn.vec_seq_val[s]);
 		}
 	}

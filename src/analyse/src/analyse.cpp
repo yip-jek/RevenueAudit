@@ -29,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 5.0.8.0 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 5.0.10.0 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -174,7 +174,7 @@ void Analyse::ReleaseSQLTranslator()
 void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exception)
 {
 	// 格式：启动批号:指标ID:分析规则ID:...
-	std::vector<std::string> vec_str;
+	VEC_STRING vec_str;
 	base::PubStr::Str2StrVector(para, ":", vec_str);
 
 	if ( vec_str.size() < 3 )
@@ -304,9 +304,9 @@ void Analyse::ExchangeSQLMark(std::string& sql) throw(base::Exception)
 	}
 }
 
-void Analyse::FetchHiveSource(std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse::FetchHiveSource(VEC_STRING& vec_hivesql) throw(base::Exception)
 {
-	std::vector<std::vector<std::string> > vec2_fields;
+	VEC2_STRING vec2_fields;
 
 	const int SQL_SIZE = vec_hivesql.size();
 	for ( int i = 0; i < SQL_SIZE; ++i )
@@ -349,7 +349,7 @@ void Analyse::UpdateDimValue()
 	}
 }
 
-//void Analyse::AddAnalysisCondition(AnalyseRule& ana_rule, std::vector<std::string>& vec_sql)
+//void Analyse::AddAnalysisCondition(AnalyseRule& ana_rule, VEC_STRING& vec_sql)
 //{
 //	const std::string CONDITION = TaskInfoUtil::GetStraightAnaCondition(ana_rule.AnaCondType, ana_rule.AnaCondition, false);
 //
@@ -545,7 +545,7 @@ void Analyse::DoDataAnalyse() throw(base::Exception)
 {
 	m_pLog->Output("[Analyse] 解析分析规则 ...");
 
-	std::vector<std::string> vec_hivesql;
+	VEC_STRING vec_hivesql;
 	AnalyseRules(vec_hivesql);
 
 	m_pLog->Output("[Analyse] 获取Hive源数据 ...");
@@ -561,7 +561,7 @@ void Analyse::DoDataAnalyse() throw(base::Exception)
 	UpdateDimValue();
 }
 
-void Analyse::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse::AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception)
 {
 	base::PubStr::Trim(m_taskInfo.AnaRule.AnaExpress);
 	std::string& ref_exp = m_taskInfo.AnaRule.AnaExpress;
@@ -604,7 +604,7 @@ void Analyse::AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Ex
 }
 
 // 暂时只支持两组数据的汇总对比
-void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse::GetSummaryCompareHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception)
 {
 	switch ( TaskInfoUtil::CheckDualEtlRule(m_taskInfo.vecEtlRule) )
 	{
@@ -625,7 +625,7 @@ void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) th
 	// 格式样例2: A-B, all								// 所有列
 	std::string& ana_exp = m_taskInfo.AnaRule.AnaExpress;
 
-	std::vector<std::string> vec_str;
+	VEC_STRING vec_str;
 	base::PubStr::Str2StrVector(ana_exp, ",", vec_str);
 	if ( vec_str.size() != 2 )
 	{
@@ -692,7 +692,7 @@ void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) th
 		}
 	}
 
-	std::vector<std::string> v_hive_sql;
+	VEC_STRING v_hive_sql;
 
 	OneEtlRule& first_one  = m_taskInfo.vecEtlRule[first_index];
 	OneEtlRule& second_one = m_taskInfo.vecEtlRule[second_index];
@@ -762,7 +762,7 @@ void Analyse::GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) th
 }
 
 // 暂时只支持两组数据的明细对比
-void Analyse::GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse::GetDetailCompareHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception)
 {
 	switch ( TaskInfoUtil::CheckDualEtlRule(m_taskInfo.vecEtlRule) )
 	{
@@ -786,7 +786,7 @@ void Analyse::GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) thr
 	DetermineDataGroup(m_taskInfo.AnaRule.AnaExpress, first_index, second_index);
 
 	std::vector<int> vec_col;
-	std::vector<std::string> v_hive_sql;
+	VEC_STRING       v_hive_sql;
 
 	OneEtlRule& first_one  = m_taskInfo.vecEtlRule[first_index];
 	OneEtlRule& second_one = m_taskInfo.vecEtlRule[second_index];
@@ -856,7 +856,7 @@ void Analyse::GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) thr
 	v_hive_sql.swap(vec_hivesql);
 }
 
-void Analyse::GetStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse::GetStatisticsHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception)
 {
 	switch ( TaskInfoUtil::CheckPluralEtlRule(m_taskInfo.vecEtlRule) )
 	{
@@ -888,7 +888,7 @@ void Analyse::GetStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) throw(
 	//AddAnalysisCondition(m_taskInfo.AnaRule, vec_hivesql);
 }
 
-void Analyse::GetReportStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse::GetReportStatisticsHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception)
 {
 	switch ( TaskInfoUtil::CheckPluralEtlRule(m_taskInfo.vecEtlRule) )
 	{
@@ -916,7 +916,7 @@ void Analyse::GetReportStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) 
 	//AddAnalysisCondition(m_taskInfo.AnaRule, vec_hivesql);
 }
 
-void Analyse::GetStatisticsHiveSQLBySet(std::vector<std::string>& vec_hivesql, bool union_all) throw(base::Exception)
+void Analyse::GetStatisticsHiveSQLBySet(VEC_STRING& vec_hivesql, bool union_all) throw(base::Exception)
 {
 	std::set<int> set_int;
 	const int RESULT = base::PubStr::Express2IntSet(m_taskInfo.AnaRule.AnaExpress, set_int);
@@ -948,7 +948,7 @@ void Analyse::GetStatisticsHiveSQLBySet(std::vector<std::string>& vec_hivesql, b
 	}
 }
 
-void Analyse::SplitHiveSqlExpress(const std::string& exp_sqls, std::vector<std::string>& vec_hivesql) throw(base::Exception)
+void Analyse::SplitHiveSqlExpress(const std::string& exp_sqls, VEC_STRING& vec_hivesql) throw(base::Exception)
 {
 	std::string exp = base::PubStr::TrimB(exp_sqls);
 	if ( exp.empty() )
@@ -963,7 +963,7 @@ void Analyse::SplitHiveSqlExpress(const std::string& exp_sqls, std::vector<std::
 		exp.erase(LAST_INDEX);
 	}
 
-	std::vector<std::string> v_hive_sql;
+	VEC_STRING v_hive_sql;
 	base::PubStr::Str2StrVector(exp, ";", v_hive_sql);
 
 	if ( v_hive_sql.empty() )
@@ -976,7 +976,7 @@ void Analyse::SplitHiveSqlExpress(const std::string& exp_sqls, std::vector<std::
 
 void Analyse::DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception)
 {
-	std::vector<std::string> vec_str;
+	VEC_STRING vec_str;
 	base::PubStr::Str2StrVector(exp, "-", vec_str);
 	if ( vec_str.size() != 2 )
 	{
@@ -1131,7 +1131,7 @@ void Analyse::AnalyseSourceData() throw(base::Exception)
 		const int VEC3_SIZE = m_v3HiveSrcData.size();
 		for ( int i = 0; i < VEC3_SIZE; ++i )
 		{
-			std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
+			VEC2_STRING& ref_vec2 = m_v3HiveSrcData[i];
 
 			// 将源数据中的空值字符串("NULL")转换为("0")
 			base::PubStr::ReplaceInStrVector2(ref_vec2, "NULL", "0", false, true);
@@ -1155,12 +1155,12 @@ void Analyse::SrcDataUnifiedCoding() throw(base::Exception)
 	const int VEC3_SIZE = m_v3HiveSrcData.size();
 	for ( int i = 0; i < VEC3_SIZE; ++i )
 	{
-		std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
+		VEC2_STRING& ref_vec2 = m_v3HiveSrcData[i];
 
 		const size_t VEC2_SIZE = ref_vec2.size();
 		for ( size_t j = 0; j < VEC2_SIZE; ++j )
 		{
-			std::vector<std::string>& ref_vec1 = ref_vec2[j];
+			VEC_STRING& ref_vec1 = ref_vec2[j];
 
 			const int VEC1_SIZE = ref_vec1.size();
 			if ( DIM_REGION_INDEX != AnaTaskInfo::INVALID_DIM_INDEX )	// 存在-地市维度
@@ -1276,7 +1276,7 @@ void Analyse::GenerateReportStatData()
 //		m_v3HiveSrcData.erase(m_v3HiveSrcData.begin() + 3);
 //		m_v3HiveSrcData.erase(m_v3HiveSrcData.begin() + 2);
 //
-//		std::vector<std::vector<std::string> > vec2_result;
+//		VEC2_STRING vec2_result;
 //		// "左有右无" 的对比结果数据
 //		m_pLog->Output("[Analyse] 生成%s对比 \"%s\" 的结果数据 ...", com_desc.c_str(), left_desc.c_str());
 //		com_result.GetCompareResult(left_index, right_index, CompareResult::CTYPE_LEFT, left_desc, vec2_result);
@@ -1323,12 +1323,12 @@ void Analyse::DataSupplement()
 	const int VEC3_SIZE = m_v3HiveSrcData.size();
 	for ( int i = 0; i < VEC3_SIZE; ++i )
 	{
-		std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
+		VEC2_STRING& ref_vec2 = m_v3HiveSrcData[i];
 
 		const size_t VEC2_SIZE = ref_vec2.size();
 		for ( size_t s = 0; s < VEC2_SIZE; ++s )
 		{
-			std::vector<std::string>& ref_vec = ref_vec2[s];
+			VEC_STRING& ref_vec = ref_vec2[s];
 
 			if ( first_index != TimeField::TF_INVALID_INDEX )
 			{
@@ -1356,12 +1356,12 @@ void Analyse::CollectDimVal()
 	const int VEC3_SIZE = m_v3HiveSrcData.size();
 	for ( int i = 0; i < VEC3_SIZE; ++i )
 	{
-		std::vector<std::vector<std::string> >& ref_vec2 = m_v3HiveSrcData[i];
+		VEC2_STRING& ref_vec2 = m_v3HiveSrcData[i];
 
 		const size_t VEC2_SIZE = ref_vec2.size();
 		for ( size_t j = 0; j < VEC2_SIZE; ++j )
 		{
-			std::vector<std::string>& ref_vec1 = ref_vec2[j];
+			VEC_STRING& ref_vec1 = ref_vec2[j];
 
 			for ( int k = 0; k < VEC_SIZE; ++k )
 			{

@@ -12,6 +12,10 @@ class Log;
 class YCStatFactor
 {
 public:
+	typedef std::vector<std::string>		VEC_STRING;
+	typedef std::vector<VEC_STRING>			VEC2_STRING;
+	typedef std::vector<VEC2_STRING>		VEC3_STRING;
+
 	typedef std::vector<YCStatInfo>			VEC_STATINFO;
 	typedef std::map<int, VEC_STATINFO>		MAP_VEC_STATINFO;
 
@@ -32,12 +36,18 @@ public:
 	virtual void LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception);
 
 	// 载入因子对
-	virtual int LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception) = 0;
+	virtual int LoadFactors(const VEC3_STRING& v3_data) throw(base::Exception);
 
 	// 生成稽核统计结果
-	virtual void MakeResult(std::vector<std::vector<std::vector<std::string> > >& v3_result) throw(base::Exception) = 0;
+	virtual void MakeResult(VEC3_STRING& v3_result) throw(base::Exception) = 0;
 
 protected:
+	// 清空旧因子对
+	virtual void ClearOldFactors() = 0;
+
+	// 载入单个因子对
+	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception) = 0;
+
 	// 计算单个因子
 	virtual void OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception);
 

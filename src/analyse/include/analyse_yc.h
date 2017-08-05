@@ -28,10 +28,10 @@ public:
 
 protected:
 	// 获取后续参数任务信息
-	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
+	virtual void GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception);
 
 	// 解析分析规则，生成Hive取数逻辑
-	virtual void AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	virtual void AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception);
 
 	// 检查：是否为业财稽核类型。输出中文描述
 	bool CheckYCAnalyseType(std::string& cn_type) const;
@@ -103,8 +103,6 @@ protected:
 protected:
 	YCTaskReq     m_taskReq;				// 任务请求信息
 	YCStatFactor* m_pStatFactor;			// 稽核统计因子
-
-protected:
-	std::vector<std::vector<std::string> > m_v2DiffSummary;				// 差异汇总数据
+	VEC2_STRING   m_v2DiffSummary;			// 差异汇总数据
 };
 

@@ -20,6 +20,11 @@ class CAnaHive;
 class Analyse : public base::BaseFrameApp
 {
 public:
+	typedef std::vector<std::string>		VEC_STRING;
+	typedef std::vector<VEC_STRING>			VEC2_STRING;
+	typedef std::vector<VEC2_STRING>		VEC3_STRING;
+
+public:
 	Analyse();
 	virtual ~Analyse();
 
@@ -52,7 +57,7 @@ protected:
 	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
 
 	// 获取后续参数任务信息
-	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception) = 0;
+	virtual void GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception) = 0;
 
 	// 设置任务信息
 	void SetTaskInfo();
@@ -73,25 +78,25 @@ protected:
 	void DoDataAnalyse() throw(base::Exception);
 
 	// 解析分析规则，生成Hive取数逻辑
-	virtual void AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	virtual void AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception);
 
 	// 生成汇总对比类型的Hive SQL语句
-	void GetSummaryCompareHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void GetSummaryCompareHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception);
 
 	// 生成明细对比类型的Hive SQL语句
-	void GetDetailCompareHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void GetDetailCompareHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception);
 
 	// 生成一般统计类型的Hive SQL语句
-	void GetStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void GetStatisticsHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception);
 
 	// 生成报表统计类型的Hive SQL语句
-	void GetReportStatisticsHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void GetReportStatisticsHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception);
 
 	// 生成指定组的统计类型的Hive SQL语句
-	void GetStatisticsHiveSQLBySet(std::vector<std::string>& vec_hivesql, bool union_all) throw(base::Exception);
+	void GetStatisticsHiveSQLBySet(VEC_STRING& vec_hivesql, bool union_all) throw(base::Exception);
 
 	// 拆分可执行Hive SQL语句
-	void SplitHiveSqlExpress(const std::string& exp_sqls, std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void SplitHiveSqlExpress(const std::string& exp_sqls, VEC_STRING& vec_hivesql) throw(base::Exception);
 
 	// 确定所属数据组
 	void DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception);
@@ -106,7 +111,7 @@ protected:
 	virtual void ExchangeSQLMark(std::string& sql) throw(base::Exception);
 
 	// 获取Hive源数据
-	void FetchHiveSource(std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void FetchHiveSource(VEC_STRING& vec_hivesql) throw(base::Exception);
 
 	// 分析源数据，生成结果数据
 	virtual void AnalyseSourceData() throw(base::Exception);
@@ -136,7 +141,7 @@ protected:
 	virtual void UpdateDimValue();
 
 	//// 添加分析条件
-	//void AddAnalysisCondition(AnalyseRule& ana_rule, std::vector<std::string>& vec_sql);
+	//void AddAnalysisCondition(AnalyseRule& ana_rule, VEC_STRING& vec_sql);
 
 protected:
 	std::string m_sKpiID;				// 指标ID
@@ -177,8 +182,8 @@ protected:
 	base::SQLTranslator* m_pSQLTranslator;			// 标志转换
 
 protected:
-	AnaDBInfo                                            m_dbinfo;				// 库表信息
-	std::vector<std::vector<std::vector<std::string> > > m_v3HiveSrcData;		// 获取到的Hive源数据集
-	std::vector<std::vector<std::string> >               m_v2ReportStatData;	// 报表统计类型的数据集
+	AnaDBInfo   m_dbinfo;							// 库表信息
+	VEC3_STRING m_v3HiveSrcData;					// 获取到的Hive源数据集
+	VEC2_STRING m_v2ReportStatData;					// 报表统计类型的数据集
 };
 

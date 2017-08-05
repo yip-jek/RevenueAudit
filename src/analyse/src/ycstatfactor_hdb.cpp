@@ -35,74 +35,56 @@ void YCStatFactor_HDB::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exce
 	m_pLog->Output("[YCStatFactor_HDB] 载入规则因子信息成功.");
 }
 
-int YCStatFactor_HDB::LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception)
+void YCStatFactor_HDB::ClearOldFactors()
 {
+	// 清空旧数据
 	if ( !m_mFactor.empty() )
 	{
 		m_mFactor.clear();
 	}
-
-	int              counter = 0;
-	std::string      dim_id;
-	YCCategoryFactor ctgFactor;
-
-	const int VEC3_SIZE = v3_data.size();
-	for ( int i = 0; i < VEC3_SIZE; ++i )
-	{
-		std::vector<std::vector<std::string> >& ref_vec2 = v3_data[i];
-
-		const int VEC2_SIZE = ref_vec2.size();
-		for ( int j = 0; j < VEC2_SIZE; ++j )
-		{
-			std::vector<std::string>& ref_vec = ref_vec2[j];
-
-			const int VEC_SIZE = ref_vec.size();
-			if ( VEC_SIZE > 1 )
-			{
-				// 维度ID 在第一列
-				dim_id = base::PubStr::TrimUpperB(ref_vec[0]);
-
-				if ( IsCategoryDim(dim_id) )	// 分类因子
-				{
-					if ( S_CATEGORY_COLUMN_SIZE == VEC_SIZE )
-					{
-						ctgFactor.dim_id = dim_id;
-						ctgFactor.item   = base::PubStr::TrimB(ref_vec[1]);
-						ctgFactor.value  = base::PubStr::StringDoubleFormat(ref_vec[2]);
-						m_mvCategoryFactor[dim_id].push_back(ctgFactor);
-					}
-					else
-					{
-						throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，分类因子数据 SIZE 不匹配：[%lu] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
-					}
-				}
-				else	// 一般因子
-				{
-					if ( m_mFactor.find(dim_id) != m_mFactor.end() )
-					{
-						throw base::Exception(ANAERR_LOAD_FACTOR, "重复的维度因子ID：[%s] [FILE:%s, LINE:%d]", dim_id.c_str(), __FILE__, __LINE__);
-					}
-
-					m_mFactor[dim_id] = ref_vec[1];
-				}
-			}
-			else
-			{
-				throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，无效数据 SIZE: [%lu] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
-			}
-
-			++counter;
-		}
-	}
-
-	m_pLog->Output("[YCStatFactor_HDB] 载入因子对成功.");
-	return counter;
 }
 
-void YCStatFactor_HDB::MakeResult(std::vector<std::vector<std::vector<std::string> > >& v3_result) throw(base::Exception)
+void YCStatFactor_HDB::LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception)
 {
-	std::vector<std::vector<std::string> >               vec2_result;
-	std::vector<std::vector<std::vector<std::string> > > vec3_result;
+	const int VEC_SIZE = vec_dat.size();
+	if ( IsCategoryDim(dim) )	// 分类因子
+	{
+		// 分类因子包含两列：项目列与值列
+		if ( VEC_SIZE == 2 )
+		{
+			YCCategoryFactor ctgFactor;
+			ctgFactor.dim_id = dim;
+			ctgFactor.item   = base::PubStr::TrimB(vec_dat[0]);
+			ctgFactor.value  = base::PubStr::StringDoubleFormat(vec_dat[1]);
+
+			m_mvCategoryFactor[dim].push_back(ctgFactor);
+		}
+		else
+		{
+			throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，分类因子数据 SIZE 不匹配：[%d] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
+		}
+	}
+	else	// 一般因子
+	{
+		// 一般因子只有：值列
+		if ( VEC_SIZE != 1 )
+		{
+			throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，一般因子数据 SIZE 不匹配：[%d] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
+		}
+
+		if ( m_mFactor.find(dim) != m_mFactor.end() )
+		{
+			throw base::Exception(ANAERR_LOAD_FACTOR, "重复的维度因子ID：[%s] [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
+		}
+
+		m_mFactor[dim] = vec_dat[0];
+	}
+}
+
+void YCStatFactor_HDB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
+{
+	VEC2_STRING vec2_result;
+	VEC3_STRING vec3_result;
 
 	m_pLog->Output("[YCStatFactor_HDB] (1) 生成业财稽核地市核对表结果数据");
 	GenerateStatResult(vec2_result);
@@ -115,9 +97,9 @@ void YCStatFactor_HDB::MakeResult(std::vector<std::vector<std::vector<std::strin
 	vec3_result.swap(v3_result);
 }
 
-void YCStatFactor_HDB::GenerateStatResult(std::vector<std::vector<std::string> >& v2_result) throw(base::Exception)
+void YCStatFactor_HDB::GenerateStatResult(VEC2_STRING& v2_result) throw(base::Exception)
 {
-	std::vector<std::vector<std::string> > vec2_result;
+	VEC2_STRING vec2_result;
 
 	// 生成一般因子与组合因子的结果数据
 	bool        agg = false;
@@ -149,9 +131,9 @@ void YCStatFactor_HDB::GenerateStatResult(std::vector<std::vector<std::string> >
 	vec2_result.swap(v2_result);
 }
 
-void YCStatFactor_HDB::GenerateDiffSummaryResult(std::vector<std::vector<std::string> >& v2_result) throw(base::Exception)
+void YCStatFactor_HDB::GenerateDiffSummaryResult(VEC2_STRING& v2_result) throw(base::Exception)
 {
-	std::vector<std::vector<std::string> > vec2_result;
+	VEC2_STRING vec2_result;
 
 	// 生成汇总因子的结果数据
 	const int VEC_TOP_SIZE = m_vTopStatInfo.size();
@@ -177,7 +159,7 @@ std::string YCStatFactor_HDB::CalcComplexFactor(const std::string& cmplx_fctr_fm
 	MAP_STRING::iterator m_it;
 
 	// 组合因子格式：[ A1, A2, A3, ...|+, -, ... ]
-	std::vector<std::string> vec_fmt_left;
+	VEC_STRING vec_fmt_left;
 	base::PubStr::Str2StrVector(cmplx_fctr_fmt, "|", vec_fmt_left);
 	if ( vec_fmt_left.size() != 2 )
 	{
@@ -207,7 +189,7 @@ std::string YCStatFactor_HDB::CalcComplexFactor(const std::string& cmplx_fctr_fm
 	std::string yc_dims = base::PubStr::TrimUpperB(vec_fmt_left[0]);
 	std::string yc_oper = base::PubStr::TrimUpperB(vec_fmt_left[1]);
 
-	std::vector<std::string> vec_fmt_right;
+	VEC_STRING vec_fmt_right;
 	base::PubStr::Str2StrVector(yc_dims, ",", vec_fmt_left);
 	base::PubStr::Str2StrVector(yc_oper, ",", vec_fmt_right);
 
@@ -347,7 +329,7 @@ bool YCStatFactor_HDB::IsCategoryDim(const std::string& dim)
 	return false;
 }
 
-void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception)
+void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception)
 {
 	YCStatResult yc_sr;
 	yc_sr.stat_city   = m_pTaskReq->task_city;
@@ -357,7 +339,7 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 	yc_sr.stat_name   = st_info.stat_name;
 	yc_sr.statdim_id  = st_info.statdim_id;
 
-	std::vector<std::string> vec_data;
+	VEC_STRING vec_data;
 	if ( st_info.category )		// 分类因子
 	{
 		VEC_CATEGORYFACTOR vec_ctg_factor;
@@ -437,8 +419,8 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 
 void YCStatFactor_HDB::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, VEC_CATEGORYFACTOR& vec_ctgfctr) throw(base::Exception)
 {
-	VEC_CATEGORYFACTOR       vec_cf;
-	std::vector<std::string> vec_fmt;
+	VEC_CATEGORYFACTOR vec_cf;
+	VEC_STRING         vec_fmt;
 
 	if ( agg )	// 组合因子
 	{
@@ -452,7 +434,7 @@ void YCStatFactor_HDB::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool ag
 		std::string dims = base::PubStr::TrimUpperB(vec_fmt[0]);
 		std::string oper = base::PubStr::TrimUpperB(vec_fmt[1]);
 
-		std::vector<std::string> vec_oper;
+		VEC_STRING vec_oper;
 		base::PubStr::Str2StrVector(dims, ",", vec_fmt);
 		base::PubStr::Str2StrVector(oper, ",", vec_oper);
 

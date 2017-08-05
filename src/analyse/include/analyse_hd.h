@@ -28,13 +28,13 @@ public:
 
 protected:
 	// 获取后续参数任务信息
-	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
+	virtual void GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception);
 
 	// 解析分析规则，生成Hive取数逻辑
-	virtual void AnalyseRules(std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	virtual void AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception);
 
 	// 从分析表达式中生成Hive取数逻辑
-	void GetExpressHiveSQL(std::vector<std::string>& vec_hivesql) throw(base::Exception);
+	void GetExpressHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception);
 
 	// 从HIVE SQL中提取数据库序列Sequence
 	// 若HIVE SQL非法则返回false，否则无论是否成功提取到序列都会返回true
@@ -66,7 +66,7 @@ protected:
 	int m_endtime;					// 结束时间（包含）
 
 protected:
-	std::vector<SeqNode>     m_vecSeq;
-	std::vector<std::string> m_vecExecSql;				// 执行SQL队列
+	std::vector<SeqNode> m_vecSeq;
+	VEC_STRING           m_vecExecSql;			// 执行SQL队列
 };
 

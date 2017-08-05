@@ -29,10 +29,7 @@ void YCStatFactor::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exceptio
 {
 	m_statID.clear();
 	m_statReport.clear();
-	if ( !m_mvStatInfo.empty() )
-	{
-		m_mvStatInfo.clear();
-	}
+	m_mvStatInfo.clear();
 
 	const int VEC_SIZE = vec_statinfo.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
@@ -72,6 +69,43 @@ void YCStatFactor::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exceptio
 	}
 
 	m_pLog->Output("[YCStatFactor] 载入规则因子信息成功.");
+}
+
+int YCStatFactor::LoadFactors(const VEC3_STRING& v3_data) throw(base::Exception)
+{
+	ClearOldFactors();
+
+	int         counter = 0;
+	std::string dim_id;
+
+	const int VEC3_SIZE = v3_data.size();
+	for ( int i = 0; i < VEC3_SIZE; ++i )
+	{
+		const VEC2_STRING& ref_vec2 = v3_data[i];
+
+		const int VEC2_SIZE = ref_vec2.size();
+		for ( int j = 0; j < VEC2_SIZE; ++j )
+		{
+			const VEC_STRING& ref_vec = ref_vec2[j];
+
+			if ( ref_vec.size() > 1 )
+			{
+				// 维度ID 在第一列
+				dim_id = base::PubStr::TrimUpperB(ref_vec[0]);
+
+				LoadOneFactor(dim_id, VEC_STRING(ref_vec.begin()+1, ref_vec.end()));
+			}
+			else
+			{
+				throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，无效数据 SIZE: [%lu] [FILE:%s, LINE:%d]", ref_vec.size(), __FILE__, __LINE__);
+			}
+		}
+
+		++counter;
+	}
+
+	m_pLog->Output("[YCStatFactor] 载入因子对成功.");
+	return counter;
 }
 
 void YCStatFactor::OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception)

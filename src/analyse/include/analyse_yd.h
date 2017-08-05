@@ -27,7 +27,7 @@ public:
 
 protected:
 	// 获取后续参数任务信息
-	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
+	virtual void GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception);
 
 	// 分析源数据，生成结果数据
 	virtual void AnalyseSourceData() throw(base::Exception);
@@ -37,13 +37,13 @@ private:
 	void GetDimIndex();
 
 	// 尝试从分析表达式中获取指定渠道标识
-	bool TryGetTheChannel(std::vector<std::string>& vec_channel);
+	bool TryGetTheChannel(VEC_STRING& vec_channel);
 
 	// 只保留指定渠道的报表数据
-	void KeepChannelDataOnly(const std::vector<std::string>& vec_channel);
+	void KeepChannelDataOnly(const VEC_STRING& vec_channel);
 
 	// 筛选需要补全的地市
-	void FilterTheMissingCity(const std::vector<std::string>& vec_channel, std::map<std::string, std::set<std::string> >& mapset_city);
+	void FilterTheMissingCity(const VEC_STRING& vec_channel, std::map<std::string, std::set<std::string> >& mapset_city);
 
 	// 补全地市
 	void MakeCityCompleted(const std::map<std::string, std::set<std::string> >& mapset_city, int group_size);

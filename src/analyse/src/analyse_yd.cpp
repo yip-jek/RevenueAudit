@@ -72,7 +72,7 @@ void Analyse_YD::End(int err_code, const std::string& err_msg /*= std::string()*
 	Analyse::End(err_code, err_msg);
 }
 
-void Analyse_YD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
+void Analyse_YD::GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception)
 {
 	if ( vec_str.size() < 4 )
 	{
@@ -99,7 +99,7 @@ void Analyse_YD::AnalyseSourceData() throw(base::Exception)
 	{
 		// 是否指定渠道？
 		// 若指定渠道，则只保留该渠道的报表数据
-		std::vector<std::string> vec_channel;
+		VEC_STRING vec_channel;
 		if ( TryGetTheChannel(vec_channel) )
 		{
 			KeepChannelDataOnly(vec_channel);
@@ -123,7 +123,7 @@ void Analyse_YD::GetDimIndex()
 	m_dimChannelIndex = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_CHANNEL);
 }
 
-bool Analyse_YD::TryGetTheChannel(std::vector<std::string>& vec_channel)
+bool Analyse_YD::TryGetTheChannel(VEC_STRING& vec_channel)
 {
 	std::string exp = base::PubStr::TrimUpperB(m_taskInfo.AnaRule.AnaExpress);
 	if ( exp.empty() )
@@ -132,7 +132,7 @@ bool Analyse_YD::TryGetTheChannel(std::vector<std::string>& vec_channel)
 		return false;
 	}
 
-	std::vector<std::string> vec_str;
+	VEC_STRING vec_str;
 	base::PubStr::Str2StrVector(exp, "=", vec_str);
 	if ( vec_str.size() == 2 && S_CHANNEL_MARK == vec_str[0] )
 	{
@@ -160,18 +160,18 @@ bool Analyse_YD::TryGetTheChannel(std::vector<std::string>& vec_channel)
 	return false;
 }
 
-void Analyse_YD::KeepChannelDataOnly(const std::vector<std::string>& vec_channel)
+void Analyse_YD::KeepChannelDataOnly(const VEC_STRING& vec_channel)
 {
 	if ( m_dimChannelIndex != AnaTaskInfo::INVALID_DIM_INDEX )
 	{
-		std::vector<std::vector<std::string> > v2_report;
+		VEC2_STRING v2_report;
 		const int VEC2_REPORT_SIZE = m_v2ReportStatData.size();
 		m_pLog->Output("[Analyse_YD] 原报表数据大小为：%d", VEC2_REPORT_SIZE);
 
 		const int VEC_SIZE = vec_channel.size();
 		for ( int i = 0; i < VEC2_REPORT_SIZE; ++i )
 		{
-			std::vector<std::string>& ref_vec = m_v2ReportStatData[i];
+			VEC_STRING& ref_vec = m_v2ReportStatData[i];
 
 			for ( int j = 0; j < VEC_SIZE; ++j )
 			{
@@ -188,7 +188,7 @@ void Analyse_YD::KeepChannelDataOnly(const std::vector<std::string>& vec_channel
 	}
 }
 
-void Analyse_YD::FilterTheMissingCity(const std::vector<std::string>& vec_channel, std::map<std::string, std::set<std::string> >& mapset_city)
+void Analyse_YD::FilterTheMissingCity(const VEC_STRING& vec_channel, std::map<std::string, std::set<std::string> >& mapset_city)
 {
 	// 已有地市
 	int vec_size = 0;
@@ -225,7 +225,7 @@ void Analyse_YD::FilterTheMissingCity(const std::vector<std::string>& vec_channe
 	}
 
 	// 全部地市
-	std::vector<std::string> vec_all_city;
+	VEC_STRING vec_all_city;
 	m_pAnaDB2->SelectAllCity(vec_all_city);
 
 	// 找出缺少的地市
@@ -258,7 +258,7 @@ void Analyse_YD::MakeCityCompleted(const std::map<std::string, std::set<std::str
 	if ( !mapset_city.empty() )
 	{
 		// 初始化：维度列初始为空，值列初始为“0”
-		std::vector<std::string> vec_sup(m_taskInfo.vecKpiDimCol.size(), "");
+		VEC_STRING vec_sup(m_taskInfo.vecKpiDimCol.size(), "");
 		vec_sup.insert(vec_sup.end(), group_size, "0");
 
 		// 初始化：时间列

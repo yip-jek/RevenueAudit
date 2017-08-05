@@ -11,8 +11,6 @@ public:
 	typedef std::map<std::string, YCPairCategoryFactor> MAP_PAIRCATEGORYFACTOR;
 	typedef std::map<std::string, VEC_CATEGORYFACTOR>	MAP_VEC_CATEGORYFACTOR;
 
-	static const int S_CATEGORY_COLUMN_SIZE = 3;		// 分列数据列数
-
 public:
 	YCStatFactor_HDB(YCTaskReq& task_req);
 	virtual ~YCStatFactor_HDB();
@@ -21,18 +19,22 @@ public:
 	// 载入规则因子信息
 	virtual void LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception);
 
-	// 载入因子对
-	virtual int LoadFactor(std::vector<std::vector<std::vector<std::string> > >& v3_data) throw(base::Exception);
-
 	// 生成稽核统计结果
-	virtual void MakeResult(std::vector<std::vector<std::vector<std::string> > >& v3_result) throw(base::Exception);
+	virtual void MakeResult(VEC3_STRING& v3_result) throw(base::Exception);
+
+protected:
+	// 清空旧因子对
+	virtual void ClearOldFactors();
+
+	// 载入单个因子对
+	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception);
 
 private:
 	// 生成统计结果
-	void GenerateStatResult(std::vector<std::vector<std::string> >& v2_result) throw(base::Exception);
+	void GenerateStatResult(VEC2_STRING& v2_result) throw(base::Exception);
 
 	// 生成差异汇总结果
-	void GenerateDiffSummaryResult(std::vector<std::vector<std::string> >& v2_result) throw(base::Exception);
+	void GenerateDiffSummaryResult(VEC2_STRING& v2_result) throw(base::Exception);
 
 	// 计算组合因子的维度值
 	std::string CalcComplexFactor(const std::string& cmplx_fctr_fmt) throw(base::Exception);
@@ -50,7 +52,7 @@ private:
 	bool IsCategoryDim(const std::string& dim);
 
 	// 由因子规则生成结果数据
-	void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception);
+	void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception);
 
 	// 扩展分类因子信息
 	void ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, VEC_CATEGORYFACTOR& vec_ctgfctr) throw(base::Exception);
