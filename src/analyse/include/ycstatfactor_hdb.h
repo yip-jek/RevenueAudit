@@ -29,10 +29,10 @@ protected:
 	// 载入单个因子对
 	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception);
 
-private:
-	// 生成统计结果
-	void GenerateStatResult(VEC2_STRING& v2_result) throw(base::Exception);
+	// 由因子规则生成结果数据
+	virtual void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception);
 
+private:
 	// 生成差异汇总结果
 	void GenerateDiffSummaryResult(VEC2_STRING& v2_result) throw(base::Exception);
 
@@ -50,9 +50,6 @@ private:
 
 	// 是否存在于分类因子列表中
 	bool IsCategoryDim(const std::string& dim);
-
-	// 由因子规则生成结果数据
-	void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception);
 
 	// 扩展分类因子信息
 	void ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, VEC_CATEGORYFACTOR& vec_ctgfctr) throw(base::Exception);

@@ -1,6 +1,5 @@
 #include "ycstatfactor_xqb.h"
 #include "anaerror.h"
-#include "pubstr.h"
 #include "log.h"
 
 YCStatFactor_XQB::YCStatFactor_XQB(YCTaskReq& task_req)
@@ -49,9 +48,19 @@ void YCStatFactor_XQB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
 	VEC3_STRING vec3_result;
 
 	m_pLog->Output("[YCStatFactor_XQB] 生成业财稽核地市详情表结果数据");
-	//GenerateStatResult(vec2_result);
+	GenerateStatResult(vec2_result);
 	base::PubStr::VVVectorSwapPushBack(vec3_result, vec2_result);
 
 	vec3_result.swap(v3_result);
+}
+
+void YCStatFactor_XQB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception)
+{
+	if ( agg )	// 组合因子
+	{
+	}
+	else	// 一般因子
+	{
+	}
 }
 

@@ -23,6 +23,9 @@ protected:
 	// 载入单个因子对
 	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception);
 
+	// 由因子规则生成结果数据
+	virtual void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception);
+
 private:
 	MAP_FACTOR m_mFactor;
 };

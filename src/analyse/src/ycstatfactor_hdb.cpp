@@ -1,6 +1,5 @@
 #include "ycstatfactor_hdb.h"
 #include "anaerror.h"
-#include "pubstr.h"
 #include "log.h"
 
 YCStatFactor_HDB::YCStatFactor_HDB(YCTaskReq& task_req)
@@ -97,40 +96,6 @@ void YCStatFactor_HDB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
 	vec3_result.swap(v3_result);
 }
 
-void YCStatFactor_HDB::GenerateStatResult(VEC2_STRING& v2_result) throw(base::Exception)
-{
-	VEC2_STRING vec2_result;
-
-	// 生成一般因子与组合因子的结果数据
-	bool        agg = false;
-	std::string factor_type;
-	for ( MAP_VEC_STATINFO::iterator m_it = m_mvStatInfo.begin(); m_it != m_mvStatInfo.end(); ++m_it )
-	{
-		if ( m_it->first > 0 )		// 组合（合计）因子
-		{
-			agg         = true;
-			factor_type = "组合（合计）因子";
-		}
-		else	// 一般因子
-		{
-			agg         = false;
-			factor_type = "一般因子";
-		}
-
-		const int VEC_SIZE = m_it->second.size();
-		for ( int i = 0; i < VEC_SIZE; ++i )
-		{
-			YCStatInfo& ref_si = (m_it->second)[i];
-
-			m_pLog->Output("[YCStatFactor_HDB] 统计因子类型：%s", factor_type.c_str());
-			m_pLog->Output("[YCStatFactor_HDB] 生成统计因子结果数据：%s", ref_si.LogPrintInfo().c_str());
-			MakeStatInfoResult(m_pTaskReq->task_batch, ref_si, agg, vec2_result);
-		}
-	}
-
-	vec2_result.swap(v2_result);
-}
-
 void YCStatFactor_HDB::GenerateDiffSummaryResult(VEC2_STRING& v2_result) throw(base::Exception)
 {
 	VEC2_STRING vec2_result;
@@ -172,8 +137,7 @@ std::string YCStatFactor_HDB::CalcComplexFactor(const std::string& cmplx_fctr_fm
 			}
 			else if ( (m_it = m_mFactor.find(ref_fmt)) != m_mFactor.end() )
 			{
-				OperateOneFactor(cmplx_fctr_result, "+", m_it->second);
-				return cmplx_fctr_result;
+				return OperateOneFactor(cmplx_fctr_result, "+", m_it->second);
 			}
 			else
 			{
@@ -400,7 +364,7 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 		}
 		else	// 一般因子
 		{
-			MAP_STRING::iterator m_it = m_mFactor.find(base::PubStr::TrimUpperB(st_info.statdim_id));
+			MAP_STRING::iterator m_it = m_mFactor.find(st_info.statdim_id);
 			if ( m_it != m_mFactor.end() )
 			{
 				yc_sr.stat_value = m_it->second;

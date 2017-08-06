@@ -48,8 +48,14 @@ protected:
 	// 载入单个因子对
 	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception) = 0;
 
+	// 生成统计结果
+	virtual void GenerateStatResult(VEC2_STRING& v2_result) throw(base::Exception);
+
+	// 由因子规则生成结果数据
+	virtual void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception) = 0;
+
 	// 计算单个因子
-	virtual void OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception);
+	virtual std::string OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception);
 
 protected:
 	base::Log*       m_pLog;

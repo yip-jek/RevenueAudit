@@ -108,7 +108,41 @@ int YCStatFactor::LoadFactors(const VEC3_STRING& v3_data) throw(base::Exception)
 	return counter;
 }
 
-void YCStatFactor::OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception)
+void YCStatFactor::GenerateStatResult(VEC2_STRING& v2_result) throw(base::Exception)
+{
+	VEC2_STRING vec2_result;
+
+	// 生成一般因子与组合因子的结果数据
+	bool        agg = false;
+	std::string factor_type;
+	for ( MAP_VEC_STATINFO::iterator m_it = m_mvStatInfo.begin(); m_it != m_mvStatInfo.end(); ++m_it )
+	{
+		if ( m_it->first > 0 )		// 组合（合计）因子
+		{
+			agg         = true;
+			factor_type = "组合（合计）因子";
+		}
+		else	// 一般因子
+		{
+			agg         = false;
+			factor_type = "一般因子";
+		}
+
+		const int VEC_SIZE = m_it->second.size();
+		for ( int i = 0; i < VEC_SIZE; ++i )
+		{
+			YCStatInfo& ref_si = (m_it->second)[i];
+
+			m_pLog->Output("[YCStatFactor] 统计因子类型：%s", factor_type.c_str());
+			m_pLog->Output("[YCStatFactor] 生成统计因子结果数据：%s", ref_si.LogPrintInfo().c_str());
+			MakeStatInfoResult(m_pTaskReq->task_batch, ref_si, agg, vec2_result);
+		}
+	}
+
+	vec2_result.swap(v2_result);
+}
+
+std::string YCStatFactor::OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception)
 {
 	double dou_res = 0.0;
 	if ( !result.empty() && !base::PubStr::Str2Double(result, dou_res) )
@@ -144,5 +178,6 @@ void YCStatFactor::OperateOneFactor(std::string& result, const std::string& op, 
 	}
 
 	result = base::PubStr::Double2FormatStr(dou_res);
+	return result;
 }
 
