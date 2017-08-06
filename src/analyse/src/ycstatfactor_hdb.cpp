@@ -2,8 +2,8 @@
 #include "anaerror.h"
 #include "log.h"
 
-YCStatFactor_HDB::YCStatFactor_HDB(YCTaskReq& task_req)
-:YCStatFactor(task_req)
+YCStatFactor_HDB::YCStatFactor_HDB(const std::string& etl_day, YCTaskReq& task_req)
+:YCStatFactor(etl_day, task_req)
 {
 }
 
@@ -116,88 +116,91 @@ void YCStatFactor_HDB::GenerateDiffSummaryResult(VEC2_STRING& v2_result) throw(b
 	vec2_result.swap(v2_result);
 }
 
-std::string YCStatFactor_HDB::CalcComplexFactor(const std::string& cmplx_fctr_fmt) throw(base::Exception)
+std::string YCStatFactor_HDB::CalcComplexFactor(const std::string& cmplx_fmt) throw(base::Exception)
 {
-	m_pLog->Output("[YCStatFactor_HDB] 组合因子表达式：%s", cmplx_fctr_fmt.c_str());
+	m_pLog->Output("[YCStatFactor_HDB] 组合因子表达式：%s", cmplx_fmt.c_str());
 
-	std::string cmplx_fctr_result;
+	VEC_STRING vec_fmt_first;
+	VEC_STRING vec_fmt_second;
+	std::string cmplx_result;
 	MAP_STRING::iterator m_it;
 
 	// 组合因子格式：[ A1, A2, A3, ...|+, -, ... ]
-	VEC_STRING vec_fmt_left;
-	base::PubStr::Str2StrVector(cmplx_fctr_fmt, "|", vec_fmt_left);
-	if ( vec_fmt_left.size() != 2 )
+	base::PubStr::Str2StrVector(cmplx_fmt, "|", vec_fmt_first);
+	if ( vec_fmt_first.size() != 2 )
 	{
-		if ( vec_fmt_left.size() == 1 )		// 特殊的组合因子：不含运算符，直接等于某个因子（一般因子或者组合因子）
+		// 特殊的组合因子：不含运算符，直接等于某个因子（一般因子或者组合因子）
+		if ( vec_fmt_first.size() == 1 )
 		{
-			std::string& ref_fmt = vec_fmt_left[0];
-			if ( ref_fmt.find('?') != std::string::npos )	// 因子格式（参考）：{A?_B?}
+			const std::string& REF_DIM = vec_fmt_first[0];
+
+			if ( REF_DIM.find('?') != std::string::npos )	// 因子格式（参考）：{A?_B?}
 			{
-				return CalcCategoryFactor(ref_fmt);
+				return CalcCategoryFactor(REF_DIM);
 			}
-			else if ( (m_it = m_mFactor.find(ref_fmt)) != m_mFactor.end() )
+			else if ( (m_it = m_mFactor.find(REF_DIM)) != m_mFactor.end() )
 			{
-				return OperateOneFactor(cmplx_fctr_result, "+", m_it->second);
+				return OperateOneFactor(cmplx_result, "+", m_it->second);
 			}
 			else
 			{
-				throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不存在的业财稽核统计维度ID：%s [FILE:%s, LINE:%d]", vec_fmt_left[0].c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不存在的业财稽核统计维度ID：%s [FILE:%s, LINE:%d]", REF_DIM.c_str(), __FILE__, __LINE__);
 			}
 		}
 		else
 		{
-			throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fctr_fmt.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
 		}
 	}
 
-	std::string yc_dims = base::PubStr::TrimUpperB(vec_fmt_left[0]);
-	std::string yc_oper = base::PubStr::TrimUpperB(vec_fmt_left[1]);
+	std::string yc_dims = base::PubStr::TrimUpperB(vec_fmt_first[0]);
+	std::string yc_oper = base::PubStr::TrimUpperB(vec_fmt_first[1]);
 
-	VEC_STRING vec_fmt_right;
-	base::PubStr::Str2StrVector(yc_dims, ",", vec_fmt_left);
-	base::PubStr::Str2StrVector(yc_oper, ",", vec_fmt_right);
+	base::PubStr::Str2StrVector(yc_dims, ",", vec_fmt_first);
+	base::PubStr::Str2StrVector(yc_oper, ",", vec_fmt_second);
 
 	// 至少两个统计维度；且运算符个数比维度少一个
-	const int VEC_DIM_SIZE = vec_fmt_left.size();
-	if ( VEC_DIM_SIZE < 2 || (size_t)VEC_DIM_SIZE != (vec_fmt_right.size() + 1) )
+	const int VEC_DIM_SIZE = vec_fmt_first.size();
+	if ( VEC_DIM_SIZE < 2 || (size_t)VEC_DIM_SIZE != (vec_fmt_second.size() + 1) )
 	{
-		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不匹配的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fctr_fmt.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不匹配的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
 	}
 
 	// 首个因子
-	std::string& ref_first = vec_fmt_left[0];
-	if ( ref_first.find('?') != std::string::npos )		// 因子格式（参考）：{A?_B?}
+	const std::string& FIRST_DIM = vec_fmt_first[0];
+	if ( FIRST_DIM.find('?') != std::string::npos )		// 因子格式（参考）：{A?_B?}
 	{
-		OperateOneFactor(cmplx_fctr_result, "+", CalcCategoryFactor(ref_first));
+		OperateOneFactor(cmplx_result, "+", CalcCategoryFactor(FIRST_DIM));
 	}
-	else if ( (m_it = m_mFactor.find(ref_first)) != m_mFactor.end() )
+	else if ( (m_it = m_mFactor.find(FIRST_DIM)) != m_mFactor.end() )
 	{
-		OperateOneFactor(cmplx_fctr_result, "+", m_it->second);
+		OperateOneFactor(cmplx_result, "+", m_it->second);
 	}
 	else
 	{
-		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不存在的业财稽核统计维度ID：%s [FILE:%s, LINE:%d]", ref_first.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不存在的业财稽核统计维度ID：%s [FILE:%s, LINE:%d]", FIRST_DIM.c_str(), __FILE__, __LINE__);
 	}
 	
 	// 计算结果
 	for ( int i = 1; i < VEC_DIM_SIZE; ++i )
 	{
-		std::string& ref_fmt = vec_fmt_left[i];
-		if ( ref_fmt.find('?') != std::string::npos )	// 因子格式（参考）：{A?_B?}
+		std::string& ref_dim = vec_fmt_first[i];
+
+		if ( ref_dim.find('?') != std::string::npos )	// 因子格式（参考）：{A?_B?}
 		{
-			OperateOneFactor(cmplx_fctr_result, "+", CalcCategoryFactor(ref_fmt));
+			OperateOneFactor(cmplx_result, "+", CalcCategoryFactor(ref_dim));
 		}
-		else if ( (m_it = m_mFactor.find(ref_fmt)) != m_mFactor.end() )
+		else if ( (m_it = m_mFactor.find(ref_dim)) != m_mFactor.end() )
 		{
-			OperateOneFactor(cmplx_fctr_result, vec_fmt_right[i-1], m_it->second);
+			OperateOneFactor(cmplx_result, vec_fmt_second[i-1], m_it->second);
 		}
 		else
 		{
-			throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不存在的业财稽核统计维度ID：%s [FILE:%s, LINE:%d]", ref_fmt.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不存在的业财稽核统计维度ID：%s [FILE:%s, LINE:%d]", ref_dim.c_str(), __FILE__, __LINE__);
 		}
 	}
 
-	return cmplx_fctr_result;
+	return cmplx_result;
 }
 
 std::string YCStatFactor_HDB::CalcCategoryFactor(const std::string& ctg_fmt) throw(base::Exception)
@@ -295,13 +298,13 @@ bool YCStatFactor_HDB::IsCategoryDim(const std::string& dim)
 
 void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception)
 {
-	YCStatResult yc_sr;
-	yc_sr.stat_city   = m_pTaskReq->task_city;
-	yc_sr.stat_batch  = batch;
-	yc_sr.stat_report = st_info.stat_report;
-	yc_sr.stat_id     = st_info.stat_id;
-	yc_sr.stat_name   = st_info.stat_name;
-	yc_sr.statdim_id  = st_info.statdim_id;
+	YCResult_HDB ycr;
+	ycr.stat_city   = m_pTaskReq->task_city;
+	ycr.stat_batch  = batch;
+	ycr.stat_report = st_info.stat_report;
+	ycr.stat_id     = st_info.stat_id;
+	ycr.stat_name   = st_info.stat_name;
+	ycr.statdim_id  = st_info.statdim_id;
 
 	VEC_STRING vec_data;
 	if ( st_info.category )		// 分类因子
@@ -314,35 +317,35 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 		for ( int i = 0; i < VEC_SIZE; ++i )
 		{
 			YCCategoryFactor& ref_cf = vec_ctg_factor[i];
-			yc_sr.statdim_id = ref_cf.dim_id;
-			yc_sr.stat_value = ref_cf.value;
+			ycr.statdim_id = ref_cf.dim_id;
+			ycr.stat_value = ref_cf.value;
 
 			// 一般因子记录数据项名称
 			if ( !agg )
 			{
-				yc_sr.stat_name = ref_cf.item;
+				ycr.stat_name = ref_cf.item;
 			}
 
 			// 记录分类因子结果
-			if ( m_mFactor.find(yc_sr.statdim_id) != m_mFactor.end() )
+			if ( m_mFactor.find(ycr.statdim_id) != m_mFactor.end() )
 			{
 				throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "重复的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", ref_cf.dim_id.c_str(), __FILE__, __LINE__);
 			}
 			else
 			{
-				m_mFactor[yc_sr.statdim_id] = yc_sr.stat_value;
+				m_mFactor[ycr.statdim_id] = ycr.stat_value;
 			}
 
 			if ( agg )
 			{
-				m_pLog->Output("[YCStatFactor_HDB] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
+				m_pLog->Output("[YCStatFactor_HDB] 因子结果：DIM=[%s], VALUE=[%s]", ycr.statdim_id.c_str(), ycr.stat_value.c_str());
 			}
 			else
 			{
-				m_pLog->Output("[YCStatFactor_HDB] 因子结果：ITEM=[%s], DIM=[%s], VALUE=[%s]", yc_sr.stat_name.c_str(), yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
+				m_pLog->Output("[YCStatFactor_HDB] 因子结果：ITEM=[%s], DIM=[%s], VALUE=[%s]", ycr.stat_name.c_str(), ycr.statdim_id.c_str(), ycr.stat_value.c_str());
 			}
 
-			yc_sr.Export(vec_data);
+			ycr.Export(vec_data);
 			base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
 		}
 	}
@@ -350,16 +353,16 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 	{
 		if ( agg )	// 组合因子
 		{
-			yc_sr.stat_value = CalcComplexFactor(st_info.stat_sql);
+			ycr.stat_value = CalcComplexFactor(st_info.stat_sql);
 
 			// 记录组合因子结果
-			if ( m_mFactor.find(yc_sr.statdim_id) != m_mFactor.end() )
+			if ( m_mFactor.find(st_info.statdim_id) != m_mFactor.end() )
 			{
 				throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "重复的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", st_info.statdim_id.c_str(), __FILE__, __LINE__);
 			}
 			else
 			{
-				m_mFactor[yc_sr.statdim_id] = yc_sr.stat_value;
+				m_mFactor[ycr.statdim_id] = ycr.stat_value;
 			}
 		}
 		else	// 一般因子
@@ -367,7 +370,7 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 			MAP_STRING::iterator m_it = m_mFactor.find(st_info.statdim_id);
 			if ( m_it != m_mFactor.end() )
 			{
-				yc_sr.stat_value = m_it->second;
+				ycr.stat_value = m_it->second;
 			}
 			else
 			{
@@ -375,8 +378,8 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 			}
 		}
 
-		m_pLog->Output("[YCStatFactor_HDB] 因子结果：DIM=[%s], VALUE=[%s]", yc_sr.statdim_id.c_str(), yc_sr.stat_value.c_str());
-		yc_sr.Export(vec_data);
+		m_pLog->Output("[YCStatFactor_HDB] 因子结果：DIM=[%s], VALUE=[%s]", ycr.statdim_id.c_str(), ycr.stat_value.c_str());
+		ycr.Export(vec_data);
 		base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
 	}
 }

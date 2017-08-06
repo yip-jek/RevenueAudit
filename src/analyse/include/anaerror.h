@@ -30,6 +30,8 @@ enum ANALYSE_ERROR
 	ANAERR_STORE_RESULT_FAILED    = -3000024,			// 结果数据入库失败
 	ANAERR_SET_NEWBATCH_XQB       = -3000025,			// 设置详情表稽核的最新批次失败
 	ANAERR_CREATE_STATFACTOR      = -3000026,			// 创建稽核统计因子失败
+	ANAERR_STORE_DIFF_SUMMARY     = -3000027,			// 入库差异汇总结果数据失败
+	ANAERR_STORE_DETAIL_CW        = -3000028,			// 入库详情表（财务侧）结果失败
 
 	// HIVE类错误码
 	ANAERR_FETCH_SRCDATA_FAILED   = -3001001,			// 获取源数据失败
@@ -63,9 +65,10 @@ enum ANALYSE_ERROR
 	ANAERR_SEL_SRC_MAX_BATCH      = -3002025,			// 获取业财数据源表最新批次出错
 	ANAERR_UPD_TSLOG_STATE        = -3002026,			// 更新任务日程日志表状态出错
 	ANAERR_EXECUTE_SQL            = -3002027,			// 直接执行 SQL 出错
-	ANAERR_UPD_INS_DIFFSUMMARY    = -3002028,			// (业财) 更新或插入差异汇总结果数据出错
-	ANAERR_UPD_INS_REPORTSTATE    = -3002029,			// (业财) 更新或插入报表状态表的状态出错
-	ANAERR_UPD_INS_PROCESSLOG     = -3002030,			// (业财) 更新或插入流程记录日志表的状态出错
+	ANAERR_UPD_DETAIL_CW_RESULT   = -3002028,			// (业财) 更新详情表（财务侧）结果数据出错
+	ANAERR_UPD_INS_DIFFSUMMARY    = -3002029,			// (业财) 更新或插入差异汇总结果数据出错
+	ANAERR_UPD_INS_REPORTSTATE    = -3002030,			// (业财) 更新或插入报表状态表的状态出错
+	ANAERR_UPD_INS_PROCESSLOG     = -3002031,			// (业财) 更新或插入流程记录日志表的状态出错
 
 	// 编码转换错误码
 	ANAERR_INPUT_CHANN_UNICODE    = -3003001,			// 录入渠道统一编码信息失败
@@ -84,6 +87,5 @@ enum ANALYSE_ERROR
 	ANAERR_CALC_CATEGORY_FACTOR   = -3005006,			// 计算组合分类因子的维度值失败
 	ANAERR_EXPAND_CATEGORY_INFO   = -3005007,			// 扩展分类因子信息失败
 	ANAERR_MATCH_CATEGORY_FACTOR  = -3005008,			// 匹配一般分类因子失败
-	ANAERR_STORE_DIFF_SUMMARY     = -3005009,			// 入库差异汇总结果数据失败
 };
 

@@ -69,6 +69,9 @@ protected:
 	// 入库报表稽核统计结果
 	void StoreReportResult();
 
+	// 入库详情表（财务侧）结果
+	void StoreDetailResult_CW();
+
 	// 入库差异汇总结果
 	void StoreDiffSummaryResult() throw(base::Exception);
 

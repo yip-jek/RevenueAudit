@@ -61,7 +61,7 @@ public:
 	int         stat_batch;				// 统计批次
 };
 
-// (业财稽核) 分类因子对
+// (业财稽核) 分类因子
 struct YCCategoryFactor
 {
 public:
@@ -70,7 +70,7 @@ public:
 	std::string value;					// 维度值
 };
 
-// (业财稽核) 两个分类因子对
+// (业财稽核) 分类因子对
 struct YCPairCategoryFactor
 {
 public:
@@ -79,8 +79,48 @@ public:
 
 public:
 	int              index;				// 序号
-	YCCategoryFactor cf_A;				// （左A）分类因子对
-	YCCategoryFactor cf_B;				// （右B）分类因子对
+	YCCategoryFactor cf_A;				// （左A）分类因子
+	YCCategoryFactor cf_B;				// （右B）分类因子
+};
+
+// (业财稽核) 详情表因子
+struct YCFactor_XQB
+{
+public:
+	static const int S_FACTOR_SIZE = 3;
+
+public:
+	// 导入数据
+	bool Import(const std::vector<std::string>& vec_dat)
+	{
+		const int VEC_SIZE = vec_dat.size();
+		if ( VEC_SIZE != S_FACTOR_SIZE )
+		{
+			return false;
+		}
+
+		int index = 0;
+		area  = vec_dat[index++];
+		item  = vec_dat[index++];
+		value = vec_dat[index++];
+		return true;
+	}
+
+	// 导出数据
+	void Export(std::vector<std::string>& vec_dat) const
+	{
+		std::vector<std::string> v_dat;
+		v_dat.push_back(area);
+		v_dat.push_back(item);
+		v_dat.push_back(value);
+
+		v_dat.swap(vec_dat);
+	}
+
+public:
+	std::string area;					// 区域
+	std::string item;					// 项目内容
+	std::string value;					// 值
 };
 
 // (业财稽核) 因子规则信息
@@ -94,17 +134,17 @@ public:
 	{
 		std::string info;
 		base::PubStr::SetFormatString(info, "CATEGORY=[%d], "
-				"STAT_ID=[%s], "
-				"STAT_NAME=[%s], "
-				"DIM=[%s], "
-				"PRIORITY=[%s], "
-				"REPORT=[%s]", 
-				category, 
-				stat_id.c_str(), 
-				stat_name.c_str(), 
-				statdim_id.c_str(), 
-				stat_priority.c_str(), 
-				stat_report.c_str());
+											"STAT_ID=[%s], "
+											"STAT_NAME=[%s], "
+											"DIM=[%s], "
+											"PRIORITY=[%s], "
+											"REPORT=[%s]", 
+											category, 
+											stat_id.c_str(), 
+											stat_name.c_str(), 
+											statdim_id.c_str(), 
+											stat_priority.c_str(), 
+											stat_report.c_str());
 		return info;
 	}
 
@@ -118,11 +158,11 @@ public:
 	std::string stat_report;			// 关联报表
 };
 
-// (业财稽核) 因子结果信息
-struct YCStatResult
+// (业财稽核) 核对表因子结果信息
+struct YCResult_HDB
 {
 public:
-	YCStatResult(): stat_batch(0)
+	YCResult_HDB(): stat_batch(0)
 	{}
 
 	static const int S_NUMBER_OF_MEMBERS = 7;			// 总成员数
@@ -154,7 +194,7 @@ public:
 	}
 
 	// 导出数据
-	void Export(std::vector<std::string>& vec_dat)
+	void Export(std::vector<std::string>& vec_dat) const
 	{
 		std::vector<std::string> v_dat;
 		v_dat.push_back(stat_report);
@@ -168,6 +208,26 @@ public:
 		v_dat.swap(vec_dat);
 	}
 
+	std::string LogPrintInfo() const
+	{
+		std::string info;
+		base::PubStr::SetFormatString(info, "REPORT=[%s], "
+											"STAT_ID=[%s], "
+											"STAT_NAME=[%s], "
+											"DIM=[%s], "
+											"CITY=[%s], "
+											"BATCH=[%d], "
+											"VALUE=[%s]", 
+											stat_report.c_str(), 
+											stat_id.c_str(), 
+											stat_name.c_str(), 
+											statdim_id.c_str(), 
+											stat_city.c_str(), 
+											stat_batch, 
+											stat_value.c_str());
+		return info;
+	}
+
 public:
 	std::string stat_report;				// 关联报表
 	std::string stat_id;					// 统计指标ID
@@ -176,6 +236,98 @@ public:
 	std::string stat_city;					// 地市
 	int         stat_batch;					// 批次
 	std::string stat_value;					// 统计维度值
+};
+
+// (业财稽核) 详情表因子结果信息
+struct YCResult_XQB
+{
+public:
+	YCResult_XQB(): batch(0) {}
+
+	static const int S_NUMBER_OF_MEMBERS = 8;			// 总成员数
+
+public:
+	// 从因子导入
+	void ImportFromFactor(const YCFactor_XQB& factor)
+	{
+		this->area  = factor.area;
+		this->item  = factor.item;
+		this->value = factor.value;
+	}
+
+	// 导入数据
+	bool Import(const std::vector<std::string>& vec_dat)
+	{
+		const int VEC_SIZE = vec_dat.size();
+		if ( VEC_SIZE != S_NUMBER_OF_MEMBERS )
+		{
+			return false;
+		}
+
+		int index = 0;
+		bill_cyc = vec_dat[index++];
+		city     = vec_dat[index++];
+		type     = vec_dat[index++];
+		dim_id   = vec_dat[index++];
+		area     = vec_dat[index++];
+		item     = vec_dat[index++];
+
+		if ( !base::PubStr::Str2Int(vec_dat[index++], batch) )
+		{
+			return false;
+		}
+	
+		value = vec_dat[index++];
+		return true;
+	}
+
+	// 导出数据
+	void Export(std::vector<std::string>& vec_dat) const
+	{
+		std::vector<std::string> v_dat;
+		v_dat.push_back(bill_cyc);
+		v_dat.push_back(city);
+		v_dat.push_back(type);
+		v_dat.push_back(dim_id);
+		v_dat.push_back(area);
+		v_dat.push_back(item);
+		v_dat.push_back(base::PubStr::Int2Str(batch));
+		v_dat.push_back(value);
+
+		v_dat.swap(vec_dat);
+	}
+
+	std::string LogPrintInfo() const
+	{
+		std::string info;
+		base::PubStr::SetFormatString(info, "BILL_CYC=[%s], "
+											"CITY=[%s], "
+											"TYPE=[%s], "
+											"DIM=[%s], "
+											"AREA=[%s], "
+											"ITEM=[%s], "
+											"BATCH=[%d], "
+											"VALUE=[%s]", 
+											bill_cyc.c_str(), 
+											city.c_str(), 
+											type.c_str(), 
+											dim_id.c_str(), 
+											area.c_str(), 
+											item.c_str(), 
+											batch, 
+											value.c_str());
+		return info;
+	}
+
+public:
+	std::string bill_cyc;					// 账期
+	std::string city;						// 地市
+	std::string type;						// 类型：0-固定项，1-浮动项
+	std::string dim_id;						// 维度ID
+	std::string area;						// 区域
+	std::string item;						// 项目内容
+	int         batch;						// 批次
+	std::string value;						// 值
 };
 
 // (业财稽核) 日志信息
@@ -207,37 +359,6 @@ public:
 	std::string city;					// 地市
 	std::string field_batch;			// 批次字段名
 	int         batch;					// 批次
-};
-
-// (业财稽核) 详情表因子对
-struct YCFactor_XQB
-{
-public:
-	YCFactor_XQB() {}
-	YCFactor_XQB(const std::vector<std::string>& v_dat): vec_data(v_dat) {}
-
-	YCFactor_XQB& operator = (const std::vector<std::string>& v_dat)
-	{
-		vec_data = v_dat;
-		return *this;
-	}
-
-	size_t Size() const
-	{ return vec_data.size(); }
-
-	std::string GetVal() const
-	{
-		const int VEC_SIZE = vec_data.size();
-		if ( VEC_SIZE > 0 )
-		{
-			return vec_data[VEC_SIZE-1];
-		}
-
-		return "";
-	}
-
-public:
-	std::vector<std::string> vec_data;
 };
 
 // 地市详情表批次信息

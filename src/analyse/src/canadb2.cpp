@@ -1490,7 +1490,49 @@ void CAnaDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const
 	}
 }
 
-void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatResult& ycsr) throw(base::Exception)
+void CAnaDB2::UpdateDetailCWResult(const std::string& tab_target, const std::vector<YCResult_XQB>& vec_result) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "UPDATE " + tab_target + " SET FINANCEVERSION = ?, AUTORESULT = ? WHERE BILLCYC = ?";
+	sql += " AND CITY = ? AND TYPE = ? AND DIM = ? AND AREA = ? AND ITEM = ? AND BUSIVERSION = ?";
+	m_pLog->Output("[DB2] UPDATE DETAIL CW: %s", sql.c_str());
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		Begin();
+
+		const int VEC_SIZE = vec_result.size();
+		for ( int i = 0; i < VEC_SIZE; ++i )
+		{
+			const YCResult_XQB& ref_yc = vec_result[i];
+
+			int index = 1;
+			rs.Parameter(index++) = ref_yc.batch;
+			rs.Parameter(index++) = ref_yc.value.c_str();
+			rs.Parameter(index++) = ref_yc.bill_cyc.c_str();
+			rs.Parameter(index++) = ref_yc.city.c_str();
+			rs.Parameter(index++) = ref_yc.type.c_str();
+			rs.Parameter(index++) = ref_yc.dim_id.c_str();
+			rs.Parameter(index++) = ref_yc.area.c_str();
+			rs.Parameter(index++) = ref_yc.item.c_str();
+			rs.Parameter(index++) = ref_yc.batch;			// 业务侧与财务侧批次一致
+			rs.Execute();
+		}
+
+		Commit();
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ANAERR_UPD_DETAIL_CW_RESULT, "[DB2] Update detail (CW) result in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_target.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCResult_HDB& ycr) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -1505,11 +1547,11 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatRe
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		int index = 1;
-		rs.Parameter(index++) = ycsr.stat_report.c_str();
-		rs.Parameter(index++) = ycsr.stat_id.c_str();
-		rs.Parameter(index++) = ycsr.statdim_id.c_str();
+		rs.Parameter(index++) = ycr.stat_report.c_str();
+		rs.Parameter(index++) = ycr.stat_id.c_str();
+		rs.Parameter(index++) = ycr.statdim_id.c_str();
 		rs.Parameter(index++) = ETL_DAY.c_str();
-		rs.Parameter(index++) = ycsr.stat_city.c_str();
+		rs.Parameter(index++) = ycr.stat_city.c_str();
 		rs.Execute();
 
 		int num = 0;
@@ -1521,26 +1563,26 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatRe
 		}
 		rs.Close();
 
-		m_pLog->Output("[DB2] DIFF SUMMARY DIM_ID=[%s], COUNT:%d", ycsr.statdim_id.c_str(), num);
+		m_pLog->Output("[DB2] DIFF SUMMARY DIM_ID=[%s], COUNT:%d", ycr.statdim_id.c_str(), num);
 		// 差异汇总维度数据是否存在？
 		if ( num > 0 )	// 已存在
 		{
 			sql  = "UPDATE " + db_info.target_table + " SET STAT_NAME = ?, STAT_VALUE = ?, INTIME = ?, STAT_NUM = ? ";
 			sql += "WHERE STAT_REPORT = ? and STAT_ID = ? and STATDIM_ID = ? and STAT_DATE = ? and STAT_CITY = ?";
-			m_pLog->Output("[DB2] UPDATE DIFF SUMMARY: REPORT=[%s], STAT_ID=[%s], STAT_NAME=[%s], CITY=[%s], BATCH=[%d], ETL_DAY=[%s], NOW_DAY=[%s], DIM=[%s], VALUE=[%s]", ycsr.stat_report.c_str(), ycsr.stat_id.c_str(), ycsr.stat_name.c_str(), ycsr.stat_city.c_str(), ycsr.stat_batch, ETL_DAY.c_str(), NOW_DAY.c_str(), ycsr.statdim_id.c_str(), ycsr.stat_value.c_str());
+			m_pLog->Output("[DB2] UPDATE DIFF SUMMARY: %s, ETL_DAY=[%s], NOW_DAY=[%s]", ycr.LogPrintInfo().c_str(), ETL_DAY.c_str(), NOW_DAY.c_str());
 
 			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 			index = 1;
-			rs.Parameter(index++) = ycsr.stat_name.c_str();
-			rs.Parameter(index++) = ycsr.stat_value.c_str();
+			rs.Parameter(index++) = ycr.stat_name.c_str();
+			rs.Parameter(index++) = ycr.stat_value.c_str();
 			rs.Parameter(index++) = NOW_DAY.c_str();
-			rs.Parameter(index++) = ycsr.stat_batch;
-			rs.Parameter(index++) = ycsr.stat_report.c_str();
-			rs.Parameter(index++) = ycsr.stat_id.c_str();
-			rs.Parameter(index++) = ycsr.statdim_id.c_str();
+			rs.Parameter(index++) = ycr.stat_batch;
+			rs.Parameter(index++) = ycr.stat_report.c_str();
+			rs.Parameter(index++) = ycr.stat_id.c_str();
+			rs.Parameter(index++) = ycr.statdim_id.c_str();
 			rs.Parameter(index++) = ETL_DAY.c_str();
-			rs.Parameter(index++) = ycsr.stat_city.c_str();
+			rs.Parameter(index++) = ycr.stat_city.c_str();
 
 			rs.Execute();
 			Commit();
@@ -1550,20 +1592,20 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCStatRe
 		{
 			sql  = "INSERT INTO " + db_info.target_table + "(STAT_REPORT, STAT_ID, STAT_NAME, STATDIM_ID";
 			sql += ", STAT_VALUE, STAT_DATE, INTIME, STAT_CITY, STAT_NUM) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
-			m_pLog->Output("[DB2] INSERT DIFF SUMMARY: REPORT=[%s], STAT_ID=[%s], STAT_NAME=[%s], CITY=[%s], BATCH=[%d], ETL_DAY=[%s], NOW_DAY=[%s], DIM=[%s], VALUE=[%s]", ycsr.stat_report.c_str(), ycsr.stat_id.c_str(), ycsr.stat_name.c_str(), ycsr.stat_city.c_str(), ycsr.stat_batch, ETL_DAY.c_str(), NOW_DAY.c_str(), ycsr.statdim_id.c_str(), ycsr.stat_value.c_str());
+			m_pLog->Output("[DB2] INSERT DIFF SUMMARY: %s, ETL_DAY=[%s], NOW_DAY=[%s]", ycr.LogPrintInfo().c_str(), ETL_DAY.c_str(), NOW_DAY.c_str());
 
 			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 			index = 1;
-			rs.Parameter(index++) = ycsr.stat_report.c_str();
-			rs.Parameter(index++) = ycsr.stat_id.c_str();
-			rs.Parameter(index++) = ycsr.stat_name.c_str();
-			rs.Parameter(index++) = ycsr.statdim_id.c_str();
-			rs.Parameter(index++) = ycsr.stat_value.c_str();
+			rs.Parameter(index++) = ycr.stat_report.c_str();
+			rs.Parameter(index++) = ycr.stat_id.c_str();
+			rs.Parameter(index++) = ycr.stat_name.c_str();
+			rs.Parameter(index++) = ycr.statdim_id.c_str();
+			rs.Parameter(index++) = ycr.stat_value.c_str();
 			rs.Parameter(index++) = ETL_DAY.c_str();
 			rs.Parameter(index++) = NOW_DAY.c_str();
-			rs.Parameter(index++) = ycsr.stat_city.c_str();
-			rs.Parameter(index++) = ycsr.stat_batch;
+			rs.Parameter(index++) = ycr.stat_city.c_str();
+			rs.Parameter(index++) = ycr.stat_batch;
 
 			rs.Execute();
 			Commit();

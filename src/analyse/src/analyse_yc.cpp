@@ -186,11 +186,11 @@ void Analyse_YC::CreateStatFactor() throw(base::Exception)
 
 	if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )	// 核对表
 	{
-		m_pStatFactor = new YCStatFactor_HDB(m_taskReq);
+		m_pStatFactor = new YCStatFactor_HDB(m_dbinfo.GetEtlDay(), m_taskReq);
 	}
 	else	// 详情表
 	{
-		m_pStatFactor = new YCStatFactor_XQB(m_taskReq);
+		m_pStatFactor = new YCStatFactor_XQB(m_dbinfo.GetEtlDay(), m_taskReq);
 	}
 
 	if ( NULL == m_pStatFactor )
@@ -328,6 +328,7 @@ void Analyse_YC::StoreReportResult()
 	if ( AnalyseRule::ANATYPE_YCXQB_CW == m_taskInfo.AnaRule.AnaType )
 	{
 		m_pLog->Output("[Analyse_YC] 准备入库：业财稽核详情表（财务侧）结果数据");
+		StoreDetailResult_CW();
 	}
 	else	// 非详情表（财务侧）数据
 	{
@@ -342,20 +343,45 @@ void Analyse_YC::StoreReportResult()
 	}
 }
 
+void Analyse_YC::StoreDetailResult_CW()
+{
+	YCResult_XQB ycr;
+	std::vector<YCResult_XQB> vec_result;
+
+	const int VEC3_SIZE = m_v3HiveSrcData.size();
+	for ( int i = 0; i < VEC3_SIZE; ++i )
+	{
+		VEC2_STRING& ref_vec2 = m_v3HiveSrcData[i];
+
+		const int VEC2_SIZE = ref_vec2.size();
+		for ( int j = 0; j < VEC2_SIZE; ++j )
+		{
+			if ( !ycr.Import(ref_vec2[j]) )
+			{
+				throw base::Exception(ANAERR_STORE_DETAIL_CW, "详情表（财务侧）结果数据导出失败！[INDEX:(%d, %d)] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", (i+1), (j+1), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			}
+
+			vec_result.push_back(ycr);
+		}
+	}
+
+	m_pAnaDB2->UpdateDetailCWResult(m_dbinfo.target_table, vec_result);
+	m_pLog->Output("[Analyse_YC] Store detail (CW) result data size: %lu", vec_result.size());
+}
+
 void Analyse_YC::StoreDiffSummaryResult() throw(base::Exception)
 {
-	YCStatResult yc_sr;
+	YCResult_HDB ycr;
 
 	const int VEC2_SIZE = m_v2DiffSummary.size();
 	for ( int i = 0; i < VEC2_SIZE; ++i )
 	{
-		VEC_STRING& ref_vec = m_v2DiffSummary[i];
-		if ( !yc_sr.Import(ref_vec) )
+		if ( !ycr.Import(m_v2DiffSummary[i]) )
 		{
-			throw base::Exception(ANAERR_STORE_DIFF_SUMMARY, "差异汇总结果数据还原失败！[INDEX:%d] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", (i+1), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_STORE_DIFF_SUMMARY, "差异汇总结果数据导出失败！[INDEX:%d] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", (i+1), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 
-		m_pAnaDB2->UpdateInsertYCDIffSummary(m_dbinfo, yc_sr);
+		m_pAnaDB2->UpdateInsertYCDIffSummary(m_dbinfo, ycr);
 	}
 
 	m_pLog->Output("[Analyse_YC] Store diff summary result data size: %d", VEC2_SIZE);

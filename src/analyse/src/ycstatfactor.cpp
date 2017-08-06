@@ -4,8 +4,9 @@
 
 const char* const YCStatFactor::S_TOP_PRIORITY  = "NN";			// 最高优先级 (差异汇总)
 
-YCStatFactor::YCStatFactor(YCTaskReq& task_req)
+YCStatFactor::YCStatFactor(const std::string& etl_day, YCTaskReq& task_req)
 :m_pLog(base::Log::Instance())
+,m_etlDay(etl_day)
 ,m_pTaskReq(&task_req)
 {
 }
@@ -177,7 +178,6 @@ std::string YCStatFactor::OperateOneFactor(std::string& result, const std::strin
 		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "无法识别的因子运算符：%s [FILE:%s, LINE:%d]", op.c_str(), __FILE__, __LINE__);
 	}
 
-	result = base::PubStr::Double2FormatStr(dou_res);
-	return result;
+	return (result = base::PubStr::Double2FormatStr(dou_res));
 }
 
