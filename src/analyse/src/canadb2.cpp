@@ -1490,18 +1490,16 @@ void CAnaDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const
 	}
 }
 
-void CAnaDB2::UpdateDetailCWResult(const std::string& tab_target, const std::vector<YCResult_XQB>& vec_result) throw(base::Exception)
+void CAnaDB2::UpdateDetailCWResult(const AnaDBInfo& db_info, const std::vector<YCResult_XQB>& vec_result) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "UPDATE " + tab_target + " SET FINANCEVERSION = ?, AUTORESULT = ? WHERE BILLCYC = ?";
-	sql += " AND CITY = ? AND TYPE = ? AND DIM = ? AND AREA = ? AND ITEM = ? AND BUSIVERSION = ?";
-	m_pLog->Output("[DB2] UPDATE DETAIL CW: %s", sql.c_str());
+	m_pLog->Output("[DB2] UPDATE DETAIL CW: %s", db_info.db2_sql.c_str());
 
 	try
 	{
-		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Prepare(db_info.db2_sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		Begin();
 
@@ -1528,7 +1526,7 @@ void CAnaDB2::UpdateDetailCWResult(const std::string& tab_target, const std::vec
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ANAERR_UPD_DETAIL_CW_RESULT, "[DB2] Update detail (CW) result in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab_target.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_UPD_DETAIL_CW_RESULT, "[DB2] Update detail (CW) result in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", db_info.target_table.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 

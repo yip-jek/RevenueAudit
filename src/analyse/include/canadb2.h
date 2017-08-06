@@ -135,7 +135,7 @@ public:
 	void UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark) throw(base::Exception);
 
 	// (业财) 更新详情表（财务侧）结果数据
-	void UpdateDetailCWResult(const std::string& tab_target, const std::vector<YCResult_XQB>& vec_result) throw(base::Exception);
+	void UpdateDetailCWResult(const AnaDBInfo& db_info, const std::vector<YCResult_XQB>& vec_result) throw(base::Exception);
 
 	// (业财) 更新或插入差异汇总结果数据
 	void UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCResult_HDB& ycr) throw(base::Exception);

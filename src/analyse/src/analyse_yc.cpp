@@ -154,6 +154,32 @@ bool Analyse_YC::CheckYCAnalyseType(std::string& cn_type) const
 	}
 }
 
+void Analyse_YC::GetAnaDBInfo() throw(base::Exception)
+{
+	Analyse::GetAnaDBInfo();
+
+	// 详情表（财务侧）采用更新SQL语句
+	if ( AnalyseRule::ANATYPE_YCXQB_CW == m_taskInfo.AnaRule.AnaType )
+	{
+		int field_size = m_dbinfo.GetFieldSize();
+		if ( field_size != (YCResult_XQB::S_NUMBER_OF_MEMBERS + 1) )
+		{
+			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "指标字段数不足[%d]: %d [FILE:%s, LINE:%d]", (YCResult_XQB::S_NUMBER_OF_MEMBERS+1), field_size, __FILE__, __LINE__);
+		}
+
+		m_dbinfo.db2_sql  = "UPDATE " + m_dbinfo.target_table + " SET ";
+		m_dbinfo.db2_sql += m_dbinfo.GetAnaField(field_size-2).field_name + " = ?, ";
+		m_dbinfo.db2_sql += m_dbinfo.GetAnaField(field_size-1).field_name + " = ? WHERE ";
+		m_dbinfo.db2_sql += m_dbinfo.GetAnaField(0).field_name + " = ?";
+
+		field_size -= 2;
+		for ( int i = 1; i < field_size; ++i )
+		{
+			m_dbinfo.db2_sql += " AND " + m_dbinfo.GetAnaField(i).field_name + " = ?";
+		}
+	}
+}
+
 void Analyse_YC::ReleaseStatFactor()
 {
 	if ( m_pStatFactor != NULL )
@@ -365,7 +391,7 @@ void Analyse_YC::StoreDetailResult_CW()
 		}
 	}
 
-	m_pAnaDB2->UpdateDetailCWResult(m_dbinfo.target_table, vec_result);
+	m_pAnaDB2->UpdateDetailCWResult(m_dbinfo, vec_result);
 	m_pLog->Output("[Analyse_YC] Store detail (CW) result data size: %lu", vec_result.size());
 }
 

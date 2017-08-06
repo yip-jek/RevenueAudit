@@ -36,6 +36,9 @@ protected:
 	// 检查：是否为业财稽核类型。输出中文描述
 	bool CheckYCAnalyseType(std::string& cn_type) const;
 
+	// 生成数据库信息
+	virtual void GetAnaDBInfo() throw(base::Exception);
+
 	// 释放稽核统计因子资源
 	void ReleaseStatFactor();
 

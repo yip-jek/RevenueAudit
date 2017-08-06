@@ -48,7 +48,7 @@ void YCStatFactor_XQB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
 void YCStatFactor_XQB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception)
 {
 	YCResult_XQB ycr;
-	ycr.bill_cyc = m_etlDay;
+	ycr.bill_cyc = m_etlDay.substr(0, 6);			// 账期为月份：YYYYMM
 	ycr.city     = m_pTaskReq->task_city;
 	ycr.type     = "0";			// 类型默认值：0-固定项
 	ycr.dim_id   = st_info.statdim_id;

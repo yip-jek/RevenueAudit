@@ -105,7 +105,7 @@ protected:
 	virtual void GenerateTableNameByType() throw(base::Exception);
 
 	// 生成数据库信息
-	void GetAnaDBInfo() throw(base::Exception);
+	virtual void GetAnaDBInfo() throw(base::Exception);
 
 	// 标志转换
 	virtual void ExchangeSQLMark(std::string& sql) throw(base::Exception);
