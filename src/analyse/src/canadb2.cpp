@@ -961,7 +961,8 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 	sql += " from " + db_info.target_table;
 
 	// 是否带采集时间
-	if ( db_info.IsEtlDayValid() )
+	int etlday_index = 0;
+	if ( db_info.GetEtlDayIndex(etlday_index) )
 	{
 		sql += " where " + db_info.GetEtlDayFieldName() + " = ?";
 	}
@@ -975,7 +976,7 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		// 是否带时间条件
-		if ( db_info.IsEtlDayValid() )
+		if ( etlday_index != TimeField::TF_INVALID_INDEX )
 		{
 			rs.Parameter(1) = date.c_str();
 		}
@@ -1509,14 +1510,14 @@ void CAnaDB2::UpdateDetailCWResult(const AnaDBInfo& db_info, const std::vector<Y
 			const YCResult_XQB& ref_yc = vec_result[i];
 
 			int index = 1;
+			rs.Parameter(index++) = ref_yc.area.c_str();
+			rs.Parameter(index++) = ref_yc.item.c_str();
 			rs.Parameter(index++) = ref_yc.batch;
 			rs.Parameter(index++) = ref_yc.value.c_str();
 			rs.Parameter(index++) = ref_yc.bill_cyc.c_str();
 			rs.Parameter(index++) = ref_yc.city.c_str();
 			rs.Parameter(index++) = ref_yc.type.c_str();
 			rs.Parameter(index++) = ref_yc.dim_id.c_str();
-			rs.Parameter(index++) = ref_yc.area.c_str();
-			rs.Parameter(index++) = ref_yc.item.c_str();
 			rs.Parameter(index++) = ref_yc.batch;			// 业务侧与财务侧批次一致
 			rs.Execute();
 		}
@@ -1539,6 +1540,7 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCResult
 	const std::string NOW_DAY = db_info.GetNowDay();
 	std::string sql = "SELECT COUNT(0) FROM " + db_info.target_table + " WHERE STAT_REPORT = ? ";
 	sql += "and STAT_ID = ? and STATDIM_ID = ? and STAT_DATE = ? and STAT_CITY = ?";
+	m_pLog->Output("[DB2] Update or insert diff summary to table: [%s]", db_info.target_table.c_str());
 
 	try
 	{
@@ -1622,6 +1624,7 @@ void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(b
 	rs.EnableWarning(true);
 
 	std::string sql = "SELECT COUNT(0) FROM " + m_tabReportStat + " WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ? AND ACTOR = ?";
+	m_pLog->Output("[DB2] Update or insert report state to table: [%s]", m_tabReportStat.c_str());
 
 	try
 	{
@@ -1696,6 +1699,7 @@ void CAnaDB2::UpdateInsertProcessLogState(const YCProcessLog& proc_log) throw(ba
 	rs.EnableWarning(true);
 
 	std::string sql = "SELECT COUNT(0) FROM " + m_tabProcessLog + " WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ? AND ACTOR = ?";
+	m_pLog->Output("[DB2] Update or insert process log state to table: [%s]", m_tabProcessLog.c_str());
 
 	try
 	{

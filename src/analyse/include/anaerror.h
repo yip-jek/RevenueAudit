@@ -32,6 +32,7 @@ enum ANALYSE_ERROR
 	ANAERR_CREATE_STATFACTOR      = -3000026,			// 创建稽核统计因子失败
 	ANAERR_STORE_DIFF_SUMMARY     = -3000027,			// 入库差异汇总结果数据失败
 	ANAERR_STORE_DETAIL_CW        = -3000028,			// 入库详情表（财务侧）结果失败
+	ANAERR_ETLTIME_CONVERTION     = -3000029,			// 采集时间转换失败
 
 	// HIVE类错误码
 	ANAERR_FETCH_SRCDATA_FAILED   = -3001001,			// 获取源数据失败

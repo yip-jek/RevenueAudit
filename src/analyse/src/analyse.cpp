@@ -29,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 5.1.1.1 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Analyse: Version 5.1.2.2 released. Compiled at "__TIME__" on "__DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -204,9 +204,6 @@ void Analyse::GetAnaDBInfo() throw(base::Exception)
 	AnaField ana_field;
 	std::vector<AnaField> v_fields;
 
-	m_dbinfo.GenerateEtlDay("", TimeField::TF_INVALID_INDEX);
-	m_dbinfo.GenerateNowDay(false, TimeField::TF_INVALID_INDEX);
-
 	// 指标维度字段
 	int v_size = m_taskInfo.vecKpiDimCol.size();
 	for ( int i = 0; i < v_size; ++i )
@@ -225,17 +222,11 @@ void Analyse::GetAnaDBInfo() throw(base::Exception)
 
 		if ( KpiColumn::EWTYPE_ETLDAY == ref_col.ExpWay )
 		{
-			// 取第一个采集规则的采集时间
-			std::string& ref_etltime = m_taskInfo.vecEtlRule[0].EtlTime;
-			if ( !m_dbinfo.GenerateEtlDay(ref_etltime, i) )
-			{
-				throw base::Exception(ANAERR_GET_DBINFO_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", ref_etltime.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
-			}
-			m_pLog->Output("[Analyse] 完成采集时间转换：[%s] -> [%s]", ref_etltime.c_str(), m_dbinfo.GetEtlDay().c_str());
+			m_dbinfo.SetEtlDayIndex(i);
 		}
 		else if ( KpiColumn::EWTYPE_NOWDAY == ref_col.ExpWay )
 		{
-			m_dbinfo.GenerateNowDay(true, i);
+			m_dbinfo.SetNowDayIndex(i);
 		}
 
 		ana_field.field_name = ref_col.DBName;
@@ -378,6 +369,8 @@ void Analyse::FetchTaskInfo() throw(base::Exception)
 
 	m_pLog->Output("[Analyse] 获取渠道、地市统一编码信息 ...");
 	FetchUniformCode();
+
+	EtlTimeConvertion();
 }
 
 void Analyse::CheckAnaTaskInfo() throw(base::Exception)
@@ -539,6 +532,17 @@ void Analyse::FetchUniformCode() throw(base::Exception)
 
 	m_pLog->Output("[Analyse] Fetch city uniform code, size: %llu", vec_city_uni_code.size());
 	m_UniCodeTransfer.InputCityUniformCode(vec_city_uni_code);
+}
+
+void Analyse::EtlTimeConvertion() throw(base::Exception)
+{
+	// 取第一个采集规则的采集时间
+	const std::string& REF_ETLTIME = m_taskInfo.vecEtlRule[0].EtlTime;
+	if ( !m_dbinfo.GenerateDayTime(REF_ETLTIME) )
+	{
+		throw base::Exception(ANAERR_ETLTIME_CONVERTION, "采集时间转换失败！无法识别的采集时间表达式：%s (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", REF_ETLTIME.c_str(), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
+	}
+	m_pLog->Output("[Analyse] 完成采集时间转换：[%s] -> [%s]", REF_ETLTIME.c_str(), m_dbinfo.GetEtlDay().c_str());
 }
 
 void Analyse::DoDataAnalyse() throw(base::Exception)
@@ -1293,31 +1297,34 @@ void Analyse::GenerateReportStatData()
 
 void Analyse::DataSupplement()
 {
+	int first_index  = 0;
+	int second_index = 0;
+
 	// 没有需要补全的时间字段
-	if ( !m_dbinfo.IsEtlDayValid() && !m_dbinfo.IsNowDayValid() )
+	if ( !m_dbinfo.GetEtlDayIndex(first_index) && !m_dbinfo.GetNowDayIndex(second_index) )
 	{
 		m_pLog->Output("[Analyse] 无需进行数据补全！");
 		return;
 	}
 	m_pLog->Output("[Analyse] 进行时间数据补全 ...");
 
-	int first_index  = 0;
-	int second_index = 0;
 	std::string first_time;
 	std::string second_time;
-	if ( m_dbinfo.GetEtlDayIndex() < m_dbinfo.GetNowDayIndex() )
+
+	if ( first_index < second_index )	// 采集时间在前，当前时间在后
 	{
-		first_index  = m_dbinfo.GetEtlDayIndex();
-		second_index = m_dbinfo.GetNowDayIndex();
-		first_time   = m_dbinfo.GetEtlDay();
-		second_time  = m_dbinfo.GetNowDay();
+		first_time  = m_dbinfo.GetEtlDay();
+		second_time = m_dbinfo.GetNowDay();
 	}
-	else
+	else	// 当前时间在前，采集时间在后
 	{
-		first_index  = m_dbinfo.GetNowDayIndex();
-		second_index = m_dbinfo.GetEtlDayIndex();
-		first_time   = m_dbinfo.GetNowDay();
-		second_time  = m_dbinfo.GetEtlDay();
+		// 交换索引位置
+		int temp     = first_index;
+		first_index  = second_index;
+		second_index = temp;
+
+		first_time  = m_dbinfo.GetNowDay();
+		second_time = m_dbinfo.GetEtlDay();
 	}
 
 	const int VEC3_SIZE = m_v3HiveSrcData.size();
@@ -1410,7 +1417,8 @@ void Analyse::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype
 {
 	// 是否带时间戳
 	// 只有带时间戳才可以按采集时间删除结果数据
-	if ( m_dbinfo.IsEtlDayValid() )
+	int index = 0;
+	if ( m_dbinfo.GetEtlDayIndex(index) )
 	{
 		// 结果表类型是否为天表？
 		if ( AnaTaskInfo::TABTYPE_DAY == result_tabtype )

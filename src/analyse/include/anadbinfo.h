@@ -11,13 +11,12 @@ public:
 	static const int TF_INVALID_INDEX = -1;
 
 public:
-	TimeField(): valid(false), index(TF_INVALID_INDEX)
+	TimeField(): index(TF_INVALID_INDEX)
 	{}
 
 public:
-	bool        valid;					// 是否有效
 	int         index;					// 所在位置索引
-	std::string str_time;
+	std::string day_time;				// 时间（天）
 };
 
 struct AnaField
@@ -34,26 +33,23 @@ public:
 	~AnaDBInfo();
 
 public:
-	// 生成采集时间
-	bool GenerateEtlDay(const std::string& etl_time, int index);
+	// 生成时间（天）
+	bool GenerateDayTime(const std::string& etl_time);
 
-	// 生成当前时间
-	void GenerateNowDay(bool is_valid, int index);
+	// 获取采集时间所在位置索引
+	bool SetEtlDayIndex(int index);
+
+	// 获取当前时间所在位置索引
+	bool SetNowDayIndex(int index);
 
 	// 获取采集时间类型
 	base::PubTime::DATE_TYPE GetEtlDateType() const;
 
-	// 采集时间是否有效
-	bool IsEtlDayValid() const;
+	// 获取采集时间所在位置索引，返回位置索引的有效性
+	bool GetEtlDayIndex(int& index) const;
 
-	// 当前时间是否有效
-	bool IsNowDayValid() const;
-
-	// 获取采集时间所在位置索引
-	int GetEtlDayIndex() const;
-
-	// 获取当前时间所在位置索引
-	int GetNowDayIndex() const;
+	// 获取当前时间所在位置索引，返回位置索引的有效性
+	bool GetNowDayIndex(int& index) const;
 
 	// 获取采集时间
 	std::string GetEtlDay() const;
@@ -62,7 +58,7 @@ public:
 	std::string GetNowDay() const;
 
 	// 设置目标表字段信息
-	void SetAnaFields(std::vector<AnaField>& v_fields);
+	void SetAnaFields(const std::vector<AnaField>& v_fields);
 
 	// 获取目标字段数
 	int GetFieldSize() const;

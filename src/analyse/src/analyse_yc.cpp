@@ -161,19 +161,27 @@ void Analyse_YC::GetAnaDBInfo() throw(base::Exception)
 	// 详情表（财务侧）采用更新SQL语句
 	if ( AnalyseRule::ANATYPE_YCXQB_CW == m_taskInfo.AnaRule.AnaType )
 	{
-		int field_size = m_dbinfo.GetFieldSize();
-		if ( field_size != (YCResult_XQB::S_NUMBER_OF_MEMBERS + 1) )
+		const int FIELD_SIZE = m_dbinfo.GetFieldSize();
+		if ( FIELD_SIZE != (YCResult_XQB::S_NUMBER_OF_MEMBERS + 1) )
 		{
-			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "指标字段数不足[%d]: %d [FILE:%s, LINE:%d]", (YCResult_XQB::S_NUMBER_OF_MEMBERS+1), field_size, __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "指标字段数不足[%d]: %d [FILE:%s, LINE:%d]", (YCResult_XQB::S_NUMBER_OF_MEMBERS+1), FIELD_SIZE, __FILE__, __LINE__);
 		}
 
+		// 更新 SQL 语句头
 		m_dbinfo.db2_sql  = "UPDATE " + m_dbinfo.target_table + " SET ";
-		m_dbinfo.db2_sql += m_dbinfo.GetAnaField(field_size-2).field_name + " = ?, ";
-		m_dbinfo.db2_sql += m_dbinfo.GetAnaField(field_size-1).field_name + " = ? WHERE ";
-		m_dbinfo.db2_sql += m_dbinfo.GetAnaField(0).field_name + " = ?";
 
-		field_size -= 2;
-		for ( int i = 1; i < field_size; ++i )
+		// SET 的内容
+		const int COND_FIELD_SIZE = FIELD_SIZE - 4;
+		for ( int i = COND_FIELD_SIZE; i < FIELD_SIZE; ++i )
+		{
+			m_dbinfo.db2_sql += m_dbinfo.GetAnaField(i).field_name + " = ?, ";
+		}
+		// 加入关键词 WHERE
+		m_dbinfo.db2_sql.replace(m_dbinfo.db2_sql.size()-2, 1, " WHERE");
+
+		// WHERE 后的条件
+		m_dbinfo.db2_sql += m_dbinfo.GetAnaField(0).field_name + " = ?";
+		for ( int i = 1; i < COND_FIELD_SIZE; ++i )
 		{
 			m_dbinfo.db2_sql += " AND " + m_dbinfo.GetAnaField(i).field_name + " = ?";
 		}

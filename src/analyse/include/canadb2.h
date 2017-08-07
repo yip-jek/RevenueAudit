@@ -5,7 +5,7 @@
 #include "dimvaldiffer.h"
 #include "ycinfo.h"
 
-struct AnaDBInfo;
+class AnaDBInfo;
 struct ChannelUniformCode;
 struct CityUniformCode;
 

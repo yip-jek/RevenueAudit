@@ -10,37 +10,38 @@ AnaDBInfo::~AnaDBInfo()
 {
 }
 
-bool AnaDBInfo::GenerateEtlDay(const std::string& etl_time, int index)
+bool AnaDBInfo::GenerateDayTime(const std::string& etl_time)
 {
-	if ( base::PubTime::DateApartFromNow(etl_time, date_type, tf_etlday.str_time) )
+	// 生成当前时间（天）和采集时间（天）
+	tf_nowday.day_time = base::SimpleTime::Now().DayTime8();
+	return base::PubTime::DateApartFromNow(etl_time, date_type, tf_etlday.day_time);
+}
+
+bool AnaDBInfo::SetEtlDayIndex(int index)
+{
+	if ( index >= 0 )	// 有效
 	{
-		tf_etlday.valid = true;
 		tf_etlday.index = index;
 		return true;
 	}
-	else
+	else	// 无效
 	{
-		date_type       = base::PubTime::DT_UNKNOWN;
-		tf_etlday.valid = false;
 		tf_etlday.index = TimeField::TF_INVALID_INDEX;
-		tf_etlday.str_time.clear();
 		return false;
 	}
 }
 
-void AnaDBInfo::GenerateNowDay(bool is_valid, int index)
+bool AnaDBInfo::SetNowDayIndex(int index)
 {
-	if ( is_valid )
+	if ( index >= 0 )	// 有效
 	{
-		tf_nowday.valid    = true;
-		tf_nowday.index    = index;
-		tf_nowday.str_time = base::SimpleTime::Now().DayTime8();
+		tf_nowday.index = index;
+		return true;
 	}
-	else
+	else	// 无效
 	{
-		tf_nowday.valid    = false;
-		tf_nowday.index    = TimeField::TF_INVALID_INDEX;
-		tf_nowday.str_time.clear();
+		tf_nowday.index = TimeField::TF_INVALID_INDEX;
+		return false;
 	}
 }
 
@@ -49,39 +50,29 @@ base::PubTime::DATE_TYPE AnaDBInfo::GetEtlDateType() const
 	return date_type;
 }
 
-bool AnaDBInfo::IsEtlDayValid() const
+bool AnaDBInfo::GetEtlDayIndex(int& index) const
 {
-	return tf_etlday.valid;
+	return ((index = tf_etlday.index) != TimeField::TF_INVALID_INDEX);
 }
 
-bool AnaDBInfo::IsNowDayValid() const
+bool AnaDBInfo::GetNowDayIndex(int& index) const
 {
-	return tf_nowday.valid;
-}
-
-int AnaDBInfo::GetEtlDayIndex() const
-{
-	return tf_etlday.index;
-}
-
-int AnaDBInfo::GetNowDayIndex() const
-{
-	return tf_nowday.index;
+	return ((index = tf_nowday.index) != TimeField::TF_INVALID_INDEX);
 }
 
 std::string AnaDBInfo::GetEtlDay() const
 {
-	return tf_etlday.str_time;
+	return tf_etlday.day_time;
 }
 
 std::string AnaDBInfo::GetNowDay() const
 {
-	return tf_nowday.str_time;
+	return tf_nowday.day_time;
 }
 
-void AnaDBInfo::SetAnaFields(std::vector<AnaField>& v_fields)
+void AnaDBInfo::SetAnaFields(const std::vector<AnaField>& v_fields)
 {
-	vec_fields.swap(v_fields);
+	vec_fields.assign(v_fields.begin(), v_fields.end());
 }
 
 int AnaDBInfo::GetFieldSize() const
@@ -102,7 +93,7 @@ AnaField AnaDBInfo::GetAnaField(int index) const
 
 std::string AnaDBInfo::GetEtlDayFieldName() const
 {
-	if ( tf_etlday.valid )
+	if ( tf_etlday.index != TimeField::TF_INVALID_INDEX && tf_etlday.index < (int)vec_fields.size() )
 	{
 		return vec_fields[tf_etlday.index].field_name;
 	}
