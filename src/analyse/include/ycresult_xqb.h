@@ -1,11 +1,15 @@
 #pragma once
 
+#include "exception.h"
+
 class YCFactor_XQB;
 
 // (业财稽核) 详情表因子结果信息
 class YCResult_XQB
 {
 public:
+	typedef std::vector<std::string>		VEC_STRING;
+
 	static const int S_PUBLIC_MEMBERS = 4;			// 公开成员数
 
 	// 结果因子类型
@@ -16,80 +20,25 @@ public:
 	};
 
 public:
-	YCResult_XQB(RESULT_FACTOR_TYPE type);
+	YCResult_XQB(RESULT_FACTOR_TYPE rf_type);
 	virtual ~YCResult_XQB();
 
 public:
 	// 从因子导入
-	bool ImportFromFactor(YCFactor_XQB* p_factor);
+	bool ImportFromFactor(const YCFactor_XQB* p_factor);
 
 	// 导入数据
-	bool Import(const std::vector<std::string>& vec_dat)
-	{
-		const int VEC_SIZE = vec_dat.size();
-		if ( VEC_SIZE != S_NUMBER_OF_MEMBERS )
-		{
-			return false;
-		}
-
-		int index = 0;
-		bill_cyc = vec_dat[index++];
-		city     = vec_dat[index++];
-		type     = vec_dat[index++];
-		dim_id   = vec_dat[index++];
-		area     = vec_dat[index++];
-		item     = vec_dat[index++];
-
-		if ( !base::PubStr::Str2Int(vec_dat[index++], batch) )
-		{
-			return false;
-		}
-	
-		value = vec_dat[index++];
-		return true;
-	}
+	bool Import(const VEC_STRING& vec_dat);
 
 	// 导出数据
-	void Export(std::vector<std::string>& vec_dat) const
-	{
-		std::vector<std::string> v_dat;
-		v_dat.push_back(bill_cyc);
-		v_dat.push_back(city);
-		v_dat.push_back(type);
-		v_dat.push_back(dim_id);
-		v_dat.push_back(area);
-		v_dat.push_back(item);
-		v_dat.push_back(base::PubStr::Int2Str(batch));
-		v_dat.push_back(value);
+	void Export(VEC_STRING& vec_dat) const;
 
-		v_dat.swap(vec_dat);
-	}
-
-	std::string LogPrintInfo() const
-	{
-		std::string info;
-		base::PubStr::SetFormatString(info, "BILL_CYC=[%s], "
-											"CITY=[%s], "
-											"TYPE=[%s], "
-											"DIM=[%s], "
-											"AREA=[%s], "
-											"ITEM=[%s], "
-											"BATCH=[%d], "
-											"VALUE=[%s]", 
-											bill_cyc.c_str(), 
-											city.c_str(), 
-											type.c_str(), 
-											dim_id.c_str(), 
-											area.c_str(), 
-											item.c_str(), 
-											batch, 
-											value.c_str());
-		return info;
-	}
+	// 输出日志信息
+	std::string LogPrintInfo() const;
 
 private:
 	// 创建详情因子
-	void CreateFactor();
+	void CreateFactor() throw(base::Exception);
 
 	// 释放详情因子
 	void ReleaseFactor();
