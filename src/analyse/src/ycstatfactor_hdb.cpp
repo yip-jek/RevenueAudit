@@ -2,8 +2,8 @@
 #include "anaerror.h"
 #include "log.h"
 
-YCStatFactor_HDB::YCStatFactor_HDB(const std::string& etl_day, YCTaskReq& task_req)
-:YCStatFactor(etl_day, task_req)
+YCStatFactor_HDB::YCStatFactor_HDB(const std::string& etl_day, int ana_type, YCTaskReq& task_req)
+:YCStatFactor(etl_day, ana_type, task_req)
 {
 }
 

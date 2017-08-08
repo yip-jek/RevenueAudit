@@ -12,7 +12,7 @@ public:
 	typedef std::map<std::string, VEC_CATEGORYFACTOR>	MAP_VEC_CATEGORYFACTOR;
 
 public:
-	YCStatFactor_HDB(const std::string& etl_day, YCTaskReq& task_req);
+	YCStatFactor_HDB(const std::string& etl_day, int ana_type, YCTaskReq& task_req);
 	virtual ~YCStatFactor_HDB();
 
 public:

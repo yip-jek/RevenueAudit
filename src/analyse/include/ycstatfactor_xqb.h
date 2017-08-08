@@ -9,7 +9,7 @@ public:
 	typedef std::map<std::string, YCFactor_XQB>		MAP_FACTOR;
 
 public:
-	YCStatFactor_XQB(const std::string& etl_day, YCTaskReq& task_req);
+	YCStatFactor_XQB(const std::string& etl_day, int ana_type, YCTaskReq& task_req);
 	virtual ~YCStatFactor_XQB();
 
 public:

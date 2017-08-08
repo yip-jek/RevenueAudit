@@ -4,9 +4,10 @@
 
 const char* const YCStatFactor::S_TOP_PRIORITY  = "NN";			// 最高优先级 (差异汇总)
 
-YCStatFactor::YCStatFactor(const std::string& etl_day, YCTaskReq& task_req)
+YCStatFactor::YCStatFactor(const std::string& etl_day, int ana_type, YCTaskReq& task_req)
 :m_pLog(base::Log::Instance())
 ,m_etlDay(etl_day)
+,m_anaType(ana_type)
 ,m_pTaskReq(&task_req)
 {
 }

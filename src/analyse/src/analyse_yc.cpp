@@ -161,10 +161,13 @@ void Analyse_YC::GetAnaDBInfo() throw(base::Exception)
 	// 详情表（财务侧）采用更新SQL语句
 	if ( AnalyseRule::ANATYPE_YCXQB_CW == m_taskInfo.AnaRule.AnaType )
 	{
-		const int FIELD_SIZE = m_dbinfo.GetFieldSize();
-		if ( FIELD_SIZE != (YCResult_XQB::S_NUMBER_OF_MEMBERS + 1) )
+		// 由于批次成员变量会在入库操作时绑定两次，所以此处需要加 1
+		const int MEMBER_SIZE = YCResult_XQB::S_PUBLIC_MEMBERS + YCFactor_XQB_YCW::S_XQBYCW_MEMBERS + 1;
+
+		const int FIELD_SIZE  = m_dbinfo.GetFieldSize();
+		if ( FIELD_SIZE != MEMBER_SIZE )
 		{
-			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "指标字段数不足[%d]: %d [FILE:%s, LINE:%d]", (YCResult_XQB::S_NUMBER_OF_MEMBERS+1), FIELD_SIZE, __FILE__, __LINE__);
+			throw base::Exception(ANAERR_GET_DBINFO_FAILED, "指标字段数不足[%d]: %d [FILE:%s, LINE:%d]", MEMBER_SIZE, FIELD_SIZE, __FILE__, __LINE__);
 		}
 
 		// 更新 SQL 语句头
@@ -220,11 +223,11 @@ void Analyse_YC::CreateStatFactor() throw(base::Exception)
 
 	if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )	// 核对表
 	{
-		m_pStatFactor = new YCStatFactor_HDB(m_dbinfo.GetEtlDay(), m_taskReq);
+		m_pStatFactor = new YCStatFactor_HDB(m_dbinfo.GetEtlDay(), m_taskInfo.AnaRule.AnaType, m_taskReq);
 	}
 	else	// 详情表
 	{
-		m_pStatFactor = new YCStatFactor_XQB(m_dbinfo.GetEtlDay(), m_taskReq);
+		m_pStatFactor = new YCStatFactor_XQB(m_dbinfo.GetEtlDay(), m_taskInfo.AnaRule.AnaType, m_taskReq);
 	}
 
 	if ( NULL == m_pStatFactor )
