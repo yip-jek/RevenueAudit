@@ -4,6 +4,8 @@
 #include "simpletime.h"
 #include "canadb2.h"
 #include "canahive.h"
+#include "ycfactor_xqb.h"
+#include "ycresult_xqb.h"
 #include "ycstatfactor_hdb.h"
 #include "ycstatfactor_xqb.h"
 
@@ -162,8 +164,7 @@ void Analyse_YC::GetAnaDBInfo() throw(base::Exception)
 	if ( AnalyseRule::ANATYPE_YCXQB_CW == m_taskInfo.AnaRule.AnaType )
 	{
 		// 由于批次成员变量会在入库操作时绑定两次，所以此处需要加 1
-		const int MEMBER_SIZE = YCResult_XQB::S_PUBLIC_MEMBERS + YCFactor_XQB_YCW::S_XQBYCW_MEMBERS + 1;
-
+		const int MEMBER_SIZE = YCResult_XQB::S_PUBLIC_MEMBERS + YCFactor_XQB_YCW(GetFactorItemSize())->GetAllSize() + 1;
 		const int FIELD_SIZE  = m_dbinfo.GetFieldSize();
 		if ( FIELD_SIZE != MEMBER_SIZE )
 		{
@@ -221,18 +222,34 @@ void Analyse_YC::CreateStatFactor() throw(base::Exception)
 {
 	ReleaseStatFactor();
 
-	if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )	// 核对表
+	const AnalyseRule::AnalyseType& ANA_TYPE = m_taskInfo.AnaRule.AnaType;
+	if ( AnalyseRule::ANATYPE_YCHDB == ANA_TYPE )	// 核对表
 	{
-		m_pStatFactor = new YCStatFactor_HDB(m_dbinfo.GetEtlDay(), m_taskInfo.AnaRule.AnaType, m_taskReq);
+		m_pStatFactor = new YCStatFactor_HDB(m_dbinfo.GetEtlDay(), m_taskReq);
 	}
 	else	// 详情表
 	{
-		m_pStatFactor = new YCStatFactor_XQB(m_dbinfo.GetEtlDay(), m_taskInfo.AnaRule.AnaType, m_taskReq);
+		m_pStatFactor = new YCStatFactor_XQB(m_dbinfo.GetEtlDay(), m_taskReq, ANA_TYPE, GetFactorItemSize());
 	}
 
 	if ( NULL == m_pStatFactor )
 	{
 		throw base::Exception(ANAERR_CREATE_STATFACTOR, "Operator new YCStatFactor failed: 无法申请到内存空间！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+}
+
+int Analyse_YC::GetFactorItemSize() const
+{
+	switch ( m_taskInfo.AnaRule.AnaType )
+	{
+	case AnalyseRule::ANATYPE_YCXQB_GD:			// 业财详情表（省）稽核
+	case AnalyseRule::ANATYPE_YCXQB_CW:			// 业财详情表（财务侧）稽核
+		return (m_taskInfo.vecKpiDimCol.size()-YCResult_XQB::S_PUBLIC_MEMBERS-2);
+	case AnalyseRule::ANATYPE_YCXQB_YW:			// 业财详情表（业务侧）稽核
+		return (m_taskInfo.vecKpiDimCol.size()-YCResult_XQB::S_PUBLIC_MEMBERS-1);
+	case AnalyseRule::ANATYPE_YCHDB:			// 业财核对表稽核
+	default:
+		return 0;
 	}
 }
 
@@ -382,7 +399,7 @@ void Analyse_YC::StoreReportResult()
 
 void Analyse_YC::StoreDetailResult_CW()
 {
-	YCResult_XQB ycr;
+	YCResult_XQB ycr(YCResult_XQB::RFT_XQB_YCW, GetFactorItemSize());
 	std::vector<YCResult_XQB> vec_result;
 
 	const int VEC3_SIZE = m_v3HiveSrcData.size();

@@ -12,7 +12,7 @@ public:
 	typedef std::map<std::string, VEC_CATEGORYFACTOR>	MAP_VEC_CATEGORYFACTOR;
 
 public:
-	YCStatFactor_HDB(const std::string& etl_day, int ana_type, YCTaskReq& task_req);
+	YCStatFactor_HDB(const std::string& etl_day, YCTaskReq& task_req);
 	virtual ~YCStatFactor_HDB();
 
 public:
@@ -38,6 +38,9 @@ private:
 
 	// 计算组合因子的维度值
 	std::string CalcComplexFactor(const std::string& cmplx_fmt) throw(base::Exception);
+
+	// 计算单个因子的维度值
+	std::string CalcOneFactor(std::string& result, const std::string& op, const std::string& dim) throw(base::Exception);
 
 	// 计算组合分类因子的维度值
 	std::string CalcCategoryFactor(const std::string& ctg_fmt) throw(base::Exception);

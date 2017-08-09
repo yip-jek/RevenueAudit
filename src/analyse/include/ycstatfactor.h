@@ -22,7 +22,7 @@ public:
 	static const char* const S_TOP_PRIORITY;			// 最高优先级 (差异汇总)
 
 public:
-	YCStatFactor(const std::string& etl_day, int ana_type, YCTaskReq& task_req);
+	YCStatFactor(const std::string& etl_day, YCTaskReq& task_req);
 	virtual ~YCStatFactor();
 
 public:
@@ -62,7 +62,6 @@ protected:
 	std::string      m_statID;					// 统计指标ID
 	std::string      m_statReport;				// 关联报表
 	std::string      m_etlDay;					// 采集账期
-	int              m_anaType;					// 分析类型
 	YCTaskReq*       m_pTaskReq;				// 任务请求信息
 	MAP_VEC_STATINFO m_mvStatInfo;				// 规则因子信息列表
 };

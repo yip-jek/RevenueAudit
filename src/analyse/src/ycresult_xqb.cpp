@@ -3,12 +3,26 @@
 #include "anaerror.h"
 #include "pubstr.h"
 
-YCResult_XQB::YCResult_XQB(RESULT_FACTOR_TYPE rf_type)
+YCResult_XQB::YCResult_XQB(RESULT_FACTOR_TYPE rf_type, int item_size)
 :batch(0)
 ,m_rfType(rf_type)
+,ITEM_SIZE(item_size)
 ,m_pFactor(NULL)
 {
 	CreateFactor();
+}
+
+YCResult_XQB::YCResult_XQB(const YCResult_XQB& ycr)
+:bill_cyc(ycr.bill_cyc)
+,city(ycr.city)
+,type(ycr.type)
+,batch(ycr.batch)
+,m_rfType(ycr.m_rfType)
+,ITEM_SIZE(ycr.ITEM_SIZE)
+,m_pFactor(NULL)
+{
+	CreateFactor();
+	ImportFromFactor(ycr.m_pFactor);
 }
 
 YCResult_XQB::~YCResult_XQB()
@@ -22,11 +36,11 @@ void YCResult_XQB::CreateFactor() throw(base::Exception)
 
 	if ( RFT_XQB_YCW == m_rfType )				// 详情表（业务侧、财务侧）因子
 	{
-		m_pFactor = new YCFactor_XQB_YCW();
+		m_pFactor = new YCFactor_XQB_YCW(ITEM_SIZE);
 	}
 	else if ( RFT_XQB_GD == m_rfType )			// 详情表（省）因子
 	{
-		m_pFactor = new YCFactor_XQB_GD();
+		m_pFactor = new YCFactor_XQB_GD(ITEM_SIZE);
 	}
 	else	// 未知类型
 	{
@@ -124,5 +138,31 @@ std::string YCResult_XQB::LogPrintInfo() const
 										batch, 
 										m_pFactor->LogPrintInfo().c_str());
 	return info;
+}
+
+std::string YCResult_XQB::GetFactorDim() const
+{
+	return m_pFactor->GetDimID();
+}
+
+std::string YCResult_XQB::GetFactorArea() const
+{
+	return m_pFactor->GetArea();
+}
+
+std::string YCResult_XQB::GetFactorFirstItem() const
+{
+	VEC_STRING vec_item;
+	m_pFactor->ExportItems(vec_item);
+
+	return vec_item[0];
+}
+
+std::string YCResult_XQB::GetFactorFirstValue() const
+{
+	VEC_STRING vec_val;
+	m_pFactor->ExportValue(vec_val);
+
+	return vec_val[0];
 }
 

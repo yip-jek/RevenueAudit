@@ -15,37 +15,52 @@ public:
 
 public:
 	// 导入数据
-	virtual bool Import(const VEC_STRING& vec_dat);
+	bool Import(const VEC_STRING& vec_dat);
 
 	// 导出数据
-	virtual void Export(VEC_STRING& vec_dat) const;
+	void Export(VEC_STRING& vec_dat) const;
 
 	// 输出日志信息
-	virtual std::string LogPrintInfo() const;
+	std::string LogPrintInfo() const;
 
-	// 总大小
+	// 总个数
 	virtual int GetAllSize() const;
 
-	// 区域和项目大小
-	virtual int GetAreaItemSize() const;
+	// 区域和项目个数
+	int GetAreaItemSize() const;
 
-	// 设置 AREA
-	virtual void SetArea(const std::string& area);
+	// VALUE 个数
+	virtual int GetValueSize() const = 0;
+
+	// 获取维度ID
+	std::string GetDimID() const;
+
+	// 获取区域
+	std::string GetArea() const;
+
+	// 设置维度ID
+	void SetDimID(const std::string& dim);
+
+	// 设置区域
+	void SetArea(const std::string& area);
 
 	// 导入项目内容
-	virtual bool ImportItems(const VEC_STRING& vec_item);
+	bool ImportItems(const VEC_STRING& vec_item);
+
+	// 导出项目内容
+	void ExportItems(VEC_STRING& vec_item);
+
+	// 导入 VALUE
+	virtual bool ImportValue(const VEC_STRING& vec_value) = 0;
+
+	// 导出 VALUE
+	virtual void ExportValue(VEC_STRING& vec_value) const = 0;
 
 protected:
 	// 初始化项目内容
-	virtual void InitItems() throw(base::Exception);
+	void InitItems() throw(base::Exception);
 
-	// 导入值
-	virtual void ImportValue(const VEC_STRING& vec_value) = 0;
-
-	// 导出值
-	virtual void ExportValue(VEC_STRING& vec_value) const = 0;
-
-	// 追加值的日志信息
+	// 追加 VALUE 的日志信息
 	virtual void AddValueLogInfo(std::string& info) const = 0;
 
 protected:
@@ -69,17 +84,20 @@ public:
 	static const int S_VALUE_SIZE = 1;			// 只有1个VALUE
 
 public:
-	// 总大小
+	// 总个数
 	virtual int GetAllSize() const;
 
-protected:
-	// 导入值
-	virtual void ImportValue(const VEC_STRING& vec_value);
+	// VALUE 个数
+	virtual int GetValueSize() const;
 
-	// 导出值
+	// 导入 VALUE
+	virtual bool ImportValue(const VEC_STRING& vec_value);
+
+	// 导出 VALUE
 	virtual void ExportValue(VEC_STRING& vec_value) const;
 
-	// 追加值的日志信息
+protected:
+	// 追加 VALUE 的日志信息
 	virtual void AddValueLogInfo(std::string& info) const;
 
 protected:
@@ -98,17 +116,20 @@ public:
 	static const int S_VALUE_SIZE = 2;			// 有2个VALUE
 
 public:
-	// 导入数据
+	// 总个数
 	virtual int GetAllSize() const;
 
-protected:
-	// 导入值
-	virtual void ImportValue(const VEC_STRING& vec_value);
+	// VALUE 个数
+	virtual int GetValueSize() const;
 
-	// 导出值
+	// 导入 VALUE
+	virtual bool ImportValue(const VEC_STRING& vec_value);
+
+	// 导出 VALUE
 	virtual void ExportValue(VEC_STRING& vec_value) const;
 
-	// 追加值的日志信息
+protected:
+	// 追加 VALUE 的日志信息
 	virtual void AddValueLogInfo(std::string& info) const;
 
 protected:

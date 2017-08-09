@@ -4,6 +4,7 @@
 #include "anadbinfo.h"
 #include "anaerror.h"
 #include "uniformcodetransfer.h"
+#include "ycresult_xqb.h"
 
 
 CAnaDB2::CAnaDB2(const std::string& db_name, const std::string& usr, const std::string& pw)
@@ -1507,18 +1508,18 @@ void CAnaDB2::UpdateDetailCWResult(const AnaDBInfo& db_info, const std::vector<Y
 		const int VEC_SIZE = vec_result.size();
 		for ( int i = 0; i < VEC_SIZE; ++i )
 		{
-			const YCResult_XQB& ref_yc = vec_result[i];
+			YCResult_XQB& ref_ycr = vec_result[i];
 
 			int index = 1;
-			rs.Parameter(index++) = ref_yc.area.c_str();
-			rs.Parameter(index++) = ref_yc.item.c_str();
-			rs.Parameter(index++) = ref_yc.batch;
-			rs.Parameter(index++) = ref_yc.value.c_str();
-			rs.Parameter(index++) = ref_yc.bill_cyc.c_str();
-			rs.Parameter(index++) = ref_yc.city.c_str();
-			rs.Parameter(index++) = ref_yc.type.c_str();
-			rs.Parameter(index++) = ref_yc.dim_id.c_str();
-			rs.Parameter(index++) = ref_yc.batch;			// 业务侧与财务侧批次一致
+			rs.Parameter(index++) = ref_ycr.GetFactorArea().c_str();
+			rs.Parameter(index++) = ref_ycr.GetFactorFirstItem().c_str();
+			rs.Parameter(index++) = ref_ycr.batch;
+			rs.Parameter(index++) = ref_ycr.GetFactorFirstValue().c_str();
+			rs.Parameter(index++) = ref_ycr.bill_cyc.c_str();
+			rs.Parameter(index++) = ref_ycr.city.c_str();
+			rs.Parameter(index++) = ref_ycr.type.c_str();
+			rs.Parameter(index++) = ref_ycr.GetFactorDim().c_str();
+			rs.Parameter(index++) = ref_ycr.batch;
 			rs.Execute();
 		}
 

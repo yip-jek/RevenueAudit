@@ -4,10 +4,9 @@
 
 const char* const YCStatFactor::S_TOP_PRIORITY  = "NN";			// 最高优先级 (差异汇总)
 
-YCStatFactor::YCStatFactor(const std::string& etl_day, int ana_type, YCTaskReq& task_req)
+YCStatFactor::YCStatFactor(const std::string& etl_day, YCTaskReq& task_req)
 :m_pLog(base::Log::Instance())
 ,m_etlDay(etl_day)
-,m_anaType(ana_type)
 ,m_pTaskReq(&task_req)
 {
 }
@@ -60,16 +59,13 @@ void YCStatFactor::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exceptio
 		}
 	}
 
-	if ( m_mvStatInfo.find(0) != m_mvStatInfo.end() )
-	{
-		m_statID     = m_mvStatInfo[0][0].stat_id;
-		m_statReport = m_mvStatInfo[0][0].stat_report;
-	}
-	else
+	if ( m_mvStatInfo.find(0) == m_mvStatInfo.end() )
 	{
 		throw base::Exception(ANAERR_LOAD_STAT_INFO, "缺少一般规则因子信息！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
+	m_statID     = m_mvStatInfo[0][0].stat_id;
+	m_statReport = m_mvStatInfo[0][0].stat_report;
 	m_pLog->Output("[YCStatFactor] 载入规则因子信息成功.");
 }
 

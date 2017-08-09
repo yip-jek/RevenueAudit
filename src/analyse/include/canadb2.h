@@ -8,6 +8,7 @@
 class AnaDBInfo;
 struct ChannelUniformCode;
 struct CityUniformCode;
+class YCResult_XQB;
 
 class CAnaDB2 : public base::BaseDB2
 {
