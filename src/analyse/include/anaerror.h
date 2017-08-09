@@ -89,5 +89,6 @@ enum ANALYSE_ERROR
 	ANAERR_EXPAND_CATEGORY_INFO   = -3005007,			// 扩展分类因子信息失败
 	ANAERR_MATCH_CATEGORY_FACTOR  = -3005008,			// 匹配一般分类因子失败
 	ANAERR_CREATE_FACTOR          = -3005009,			// 创建详情因子失败
+	ANAERR_INIT_ITEMS             = -3005010,			// 初始化项目内容失败
 };
 

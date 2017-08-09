@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include "exception.h"
 
 class YCFactor_XQB;

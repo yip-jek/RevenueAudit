@@ -89,20 +89,29 @@ void YCStatFactor_XQB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 	base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
 }
 
-void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB& factor) throw(base::Exception)
+void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB* p_factor) throw(base::Exception)
 {
+	if ( NULL == p_factor )
+	{
+		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "Invalid factor: YCFactor_XQB pointer is blank! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
 	VEC_STRING vec_fmt_first;
 	VEC_STRING vec_fmt_second;
 
 	// 格式：[ {父项目内容}; {子项目内容}; A1, A2, A3, ...|+, -, ... ]
+	const int AREA_ITEM_SIZE = p_factor->GetAreaItemSize();
 	base::PubStr::Str2StrVector(cmplx_fmt, ";", vec_fmt_first);
-	if ( vec_fmt_first.size() != 3 )
+	if ( vec_fmt_first.size() != (AREA_ITEM_SIZE + 1) )
 	{
 		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
 	}
 
-	factor.area = vec_fmt_first[0];					// 父项目内容
-	factor.item = vec_fmt_first[1];					// 子项目内容
+	// 父项目内容
+	p_factor->SetArea(vec_fmt_first[0]);
+
+	// 子项目内容
+	factor.item = vec_fmt_first[1];					
 
 	std::string complex_result;
 	MAP_FACTOR::iterator m_it;

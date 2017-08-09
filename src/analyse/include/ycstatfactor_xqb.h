@@ -6,7 +6,7 @@
 class YCStatFactor_XQB : public YCStatFactor
 {
 public:
-	typedef std::map<std::string, YCFactor_XQB>		MAP_FACTOR;
+	typedef std::map<std::string, YCFactor_XQB*>		MAP_FACTOR;
 
 public:
 	YCStatFactor_XQB(const std::string& etl_day, int ana_type, YCTaskReq& task_req);
@@ -28,7 +28,7 @@ protected:
 
 private:
 	// 计算组合因子
-	void CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB& factor) throw(base::Exception);
+	void CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB* p_factor) throw(base::Exception);
 
 private:
 	MAP_FACTOR m_mFactor;

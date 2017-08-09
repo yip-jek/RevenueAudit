@@ -62,8 +62,9 @@ bool YCResult_XQB::ImportFromFactor(const YCFactor_XQB* p_factor)
 
 bool YCResult_XQB::Import(const VEC_STRING& vec_dat)
 {
-	const int VEC_SIZE = vec_dat.size();
-	if ( VEC_SIZE <= S_PUBLIC_MEMBERS )
+	const int VEC_SIZE    = vec_dat.size();
+	const int MEMBER_SIZE = S_PUBLIC_MEMBERS + (RFT_XQB_GD == m_rfType) + m_pFactor->GetAllSize();
+	if ( VEC_SIZE != MEMBER_SIZE )
 	{
 		return false;
 	}
@@ -74,6 +75,13 @@ bool YCResult_XQB::Import(const VEC_STRING& vec_dat)
 	type     = vec_dat[index++];
 
 	if ( !base::PubStr::Str2Int(vec_dat[index++], batch) )
+	{
+		return false;
+	}
+
+	// 详情表（省）稽核有2个批次：业务批次 和 财务批次
+	// 而且批次是一致的
+	if ( RFT_XQB_GD == m_rfType && !base::PubStr::Str2Int(vec_dat[index++], batch) )
 	{
 		return false;
 	}
@@ -89,11 +97,17 @@ void YCResult_XQB::Export(VEC_STRING& vec_dat) const
 	v_dat.push_back(type);
 	v_dat.push_back(base::PubStr::Int2Str(batch));
 
-	VEC_STRING v_factor;
-	m_pFactor->Export(v_factor);
-	v_dat.insert(v_dat.end(), v_factor.begin(), v_factor.end());
+	// 详情表（省）稽核有2个批次：业务批次 和 财务批次
+	// 而且批次是一致的
+	if ( RFT_XQB_GD == m_rfType )
+	{
+		v_dat.push_back(base::PubStr::Int2Str(batch));
+	}
 
 	v_dat.swap(vec_dat);
+
+	m_pFactor->Export(v_dat);
+	vec_dat.insert(vec_dat.end(), v_dat.begin(), v_dat.end());
 }
 
 std::string YCResult_XQB::LogPrintInfo() const
