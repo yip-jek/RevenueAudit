@@ -164,7 +164,7 @@ void Analyse_YC::GetAnaDBInfo() throw(base::Exception)
 	if ( AnalyseRule::ANATYPE_YCXQB_CW == m_taskInfo.AnaRule.AnaType )
 	{
 		// 由于批次成员变量会在入库操作时绑定两次，所以此处需要加 1
-		const int MEMBER_SIZE = YCResult_XQB::S_PUBLIC_MEMBERS + YCFactor_XQB_YCW(GetFactorItemSize())->GetAllSize() + 1;
+		const int MEMBER_SIZE = YCResult_XQB::S_PUBLIC_MEMBERS + YCFactor_XQB_YCW(GetFactorItemSize()).GetAllSize() + 1;
 		const int FIELD_SIZE  = m_dbinfo.GetFieldSize();
 		if ( FIELD_SIZE != MEMBER_SIZE )
 		{

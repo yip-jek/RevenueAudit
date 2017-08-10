@@ -141,7 +141,7 @@ void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_
 	VEC_STRING vec_fmt_second;
 
 	// 格式：[ {父项目内容}; {子项目内容}; A1, A2, A3, ...|+, -, ... ]
-	const int AREA_ITEM_SIZE = p_factor->GetAreaItemSize();
+	const size_t AREA_ITEM_SIZE = p_factor->GetAreaItemSize();
 	base::PubStr::Str2StrVector(cmplx_fmt, ";", vec_fmt_first);
 	if ( vec_fmt_first.size() != (AREA_ITEM_SIZE + 1) )
 	{

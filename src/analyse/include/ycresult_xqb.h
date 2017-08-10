@@ -19,8 +19,8 @@ public:
 	// 结果因子类型
 	enum RESULT_FACTOR_TYPE
 	{
-		RFT_XQB_YCW = 1;			// 详情表（业务侧、财务侧）
-		RFT_XQB_GD  = 2;			// 详情表（省）
+		RFT_XQB_YCW = 1,			// 详情表（业务侧、财务侧）
+		RFT_XQB_GD  = 2,			// 详情表（省）
 	};
 
 public:

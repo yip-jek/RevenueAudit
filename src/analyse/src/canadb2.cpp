@@ -1508,7 +1508,7 @@ void CAnaDB2::UpdateDetailCWResult(const AnaDBInfo& db_info, const std::vector<Y
 		const int VEC_SIZE = vec_result.size();
 		for ( int i = 0; i < VEC_SIZE; ++i )
 		{
-			YCResult_XQB& ref_ycr = vec_result[i];
+			const YCResult_XQB& ref_ycr = vec_result[i];
 
 			int index = 1;
 			rs.Parameter(index++) = ref_ycr.GetFactorArea().c_str();

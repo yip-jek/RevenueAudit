@@ -97,7 +97,7 @@ void YCFactor_XQB::SetArea(const std::string& area)
 bool YCFactor_XQB::ImportItems(const VEC_STRING& vec_item)
 {
 	const int VEC_SIZE = vec_item.size();
-	for ( VEC_SIZE != ITEM_SIZE )
+	if ( VEC_SIZE != ITEM_SIZE )
 	{
 		return false;
 	}

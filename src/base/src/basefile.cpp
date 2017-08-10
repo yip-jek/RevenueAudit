@@ -1,5 +1,6 @@
 #include "basefile.h"
 #include <stdio.h>
+#include <unistd.h>
 #include "pubstr.h"
 
 namespace base
