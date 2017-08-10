@@ -244,9 +244,9 @@ int Analyse_YC::GetFactorItemSize() const
 	{
 	case AnalyseRule::ANATYPE_YCXQB_GD:			// 业财详情表（省）稽核
 	case AnalyseRule::ANATYPE_YCXQB_CW:			// 业财详情表（财务侧）稽核
-		return (m_taskInfo.vecKpiDimCol.size()-YCResult_XQB::S_PUBLIC_MEMBERS-2);
+		return (m_taskInfo.vecKpiDimCol.size()-YCResult_XQB::S_PUBLIC_MEMBERS-3);
 	case AnalyseRule::ANATYPE_YCXQB_YW:			// 业财详情表（业务侧）稽核
-		return (m_taskInfo.vecKpiDimCol.size()-YCResult_XQB::S_PUBLIC_MEMBERS-1);
+		return (m_taskInfo.vecKpiDimCol.size()-YCResult_XQB::S_PUBLIC_MEMBERS-2);
 	case AnalyseRule::ANATYPE_YCHDB:			// 业财核对表稽核
 	default:
 		return 0;
