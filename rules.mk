@@ -15,7 +15,7 @@ JNI_LIB  = -L$(JAVA_HOME)/jre/lib/amd64/server -ljvm
 HDFS_LIB = -L$(HADOOP_HOME)/lib/native -lhdfs
 
 ################################################################
-CPP = GNU_G++-6.4.0
+CPP = GNU_G++
 CPP_FLAG = -g -m64 -Wall -O2 -DLINUX
 
 ################################################################

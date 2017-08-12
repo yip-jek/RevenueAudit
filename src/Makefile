@@ -1,4 +1,4 @@
-DIRS = base acquire analyse
+DIRS = base acquire analyse alarm
 
 .PHONY: all clean
 
