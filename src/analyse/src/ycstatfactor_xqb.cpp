@@ -40,12 +40,16 @@ void YCStatFactor_XQB::LoadOneFactor(const std::string& dim, const VEC_STRING& v
 		throw base::Exception(ANAERR_LOAD_FACTOR, "重复的维度因子ID：[%s] [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
 	}
 
+	// 在首位补上 DIM
+	VEC_STRING v_data = vec_dat;
+	v_data.insert(v_data.begin(), dim);
+
 	YCFactor_XQB* pFactor = CreateFactor(dim);
 	m_mFactor[dim] = pFactor;
 
-	if ( !pFactor->Import(vec_dat) )
+	if ( !pFactor->Import(v_data) )
 	{
-		throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，无法导入因子数据：DIM=[%s], SIZE=[%lu] [FILE:%s, LINE:%d]", dim.c_str(), vec_dat.size(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，无法导入因子数据：DIM=[%s], SIZE=[%lu] [FILE:%s, LINE:%d]", dim.c_str(), v_data.size(), __FILE__, __LINE__);
 	}
 }
 
@@ -162,7 +166,7 @@ void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_
 
 	// 组合因子表达式：[ A1, A2, A3, ...|+, -, ... ]
 	m_pLog->Output("[YCStatFactor_XQB] 组合因子表达式：%s", vec_fmt_first[AREA_ITEM_SIZE].c_str());
-	base::PubStr::Str2StrVector(vec_fmt_first[2], "|", vec_fmt_first);
+	base::PubStr::Str2StrVector(vec_fmt_first[AREA_ITEM_SIZE], "|", vec_fmt_first);
 	if ( vec_fmt_first.size() != 2 )
 	{
 		if ( vec_fmt_first.size() != 1 )
@@ -197,7 +201,7 @@ void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_
 		CalcOneFactor(vec_result, vec_fmt_second[i-1], vec_fmt_first[i]);
 	}
 
-	if ( p_factor->ImportValue(vec_result) )
+	if ( !p_factor->ImportValue(vec_result) )
 	{
 		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "Import value of complex factor failed: DIM=[%s], COMPLEX_FMT=[%s] [FILE:%s, LINE:%d]", p_factor->GetDimID().c_str(), cmplx_fmt.c_str(), __FILE__, __LINE__);
 	}
@@ -222,9 +226,11 @@ void YCStatFactor_XQB::CalcOneFactor(VEC_STRING& vec_result, const std::string& 
 	VEC_STRING vec_value;
 	pFactor->ExportValue(vec_value);
 
+	m_pLog->Output("[YCStatFactor_XQB] CalcOneFactor: DIM=[%s], OP=[%s], VALUE_SIZE=[%d]", dim.c_str(), op.c_str(), VEC_SIZE);
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
 		OperateOneFactor(vec_result[i], op, vec_value[i]);
+		m_pLog->Output("[YCStatFactor_XQB] CalcOneFactor: INDEX=[%d], FACTOR_VALUE=[%s], RESULT_VALUE=[%s]", (i+1), vec_value[i].c_str(), vec_result[i].c_str());
 	}
 }
 
