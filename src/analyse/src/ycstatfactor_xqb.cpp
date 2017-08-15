@@ -75,7 +75,9 @@ void YCStatFactor_XQB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 	ycr.type     = "0";			// 类型默认值：0-固定项
 	ycr.batch    = batch;
 
-	VEC_STRING vec_data;
+	YCFactor_XQB* pFactor = NULL;
+	VEC_STRING    vec_data;
+
 	if ( agg )	// 组合因子
 	{
 		// 记录组合因子结果
@@ -84,11 +86,10 @@ void YCStatFactor_XQB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 			throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "重复的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", st_info.statdim_id.c_str(), __FILE__, __LINE__);
 		}
 
-		YCFactor_XQB* pFactor = CreateFactor(st_info.statdim_id);
+		pFactor = CreateFactor(st_info.statdim_id);
 		m_mFactor[st_info.statdim_id] = pFactor;
 
 		CalcComplexFactor(st_info.stat_sql, pFactor);
-		ycr.ImportFromFactor(pFactor);
 	}
 	else	// 一般因子
 	{
@@ -98,7 +99,12 @@ void YCStatFactor_XQB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 			throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "不存在的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", st_info.statdim_id.c_str(), __FILE__, __LINE__);
 		}
 
-		ycr.ImportFromFactor(m_it->second);
+		pFactor = m_it->second;
+	}
+
+	if ( !ycr.ImportFromFactor(pFactor) )
+	{
+		throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "导入因子数据失败：DIM=[%s], FACTOR_SIZE=[%d] [FILE:%s, LINE:%d]", st_info.statdim_id.c_str(), pFactor->GetAllSize(), __FILE__, __LINE__);
 	}
 
 	ycr.Export(vec_data);
@@ -167,38 +173,39 @@ void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_
 	// 组合因子表达式：[ A1, A2, A3, ...|+, -, ... ]
 	m_pLog->Output("[YCStatFactor_XQB] 组合因子表达式：%s", vec_fmt_first[AREA_ITEM_SIZE].c_str());
 	base::PubStr::Str2StrVector(vec_fmt_first[AREA_ITEM_SIZE], "|", vec_fmt_first);
-	if ( vec_fmt_first.size() != 2 )
+
+	const int VEC_FMT_SIZE = vec_fmt_first.size();
+	if ( VEC_FMT_SIZE == 1 )	// 特殊的组合因子：不含运算符，直接等于某个因子（一般因子或者组合因子）
 	{
-		if ( vec_fmt_first.size() != 1 )
+		CalcOneFactor(vec_result, "+", vec_fmt_first[0]);
+	}
+	else if ( VEC_FMT_SIZE == 2 )	// 正常的组合因子：左边维度ID集，右边操作符集
+	{
+		std::string fmt_dim = base::PubStr::TrimUpperB(vec_fmt_first[0]);
+		std::string fmt_op  = base::PubStr::TrimUpperB(vec_fmt_first[1]);
+
+		base::PubStr::Str2StrVector(fmt_dim, ",", vec_fmt_first);
+		base::PubStr::Str2StrVector(fmt_op,  ",", vec_fmt_second);
+
+		// 至少两个统计维度；且运算符个数比维度少一个
+		const int VEC_DIM_SIZE = vec_fmt_first.size();
+		if ( VEC_DIM_SIZE < 2 || (size_t)VEC_DIM_SIZE != (vec_fmt_second.size() + 1) )
 		{
-			throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不匹配的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
 		}
 
-		// 特殊的组合因子：不含运算符，直接等于某个因子（一般因子或者组合因子）
+		// 计算结果：首个因子
 		CalcOneFactor(vec_result, "+", vec_fmt_first[0]);
-		return;
+
+		// 计算结果：剩余因子
+		for ( int i = 1; i < VEC_DIM_SIZE; ++i )
+		{
+			CalcOneFactor(vec_result, vec_fmt_second[i-1], vec_fmt_first[i]);
+		}
 	}
-
-	std::string fmt_dim = base::PubStr::TrimUpperB(vec_fmt_first[0]);
-	std::string fmt_op  = base::PubStr::TrimUpperB(vec_fmt_first[1]);
-
-	base::PubStr::Str2StrVector(fmt_dim, ",", vec_fmt_first);
-	base::PubStr::Str2StrVector(fmt_op,  ",", vec_fmt_second);
-
-	// 至少两个统计维度；且运算符个数比维度少一个
-	const int VEC_DIM_SIZE = vec_fmt_first.size();
-	if ( VEC_DIM_SIZE < 2 || (size_t)VEC_DIM_SIZE != (vec_fmt_second.size() + 1) )
+	else
 	{
-		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不匹配的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
-	}
-
-	// 首个因子
-	CalcOneFactor(vec_result, "+", vec_fmt_first[0]);
-
-	// 计算结果
-	for ( int i = 1; i < VEC_DIM_SIZE; ++i )
-	{
-		CalcOneFactor(vec_result, vec_fmt_second[i-1], vec_fmt_first[i]);
+		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( !p_factor->ImportValue(vec_result) )
@@ -226,11 +233,9 @@ void YCStatFactor_XQB::CalcOneFactor(VEC_STRING& vec_result, const std::string& 
 	VEC_STRING vec_value;
 	pFactor->ExportValue(vec_value);
 
-	m_pLog->Output("[YCStatFactor_XQB] CalcOneFactor: DIM=[%s], OP=[%s], VALUE_SIZE=[%d]", dim.c_str(), op.c_str(), VEC_SIZE);
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
 		OperateOneFactor(vec_result[i], op, vec_value[i]);
-		m_pLog->Output("[YCStatFactor_XQB] CalcOneFactor: INDEX=[%d], FACTOR_VALUE=[%s], RESULT_VALUE=[%s]", (i+1), vec_value[i].c_str(), vec_result[i].c_str());
 	}
 }
 

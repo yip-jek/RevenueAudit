@@ -501,6 +501,31 @@ void Analyse_YC::RecordStatisticsLog()
 	m_pAnaDB2->InsertYCStatLog(yc_log);
 }
 
+void Analyse_YC::SetReportStateType(std::string& type)
+{
+	/// 类型：
+	// 00-核对表
+	// 01-地市账务业务详情表
+	// 02-监控表
+	// 03-地市财务对账详情表
+	switch ( m_taskInfo.AnaRule.AnaType )
+	{
+	case AnalyseRule::ANATYPE_YCHDB:		// 业财核对表
+		type = "00";
+		break;
+	case AnalyseRule::ANATYPE_YCXQB_YW:		// 业财详情表（业务侧）
+		type = "01";
+		break;
+	case AnalyseRule::ANATYPE_YCXQB_CW:		// 业财详情表（财务侧）
+	case AnalyseRule::ANATYPE_YCXQB_GD:		// 业财详情表（省财务侧）
+		type = "03";
+		break;
+	default:	// 未知类型
+		type.clear();
+		break;
+	}
+}
+
 void Analyse_YC::RecordReportState(YCReportState& report_state)
 {
 	report_state.report_id = m_pStatFactor->GetStatReport();
@@ -518,16 +543,7 @@ void Analyse_YC::RecordReportState(YCReportState& report_state)
 		report_state.city = m_taskReq.task_city;
 	}
 
-	// 类型：00-核对表，01-地市账务业务详情表，02-监控表，03-地市财务对账详情表
-	if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )	// 核对表
-	{
-		report_state.type = "00";
-	}
-	else	// 详情表
-	{
-		report_state.type = "01";
-	}
-
+	SetReportStateType(report_state.type);
 	m_pAnaDB2->UpdateInsertReportState(report_state);
 }
 

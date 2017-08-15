@@ -87,6 +87,9 @@ protected:
 	// 登记稽核记录日志
 	void RecordStatisticsLog();
 
+	// 设置报表状态-类型
+	void SetReportStateType(std::string& type);
+
 	// 登记报表状态
 	void RecordReportState(YCReportState& report_state);
 
