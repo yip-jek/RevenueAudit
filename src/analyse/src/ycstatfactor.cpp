@@ -71,7 +71,7 @@ void YCStatFactor::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exceptio
 
 int YCStatFactor::LoadFactors(const VEC3_STRING& v3_data) throw(base::Exception)
 {
-	ClearOldFactors();
+	ReleaseFactors();
 
 	int         counter = 0;
 	std::string dim_id;

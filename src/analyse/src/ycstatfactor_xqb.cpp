@@ -3,7 +3,6 @@
 #include "anaerror.h"
 #include "anataskinfo.h"
 #include "ycfactor_xqb.h"
-#include "ycresult_xqb.h"
 
 YCStatFactor_XQB::YCStatFactor_XQB(const std::string& etl_day, YCTaskReq& task_req, int ana_type, int item_size)
 :YCStatFactor(etl_day, task_req)
@@ -14,10 +13,10 @@ YCStatFactor_XQB::YCStatFactor_XQB(const std::string& etl_day, YCTaskReq& task_r
 
 YCStatFactor_XQB::~YCStatFactor_XQB()
 {
-	ClearOldFactors();
+	ReleaseFactors();
 }
 
-void YCStatFactor_XQB::ClearOldFactors()
+void YCStatFactor_XQB::ReleaseFactors()
 {
 	// 清空旧数据
 	if ( !m_mFactor.empty() )
@@ -67,11 +66,9 @@ void YCStatFactor_XQB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
 
 void YCStatFactor_XQB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception)
 {
-	const YCResult_XQB::RESULT_FACTOR_TYPE RFACTOR_TYPE = (ANA_TYPE == AnalyseRule::ANATYPE_YCXQB_GD ? YCResult_XQB::RFT_XQB_GD : YCResult_XQB::RFT_XQB_YCW);
-
-	YCResult_XQB ycr(RFACTOR_TYPE, ITEM_SIZE);
+	YCResult_XQB ycr(GetResultFactorType(), ITEM_SIZE);
 	ycr.bill_cyc = m_etlDay.substr(0, 6);			// 账期为月份：YYYYMM
-	ycr.city     = m_pTaskReq->task_city;
+	ycr.city     = GetResultCity();
 	ycr.type     = "0";			// 类型默认值：0-固定项
 	ycr.batch    = batch;
 
@@ -138,6 +135,30 @@ YCFactor_XQB* YCStatFactor_XQB::CreateFactor(const std::string& dim)
 
 	pFactor->SetDimID(dim);
 	return pFactor;
+}
+
+YCResult_XQB::RESULT_FACTOR_TYPE YCStatFactor_XQB::GetResultFactorType()
+{
+	if ( AnalyseRule::ANATYPE_YCXQB_GD == ANA_TYPE )	// 详情表（省）
+	{
+		return YCResult_XQB::RFT_XQB_GD;
+	}
+	else	// 详情表（业务侧、财务侧）
+	{
+		return YCResult_XQB::RFT_XQB_YCW;
+	}
+}
+
+std::string YCStatFactor_XQB::GetResultCity()
+{
+	if ( AnalyseRule::ANATYPE_YCXQB_GD == ANA_TYPE )	// 详情表（省）
+	{
+		return "GD";
+	}
+	else	// 详情表（业务侧、财务侧）
+	{
+		return m_pTaskReq->task_city;
+	}
 }
 
 void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB* p_factor) throw(base::Exception)

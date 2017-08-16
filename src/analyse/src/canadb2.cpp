@@ -733,7 +733,6 @@ void CAnaDB2::InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Excepti
 			rs.Parameter(2) = dv.DBName.c_str();
 			rs.Parameter(3) = dv.Value.c_str();
 			rs.Parameter(4) = dv.CNName.c_str();
-
 			rs.Execute();
 
 			// 每达到最大值提交一次
@@ -1584,8 +1583,8 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCResult
 			rs.Parameter(index++) = ycr.statdim_id.c_str();
 			rs.Parameter(index++) = ETL_DAY.c_str();
 			rs.Parameter(index++) = ycr.stat_city.c_str();
-
 			rs.Execute();
+
 			Commit();
 			rs.Close();
 		}
@@ -1607,8 +1606,8 @@ void CAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCResult
 			rs.Parameter(index++) = NOW_DAY.c_str();
 			rs.Parameter(index++) = ycr.stat_city.c_str();
 			rs.Parameter(index++) = ycr.stat_batch;
-
 			rs.Execute();
+
 			Commit();
 			rs.Close();
 		}
@@ -1663,8 +1662,8 @@ void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(b
 			rs.Parameter(index++) = report_state.bill_cyc.c_str();
 			rs.Parameter(index++) = report_state.city.c_str();
 			rs.Parameter(index++) = report_state.actor.c_str();
-
 			rs.Execute();
+
 			Commit();
 			rs.Close();
 		}
@@ -1682,8 +1681,8 @@ void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(b
 			rs.Parameter(index++) = report_state.status.c_str();
 			rs.Parameter(index++) = report_state.type.c_str();
 			rs.Parameter(index++) = report_state.actor.c_str();
-
 			rs.Execute();
+
 			Commit();
 			rs.Close();
 		}
@@ -1694,13 +1693,14 @@ void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(b
 	}
 }
 
-void CAnaDB2::UpdateInsertProcessLogState(const YCProcessLog& proc_log) throw(base::Exception)
+void CAnaDB2::InsertProcessLog(const YCProcessLog& proc_log) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT COUNT(0) FROM " + m_tabProcessLog + " WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ? AND ACTOR = ?";
-	m_pLog->Output("[DB2] Update or insert process log state to table: [%s]", m_tabProcessLog.c_str());
+	std::string sql = "INSERT INTO " + m_tabProcessLog + "(REPORTNAME, BILLCYC, CITY, STATUS, ";
+	sql += "TYPE, ACTOR, OPERATOR, VERSION, UPTIME) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	m_pLog->Output("[DB2] INSERT PROCESS LOG: %s", proc_log.LogPrintInfo().c_str());
 
 	try
 	{
@@ -1710,69 +1710,20 @@ void CAnaDB2::UpdateInsertProcessLogState(const YCProcessLog& proc_log) throw(ba
 		rs.Parameter(index++) = proc_log.report_id.c_str();
 		rs.Parameter(index++) = proc_log.bill_cyc.c_str();
 		rs.Parameter(index++) = proc_log.city.c_str();
+		rs.Parameter(index++) = proc_log.status.c_str();
+		rs.Parameter(index++) = proc_log.type.c_str();
 		rs.Parameter(index++) = proc_log.actor.c_str();
+		rs.Parameter(index++) = proc_log.oper.c_str();
+		rs.Parameter(index++) = proc_log.version;
+		rs.Parameter(index++) = proc_log.uptime.c_str();
 		rs.Execute();
 
-		int record_count = 0;
-		while ( !rs.IsEOF() )
-		{
-			record_count = (int)rs[1];
-
-			rs.MoveNext();
-		}
+		Commit();
 		rs.Close();
-
-		m_pLog->Output("[DB2] Record count in process log: [%d]", record_count);
-		if ( record_count > 0 )		// 已存在
-		{
-			sql  = "UPDATE " + m_tabProcessLog + " SET STATUS = ?, TYPE = ?, OPERATOR = ?, VERSION = ?";
-			sql += ", UPTIME = ? WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ? AND ACTOR = ?";
-
-			m_pLog->Output("[DB2] UPDATE PROCESS LOG: %s", proc_log.LogPrintInfo().c_str());
-			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-
-			index = 1;
-			rs.Parameter(index++) = proc_log.status.c_str();
-			rs.Parameter(index++) = proc_log.type.c_str();
-			rs.Parameter(index++) = proc_log.oper.c_str();
-			rs.Parameter(index++) = proc_log.version;
-			rs.Parameter(index++) = proc_log.uptime.c_str();
-			rs.Parameter(index++) = proc_log.report_id.c_str();
-			rs.Parameter(index++) = proc_log.bill_cyc.c_str();
-			rs.Parameter(index++) = proc_log.city.c_str();
-			rs.Parameter(index++) = proc_log.actor.c_str();
-
-			rs.Execute();
-			Commit();
-			rs.Close();
-		}
-		else	// 不存在
-		{
-			sql  = "INSERT INTO " + m_tabProcessLog + "(REPORTNAME, BILLCYC, CITY, STATUS, ";
-			sql += "TYPE, ACTOR, OPERATOR, VERSION, UPTIME) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-			m_pLog->Output("[DB2] INSERT PROCESS LOG: %s", proc_log.LogPrintInfo().c_str());
-			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-
-			index = 1;
-			rs.Parameter(index++) = proc_log.report_id.c_str();
-			rs.Parameter(index++) = proc_log.bill_cyc.c_str();
-			rs.Parameter(index++) = proc_log.city.c_str();
-			rs.Parameter(index++) = proc_log.status.c_str();
-			rs.Parameter(index++) = proc_log.type.c_str();
-			rs.Parameter(index++) = proc_log.actor.c_str();
-			rs.Parameter(index++) = proc_log.oper.c_str();
-			rs.Parameter(index++) = proc_log.version;
-			rs.Parameter(index++) = proc_log.uptime.c_str();
-
-			rs.Execute();
-			Commit();
-			rs.Close();
-		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ANAERR_UPD_INS_PROCESSLOG, "[DB2] Update or insert process log to table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabProcessLog.c_str(), ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_INS_PROCESSLOG, "[DB2] Insert process log to table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabProcessLog.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 

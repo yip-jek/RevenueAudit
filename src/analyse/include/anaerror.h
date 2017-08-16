@@ -68,8 +68,8 @@ enum ANALYSE_ERROR
 	ANAERR_EXECUTE_SQL            = -3002027,			// 直接执行 SQL 出错
 	ANAERR_UPD_DETAIL_CW_RESULT   = -3002028,			// (业财) 更新详情表（财务侧）结果数据出错
 	ANAERR_UPD_INS_DIFFSUMMARY    = -3002029,			// (业财) 更新或插入差异汇总结果数据出错
-	ANAERR_UPD_INS_REPORTSTATE    = -3002030,			// (业财) 更新或插入报表状态表的状态出错
-	ANAERR_UPD_INS_PROCESSLOG     = -3002031,			// (业财) 更新或插入流程记录日志表的状态出错
+	ANAERR_UPD_INS_REPORTSTATE    = -3002030,			// (业财) 更新或插入报表状态表出错
+	ANAERR_INS_PROCESSLOG         = -3002031,			// (业财) 插入流程记录日志出错
 
 	// 编码转换错误码
 	ANAERR_INPUT_CHANN_UNICODE    = -3003001,			// 录入渠道统一编码信息失败

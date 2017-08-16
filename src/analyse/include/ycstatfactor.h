@@ -42,8 +42,8 @@ public:
 	virtual void MakeResult(VEC3_STRING& v3_result) throw(base::Exception) = 0;
 
 protected:
-	// 清空旧因子对
-	virtual void ClearOldFactors() = 0;
+	// 释放因子资源
+	virtual void ReleaseFactors() = 0;
 
 	// 载入单个因子对
 	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception) = 0;

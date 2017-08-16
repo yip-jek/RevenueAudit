@@ -34,7 +34,7 @@ void YCStatFactor_HDB::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exce
 	m_pLog->Output("[YCStatFactor_HDB] 载入规则因子信息成功.");
 }
 
-void YCStatFactor_HDB::ClearOldFactors()
+void YCStatFactor_HDB::ReleaseFactors()
 {
 	// 清空旧数据
 	if ( !m_mFactor.empty() )

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ycstatfactor.h"
+#include "ycresult_xqb.h"
 
 class YCFactor_XQB;
 
@@ -19,8 +20,8 @@ public:
 	virtual void MakeResult(VEC3_STRING& v3_result) throw(base::Exception);
 
 protected:
-	// 清空旧因子对
-	virtual void ClearOldFactors();
+	// 释放因子资源
+	virtual void ReleaseFactors();
 
 	// 载入单个因子对
 	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception);
@@ -29,7 +30,14 @@ protected:
 	virtual void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception);
 
 private:
+	// 创建详情表因子
 	YCFactor_XQB* CreateFactor(const std::string& dim);
+
+	// 获取结果因子类型
+	YCResult_XQB::RESULT_FACTOR_TYPE GetResultFactorType();
+
+	// 获取结果地市信息
+	std::string GetResultCity();
 
 	// 计算组合因子
 	void CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB* p_factor) throw(base::Exception);

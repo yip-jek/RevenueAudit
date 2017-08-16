@@ -301,7 +301,7 @@ void Analyse_YC::SetNewBatch_XQB() throw(base::Exception)
 	// 查询地市详情表的最新批次
 	YCXQBBatch xq_batch;
 	xq_batch.bill_cyc   = m_dbinfo.GetEtlDay().substr(0, 6);
-	xq_batch.city       = m_taskReq.task_city;
+	xq_batch.city       = GetCity_XQB();
 	xq_batch.type       = "0";			// 类型：0-固定项，1-浮动项
 	xq_batch.busi_batch = 0;
 	m_pAnaDB2->SelectXQBMaxBatch(m_dbinfo.target_table, xq_batch);
@@ -501,28 +501,40 @@ void Analyse_YC::RecordStatisticsLog()
 	m_pAnaDB2->InsertYCStatLog(yc_log);
 }
 
-void Analyse_YC::SetReportStateType(std::string& type)
+std::string Analyse_YC::GetCity_XQB()
+{
+	// 业财详情表（省）稽核：地市指定为"GD"
+	if ( AnalyseRule::ANATYPE_YCXQB_GD == m_taskInfo.AnaRule.AnaType )
+	{
+		return "GD";
+	}
+	else
+	{
+		return m_taskReq.task_city;
+	}
+}
+
+std::string Analyse_YC::GetReportStateType()
 {
 	/// 类型：
 	// 00-核对表
 	// 01-地市账务业务详情表
 	// 02-监控表
 	// 03-地市财务对账详情表
+	// 04-省财务详情表
+	// 05-省财务监控表
 	switch ( m_taskInfo.AnaRule.AnaType )
 	{
 	case AnalyseRule::ANATYPE_YCHDB:		// 业财核对表
-		type = "00";
-		break;
+		return "00";
 	case AnalyseRule::ANATYPE_YCXQB_YW:		// 业财详情表（业务侧）
-		type = "01";
-		break;
+		return "01";
 	case AnalyseRule::ANATYPE_YCXQB_CW:		// 业财详情表（财务侧）
+		return "03";
 	case AnalyseRule::ANATYPE_YCXQB_GD:		// 业财详情表（省财务侧）
-		type = "03";
-		break;
+		return "04";
 	default:	// 未知类型
-		type.clear();
-		break;
+		return "";
 	}
 }
 
@@ -530,20 +542,11 @@ void Analyse_YC::RecordReportState(YCReportState& report_state)
 {
 	report_state.report_id = m_pStatFactor->GetStatReport();
 	report_state.bill_cyc  = m_dbinfo.GetEtlDay().substr(0, 6);
+	report_state.city      = GetCity_XQB();
 	report_state.status    = "00";			// 状态：00-待审核
+	report_state.type      = GetReportStateType();
 	report_state.actor     = m_taskReq.actor;
 
-	// 业财详情表（省）稽核：地市指定为"GD"
-	if ( AnalyseRule::ANATYPE_YCXQB_GD == m_taskInfo.AnaRule.AnaType )
-	{
-		report_state.city = "GD";
-	}
-	else
-	{
-		report_state.city = m_taskReq.task_city;
-	}
-
-	SetReportStateType(report_state.type);
 	m_pAnaDB2->UpdateInsertReportState(report_state);
 }
 
@@ -560,7 +563,7 @@ void Analyse_YC::RecordProcessLog(const YCReportState& report_state)
 	proc_log.version   = m_taskReq.task_batch;
 	proc_log.uptime    = base::SimpleTime::Now().Time14();
 
-	m_pAnaDB2->UpdateInsertProcessLogState(proc_log);
+	m_pAnaDB2->InsertProcessLog(proc_log);
 }
 
 void Analyse_YC::DropEtlTargetTable()

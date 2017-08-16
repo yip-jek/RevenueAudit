@@ -87,8 +87,11 @@ protected:
 	// 登记稽核记录日志
 	void RecordStatisticsLog();
 
-	// 设置报表状态-类型
-	void SetReportStateType(std::string& type);
+	// 获取详情表地市信息
+	std::string GetCity_XQB();
+
+	// 获取报表状态-类型
+	std::string GetReportStateType();
 
 	// 登记报表状态
 	void RecordReportState(YCReportState& report_state);
