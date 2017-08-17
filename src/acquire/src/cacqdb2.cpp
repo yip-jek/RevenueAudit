@@ -451,7 +451,7 @@ void CAcqDB2::SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcIn
 void CAcqDB2::FetchEtlData(const std::string& sql, int data_size, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
-	rs.EnableWarning(true);
+	rs.EnableWarning(false);
 
 	std::vector<std::vector<std::string> > v2_data;
 	std::vector<std::string> v_dat;
