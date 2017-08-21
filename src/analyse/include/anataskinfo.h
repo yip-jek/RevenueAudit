@@ -267,6 +267,10 @@ public:
 		EWTYPE_COMPARE_RESULT = 6,				// 表示对比结果 (唯一)
 		EWTYPE_SINGLE_LEFT    = 7,				// 左侧单独显示方式
 		EWTYPE_SINGLE_RIGHT   = 8,				// 右侧单独显示方式
+
+		// 业财稽核
+		EWTYPE_YC_ITEM        = 100,			// (业财) 项目内容
+		EWTYPE_YC_VALUE       = 101,			// (业财) 值 (VALUE)
 	};
 
 public:
@@ -384,6 +388,14 @@ public:
 		else if ( "SINGLE_RIGHT" == TYPE )		// 右侧单独显示方式
 		{
 			ExpWay = EWTYPE_SINGLE_RIGHT;
+		}
+		else if ( "YC_ITEM" == TYPE )			// (业财) 项目内容
+		{
+			ExpWay = EWTYPE_YC_ITEM;
+		}
+		else if ( "YC_VALUE" == TYPE )			// (业财) 值 (VALUE)
+		{
+			ExpWay = EWTYPE_YC_VALUE;
 		}
 		else	// 未知表示方式
 		{

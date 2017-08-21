@@ -48,8 +48,11 @@ protected:
 	// 创建稽核统计因子
 	void CreateStatFactor() throw(base::Exception);
 
-	// 获取因子项目个数
-	int GetFactorItemSize() const;
+	// 获取因子项目和值个数
+	void GetFactorItemValSize(int& item_size, int& val_size) const;
+
+	// 计算指标字段集的项目和值个数
+	void CountKpiColumnItemValSize(const std::vector<KpiColumn>& vec_column, int& item_size, int& val_size) const;
 
 	// 分析业财稽核源数据，生成结果数据
 	virtual void AnalyseSourceData() throw(base::Exception);

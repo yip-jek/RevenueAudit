@@ -3,11 +3,13 @@
 #include "anaerror.h"
 #include "anataskinfo.h"
 #include "ycfactor_xqb.h"
+#include "ycresult_xqb.h"
 
-YCStatFactor_XQB::YCStatFactor_XQB(const std::string& etl_day, YCTaskReq& task_req, int ana_type, int item_size)
+YCStatFactor_XQB::YCStatFactor_XQB(const std::string& etl_day, YCTaskReq& task_req, int ana_type, int item_size, int val_size)
 :YCStatFactor(etl_day, task_req)
 ,ANA_TYPE(ana_type)
 ,ITEM_SIZE(item_size)
+,VAL_SIZE(val_size)
 {
 }
 
@@ -21,13 +23,6 @@ void YCStatFactor_XQB::ReleaseFactors()
 	// 清空旧数据
 	if ( !m_mFactor.empty() )
 	{
-		// 释放资源
-		for ( MAP_FACTOR::iterator it = m_mFactor.begin(); it != m_mFactor.end(); ++it )
-		{
-			delete it->second;
-			it->second = NULL;
-		}
-
 		m_mFactor.clear();
 	}
 }
@@ -43,13 +38,13 @@ void YCStatFactor_XQB::LoadOneFactor(const std::string& dim, const VEC_STRING& v
 	VEC_STRING v_data = vec_dat;
 	v_data.insert(v_data.begin(), dim);
 
-	YCFactor_XQB* pFactor = CreateFactor(dim);
-	m_mFactor[dim] = pFactor;
-
-	if ( !pFactor->Import(v_data) )
+	YCFactor_XQB factor(ITEM_SIZE, VAL_SIZE);
+	if ( !factor.Import(v_data) )
 	{
 		throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，无法导入因子数据：DIM=[%s], SIZE=[%lu] [FILE:%s, LINE:%d]", dim.c_str(), v_data.size(), __FILE__, __LINE__);
 	}
+
+	m_mFactor.insert(PAIR_FACTOR(dim, factor));
 }
 
 void YCStatFactor_XQB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
@@ -66,27 +61,27 @@ void YCStatFactor_XQB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
 
 void YCStatFactor_XQB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception)
 {
-	YCResult_XQB ycr(GetResultFactorType(), ITEM_SIZE);
+	YCResult_XQB ycr(ANA_TYPE, ITEM_SIZE, VAL_SIZE);
 	ycr.bill_cyc = m_etlDay.substr(0, 6);			// 账期为月份：YYYYMM
 	ycr.city     = GetResultCity();
 	ycr.type     = "0";			// 类型默认值：0-固定项
 	ycr.batch    = batch;
 
-	YCFactor_XQB* pFactor = NULL;
-	VEC_STRING    vec_data;
+	YCFactor_XQB factor(ITEM_SIZE, VAL_SIZE);
+	VEC_STRING   vec_data;
 
 	if ( agg )	// 组合因子
 	{
-		// 记录组合因子结果
 		if ( m_mFactor.find(st_info.statdim_id) != m_mFactor.end() )
 		{
 			throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "重复的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", st_info.statdim_id.c_str(), __FILE__, __LINE__);
 		}
 
-		pFactor = CreateFactor(st_info.statdim_id);
-		m_mFactor[st_info.statdim_id] = pFactor;
+		factor.SetDimID(st_info.statdim_id);
+		CalcComplexFactor(st_info.stat_sql, factor);
 
-		CalcComplexFactor(st_info.stat_sql, pFactor);
+		// 记录组合因子结果
+		m_mFactor.insert(PAIR_FACTOR(st_info.statdim_id, factor));
 	}
 	else	// 一般因子
 	{
@@ -96,57 +91,14 @@ void YCStatFactor_XQB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 			throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "不存在的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", st_info.statdim_id.c_str(), __FILE__, __LINE__);
 		}
 
-		pFactor = m_it->second;
+		factor = m_it->second;
 	}
 
-	if ( !ycr.ImportFromFactor(pFactor) )
-	{
-		throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "导入因子数据失败：DIM=[%s], FACTOR_SIZE=[%d] [FILE:%s, LINE:%d]", st_info.statdim_id.c_str(), pFactor->GetAllSize(), __FILE__, __LINE__);
-	}
-
+	ycr.ImportFactor(factor);
 	ycr.Export(vec_data);
 	m_pLog->Output("[YCStatFactor_XQB] 因子结果：%s", ycr.LogPrintInfo().c_str());
 
 	base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
-}
-
-YCFactor_XQB* YCStatFactor_XQB::CreateFactor(const std::string& dim)
-{
-	YCFactor_XQB* pFactor = NULL;
-
-	switch ( ANA_TYPE )
-	{
-	case AnalyseRule::ANATYPE_YCXQB_GD:				// 业财详情表（省）稽核类型
-		pFactor = new YCFactor_XQB_GD(ITEM_SIZE);
-		break;
-	case AnalyseRule::ANATYPE_YCXQB_CW:				// 业财详情表（财务侧）稽核类型
-	case AnalyseRule::ANATYPE_YCXQB_YW:				// 业财详情表（业务侧）稽核类型
-		pFactor = new YCFactor_XQB_YCW(ITEM_SIZE);
-		break;
-	case AnalyseRule::ANATYPE_YCHDB:				// 业财核对表稽核类型
-	default:
-		throw base::Exception(ANAERR_CREATE_FACTOR, "Create factor failed! Unsupported ANALYSE_TYPE: [%d] [FILE:%s, LINE:%d]", ANA_TYPE, __FILE__, __LINE__);
-	}
-
-	if ( NULL == pFactor )
-	{
-		throw base::Exception(ANAERR_CREATE_FACTOR, "Create factor failed: Operator new YCFactor_XQB failed! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
-	}
-
-	pFactor->SetDimID(dim);
-	return pFactor;
-}
-
-YCResult_XQB::RESULT_FACTOR_TYPE YCStatFactor_XQB::GetResultFactorType()
-{
-	if ( AnalyseRule::ANATYPE_YCXQB_GD == ANA_TYPE )	// 详情表（省）
-	{
-		return YCResult_XQB::RFT_XQB_GD;
-	}
-	else	// 详情表（业务侧、财务侧）
-	{
-		return YCResult_XQB::RFT_XQB_YCW;
-	}
 }
 
 std::string YCStatFactor_XQB::GetResultCity()
@@ -161,18 +113,13 @@ std::string YCStatFactor_XQB::GetResultCity()
 	}
 }
 
-void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB* p_factor) throw(base::Exception)
+void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB& factor) throw(base::Exception)
 {
-	if ( NULL == p_factor )
-	{
-		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "Invalid factor: YCFactor_XQB pointer is blank! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
-	}
-
 	VEC_STRING vec_fmt_first;
 	VEC_STRING vec_fmt_second;
 
 	// 格式：[ {父项目内容}; {子项目内容}; A1, A2, A3, ...|+, -, ... ]
-	const size_t AREA_ITEM_SIZE = p_factor->GetAreaItemSize();
+	const size_t AREA_ITEM_SIZE = factor.GetAreaItemSize();
 	base::PubStr::Str2StrVector(cmplx_fmt, ";", vec_fmt_first);
 	if ( vec_fmt_first.size() != (AREA_ITEM_SIZE + 1) )
 	{
@@ -180,15 +127,15 @@ void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_
 	}
 
 	// 父项目内容
-	p_factor->SetArea(vec_fmt_first[0]);
+	factor.SetArea(vec_fmt_first[0]);
 
 	// 子项目内容
-	if ( !p_factor->ImportItems(VEC_STRING(vec_fmt_first.begin()+1, vec_fmt_first.begin()+AREA_ITEM_SIZE)) )
+	if ( !factor.ImportItems(VEC_STRING(vec_fmt_first.begin()+1, vec_fmt_first.begin()+AREA_ITEM_SIZE)) )
 	{
-		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "Import items of complex factor failed: DIM=[%s], COMPLEX_FMT=[%s] [FILE:%s, LINE:%d]", p_factor->GetDimID().c_str(), cmplx_fmt.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "Import items of complex factor failed: DIM=[%s], COMPLEX_FMT=[%s] [FILE:%s, LINE:%d]", factor.GetDimID().c_str(), cmplx_fmt.c_str(), __FILE__, __LINE__);
 	}
 
-	const int FACTOR_VALUE_SIZE = p_factor->GetValueSize();
+	const int FACTOR_VALUE_SIZE = factor.GetValueSize();
 	VEC_STRING vec_result(FACTOR_VALUE_SIZE, "");
 
 	// 组合因子表达式：[ A1, A2, A3, ...|+, -, ... ]
@@ -229,9 +176,9 @@ void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_
 		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
 	}
 
-	if ( !p_factor->ImportValue(vec_result) )
+	if ( !factor.ImportValue(vec_result) )
 	{
-		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "Import value of complex factor failed: DIM=[%s], COMPLEX_FMT=[%s] [FILE:%s, LINE:%d]", p_factor->GetDimID().c_str(), cmplx_fmt.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "Import value of complex factor failed: DIM=[%s], COMPLEX_FMT=[%s] [FILE:%s, LINE:%d]", factor.GetDimID().c_str(), cmplx_fmt.c_str(), __FILE__, __LINE__);
 	}
 }
 
@@ -243,16 +190,16 @@ void YCStatFactor_XQB::CalcOneFactor(VEC_STRING& vec_result, const std::string& 
 		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不存在的业财稽核统计维度ID：%s [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
 	}
 
-	const int     VEC_SIZE = vec_result.size();
-	YCFactor_XQB* pFactor  = m_it->second;
+	const int     VEC_SIZE   = vec_result.size();
+	YCFactor_XQB& ref_factor = m_it->second;
 
-	if ( pFactor->GetValueSize() != VEC_SIZE )
+	if ( ref_factor.GetValueSize() != VEC_SIZE )
 	{
-		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "业财稽核维度因子：DIM=[%s], VALUE_SIZE=[%d], 与结果集：RESULT_SIZE=[%d] 不一致！[FILE:%s, LINE:%d]", dim.c_str(), pFactor->GetValueSize(), VEC_SIZE, __FILE__, __LINE__);
+		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "业财稽核维度因子：DIM=[%s], VALUE_SIZE=[%d], 与结果集：RESULT_SIZE=[%d] 不一致！[FILE:%s, LINE:%d]", dim.c_str(), ref_factor.GetValueSize(), VEC_SIZE, __FILE__, __LINE__);
 	}
 
 	VEC_STRING vec_value;
-	pFactor->ExportValue(vec_value);
+	ref_factor.ExportValue(vec_value);
 
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{

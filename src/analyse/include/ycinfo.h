@@ -131,8 +131,7 @@ public:
 	// 导入数据
 	bool Import(const std::vector<std::string>& vec_dat)
 	{
-		const int VEC_SIZE = vec_dat.size();
-		if ( VEC_SIZE != S_NUMBER_OF_MEMBERS )
+		if ( vec_dat.size() != S_NUMBER_OF_MEMBERS )
 		{
 			return false;
 		}

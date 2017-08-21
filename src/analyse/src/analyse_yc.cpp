@@ -4,7 +4,6 @@
 #include "simpletime.h"
 #include "canadb2.h"
 #include "canahive.h"
-#include "ycfactor_xqb.h"
 #include "ycresult_xqb.h"
 #include "ycstatfactor_hdb.h"
 #include "ycstatfactor_xqb.h"
@@ -163,8 +162,11 @@ void Analyse_YC::GetAnaDBInfo() throw(base::Exception)
 	// 详情表（财务侧）采用更新SQL语句
 	if ( AnalyseRule::ANATYPE_YCXQB_CW == m_taskInfo.AnaRule.AnaType )
 	{
-		// 由于批次成员变量会在入库操作时绑定两次，所以此处需要加 1
-		const int MEMBER_SIZE = YCResult_XQB::S_PUBLIC_MEMBERS + YCFactor_XQB_YCW(GetFactorItemSize()).GetAllSize() + 1;
+		int item_size = 0;
+		int val_size  = 0;
+		GetFactorItemValSize(item_size, val_size);
+
+		const int MEMBER_SIZE = YCResult_XQB::S_PUBLIC_MEMBERS + item_size + val_size + 3;
 		const int FIELD_SIZE  = m_dbinfo.GetFieldSize();
 		if ( FIELD_SIZE != MEMBER_SIZE )
 		{
@@ -229,7 +231,11 @@ void Analyse_YC::CreateStatFactor() throw(base::Exception)
 	}
 	else	// 详情表
 	{
-		m_pStatFactor = new YCStatFactor_XQB(m_dbinfo.GetEtlDay(), m_taskReq, ANA_TYPE, GetFactorItemSize());
+		int item_size = 0;
+		int val_size  = 0;
+		GetFactorItemValSize(item_size, val_size);
+
+		m_pStatFactor = new YCStatFactor_XQB(m_dbinfo.GetEtlDay(), m_taskReq, ANA_TYPE, item_size, val_size);
 	}
 
 	if ( NULL == m_pStatFactor )
@@ -238,18 +244,30 @@ void Analyse_YC::CreateStatFactor() throw(base::Exception)
 	}
 }
 
-int Analyse_YC::GetFactorItemSize() const
+void Analyse_YC::GetFactorItemValSize(int& item_size, int& val_size) const
 {
-	switch ( m_taskInfo.AnaRule.AnaType )
+	item_size = 0;
+	val_size  = 0;
+
+	CountKpiColumnItemValSize(m_taskInfo.vecKpiDimCol, item_size, val_size);
+	CountKpiColumnItemValSize(m_taskInfo.vecKpiValCol, item_size, val_size);
+}
+
+void Analyse_YC::CountKpiColumnItemValSize(const std::vector<KpiColumn>& vec_column, int& item_size, int& val_size) const
+{
+	const int VEC_SIZE = vec_column.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
-	case AnalyseRule::ANATYPE_YCXQB_GD:			// 业财详情表（省）稽核
-	case AnalyseRule::ANATYPE_YCXQB_CW:			// 业财详情表（财务侧）稽核
-		return (m_taskInfo.vecKpiDimCol.size()-YCResult_XQB::S_PUBLIC_MEMBERS-3);
-	case AnalyseRule::ANATYPE_YCXQB_YW:			// 业财详情表（业务侧）稽核
-		return (m_taskInfo.vecKpiDimCol.size()-YCResult_XQB::S_PUBLIC_MEMBERS-2);
-	case AnalyseRule::ANATYPE_YCHDB:			// 业财核对表稽核
-	default:
-		return 0;
+		const KpiColumn& ref_col = vec_column[i];
+
+		if ( KpiColumn::EWTYPE_YC_ITEM == ref_col.ExpWay )
+		{
+			++item_size;
+		}
+		else if ( KpiColumn::EWTYPE_YC_VALUE == ref_col.ExpWay )
+		{
+			++val_size;
+		}
 	}
 }
 
@@ -399,7 +417,11 @@ void Analyse_YC::StoreReportResult()
 
 void Analyse_YC::StoreDetailResult_CW()
 {
-	YCResult_XQB ycr(YCResult_XQB::RFT_XQB_YCW, GetFactorItemSize());
+	int item_size = 0;
+	int val_size  = 0;
+	GetFactorItemValSize(item_size, val_size);
+
+	YCResult_XQB ycr(m_taskInfo.AnaRule.AnaType, item_size, val_size);
 	std::vector<YCResult_XQB> vec_result;
 
 	const int VEC3_SIZE = m_v3HiveSrcData.size();

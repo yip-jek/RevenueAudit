@@ -2,10 +2,9 @@
 #include "anaerror.h"
 #include "pubstr.h"
 
-YCFactor_XQB::YCFactor_XQB(int item_size)
-:ITEM_SIZE(item_size)
+YCFactor_XQB::YCFactor_XQB(int item_size, int val_size)
 {
-	InitItems();
+	Init(item_size, val_size);
 }
 
 YCFactor_XQB::~YCFactor_XQB()
@@ -14,8 +13,7 @@ YCFactor_XQB::~YCFactor_XQB()
 
 bool YCFactor_XQB::Import(const VEC_STRING& vec_dat)
 {
-	const int VEC_SIZE = vec_dat.size();
-	if ( VEC_SIZE != GetAllSize() )
+	if ( vec_dat.size() != (size_t)GetAllSize() )
 	{
 		return false;
 	}
@@ -24,7 +22,7 @@ bool YCFactor_XQB::Import(const VEC_STRING& vec_dat)
 	m_dimID = vec_dat[index++];
 	m_area  = vec_dat[index++];
 
-	const int LAST_INDEX = index + ITEM_SIZE;
+	const int LAST_INDEX = index + m_vecItems.size();
 	if ( !ImportItems(VEC_STRING(vec_dat.begin()+index, vec_dat.begin()+LAST_INDEX)) )
 	{
 		return false;
@@ -53,25 +51,35 @@ std::string YCFactor_XQB::LogPrintInfo() const
 										m_dimID.c_str(), 
 										m_area.c_str());
 
-	for ( int i = 0; i < ITEM_SIZE; ++i )
+	int vec_size = m_vecItems.size();
+	for ( int i = 0; i < vec_size; ++i )
 	{
 		base::PubStr::SetFormatString(info, "%sITEM_%d=[%s], ", info.c_str(), (i+1), m_vecItems[i].c_str());
 	}
 
-	AddValueLogInfo(info);
+	vec_size = m_vecVals.size();
+	for ( int j = 0; j < vec_size; ++j )
+	{
+		base::PubStr::SetFormatString(info, "%sVALUE_%d=[%s], ", info.c_str(), (j+1), m_vecVals[j].c_str());
+	}
 	return info;
 }
 
 int YCFactor_XQB::GetAllSize() const
 {
-	// 1个DIM_ID + 1个AREA + ITEM_SIZE
-	return (2 + ITEM_SIZE);
+	// 1个DIM_ID + 1个AREA + m_vecItems.size() + m_vecVals.size()
+	return (2 + m_vecItems.size() + m_vecVals.size());
 }
 
 int YCFactor_XQB::GetAreaItemSize() const
 {
-	// 1个AREA + ITEM_SIZE
-	return (1 + ITEM_SIZE);
+	// 1个AREA + m_vecItems.size()
+	return (1 + m_vecItems.size());
+}
+
+int YCFactor_XQB::GetValueSize() const
+{
+	return m_vecVals.size();
 }
 
 std::string YCFactor_XQB::GetDimID() const
@@ -96,122 +104,52 @@ void YCFactor_XQB::SetArea(const std::string& area)
 
 bool YCFactor_XQB::ImportItems(const VEC_STRING& vec_item)
 {
-	const int VEC_SIZE = vec_item.size();
-	if ( VEC_SIZE != ITEM_SIZE )
+	if ( vec_item.size() == m_vecItems.size() )
 	{
-		return false;
+		m_vecItems.assign(vec_item.begin(), vec_item.end());
+		return true;
 	}
 
-	m_vecItems.assign(vec_item.begin(), vec_item.end());
-	return true;
+	return false;
 }
 
-void YCFactor_XQB::ExportItems(VEC_STRING& vec_item)
+void YCFactor_XQB::ExportItems(VEC_STRING& vec_item) const
 {
 	vec_item.assign(m_vecItems.begin(), m_vecItems.end());
 }
 
-void YCFactor_XQB::InitItems() throw(base::Exception)
+bool YCFactor_XQB::ImportValue(const VEC_STRING& vec_value)
 {
-	if ( ITEM_SIZE <= 0 )
+	if ( vec_value.size() == m_vecVals.size() )
 	{
-		throw base::Exception(ANAERR_INIT_ITEMS, "Init items failed! Invalid item size: [%d] [FILE:%s, LINE:%d]", ITEM_SIZE, __FILE__, __LINE__);
+		m_vecVals.assign(vec_value.begin(), vec_value.end());
+		return true;
+	}
+
+	return false;
+}
+
+void YCFactor_XQB::ExportValue(VEC_STRING& vec_value) const
+{
+	vec_value.assign(m_vecVals.begin(), m_vecVals.end());
+}
+
+void YCFactor_XQB::Init(int item_size, int val_size) throw(base::Exception)
+{
+	if ( item_size <= 0 )
+	{
+		throw base::Exception(ANAERR_FACTOR_XQB_INIT, "Init items failed! Invalid item size: [%d] [FILE:%s, LINE:%d]", item_size, __FILE__, __LINE__);
 	}
 
 	// 初始化：空字符串
-	m_vecItems.assign(ITEM_SIZE, "");
-}
+	m_vecItems.assign(item_size, "");
 
-
-////////////////////////////////////////////////////////////////////////////////
-YCFactor_XQB_YCW::YCFactor_XQB_YCW(int item_size)
-:YCFactor_XQB(item_size)
-{
-}
-
-YCFactor_XQB_YCW::~YCFactor_XQB_YCW()
-{
-}
-
-int YCFactor_XQB_YCW::GetAllSize() const
-{
-	return (YCFactor_XQB::GetAllSize() + S_VALUE_SIZE);
-}
-
-int YCFactor_XQB_YCW::GetValueSize() const
-{
-	return S_VALUE_SIZE;
-}
-
-bool YCFactor_XQB_YCW::ImportValue(const VEC_STRING& vec_value)
-{
-	if ( vec_value.size() == S_VALUE_SIZE )
+	if ( val_size <= 0 )
 	{
-		m_value = vec_value[0];
-		return true;
+		throw base::Exception(ANAERR_FACTOR_XQB_INIT, "Init values failed! Invalid value size: [%d] [FILE:%s, LINE:%d]", val_size, __FILE__, __LINE__);
 	}
 
-	return false;
-}
-
-void YCFactor_XQB_YCW::ExportValue(VEC_STRING& vec_value) const
-{
-	vec_value.assign(1, m_value);
-}
-
-void YCFactor_XQB_YCW::AddValueLogInfo(std::string& info) const
-{
-	base::PubStr::SetFormatString(info, "%sVALUE=[%s]", info.c_str(), m_value.c_str());
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-YCFactor_XQB_GD::YCFactor_XQB_GD(int item_size)
-:YCFactor_XQB(item_size)
-{
-}
-
-YCFactor_XQB_GD::~YCFactor_XQB_GD()
-{
-}
-
-int YCFactor_XQB_GD::GetAllSize() const
-{
-	return (YCFactor_XQB::GetAllSize() + S_VALUE_SIZE);
-}
-
-int YCFactor_XQB_GD::GetValueSize() const
-{
-	return S_VALUE_SIZE;
-}
-
-bool YCFactor_XQB_GD::ImportValue(const VEC_STRING& vec_value)
-{
-	if ( vec_value.size() == S_VALUE_SIZE )
-	{
-		m_valueYW = vec_value[0];
-		m_valueCW = vec_value[1];
-		return true;
-	}
-
-	return false;
-}
-
-void YCFactor_XQB_GD::ExportValue(VEC_STRING& vec_value) const
-{
-	VEC_STRING v_value;
-	v_value.push_back(m_valueYW);
-	v_value.push_back(m_valueCW);
-	v_value.swap(vec_value);
-}
-
-void YCFactor_XQB_GD::AddValueLogInfo(std::string& info) const
-{
-	base::PubStr::SetFormatString(info, "%s"
-										"VALUE_YW=[%s], "
-										"VALUE_CW=[%s]", 
-										info.c_str(), 
-										m_valueYW.c_str(), 
-										m_valueCW.c_str());
+	// 初始化：空字符串
+	m_vecVals.assign(val_size, "");
 }
 

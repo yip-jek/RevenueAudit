@@ -10,7 +10,7 @@ public:
 	typedef std::vector<std::string>		VEC_STRING;
 
 public:
-	YCFactor_XQB(int item_size);
+	YCFactor_XQB(int item_size, int val_size);
 	virtual ~YCFactor_XQB();
 
 public:
@@ -24,13 +24,13 @@ public:
 	std::string LogPrintInfo() const;
 
 	// 总个数
-	virtual int GetAllSize() const;
+	int GetAllSize() const;
 
 	// 区域和项目个数
 	int GetAreaItemSize() const;
 
 	// VALUE 个数
-	virtual int GetValueSize() const = 0;
+	int GetValueSize() const;
 
 	// 获取维度ID
 	std::string GetDimID() const;
@@ -48,92 +48,24 @@ public:
 	bool ImportItems(const VEC_STRING& vec_item);
 
 	// 导出项目内容
-	void ExportItems(VEC_STRING& vec_item);
+	void ExportItems(VEC_STRING& vec_item) const;
 
 	// 导入 VALUE
-	virtual bool ImportValue(const VEC_STRING& vec_value) = 0;
+	bool ImportValue(const VEC_STRING& vec_value);
 
 	// 导出 VALUE
-	virtual void ExportValue(VEC_STRING& vec_value) const = 0;
+	void ExportValue(VEC_STRING& vec_value) const;
 
-protected:
-	// 初始化项目内容
-	void InitItems() throw(base::Exception);
+private:
+	// 初始化
+	void Init(int item_size, int val_size) throw(base::Exception);
 
-	// 追加 VALUE 的日志信息
-	virtual void AddValueLogInfo(std::string& info) const = 0;
-
-protected:
+private:
 	std::string m_dimID;				// 维度ID
 	std::string m_area;					// 区域
 
-protected:
-	const int   ITEM_SIZE;				// 项目数
-	VEC_STRING  m_vecItems;				// 项目内容（一个或多个）
-};
-
-
-////////////////////////////////////////////////////////////////////////////////
-// (业财稽核) 详情表（业务侧、财务侧）因子
-class YCFactor_XQB_YCW : public YCFactor_XQB
-{
-public:
-	YCFactor_XQB_YCW(int item_size);
-	virtual ~YCFactor_XQB_YCW();
-
-	static const int S_VALUE_SIZE = 1;			// 只有1个VALUE
-
-public:
-	// 总个数
-	virtual int GetAllSize() const;
-
-	// VALUE 个数
-	virtual int GetValueSize() const;
-
-	// 导入 VALUE
-	virtual bool ImportValue(const VEC_STRING& vec_value);
-
-	// 导出 VALUE
-	virtual void ExportValue(VEC_STRING& vec_value) const;
-
-protected:
-	// 追加 VALUE 的日志信息
-	virtual void AddValueLogInfo(std::string& info) const;
-
-protected:
-	std::string m_value;				// 业务账 或 财务账
-};
-
-
-////////////////////////////////////////////////////////////////////////////////
-// (业财稽核) 详情表（省）因子
-class YCFactor_XQB_GD : public YCFactor_XQB
-{
-public:
-	YCFactor_XQB_GD(int item_size);
-	virtual ~YCFactor_XQB_GD();
-
-	static const int S_VALUE_SIZE = 2;			// 有2个VALUE
-
-public:
-	// 总个数
-	virtual int GetAllSize() const;
-
-	// VALUE 个数
-	virtual int GetValueSize() const;
-
-	// 导入 VALUE
-	virtual bool ImportValue(const VEC_STRING& vec_value);
-
-	// 导出 VALUE
-	virtual void ExportValue(VEC_STRING& vec_value) const;
-
-protected:
-	// 追加 VALUE 的日志信息
-	virtual void AddValueLogInfo(std::string& info) const;
-
-protected:
-	std::string  m_valueYW;				// 业务账
-	std::string  m_valueCW;				// 财务账
+private:
+	VEC_STRING  m_vecItems;				// 项目内容 (1..N)
+	VEC_STRING  m_vecVals;				// 值：业务账、财务账等
 };
 
