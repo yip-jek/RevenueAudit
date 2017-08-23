@@ -54,6 +54,6 @@ private:
 	bool IsIndexValid(size_t group_index, size_t data_index) const;
 
 private:
-	std::vector<std::vector<std::vector<std::string> > >* m_pV3SrcData;			// Hive源数据集
+	std::vector<std::vector<std::vector<std::string> > >& m_refV3SrcData;			// Hive源数据集
 };
 

@@ -109,7 +109,7 @@ std::string YCStatFactor_XQB::GetResultCity()
 	}
 	else	// 详情表（业务侧、财务侧）
 	{
-		return m_pTaskReq->task_city;
+		return m_refTaskReq.task_city;
 	}
 }
 
@@ -184,22 +184,30 @@ void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_
 
 void YCStatFactor_XQB::CalcOneFactor(VEC_STRING& vec_result, const std::string& op, const std::string& dim) throw(base::Exception)
 {
+	VEC_STRING vec_value;
+	double     dou      = 0.0;
+	const int  VEC_SIZE = vec_result.size();
+
 	MAP_FACTOR::iterator m_it = m_mFactor.find(dim);
-	if ( m_it == m_mFactor.end() )
+	if ( m_it != m_mFactor.end() )
+	{
+		YCFactor_XQB& ref_factor = m_it->second;
+		if ( ref_factor.GetValueSize() != VEC_SIZE )
+		{
+			throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "业财稽核维度因子：DIM=[%s], VALUE_SIZE=[%d], 与结果集：RESULT_SIZE=[%d] 不一致！[FILE:%s, LINE:%d]", dim.c_str(), ref_factor.GetValueSize(), VEC_SIZE, __FILE__, __LINE__);
+		}
+
+		ref_factor.ExportValue(vec_value);
+	}
+	else if ( base::PubStr::Str2Double(dim, dou) )
+	{
+		m_pLog->Output("[YCStatFactor_XQB] 常量维度：[%s]", dim.c_str());
+		vec_value.assign(VEC_SIZE, dim);
+	}
+	else
 	{
 		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不存在的业财稽核统计维度ID：%s [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
 	}
-
-	const int     VEC_SIZE   = vec_result.size();
-	YCFactor_XQB& ref_factor = m_it->second;
-
-	if ( ref_factor.GetValueSize() != VEC_SIZE )
-	{
-		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "业财稽核维度因子：DIM=[%s], VALUE_SIZE=[%d], 与结果集：RESULT_SIZE=[%d] 不一致！[FILE:%s, LINE:%d]", dim.c_str(), ref_factor.GetValueSize(), VEC_SIZE, __FILE__, __LINE__);
-	}
-
-	VEC_STRING vec_value;
-	ref_factor.ExportValue(vec_value);
 
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{

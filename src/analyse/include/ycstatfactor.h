@@ -62,7 +62,7 @@ protected:
 	std::string      m_statID;					// 统计指标ID
 	std::string      m_statReport;				// 关联报表
 	std::string      m_etlDay;					// 采集账期
-	YCTaskReq*       m_pTaskReq;				// 任务请求信息
+	YCTaskReq&       m_refTaskReq;				// 任务请求信息
 	MAP_VEC_STATINFO m_mvStatInfo;				// 规则因子信息列表
 };
 

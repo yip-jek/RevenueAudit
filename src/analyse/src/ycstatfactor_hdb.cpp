@@ -166,6 +166,7 @@ std::string YCStatFactor_HDB::CalcOneFactor(std::string& result, const std::stri
 {
 	MAP_STRING::iterator m_it;
 
+	double dou = 0.0;
 	if ( dim.find('?') != std::string::npos )	// 因子格式（参考）：{A?_B?}
 	{
 		return OperateOneFactor(result, op, CalcCategoryFactor(dim));
@@ -173,6 +174,11 @@ std::string YCStatFactor_HDB::CalcOneFactor(std::string& result, const std::stri
 	else if ( (m_it = m_mFactor.find(dim)) != m_mFactor.end() )
 	{
 		return OperateOneFactor(result, op, m_it->second);
+	}
+	else if ( base::PubStr::Str2Double(dim, dou) )
+	{
+		m_pLog->Output("[YCStatFactor_HDB] 常量维度：[%s]", dim.c_str());
+		return OperateOneFactor(result, op, dim);
 	}
 	else
 	{
@@ -276,7 +282,7 @@ bool YCStatFactor_HDB::IsCategoryDim(const std::string& dim)
 void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception)
 {
 	YCResult_HDB ycr;
-	ycr.stat_city   = m_pTaskReq->task_city;
+	ycr.stat_city   = m_refTaskReq.task_city;
 	ycr.stat_batch  = batch;
 	ycr.stat_report = st_info.stat_report;
 	ycr.stat_id     = st_info.stat_id;

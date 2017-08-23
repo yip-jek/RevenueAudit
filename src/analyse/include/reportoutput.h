@@ -29,6 +29,6 @@ public:
 	virtual void ImportData(std::vector<std::vector<std::string> >& vec2_dat);
 
 private:
-	std::vector<std::vector<std::string> >* m_pV2ReportData;			// 报表数据集
+	std::vector<std::vector<std::string> >& m_refV2ReportData;			// 报表数据集
 };
 

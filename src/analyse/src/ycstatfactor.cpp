@@ -7,7 +7,7 @@ const char* const YCStatFactor::S_TOP_PRIORITY  = "NN";			// 最高优先级 (�
 YCStatFactor::YCStatFactor(const std::string& etl_day, YCTaskReq& task_req)
 :m_pLog(base::Log::Instance())
 ,m_etlDay(etl_day)
-,m_pTaskReq(&task_req)
+,m_refTaskReq(task_req)
 {
 }
 
@@ -133,7 +133,7 @@ void YCStatFactor::GenerateStatResult(VEC2_STRING& v2_result) throw(base::Except
 
 			m_pLog->Output("[YCStatFactor] 统计因子类型：%s", factor_type.c_str());
 			m_pLog->Output("[YCStatFactor] 生成统计因子结果数据：%s", ref_si.LogPrintInfo().c_str());
-			MakeStatInfoResult(m_pTaskReq->task_batch, ref_si, agg, vec2_result);
+			MakeStatInfoResult(m_refTaskReq.task_batch, ref_si, agg, vec2_result);
 		}
 	}
 
