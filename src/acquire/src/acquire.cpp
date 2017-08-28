@@ -1,4 +1,6 @@
 #include "acquire.h"
+#include <errno.h>
+#include <string.h>
 #include <vector>
 #include "log.h"
 #include "pubstr.h"
@@ -29,7 +31,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 5.0.0.2 released. Compiled at " __TIME__ " on " __DATE__);
+	return ("Acquire: Version 5.0.1.0 released. Compiled at " __TIME__ " on " __DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -493,7 +495,7 @@ std::string Acquire::DB2DataOutputHdfsFile(std::vector<std::vector<std::string> 
 	hdfsFile hd_file = hdfsOpenFile(hd_fs, FULL_FILE_PATH.c_str(), O_WRONLY|O_CREAT, 0, 0, 0);
 	if ( NULL == hd_file )
 	{
-		throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Open file failed: %s [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Open file failed: %s, ERROR: %s [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), strerror(errno), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[Acquire] [HDFS] Open file [%s] OK.", FULL_FILE_PATH.c_str());
 
@@ -528,7 +530,7 @@ std::string Acquire::DB2DataOutputHdfsFile(std::vector<std::vector<std::string> 
 
 		if ( hdfsWrite(hd_fs, hd_file, (void*)str_buf.c_str(), str_buf.size()) < 0 )
 		{
-			throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Write file failed: %s (index:%llu) [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), i, __FILE__, __LINE__);
+			throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Write file failed: %s (index:%llu), ERROR: %s [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), i, strerror(errno), __FILE__, __LINE__);
 		}
 
 		// 每一千行，flush一次buffer
@@ -536,7 +538,7 @@ std::string Acquire::DB2DataOutputHdfsFile(std::vector<std::vector<std::string> 
 		{
 			if ( hdfsFlush(hd_fs, hd_file) < 0 )
 			{
-				throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Flush file failed: %s (index:%llu) [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), i, __FILE__, __LINE__);
+				throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Flush file failed: %s (index:%llu), ERROR: %s [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), i, strerror(errno), __FILE__, __LINE__);
 			}
 		}
 	}
@@ -544,14 +546,14 @@ std::string Acquire::DB2DataOutputHdfsFile(std::vector<std::vector<std::string> 
 	// 最后再flush一次
 	if ( hdfsFlush(hd_fs, hd_file) < 0 )
 	{
-		throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Finally flush file failed: %s [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Finally flush file failed: %s, ERROR: %s [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), strerror(errno), __FILE__, __LINE__);
 	}
 
 	m_pLog->Output("[Acquire] [HDFS] Write file line(s): %llu", VEC2_SIZE);
 
 	if ( hdfsCloseFile(hd_fs, hd_file) < 0 )
 	{
-		throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Close file failed: %s [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_OUTPUT_HDFS_FILE_FAILED, "[Acquire] [HDFS] Close file failed: %s, ERROR: %s [FILE:%s, LINE:%d]", FULL_FILE_PATH.c_str(), strerror(errno), __FILE__, __LINE__);
 	}
 	m_pLog->Output("[Acquire] [HDFS] Close file [%s].", FULL_FILE_PATH.c_str());
 

@@ -1,4 +1,6 @@
 #include "hdfsconnector.h"
+#include <errno.h>
+#include <string.h>
 #include "log.h"
 #include "acqerror.h"
 
@@ -25,7 +27,7 @@ void HdfsConnector::ToConnect() throw(base::Exception)
 	m_hdfsFS = hdfsConnect(m_sHost.c_str(), m_nPort);
 	if ( NULL == m_hdfsFS )
 	{
-		throw base::Exception(ACQERR_HDFS_CONNECT_FAILED, "[HDFS] Connect <%s:%d> failed! [FILE:%s, LINE:%d]", m_sHost.c_str(), m_nPort, __FILE__, __LINE__);
+		throw base::Exception(ACQERR_HDFS_CONNECT_FAILED, "[HDFS] Connect <%s:%d> failed: %s [FILE:%s, LINE:%d]", m_sHost.c_str(), m_nPort, strerror(errno), __FILE__, __LINE__);
 	}
 
 	m_pLogger->Output("[HDFS] Connect <%s:%d> OK.", m_sHost.c_str(), m_nPort);
