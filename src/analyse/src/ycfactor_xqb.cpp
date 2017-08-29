@@ -62,6 +62,9 @@ std::string YCFactor_XQB::LogPrintInfo() const
 	{
 		base::PubStr::SetFormatString(info, "%sVALUE_%d=[%s], ", info.c_str(), (j+1), m_vecVals[j].c_str());
 	}
+
+	// 删除尾部的逗号与空格
+	info.erase(info.size()-2);
 	return info;
 }
 

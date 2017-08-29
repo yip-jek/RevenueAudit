@@ -6,9 +6,6 @@
 #include "cacqhive.h"
 
 const char* const Acquire_YC::S_YC_ETLRULE_TYPE = "YCRA";				// 业财稽核-采集规则类型
-const char* const Acquire_YC::S_NO_NEED_EXTEND  = "[NO_NEED_EXTEND]";	// 不需要进行扩展SQL语句的条件的标记
-const char* const Acquire_YC::S_CITY_MARK       = "[CITY_MARK]";		// 地市标记（编码）
-const char* const Acquire_YC::S_CN_CITY_MARK    = "[CN_CITY_MARK]";		// 地市标记（中文名称）
 
 Acquire_YC::Acquire_YC()
 :m_ycSeqID(0)
@@ -306,8 +303,16 @@ void Acquire_YC::ExtendSQLCondition(std::string& sql) throw(base::Exception)
 		if ( std::string::npos == w_pos )	// No space
 		{
 			tab_src = C_SQL.substr(f_pos);
+			w_pos   = f_pos + off + tab_src.size();
+
+			if ( ')' == tab_src[tab_src.size()-1] )		// 表名后跟')'
+			{
+				tab_src.erase(tab_src.size()-1);
+				w_pos -= 1;
+			}
+
 			base::PubStr::SetFormatString(str_add, " where %s %s where %s)", EXTEND_SQL_COND.c_str(), tab_src.c_str(), EX_SUB_COND.c_str());
-			sql += str_add;
+			sql.insert(w_pos, str_add);
 			break;
 		}
 		else
@@ -317,6 +322,11 @@ void Acquire_YC::ExtendSQLCondition(std::string& sql) throw(base::Exception)
 			{
 				f_pos = w_pos;
 				continue;
+			}
+
+			if ( ')' == tab_src[tab_src.size()-1] )		// 表名后跟')'
+			{
+				tab_src.erase(tab_src.size()-1);
 			}
 			base::PubStr::SetFormatString(str_add, "%s %s where %s)", EXTEND_SQL_COND.c_str(), tab_src.c_str(), EX_SUB_COND.c_str());
 

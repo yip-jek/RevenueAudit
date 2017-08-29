@@ -10,9 +10,6 @@ public:
 	virtual ~Acquire_YC();
 
 	static const char* const S_YC_ETLRULE_TYPE;			// 业财稽核-采集规则类型
-	static const char* const S_NO_NEED_EXTEND;			// 不需要进行扩展SQL语句的条件的标记
-	static const char* const S_CITY_MARK;				// 地市标记（编码）
-	static const char* const S_CN_CITY_MARK;			// 地市标记（中文名称）
 
 public:
 	// 载入参数配置信息
