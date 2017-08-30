@@ -131,7 +131,10 @@ void SQLExtendConverter::DoExtend(std::string& sql) throw(base::Exception)
 			end_pos = beg_pos + pos_off + tab_name.size();
 			if ( !DealWithRightParenthes(sql, tab_name, end_pos, pos_off) )
 			{
-				base::PubStr::SetFormatString(ins_cond, " where %s %s where %s)", m_extendCond.c_str(), tab_name.c_str(), m_subCond.c_str());
+				base::PubStr::SetFormatString(ins_cond, " where %s %s where %s)", 
+														m_extendCond.c_str(), 
+														tab_name.c_str(), 
+														m_subCond.c_str());
 				sql.insert(end_pos, ins_cond);
 			}
 			break;
@@ -145,7 +148,7 @@ void SQLExtendConverter::DoExtend(std::string& sql) throw(base::Exception)
 				continue;
 			}
 
-			if ( DealWithRightParenthes(sql, tab_name, end_pos, off) )
+			if ( DealWithRightParenthes(sql, tab_name, end_pos, pos_off) )
 			{
 				beg_pos = end_pos;
 				continue;
@@ -154,18 +157,27 @@ void SQLExtendConverter::DoExtend(std::string& sql) throw(base::Exception)
 			end_pos = C_SQL.find_first_not_of(S_SPACE, end_pos);
 			if ( std::string::npos == end_pos )		// All spaces
 			{
-				base::PubStr::SetFormatString(ins_cond, "where %s %s where %s)", m_extendCond.c_str(), tab_name.c_str(), m_subCond.c_str());
+				base::PubStr::SetFormatString(ins_cond, "where %s %s where %s)", 
+														m_extendCond.c_str(), 
+														tab_name.c_str(), 
+														m_subCond.c_str());
 				sql += ins_cond;
 				break;
 			}
 			else if ( C_SQL.substr(end_pos, MARK_WHERE_SIZE) == MARK_WHERE )	// 表名后带"WHERE"
 			{
-				base::PubStr::SetFormatString(ins_cond, "%s %s where %s) and ", m_extendCond.c_str(), tab_name.c_str(), m_subCond.c_str());
+				base::PubStr::SetFormatString(ins_cond, "%s %s where %s) and ", 
+														m_extendCond.c_str(), 
+														tab_name.c_str(), 
+														m_subCond.c_str());
 				end_pos += MARK_WHERE_SIZE;
 			}
 			else	// 表名后不带"WHERE"
 			{
-				base::PubStr::SetFormatString(ins_cond, "where %s %s where %s) ", m_extendCond.c_str(), tab_name.c_str(), m_subCond.c_str());
+				base::PubStr::SetFormatString(ins_cond, "where %s %s where %s) ", 
+														m_extendCond.c_str(), 
+														tab_name.c_str(), 
+														m_subCond.c_str());
 			}
 
 			sql.insert(end_pos+pos_off, ins_cond);
@@ -180,11 +192,13 @@ bool SQLExtendConverter::DealWithRightParenthes(std::string& sql, const std::str
 	const size_t RP_SIZE = tab.size() - tab.find_last_not_of(S_RIGHT_PARENTHESIS) - 1;
 	if ( RP_SIZE > 0 )		// 表名后带右括号
 	{
-		tab.erase(tab.size()-RP_SIZE);
-		end -= RP_SIZE;
-
 		std::string ins_sub;
-		base::PubStr::SetFormatString(ins_sub, " where %s %s where %s)", m_extendCond.c_str(), tab.c_str(), m_subCond.c_str());
+		base::PubStr::SetFormatString(ins_sub, " where %s %s where %s)", 
+												m_extendCond.c_str(), 
+												tab.substr(0, tab.size()-RP_SIZE).c_str(), 
+												m_subCond.c_str());
+
+		end -= RP_SIZE;
 		sql.insert(end, ins_sub);
 
 		off += ins_sub.size();
