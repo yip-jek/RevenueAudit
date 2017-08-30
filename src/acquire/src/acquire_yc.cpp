@@ -4,17 +4,20 @@
 #include "simpletime.h"
 #include "cacqdb2.h"
 #include "cacqhive.h"
+#include "sqlextendconverter.h"
 
 const char* const Acquire_YC::S_YC_ETLRULE_TYPE = "YCRA";				// 业财稽核-采集规则类型
 
 Acquire_YC::Acquire_YC()
 :m_ycSeqID(0)
+,m_pSqlExConv(NULL)
 {
 	m_sType = "业财稽核";
 }
 
 Acquire_YC::~Acquire_YC()
 {
+	ReleaseSqlExtendConv();
 }
 
 void Acquire_YC::LoadConfig() throw(base::Exception)
@@ -240,6 +243,8 @@ void Acquire_YC::HandleYCInfo() throw(base::Exception)
 		throw base::Exception(ACQERR_HANDLE_YCINFO_FAILED, "没有业财稽核因子规则信息! (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 	}
 
+	CreateSqlExtendConv();
+
 	const int VEC_YCI_SIZE = m_vecYCInfo.size();
 	for ( int i = 0; i < VEC_YCI_SIZE; ++i )
 	{
@@ -254,141 +259,43 @@ void Acquire_YC::HandleYCInfo() throw(base::Exception)
 
 		m_pLog->Output("[Acquire_YC] 原业财统计因子 SQL(%d) [%s]: %s", seq, ref_yci.stat_dimid.c_str(), ref_yci.stat_sql.c_str());
 		ExchangeSQLMark(ref_yci.stat_sql);
-		ExtendSQLCondition(ref_yci.stat_sql);
-		CityMarkExchange(ref_yci.stat_sql);		// 地市标记转换
+		SQLExtendConvert(ref_yci.stat_sql);
 		m_pLog->Output("[Acquire_YC] (转换后) 新统计因子 SQL(%d) [%s]: %s", seq, ref_yci.stat_dimid.c_str(), ref_yci.stat_sql.c_str());
 	}
 }
 
-void Acquire_YC::ExtendSQLCondition(std::string& sql) throw(base::Exception)
+void Acquire_YC::CreateSqlExtendConv()
 {
-	// 不需要进行扩展SQL语句的条件？
-	if ( NoNeedExtendSQL(sql) )
+	ReleaseSqlExtendConv();
+
+	SQLExtendData sql_ex_data;
+	sql_ex_data.field_period = m_fieldPeriod;
+	sql_ex_data.field_city   = m_fieldCity;
+	sql_ex_data.field_batch  = m_fieldBatch;
+	sql_ex_data.period       = m_acqDate;
+	sql_ex_data.city         = m_taskCity;
+	sql_ex_data.cityCN       = m_taskCityCN;
+
+	m_pSqlExConv = new SQLExtendConverter(sql_ex_data);
+	if ( NULL == m_pSqlExConv )
 	{
-		// 删除标记: [NO_NEED_EXTEND]
-		sql.erase(0, sql.find(']')+1);
-		return;
-	}
-
-	const std::string EX_SUB_COND;
-	const std::string EXTEND_SQL_COND;
-	base::PubStr::SetFormatString(const_cast<std::string&>(EX_SUB_COND), "%s = '%s' and %s = '%s'", m_fieldPeriod.c_str(), m_acqDate.c_str(), m_fieldCity.c_str(), m_taskCity.c_str());
-	base::PubStr::SetFormatString(const_cast<std::string&>(EXTEND_SQL_COND), "%s and decimal(%s,12,2) in (select max(decimal(%s,12,2)) from ", EX_SUB_COND.c_str(), m_fieldBatch.c_str(), m_fieldBatch.c_str());
-
-	const std::string MARK_FROM  = " FROM ";
-	const std::string MARK_WHERE = "WHERE ";
-	const size_t M_FROM_SIZE     = MARK_FROM.size();
-	const size_t M_WHERE_SIZE    = MARK_WHERE.size();
-	const std::string C_SQL = base::PubStr::UpperB(sql);
-
-	size_t f_pos = 0;
-	size_t w_pos = 0;
-	size_t off   = 0;
-	std::string tab_src;
-	std::string str_add;
-
-	while ( (f_pos = C_SQL.find(MARK_FROM, f_pos)) != std::string::npos )
-	{
-		f_pos += M_FROM_SIZE;
-
-		// Skip spaces, find the beginning of table name
-		f_pos = C_SQL.find_first_not_of('\x20', f_pos);
-		if ( std::string::npos == f_pos )	// All spaces
-		{
-			throw base::Exception(ACQERR_ADD_CITY_BATCH_FAILED, "业财稽核统计因子SQL无法添加地市和批次：NO table name! [pos:%llu] (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", f_pos, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
-		}
-
-		// Find the end of table name
-		w_pos = C_SQL.find_first_of('\x20', f_pos);
-		if ( std::string::npos == w_pos )	// No space
-		{
-			tab_src = C_SQL.substr(f_pos);
-			w_pos   = f_pos + off + tab_src.size();
-
-			if ( ')' == tab_src[tab_src.size()-1] )		// 表名后跟')'
-			{
-				tab_src.erase(tab_src.size()-1);
-				w_pos -= 1;
-			}
-
-			base::PubStr::SetFormatString(str_add, " where %s %s where %s)", EXTEND_SQL_COND.c_str(), tab_src.c_str(), EX_SUB_COND.c_str());
-			sql.insert(w_pos, str_add);
-			break;
-		}
-		else
-		{
-			tab_src = C_SQL.substr(f_pos, w_pos-f_pos);
-			if ( '(' == tab_src[0] )	// Skip: 非表名
-			{
-				f_pos = w_pos;
-				continue;
-			}
-
-			if ( ')' == tab_src[tab_src.size()-1] )		// 表名后跟')'
-			{
-				tab_src.erase(tab_src.size()-1);
-			}
-			base::PubStr::SetFormatString(str_add, "%s %s where %s)", EXTEND_SQL_COND.c_str(), tab_src.c_str(), EX_SUB_COND.c_str());
-
-			w_pos = C_SQL.find_first_not_of('\x20', w_pos);
-			if ( std::string::npos == w_pos )	// All spaces
-			{
-				str_add = " where " + str_add;
-				sql += str_add;
-				break;
-			}
-			else if ( C_SQL.substr(w_pos, M_WHERE_SIZE) == MARK_WHERE )	// 表名后带"WHERE"
-			{
-				str_add += (" and ");
-				w_pos += M_WHERE_SIZE;
-			}
-			else	// 表名后不带"WHERE"
-			{
-				str_add = " where " + str_add + " ";
-			}
-
-			sql.insert(w_pos+off, str_add);
-			off += str_add.size();
-			f_pos = w_pos;
-		}
+		throw base::Exception(ACQERR_CREATE_SQLEXTENDCONV, "Operator new SQLExtendConverter failed: 无法申请到内存空间！[FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 }
 
-bool Acquire_YC::NoNeedExtendSQL(const std::string& sql)
+void Acquire_YC::ReleaseSqlExtendConv()
 {
-	const std::string F_NO_NEED_EX = S_NO_NEED_EXTEND;
-	const size_t F_NNEX_SIZE       = F_NO_NEED_EX.size();
-	const std::string C_SQL        = base::PubStr::TrimUpperB(sql);
-
-	// 是否以'[NO_NEED_EXTEND]'开头？
-	return (C_SQL.size() >= F_NNEX_SIZE && C_SQL.substr(0, F_NNEX_SIZE) == F_NO_NEED_EX);
+	if ( m_pSqlExConv != NULL )
+	{
+		delete m_pSqlExConv;
+		m_pSqlExConv = NULL;
+	}
 }
 
-void Acquire_YC::CityMarkExchange(std::string& sql)
+void Acquire_YC::SQLExtendConvert(std::string& sql)
 {
-	const std::string F_CITY_MARK    = S_CITY_MARK;
-	const std::string F_CN_CITY_MARK = S_CN_CITY_MARK;
-
-	const size_t F_CTMK_SIZE    = F_CITY_MARK.size();
-	const size_t F_CN_CTMK_SIZE = F_CN_CITY_MARK.size();
-
-	// 任务标记（编码）转换
-	size_t      pos    = 0;
-	std::string up_sql = base::PubStr::UpperB(sql);
-	while ( (pos = up_sql.find(F_CITY_MARK)) != std::string::npos )
-	{
-		sql.replace(pos, F_CTMK_SIZE, m_taskCity);
-		up_sql = base::PubStr::UpperB(sql);
-	}
-
-	// 任务标记（中文名称）转换
-	pos    = 0;
-	up_sql = base::PubStr::UpperB(sql);
-	while ( (pos = up_sql.find(F_CN_CITY_MARK)) != std::string::npos )
-	{
-		sql.replace(pos, F_CN_CTMK_SIZE, m_taskCityCN);
-		up_sql = base::PubStr::UpperB(sql);
-	}
+	m_pSqlExConv->Extend(sql);
+	m_pSqlExConv->CityConvert(sql);
 }
 
 void Acquire_YC::MakeYCResultComplete(const std::string& dim, const int& fields, std::vector<std::vector<std::string> >& vec_result)

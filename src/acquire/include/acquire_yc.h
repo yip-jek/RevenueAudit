@@ -2,6 +2,8 @@
 
 #include "acquire.h"
 
+class SQLExtendConverter;
+
 // 业财稽核-采集模块
 class Acquire_YC : public Acquire
 {
@@ -49,14 +51,14 @@ protected:
 	// 分析处理业财稽核统计因子规则
 	void HandleYCInfo() throw(base::Exception);
 
-	// 扩展采集SQL语句的条件：增加账期、地市和批次
-	void ExtendSQLCondition(std::string& sql) throw(base::Exception);
+	// 创建 SQL 扩展转换
+	void CreateSqlExtendConv();
 
-	// 是否不需要进行扩展SQL语句的条件
-	bool NoNeedExtendSQL(const std::string& sql);
+	// 释放 SQL 扩展转换
+	void ReleaseSqlExtendConv();
 
-	// 地市标记转换
-	void CityMarkExchange(std::string& sql);
+	// SQL 扩展转换
+	void SQLExtendConvert(std::string& sql);
 
 	// 补全业财采集结果数据
 	void MakeYCResultComplete(const std::string& dim, const int& fields, std::vector<std::vector<std::string> >& vec_result);
@@ -74,5 +76,6 @@ protected:
 	std::string         m_taskCity;					// 任务地市（编码）
 	std::string         m_taskCityCN;				// 任务地市（中文名称）
 	std::vector<YCInfo> m_vecYCInfo;				// 业财稽核因子规则信息
+	SQLExtendConverter* m_pSqlExConv;				// SQL 扩展转换
 };
 
