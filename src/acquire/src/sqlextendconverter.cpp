@@ -67,7 +67,7 @@ void SQLExtendConverter::Init()
 								m_sqlExData.field_city.c_str(), 
 								m_sqlExData.city.c_str());
 
-	base::PubStr::SetFormatString(m_extendCond, "%s and decimal(%s,12,2) in (select max(decimal(%s,12,2)) from ", 
+	base::PubStr::SetFormatString(m_extendCond, "%s and decimal(%s,12,2) in (select max(decimal(%s,12,2)) from", 
 								m_subCond.c_str(), 
 								m_sqlExData.field_batch.c_str(), 
 								m_sqlExData.field_batch.c_str());
