@@ -29,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 5.1.8.1 released. Compiled at " __TIME__ " on " __DATE__);
+	return ("Analyse: Version 5.1.8.2 released. Compiled at " __TIME__ " on " __DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -1297,19 +1297,18 @@ void Analyse::GenerateReportStatData()
 
 void Analyse::DataSupplement()
 {
-	int first_index  = 0;
-	int second_index = 0;
+	std::string first_time;
+	std::string second_time;
+	int         first_index  = m_dbinfo.GetEtlDayIndex();
+	int         second_index = m_dbinfo.GetNowDayIndex();
 
 	// 没有需要补全的时间字段
-	if ( !m_dbinfo.GetEtlDayIndex(first_index) && !m_dbinfo.GetNowDayIndex(second_index) )
+	if ( TimeField::TF_INVALID_INDEX == first_index &&
+		 TimeField::TF_INVALID_INDEX == second_index )
 	{
 		m_pLog->Output("[Analyse] 无需进行数据补全！");
 		return;
 	}
-	m_pLog->Output("[Analyse] 进行时间数据补全 ...");
-
-	std::string first_time;
-	std::string second_time;
 
 	if ( first_index < second_index )	// 采集时间在前，当前时间在后
 	{
@@ -1327,6 +1326,7 @@ void Analyse::DataSupplement()
 		second_time = m_dbinfo.GetEtlDay();
 	}
 
+	m_pLog->Output("[Analyse] 进行时间数据补全 ...");
 	const int VEC3_SIZE = m_v3HiveSrcData.size();
 	for ( int i = 0; i < VEC3_SIZE; ++i )
 	{
@@ -1417,8 +1417,8 @@ void Analyse::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype
 {
 	// 是否带时间戳
 	// 只有带时间戳才可以按采集时间删除结果数据
-	int index = 0;
-	if ( m_dbinfo.GetEtlDayIndex(index) )
+	int index = m_dbinfo.GetEtlDayIndex();
+	if ( index != TimeField::TF_INVALID_INDEX )
 	{
 		// 结果表类型是否为天表？
 		if ( AnaTaskInfo::TABTYPE_DAY == result_tabtype )

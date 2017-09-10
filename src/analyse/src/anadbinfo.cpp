@@ -50,14 +50,14 @@ base::PubTime::DATE_TYPE AnaDBInfo::GetEtlDateType() const
 	return date_type;
 }
 
-bool AnaDBInfo::GetEtlDayIndex(int& index) const
+int AnaDBInfo::GetEtlDayIndex() const
 {
-	return ((index = tf_etlday.index) != TimeField::TF_INVALID_INDEX);
+	return tf_etlday.index;
 }
 
-bool AnaDBInfo::GetNowDayIndex(int& index) const
+int AnaDBInfo::GetNowDayIndex() const
 {
-	return ((index = tf_nowday.index) != TimeField::TF_INVALID_INDEX);
+	return tf_nowday.index;
 }
 
 std::string AnaDBInfo::GetEtlDay() const

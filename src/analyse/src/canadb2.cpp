@@ -961,8 +961,8 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 	sql += " from " + db_info.target_table;
 
 	// 是否带采集时间
-	int etlday_index = 0;
-	if ( db_info.GetEtlDayIndex(etlday_index) )
+	int etlday_index = db_info.GetEtlDayIndex();
+	if ( etlday_index != TimeField::TF_INVALID_INDEX )
 	{
 		sql += " where " + db_info.GetEtlDayFieldName() + " = ?";
 	}

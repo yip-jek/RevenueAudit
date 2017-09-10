@@ -31,7 +31,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 5.0.3.0 released. Compiled at " __TIME__ " on " __DATE__);
+	return ("Acquire: Version 5.1.0.0 released. Compiled at " __TIME__ " on " __DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -570,14 +570,9 @@ void Acquire::LoadHdfsFile2Hive(const std::string& target_tab, const std::string
 	m_pLog->Output("[Acquire] Load HDFS file [%s] to HIVE ...", hdfs_file.c_str());
 
 	std::string load_sql;
-	base::PubStr::SetFormatString(load_sql, "load data inpath 'hdfs://%s", m_sHdfsHostInfo.c_str());
-
-	if ( hdfs_file[0] != '/' )
-	{
-		load_sql += "/";
-	}
-
-	load_sql += hdfs_file + "' into table " + target_tab;
+	base::PubStr::SetFormatString(load_sql, "load data inpath '%s' into table %s", 
+											hdfs_file.c_str(), 
+											target_tab.c_str());
 
 	std::vector<std::string> vec_sql;
 	vec_sql.push_back(load_sql);

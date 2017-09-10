@@ -315,8 +315,8 @@ void Analyse_HD::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabt
 {
 	// 是否带时间戳
 	// 只有带时间戳才可以按采集时间删除结果数据
-	int index = 0;
-	if ( m_dbinfo.GetEtlDayIndex(index) )
+	int index = m_dbinfo.GetEtlDayIndex();
+	if ( index != TimeField::TF_INVALID_INDEX )
 	{
 		// 结果表类型是否为天表？
 		if ( AnaTaskInfo::TABTYPE_DAY == result_tabtype )

@@ -45,11 +45,11 @@ public:
 	// 获取采集时间类型
 	base::PubTime::DATE_TYPE GetEtlDateType() const;
 
-	// 获取采集时间所在位置索引，返回位置索引的有效性
-	bool GetEtlDayIndex(int& index) const;
+	// 获取采集时间所在位置索引
+	int GetEtlDayIndex() const;
 
-	// 获取当前时间所在位置索引，返回位置索引的有效性
-	bool GetNowDayIndex(int& index) const;
+	// 获取当前时间所在位置索引
+	int GetNowDayIndex() const;
 
 	// 获取采集时间
 	std::string GetEtlDay() const;
