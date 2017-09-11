@@ -29,22 +29,26 @@ void YCStatFactor_XQB::ReleaseFactors()
 
 void YCStatFactor_XQB::LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception)
 {
-	if ( m_mFactor.find(dim) != m_mFactor.end() )
+	YCStatInfo yc_si;
+	yc_si.SetDim(dim);
+	const std::string SI_DIM = yc_si.GetDim();
+
+	if ( m_mFactor.find(SI_DIM) != m_mFactor.end() )
 	{
-		throw base::Exception(ANAERR_LOAD_FACTOR, "重复的维度因子ID：[%s] [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_LOAD_FACTOR, "重复的维度因子ID：[%s] [FILE:%s, LINE:%d]", SI_DIM.c_str(), __FILE__, __LINE__);
 	}
 
 	// 在首位补上 DIM
 	VEC_STRING v_data = vec_dat;
-	v_data.insert(v_data.begin(), dim);
+	v_data.insert(v_data.begin(), SI_DIM);
 
 	YCFactor_XQB factor(ITEM_SIZE, VAL_SIZE);
 	if ( !factor.Import(v_data) )
 	{
-		throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，无法导入因子数据：DIM=[%s], SIZE=[%lu] [FILE:%s, LINE:%d]", dim.c_str(), v_data.size(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，无法导入因子数据：DIM=[%s], SIZE=[%lu] [FILE:%s, LINE:%d]", SI_DIM.c_str(), v_data.size(), __FILE__, __LINE__);
 	}
 
-	m_mFactor.insert(PAIR_FACTOR(dim, factor));
+	m_mFactor.insert(PAIR_FACTOR(SI_DIM, factor));
 }
 
 void YCStatFactor_XQB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
@@ -67,38 +71,47 @@ void YCStatFactor_XQB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 	ycr.type     = "0";			// 类型默认值：0-固定项
 	ycr.batch    = batch;
 
+	const std::string DIM = st_info.GetDim();
 	YCFactor_XQB factor(ITEM_SIZE, VAL_SIZE);
 	VEC_STRING   vec_data;
 
 	if ( agg )	// 组合因子
 	{
-		if ( m_mFactor.find(st_info.statdim_id) != m_mFactor.end() )
+		if ( m_mFactor.find(DIM) != m_mFactor.end() )
 		{
-			throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "重复的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", st_info.statdim_id.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "重复的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", DIM.c_str(), __FILE__, __LINE__);
 		}
 
-		factor.SetDimID(st_info.statdim_id);
+		factor.SetDimID(DIM);
 		CalcComplexFactor(st_info.stat_sql, factor);
 
 		// 记录组合因子结果
-		m_mFactor.insert(PAIR_FACTOR(st_info.statdim_id, factor));
+		m_mFactor.insert(PAIR_FACTOR(DIM, factor));
 	}
 	else	// 一般因子
 	{
-		MAP_FACTOR::iterator m_it = m_mFactor.find(st_info.statdim_id);
+		MAP_FACTOR::iterator m_it = m_mFactor.find(DIM);
 		if ( m_it == m_mFactor.end() )
 		{
-			throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "不存在的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", st_info.statdim_id.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "不存在的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", DIM.c_str(), __FILE__, __LINE__);
 		}
 
 		factor = m_it->second;
 	}
 
 	ycr.ImportFactor(factor);
-	ycr.Export(vec_data);
 	m_pLog->Output("[YCStatFactor_XQB] 因子结果：%s", ycr.LogPrintInfo().c_str());
 
-	base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
+	// 虚因子只参与计算，不入库！
+	if ( st_info.IsVirtual() )
+	{
+		m_pLog->Output("[YCStatFactor_XQB] 虚因子(不入库)：%s", st_info.LogPrintInfo().c_str());
+	}
+	else
+	{
+		ycr.Export(vec_data);
+		base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
+	}
 }
 
 std::string YCStatFactor_XQB::GetResultCity()

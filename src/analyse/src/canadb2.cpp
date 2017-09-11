@@ -1324,7 +1324,7 @@ void CAnaDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCStatInfo
 
 			yc_si.stat_id       = (const char*)rs[index++];
 			yc_si.stat_name     = (const char*)rs[index++];
-			yc_si.statdim_id    = (const char*)rs[index++];
+			yc_si.SetDim((const char*)rs[index++]);
 			yc_si.stat_priority = (const char*)rs[index++];
 			yc_si.stat_sql      = (const char*)rs[index++];
 			yc_si.stat_report   = (const char*)rs[index++];

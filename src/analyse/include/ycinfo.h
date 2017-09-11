@@ -87,19 +87,96 @@ public:
 struct YCStatInfo
 {
 public:
-	YCStatInfo(): category(false)
+	YCStatInfo(): property(0)
 	{}
+
+	// 因子规则信息属性
+	enum SI_Property
+	{
+		SI_PROPERTY_VIRTUAL  = 0x0001,				// 虚因子：只参与计算，不入库
+		SI_PROPERTY_CATEGORY = 0x0002,				// 分类因子
+	};
+
+public:
+	// 增加属性
+	void AddProperty(SI_Property prop)
+	{
+		property |= prop;
+	}
+
+	// 去除属性
+	void RemoveProperty(SI_Property prop)
+	{
+		property &= (~prop);
+	}
+
+	// 检查属性
+	bool CheckProperty(SI_Property prop) const
+	{
+		return (property & prop);
+	}
+
+	// 是否为虚因子？
+	bool IsVirtual() const
+	{
+		return CheckProperty(SI_PROPERTY_VIRTUAL);
+	}
+
+	// 是否为分类因子？
+	bool IsCategory() const
+	{
+		return CheckProperty(SI_PROPERTY_CATEGORY);
+	}
+
+	// 设置维度
+	void SetDim(const std::string& dim)
+	{
+		// 虚因子标记
+		const std::string VIRTUAL = "[VIRTUAL]";
+		const size_t VIRTUAL_SIZE = VIRTUAL.size();
+
+		// 是否为虚因子？
+		const std::string TP_DIM = base::PubStr::TrimUpperB(dim);
+		if ( VIRTUAL == TP_DIM.substr(0, VIRTUAL_SIZE) )
+		{
+			AddProperty(SI_PROPERTY_VIRTUAL);
+			statdim_id = base::PubStr::TrimB(TP_DIM.substr(VIRTUAL_SIZE));
+		}
+		else
+		{
+			RemoveProperty(SI_PROPERTY_VIRTUAL);
+			statdim_id = TP_DIM;
+		}
+
+		// 是否为分类因子？
+		if ( statdim_id.find('?') != std::string::npos )
+		{
+			AddProperty(SI_PROPERTY_CATEGORY);
+		}
+		else
+		{
+			RemoveProperty(SI_PROPERTY_CATEGORY);
+		}
+	}
+
+	// 获取维度
+	std::string GetDim() const
+	{
+		return statdim_id;
+	}
 
 	std::string LogPrintInfo() const
 	{
 		std::string info;
-		base::PubStr::SetFormatString(info, "CATEGORY=[%d], "
+		base::PubStr::SetFormatString(info, "VIRTUAL=[%d], "
+											"CATEGORY=[%d], "
 											"STAT_ID=[%s], "
 											"STAT_NAME=[%s], "
 											"DIM=[%s], "
 											"PRIORITY=[%s], "
 											"REPORT=[%s]", 
-											category, 
+											IsVirtual(), 
+											IsCategory(), 
 											stat_id.c_str(), 
 											stat_name.c_str(), 
 											statdim_id.c_str(), 
@@ -108,11 +185,13 @@ public:
 		return info;
 	}
 
+private:
+	int         property;				// 属性
+	std::string statdim_id;				// 统计维度ID
+
 public:
-	bool        category;				// 分类因子标志
 	std::string stat_id;				// 统计指标ID
 	std::string stat_name;				// 统计指标名称
-	std::string statdim_id;				// 统计维度ID
 	std::string stat_priority;			// 优先级别
 	std::string stat_sql;				// 统计SQL
 	std::string stat_report;			// 关联报表

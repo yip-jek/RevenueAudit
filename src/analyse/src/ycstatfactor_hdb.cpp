@@ -45,18 +45,22 @@ void YCStatFactor_HDB::ReleaseFactors()
 
 void YCStatFactor_HDB::LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception)
 {
+	YCStatInfo yc_si;
+	yc_si.SetDim(dim);
+	const std::string SI_DIM = yc_si.GetDim();
+
 	const int VEC_SIZE = vec_dat.size();
-	if ( IsCategoryDim(dim) )	// 分类因子
+	if ( IsCategoryDim(SI_DIM) )	// 分类因子
 	{
 		// 分类因子包含两列：项目列与值列
 		if ( VEC_SIZE == 2 )
 		{
 			YCCategoryFactor ctgFactor;
-			ctgFactor.dim_id = dim;
+			ctgFactor.dim_id = SI_DIM;
 			ctgFactor.item   = base::PubStr::TrimB(vec_dat[0]);
 			ctgFactor.value  = base::PubStr::StringDoubleFormat(vec_dat[1]);
 
-			m_mvCategoryFactor[dim].push_back(ctgFactor);
+			m_mvCategoryFactor[SI_DIM].push_back(ctgFactor);
 		}
 		else
 		{
@@ -71,12 +75,12 @@ void YCStatFactor_HDB::LoadOneFactor(const std::string& dim, const VEC_STRING& v
 			throw base::Exception(ANAERR_LOAD_FACTOR, "业财采集结果数据错误，一般因子数据 SIZE 不匹配：[%d] [FILE:%s, LINE:%d]", VEC_SIZE, __FILE__, __LINE__);
 		}
 
-		if ( m_mFactor.find(dim) != m_mFactor.end() )
+		if ( m_mFactor.find(SI_DIM) != m_mFactor.end() )
 		{
-			throw base::Exception(ANAERR_LOAD_FACTOR, "重复的维度因子ID：[%s] [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_LOAD_FACTOR, "重复的维度因子ID：[%s] [FILE:%s, LINE:%d]", SI_DIM.c_str(), __FILE__, __LINE__);
 		}
 
-		m_mFactor[dim] = vec_dat[0];
+		m_mFactor[SI_DIM] = vec_dat[0];
 	}
 }
 
@@ -256,7 +260,7 @@ bool YCStatFactor_HDB::IsCategoryDim(const std::string& dim)
 	{
 		YCStatInfo& ref_si = m_vTopStatInfo[i];
 
-		if ( ref_si.category && dim == ref_si.statdim_id )
+		if ( ref_si.IsCategory() && dim == ref_si.GetDim() )
 		{
 			return true;
 		}
@@ -269,7 +273,7 @@ bool YCStatFactor_HDB::IsCategoryDim(const std::string& dim)
 		{
 			YCStatInfo& ref_si = (m_it->second)[j];
 
-			if ( ref_si.category && dim == ref_si.statdim_id )
+			if ( ref_si.IsCategory() && dim == ref_si.GetDim() )
 			{
 				return true;
 			}
@@ -287,10 +291,10 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 	ycr.stat_report = st_info.stat_report;
 	ycr.stat_id     = st_info.stat_id;
 	ycr.stat_name   = st_info.stat_name;
-	ycr.statdim_id  = st_info.statdim_id;
+	ycr.statdim_id  = st_info.GetDim();
 
 	VEC_STRING vec_data;
-	if ( st_info.category )		// 分类因子
+	if ( st_info.IsCategory() )		// 分类因子
 	{
 		VEC_CATEGORYFACTOR vec_ctg_factor;
 		ExpandCategoryStatInfo(st_info, agg, vec_ctg_factor);
@@ -328,8 +332,16 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 				m_pLog->Output("[YCStatFactor_HDB] 因子结果：ITEM=[%s], DIM=[%s], VALUE=[%s]", ycr.stat_name.c_str(), ycr.statdim_id.c_str(), ycr.stat_value.c_str());
 			}
 
-			ycr.Export(vec_data);
-			base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
+			// 虚因子只参与计算，不入库！
+			if ( st_info.IsVirtual() )
+			{
+				m_pLog->Output("[YCStatFactor_HDB] 虚因子(不入库)：%s", st_info.LogPrintInfo().c_str());
+			}
+			else
+			{
+				ycr.Export(vec_data);
+				base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
+			}
 		}
 	}
 	else	// 非分类因子
@@ -339,9 +351,9 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 			ycr.stat_value = CalcComplexFactor(st_info.stat_sql);
 
 			// 记录组合因子结果
-			if ( m_mFactor.find(st_info.statdim_id) != m_mFactor.end() )
+			if ( m_mFactor.find(ycr.statdim_id) != m_mFactor.end() )
 			{
-				throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "重复的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", st_info.statdim_id.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "重复的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", ycr.statdim_id.c_str(), __FILE__, __LINE__);
 			}
 			else
 			{
@@ -350,20 +362,29 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 		}
 		else	// 一般因子
 		{
-			MAP_STRING::iterator m_it = m_mFactor.find(st_info.statdim_id);
+			MAP_STRING::iterator m_it = m_mFactor.find(ycr.statdim_id);
 			if ( m_it != m_mFactor.end() )
 			{
 				ycr.stat_value = m_it->second;
 			}
 			else
 			{
-				throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "不存在的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", st_info.statdim_id.c_str(), __FILE__, __LINE__);
+				throw base::Exception(ANAERR_MAKE_STATINFO_RESULT, "不存在的业财稽核统计维度ID: %s [FILE:%s, LINE:%d]", ycr.statdim_id.c_str(), __FILE__, __LINE__);
 			}
 		}
 
 		m_pLog->Output("[YCStatFactor_HDB] 因子结果：DIM=[%s], VALUE=[%s]", ycr.statdim_id.c_str(), ycr.stat_value.c_str());
-		ycr.Export(vec_data);
-		base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
+
+		// 虚因子只参与计算，不入库！
+		if ( st_info.IsVirtual() )
+		{
+			m_pLog->Output("[YCStatFactor_HDB] 虚因子(不入库)：%s", st_info.LogPrintInfo().c_str());
+		}
+		else
+		{
+			ycr.Export(vec_data);
+			base::PubStr::VVectorSwapPushBack(vec2_result, vec_data);
+		}
 	}
 }
 
@@ -432,7 +453,7 @@ void YCStatFactor_HDB::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool ag
 				break;
 			}
 
-			ctg_factor.dim_id = ExtendCategoryDim(st_info.statdim_id, index);
+			ctg_factor.dim_id = ExtendCategoryDim(st_info.GetDim(), index);
 			ctg_factor.value  = cmpl_fctr_result;
 			vec_cf.push_back(ctg_factor);
 
@@ -442,7 +463,7 @@ void YCStatFactor_HDB::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool ag
 	else	// 一般因子
 	{
 		// 参考格式：因子"A?(B?)"、"B?"、"A?(0)"
-		const std::string DIM = base::PubStr::TrimUpperB(st_info.statdim_id);
+		const std::string DIM = base::PubStr::TrimUpperB(st_info.GetDim());
 		if ( DIM.find('(') != std::string::npos )	// 主因子
 		{
 			base::PubStr::Str2StrVector(DIM, "(", vec_fmt);

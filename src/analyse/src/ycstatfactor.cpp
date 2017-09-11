@@ -37,12 +37,7 @@ void YCStatFactor::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exceptio
 	{
 		YCStatInfo& ref_si = vec_statinfo[i];
 
-		base::PubStr::TrimUpper(ref_si.statdim_id);
 		base::PubStr::TrimUpper(ref_si.stat_priority);
-
-		// 是否为分类因子：维度 ID 包含问号
-		ref_si.category = (ref_si.statdim_id.find('?') != std::string::npos);
-
 		if ( ref_si.stat_priority != S_TOP_PRIORITY )
 		{
 			int level = 0;
@@ -73,9 +68,7 @@ int YCStatFactor::LoadFactors(const VEC3_STRING& v3_data) throw(base::Exception)
 {
 	ReleaseFactors();
 
-	int         counter = 0;
-	std::string dim_id;
-
+	int counter = 0;
 	const int VEC3_SIZE = v3_data.size();
 	for ( int i = 0; i < VEC3_SIZE; ++i )
 	{
@@ -89,9 +82,7 @@ int YCStatFactor::LoadFactors(const VEC3_STRING& v3_data) throw(base::Exception)
 			if ( ref_vec.size() > 1 )
 			{
 				// 维度ID 在第一列
-				dim_id = base::PubStr::TrimUpperB(ref_vec[0]);
-
-				LoadOneFactor(dim_id, VEC_STRING(ref_vec.begin()+1, ref_vec.end()));
+				LoadOneFactor(ref_vec[0], VEC_STRING(ref_vec.begin()+1, ref_vec.end()));
 			}
 			else
 			{
