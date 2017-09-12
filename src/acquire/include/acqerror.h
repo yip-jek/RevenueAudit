@@ -36,7 +36,7 @@ enum ACQUIRE_ERROR
 	ACQERR_CHECK_SRC_TAB           = -2002005,			// 检查表是否存在出错
 	ACQERR_SEL_ETL_SRC             = -2002006,			// 查询采集数据源出错
 	ACQERR_SEL_YC_STATRULE         = -2002007,			// 查询业财稽核因子规则信息出错
-	ACQERR_SEL_YCTASKREQ_CITY      = -2002008,			// 查询任务请求表的地市信息出错
+	ACQERR_SEL_YCTASKREQ           = -2002008,			// 查询任务请求表的信息出错
 	ACQERR_UPD_YC_TASK_REQ         = -2002009,			// （业财）更新任务请求表出错
 	ACQERR_UPD_TSLOG_STATE         = -2002010,			// 更新任务日程日志表状态出错
 	ACQERR_SEL_YCTASKCITY_CN       = -2002011,			// 查询任务地市的中文名称出错

@@ -57,13 +57,13 @@ void CAcqDB2::SetTabYCTaskReq(const std::string& t_yc_taskreq)
 	m_tabYCTaskReq = t_yc_taskreq;
 }
 
-void CAcqDB2::SelectYCTaskReqCity(int seq, std::string& city) throw(base::Exception)
+void CAcqDB2::SelectYCTaskRequest(int seq, std::string& period, std::string& city) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT TASK_CITY FROM " + m_tabYCTaskReq + " WHERE SEQ_ID = ?";
-	m_pLog->Output("[DB2] Select city from YC task request table: %s (SEQ:%d)", m_tabYCTaskReq.c_str(), seq);
+	std::string sql = "SELECT STAT_CYCLE, TASK_CITY FROM " + m_tabYCTaskReq + " WHERE SEQ_ID = ?";
+	m_pLog->Output("[DB2] Select YC task request table [%s]: SEQ=[%d]", m_tabYCTaskReq.c_str(), seq);
 
 	int counter = 0;
 	try
@@ -76,7 +76,8 @@ void CAcqDB2::SelectYCTaskReqCity(int seq, std::string& city) throw(base::Except
 		{
 			++counter;
 
-			city = (const char*)rs[1];
+			period = (const char*)rs[1];
+			city   = (const char*)rs[2];
 			rs.MoveNext();
 		}
 
@@ -84,12 +85,12 @@ void CAcqDB2::SelectYCTaskReqCity(int seq, std::string& city) throw(base::Except
 
 		if ( 0 == counter )
 		{
-			throw base::Exception(ACQERR_SEL_YCTASKREQ_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d] NO Record! [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, __FILE__, __LINE__);
+			throw base::Exception(ACQERR_SEL_YCTASKREQ, "[DB2] Select YC task request table '%s' failed! [SEQ:%d] NO Record! [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, __FILE__, __LINE__);
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ACQERR_SEL_YCTASKREQ_CITY, "[DB2] Select city from YC task request table '%s' failed! [SEQ:%d, REC:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, counter, ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_SEL_YCTASKREQ, "[DB2] Select YC task request table '%s' failed! [SEQ:%d, REC:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, counter, ex.what(), __FILE__, __LINE__);
 	}
 }
 

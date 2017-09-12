@@ -101,9 +101,9 @@ void CAnaDB2::SelectYCTaskReq(YCTaskReq& task_req) throw(base::Exception)
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT TASK_STATUS, STATUS_DESC, TASK_CITY, TASK_DESC, ACTOR";
-	sql += ", OPERATOR, REQ_TYPE FROM " + m_tabYCTaskReq + " WHERE SEQ_ID = ?";
-	m_pLog->Output("[DB2] Select task request from table: [%s] (SEQ:%d)", m_tabYCTaskReq.c_str(), task_req.seq);
+	std::string sql = "SELECT TASK_STATUS, STATUS_DESC, STAT_CYCLE, TASK_CITY, TASK_DESC";
+	sql += ", ACTOR, OPERATOR, REQ_TYPE FROM " + m_tabYCTaskReq + " WHERE SEQ_ID = ?";
+	m_pLog->Output("[DB2] Select task request from table [%s]: SEQ=[%d]", m_tabYCTaskReq.c_str(), task_req.seq);
 
 	try
 	{
@@ -119,6 +119,7 @@ void CAnaDB2::SelectYCTaskReq(YCTaskReq& task_req) throw(base::Exception)
 			int index = 1;
 			task_req.state      = (const char*)rs[index++];
 			task_req.state_desc = (const char*)rs[index++];
+			task_req.stat_cycle = (const char*)rs[index++];
 			task_req.task_city  = (const char*)rs[index++];
 			task_req.task_desc  = (const char*)rs[index++];
 			task_req.actor      = (const char*)rs[index++];

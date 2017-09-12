@@ -5,6 +5,7 @@
 #include "cacqdb2.h"
 #include "cacqhive.h"
 #include "sqlextendconverter.h"
+#include "sqltranslator.h"
 
 const char* const Acquire_YC::S_YC_ETLRULE_TYPE = "YCRA";				// 业财稽核-采集规则类型
 
@@ -100,8 +101,12 @@ void Acquire_YC::FetchTaskInfo() throw(base::Exception)
 {
 	Acquire::FetchTaskInfo();
 
-	// 获取任务地市信息
-	m_pAcqDB2->SelectYCTaskReqCity(m_ycSeqID, m_taskCity);
+	// 获取任务账期与地市信息
+	m_pAcqDB2->SelectYCTaskRequest(m_ycSeqID, m_acqDate, m_taskCity);
+
+	base::PubStr::Trim(m_acqDate);
+	m_pLog->Output("[Acquire_YC] Get task request period: [%s]", m_acqDate.c_str());
+
 	base::PubStr::Trim(m_taskCity);
 	m_pLog->Output("[Acquire_YC] Get task request city: [%s]", m_taskCity.c_str());
 
@@ -229,7 +234,33 @@ void Acquire_YC::CheckSourceTable(bool hive) throw(base::Exception)
 
 void Acquire_YC::GenerateEtlDate(const std::string& date_fmt) throw(base::Exception)
 {
-	Acquire::GenerateEtlDate(date_fmt);
+	std::string acq_date;
+	if ( !base::PubTime::DateApartFromNow(date_fmt, m_acqDateType, acq_date) )
+	{
+		throw base::Exception(ACQERR_GEN_ETL_DATE_FAILED, "采集时间转换失败！无法识别的采集时间表达式：%s [FILE:%s, LINE:%d]", date_fmt.c_str(), __FILE__, __LINE__);
+	}
+
+	// 采集账期以任务账期为准！
+	if ( base::PubTime::DT_MONTH == m_acqDateType )		// 月
+	{
+		m_acqDate = m_acqDate.substr(0, 6);
+	}
+	else if ( base::PubTime::DT_DAY == m_acqDateType )	// 日：取YYYYMM+01
+	{
+		m_acqDate = m_acqDate.substr(0, 6) + "01";
+	}
+	else
+	{
+		throw base::Exception(ACQERR_GEN_ETL_DATE_FAILED, "采集时间转换失败！未知时间类型：%d [FILE:%s, LINE:%d]", m_acqDateType, __FILE__, __LINE__);
+	}
+	m_pLog->Output("[Acquire_YC] 生成采集账期时间：[%s]", m_acqDate.c_str());
+
+	SQLTransRelease();
+	m_pSQLTrans = new base::SQLTranslator(m_acqDateType, m_acqDate);
+	if ( NULL == m_pSQLTrans )
+	{
+		throw base::Exception(ACQERR_GEN_ETL_DATE_FAILED, "new SQLTranslator failed: 无法申请到内存空间! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
 
 	// 重设采集 (HIVE) 目标表名：加上地市与账期
 	base::PubStr::SetFormatString(m_taskInfo.EtlRuleTarget, "%s_%s_%s", m_taskInfo.EtlRuleTarget.c_str(), m_taskCity.c_str(), m_acqDate.c_str());

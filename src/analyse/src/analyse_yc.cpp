@@ -205,12 +205,12 @@ void Analyse_YC::ReleaseStatFactor()
 
 void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 {
-	Analyse::FetchTaskInfo();
-
-	// 获取任务地市信息
+	// (首先) 获取任务信息
 	m_pAnaDB2->SelectYCTaskReq(m_taskReq);
 	base::PubStr::Trim(m_taskReq.task_city);
 	m_pLog->Output("[Analyse_YC] Get task request: %s", m_taskReq.LogPrintInfo().c_str());
+
+	Analyse::FetchTaskInfo();
 
 	m_pLog->Output("[Analyse_YC] 获取业财稽核因子规则信息 ...");
 	std::vector<YCStatInfo> vec_ycsinfo;
@@ -218,6 +218,49 @@ void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 
 	CreateStatFactor();
 	m_pStatFactor->LoadStatInfo(vec_ycsinfo);
+}
+
+void Analyse_YC::EtlTimeConvertion() throw(base::Exception)
+{
+	// 任务账期
+	const std::string TASK_CYCLE = base::PubStr::TrimB(m_taskReq.stat_cycle);
+
+	// 任务年份
+	int year  = 0;
+	if ( !base::PubStr::Str2Int(TASK_CYCLE.substr(0, 4), year) )
+	{
+		throw base::Exception(ANAERR_ETLTIME_CONVERTION, "采集时间转换失败！无效的任务账期时间：%s [FILE:%s, LINE:%d]", TASK_CYCLE.c_str(), __FILE__, __LINE__);
+	}
+
+	// 任务月份
+	int mon = 0;
+	if ( !base::PubStr::Str2Int(TASK_CYCLE.substr(4, 2), mon) )
+	{
+		throw base::Exception(ANAERR_ETLTIME_CONVERTION, "采集时间转换失败！无效的任务账期时间：%s [FILE:%s, LINE:%d]", TASK_CYCLE.c_str(), __FILE__, __LINE__);
+	}
+
+	// 账期日：默认为 1 号
+	const base::SimpleTime ST_CYCLE(year, mon, 1, 0, 0, 0);
+	if ( !ST_CYCLE.IsValid() )
+	{
+		throw base::Exception(ANAERR_ETLTIME_CONVERTION, "采集时间转换失败！无效的任务账期时间：%s [FILE:%s, LINE:%d]", TASK_CYCLE.c_str(), __FILE__, __LINE__);
+	}
+
+	// 取相差天数
+	long day_diff = base::PubTime::DayDifference(ST_CYCLE, base::SimpleTime::Now());
+	if ( day_diff < 0 )
+	{
+		throw base::Exception(ANAERR_ETLTIME_CONVERTION, "采集时间转换失败！无效的任务账期时间：%s [FILE:%s, LINE:%d]", TASK_CYCLE.c_str(), __FILE__, __LINE__);
+	}
+
+	std::string etl_time;
+	base::PubStr::SetFormatString(etl_time, "day-%ld", day_diff);
+	if ( !m_dbinfo.GenerateDayTime(etl_time) )
+	{
+		throw base::Exception(ANAERR_ETLTIME_CONVERTION, "采集时间转换失败！无法识别的采集时间表达式：%s [FILE:%s, LINE:%d]", etl_time.c_str(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[Analyse_YC] 完成采集账期时间转换：[%s] -> [%s]", etl_time.c_str(), m_dbinfo.GetEtlDay().c_str());
 }
 
 void Analyse_YC::CreateStatFactor() throw(base::Exception)

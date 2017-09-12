@@ -75,7 +75,7 @@ protected:
 	void FetchUniformCode() throw(base::Exception);
 
 	// 采集时间转换
-	void EtlTimeConvertion() throw(base::Exception);
+	virtual void EtlTimeConvertion() throw(base::Exception);
 
 	// 进行数据分析
 	void DoDataAnalyse() throw(base::Exception);

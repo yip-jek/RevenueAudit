@@ -17,6 +17,7 @@ public:
 		base::PubStr::SetFormatString(info, "SEQ=[%d], "
 											"STATE=[%s], "
 											"STATE_DESC=[%s], "
+											"STAT_CYCLE=[%s], "
 											"TASK_CITY=[%s], "
 											"TASK_BATCH=[%d], "
 											"TASK_DESC=[%s], "
@@ -26,6 +27,7 @@ public:
 											seq, 
 											state.c_str(), 
 											state_desc.c_str(), 
+											stat_cycle.c_str(), 
 											task_city.c_str(), 
 											task_batch, 
 											task_desc.c_str(), 
@@ -39,6 +41,7 @@ public:
 	int         seq;				// 任务流水号
 	std::string state;				// 任务状态
 	std::string state_desc;			// 任务状态说明
+	std::string stat_cycle;			// 任务账期
 	std::string task_city;			// 任务地市
 	int         task_batch;			// 任务批次
 	std::string task_desc;			// 备注

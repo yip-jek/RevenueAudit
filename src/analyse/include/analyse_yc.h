@@ -45,6 +45,9 @@ protected:
 	// 获取任务信息
 	virtual void FetchTaskInfo() throw(base::Exception);
 
+	// 采集时间转换
+	virtual void EtlTimeConvertion() throw(base::Exception);
+
 	// 创建稽核统计因子
 	void CreateStatFactor() throw(base::Exception);
 
