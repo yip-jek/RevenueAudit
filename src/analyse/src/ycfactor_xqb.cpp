@@ -123,9 +123,14 @@ void YCFactor_XQB::ExportItems(VEC_STRING& vec_item) const
 
 bool YCFactor_XQB::ImportValue(const VEC_STRING& vec_value)
 {
-	if ( vec_value.size() == m_vecVals.size() )
+	const size_t VEC_VAL_SIZE = vec_value.size();
+	if ( VEC_VAL_SIZE == m_vecVals.size() )
 	{
-		m_vecVals.assign(vec_value.begin(), vec_value.end());
+		// 避免VALUE出现科学计数法（带E）
+		for ( size_t i = 0; i < VEC_VAL_SIZE; ++i )
+		{
+			m_vecVals[i] = base::PubStr::StringDoubleFormat(vec_value[i]);
+		}
 		return true;
 	}
 

@@ -80,7 +80,7 @@ void YCStatFactor_HDB::LoadOneFactor(const std::string& dim, const VEC_STRING& v
 			throw base::Exception(ANAERR_LOAD_FACTOR, "重复的维度因子ID：[%s] [FILE:%s, LINE:%d]", SI_DIM.c_str(), __FILE__, __LINE__);
 		}
 
-		m_mFactor[SI_DIM] = vec_dat[0];
+		m_mFactor[SI_DIM] = base::PubStr::StringDoubleFormat(vec_dat[0]);
 	}
 }
 
