@@ -38,6 +38,12 @@ public:
 	// 获取区域
 	std::string GetArea() const;
 
+	// 获取维度
+	std::string GetItem(size_t index) const;
+
+	// 获取 VALUE
+	std::string GetValue(size_t index) const;
+
 	// 设置维度ID
 	void SetDimID(const std::string& dim);
 

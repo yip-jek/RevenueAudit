@@ -95,6 +95,16 @@ std::string YCFactor_XQB::GetArea() const
 	return m_area;
 }
 
+std::string YCFactor_XQB::GetItem(size_t index) const
+{
+	return ((index >= 0 && index < m_vecItems.size()) ? m_vecItems[index] : "");
+}
+
+std::string YCFactor_XQB::GetValue(size_t index) const
+{
+	return ((index >= 0 && index < m_vecVals.size()) ? m_vecVals[index] : "");
+}
+
 void YCFactor_XQB::SetDimID(const std::string& dim)
 {
 	m_dimID = dim;

@@ -1511,15 +1511,31 @@ void CAnaDB2::UpdateDetailCWResult(const AnaDBInfo& db_info, const std::vector<Y
 			const YCResult_XQB& ref_ycr = vec_result[i];
 
 			int index = 1;
-			rs.Parameter(index++) = ref_ycr.GetFactorArea().c_str();
-			rs.Parameter(index++) = ref_ycr.GetFactorFirstItem().c_str();
-			rs.Parameter(index++) = ref_ycr.batch;
-			rs.Parameter(index++) = ref_ycr.GetFactorFirstValue().c_str();
-			rs.Parameter(index++) = ref_ycr.bill_cyc.c_str();
-			rs.Parameter(index++) = ref_ycr.city.c_str();
-			rs.Parameter(index++) = ref_ycr.type.c_str();
-			rs.Parameter(index++) = ref_ycr.GetFactorDim().c_str();
-			rs.Parameter(index++) = ref_ycr.batch;
+			rs.Parameter(index++) = ref_ycr.GetFactorArea().c_str();	// 区域
+
+			// 一个或多个项目内容
+			int max_size = ref_ycr.GetFactorItemSize();
+			for ( int i = 0; i < max_size; ++i )
+			{
+				rs.Parameter(index++) = ref_ycr.GetFactorItem(i).c_str();
+			}
+
+			rs.Parameter(index++) = ref_ycr.batch;			// 财务批次
+
+			// 一个或多个 VALUE
+			max_size = ref_ycr.GetFactorValueSize();
+			for ( int i = 0; i < max_size; ++i )
+			{
+				rs.Parameter(index++) = ref_ycr.GetFactorValue(i).c_str();
+			}
+
+			rs.Parameter(index++) = ref_ycr.bill_cyc.c_str();			// 账期
+			rs.Parameter(index++) = ref_ycr.city.c_str();				// 地市
+			rs.Parameter(index++) = ref_ycr.type.c_str();				// 类型
+			rs.Parameter(index++) = ref_ycr.GetFactorDim().c_str();		// 维度ID
+			rs.Parameter(index++) = ref_ycr.batch;						// 业务批次
+
+			//m_pLog->Output("[DB2] UPDATE CW RESULT (%d): %s", (i+1), ref_ycr.LogPrintInfo().c_str());
 			rs.Execute();
 		}
 

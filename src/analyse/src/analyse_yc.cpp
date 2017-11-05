@@ -177,7 +177,7 @@ void Analyse_YC::GetAnaDBInfo() throw(base::Exception)
 		m_dbinfo.db2_sql  = "UPDATE " + m_dbinfo.target_table + " SET ";
 
 		// SET 的内容
-		const int COND_FIELD_SIZE = FIELD_SIZE - 4;
+		const int COND_FIELD_SIZE = YCResult_XQB::S_PUBLIC_MEMBERS + 1;
 		for ( int i = COND_FIELD_SIZE; i < FIELD_SIZE; ++i )
 		{
 			m_dbinfo.db2_sql += m_dbinfo.GetAnaField(i).field_name + " = ?, ";

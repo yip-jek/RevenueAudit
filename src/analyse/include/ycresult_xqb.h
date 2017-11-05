@@ -33,10 +33,12 @@ public:
 	void ImportFactor(const YCFactor_XQB& factor);
 
 	/// 获取因子里的内容
-	std::string GetFactorDim() const;				// 获取因子维度
-	std::string GetFactorArea() const;				// 获取因子区域
-	std::string GetFactorFirstItem() const;			// 获取首个项目内容
-	std::string GetFactorFirstValue() const;		// 获取首个VALUE
+	std::string GetFactorDim() const;						// 获取因子维度
+	std::string GetFactorArea() const;						// 获取因子区域
+	int GetFactorItemSize() const;							// 获取项目个数
+	int GetFactorValueSize() const;							// 获取VALUE个数
+	std::string GetFactorItem(size_t index) const;			// 获取项目内容
+	std::string GetFactorValue(size_t index) const;			// 获取VALUE
 
 public:
 	std::string bill_cyc;				// 账期

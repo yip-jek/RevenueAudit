@@ -94,19 +94,23 @@ std::string YCResult_XQB::GetFactorArea() const
 	return m_factor.GetArea();
 }
 
-std::string YCResult_XQB::GetFactorFirstItem() const
+int YCResult_XQB::GetFactorItemSize() const
 {
-	VEC_STRING vec_item;
-	m_factor.ExportItems(vec_item);
-
-	return vec_item[0];
+	return (m_factor.GetAreaItemSize() - 1);
 }
 
-std::string YCResult_XQB::GetFactorFirstValue() const
+int YCResult_XQB::GetFactorValueSize() const
 {
-	VEC_STRING vec_val;
-	m_factor.ExportValue(vec_val);
+	return m_factor.GetValueSize();
+}
 
-	return vec_val[0];
+std::string YCResult_XQB::GetFactorItem(size_t index) const
+{
+	return m_factor.GetItem(index);
+}
+
+std::string YCResult_XQB::GetFactorValue(size_t index) const
+{
+	return m_factor.GetValue(index);
 }
 
