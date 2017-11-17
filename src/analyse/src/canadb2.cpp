@@ -1640,7 +1640,9 @@ void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(b
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT COUNT(0) FROM " + m_tabReportStat + " WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ? AND ACTOR = ?";
+	// 忽略角色（用户）
+	//std::string sql = "SELECT COUNT(0) FROM " + m_tabReportStat + " WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ? AND ACTOR = ?";
+	std::string sql = "SELECT COUNT(0) FROM " + m_tabReportStat + " WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ?";
 	m_pLog->Output("[DB2] Update or insert report state to table: [%s]", m_tabReportStat.c_str());
 
 	try
@@ -1651,7 +1653,7 @@ void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(b
 		rs.Parameter(index++) = report_state.report_id.c_str();
 		rs.Parameter(index++) = report_state.bill_cyc.c_str();
 		rs.Parameter(index++) = report_state.city.c_str();
-		rs.Parameter(index++) = report_state.actor.c_str();
+		//rs.Parameter(index++) = report_state.actor.c_str();		// 忽略角色（用户）
 		rs.Execute();
 
 		int record_count = 0;
@@ -1666,19 +1668,20 @@ void CAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(b
 		m_pLog->Output("[DB2] Record count in report state: [%d]", record_count);
 		if ( record_count > 0 )		// 已存在
 		{
-			sql  = "UPDATE " + m_tabReportStat + " SET STATUS = ?, TYPE = ? WHERE ";
-			sql += "REPORTNAME = ? AND BILLCYC = ? AND CITY = ? AND ACTOR = ?";
+			// 角色（用户）也一并更新
+			sql  = "UPDATE " + m_tabReportStat + " SET ACTOR = ?, STATUS = ?, TYPE = ?";
+			sql += " WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ?";
 
 			m_pLog->Output("[DB2] UPDATE REPORT STATE: %s", report_state.LogPrintInfo().c_str());
 			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 			index = 1;
+			rs.Parameter(index++) = report_state.actor.c_str();
 			rs.Parameter(index++) = report_state.status.c_str();
 			rs.Parameter(index++) = report_state.type.c_str();
 			rs.Parameter(index++) = report_state.report_id.c_str();
 			rs.Parameter(index++) = report_state.bill_cyc.c_str();
 			rs.Parameter(index++) = report_state.city.c_str();
-			rs.Parameter(index++) = report_state.actor.c_str();
 			rs.Execute();
 
 			Commit();

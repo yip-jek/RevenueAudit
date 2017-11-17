@@ -45,6 +45,9 @@ protected:
 	// 检查源表是否存在
 	virtual void CheckSourceTable(bool hive) throw(base::Exception);
 
+	// 生成hdfs临时文件名
+	virtual std::string GeneralHdfsFileName();
+
 	// 生成采集时间
 	virtual void GenerateEtlDate(const std::string& date_fmt) throw(base::Exception);
 

@@ -232,6 +232,20 @@ void Acquire_YC::CheckSourceTable(bool hive) throw(base::Exception)
 	}
 }
 
+std::string Acquire_YC::GeneralHdfsFileName()
+{
+	// 文件名中：增加地市与账期
+	std::string hdfs_file_name;
+	base::PubStr::SetFormatString(hdfs_file_name, "%s_%s_%s_%s_%s%02d", 
+												  m_sKpiID.c_str(), 
+												  m_sEtlID.c_str(), 
+												  m_taskCity.c_str(), 
+												  m_acqDate.c_str(), 
+												  base::SimpleTime::Now().Time14().c_str(), 
+												  ++m_seqHdfsFile);
+	return hdfs_file_name;
+}
+
 void Acquire_YC::GenerateEtlDate(const std::string& date_fmt) throw(base::Exception)
 {
 	std::string acq_date;

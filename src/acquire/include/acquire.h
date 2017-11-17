@@ -80,7 +80,7 @@ protected:
 	void LoadHdfsConfig() throw(base::Exception);
 
 	// 生成hdfs临时文件名
-	std::string GeneralHdfsFileName();
+	virtual std::string GeneralHdfsFileName();
 
 	// 将DB2数据写到HDFS文件
 	// 返回：文件存在于HDFS的详细路径
