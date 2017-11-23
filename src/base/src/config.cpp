@@ -265,18 +265,11 @@ bool Config::TryGetNameValue(const std::string& str, std::string& name, std::str
 
 void Config::CleanComment(std::string& str) const
 {
-	if ( str.empty() )
+	// 注释符：#
+	std::string::size_type pos = str.find('#');
+	if ( pos != std::string::npos )
 	{
-		return;
-	}
-
-	std::string::size_type first_comm_pos = str.find('#');
-	std::string::size_type sec_comm_pos = str.find("//");
-	first_comm_pos = first_comm_pos < sec_comm_pos ? first_comm_pos : sec_comm_pos;
-
-	if ( first_comm_pos != std::string::npos )
-	{
-		str.erase(first_comm_pos);
+		str.erase(pos);
 	}
 }
 

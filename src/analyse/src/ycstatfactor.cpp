@@ -166,6 +166,9 @@ std::string YCStatFactor::OperateOneFactor(std::string& result, const std::strin
 		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "无法识别的因子运算符：%s [FILE:%s, LINE:%d]", op.c_str(), __FILE__, __LINE__);
 	}
 
+	// 加上辅助值(0.000001)，
+	// 以避免小数点后第三位是5但“四舍五入”不进位的问题
+	dou_res += 1e-6;
 	return (result = base::PubStr::Double2FormatStr(dou_res));
 }
 
