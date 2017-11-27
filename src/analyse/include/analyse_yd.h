@@ -3,6 +3,8 @@
 #include <set>
 #include "analyse.h"
 
+class YDAnaDB2;
+
 // 一点稽核-分析模块
 class Analyse_YD : public Analyse
 {
@@ -26,6 +28,9 @@ public:
 	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(base::Exception);
 
 protected:
+	// 创建新的数据库连接
+	virtual CAnaDB2* CreateDBConnection() throw(base::Exception);
+
 	// 获取后续参数任务信息
 	virtual void GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception);
 
@@ -51,7 +56,10 @@ private:
 	// 生成告警请求
 	void AlarmRequest();
 
-private:
+protected:
+	YDAnaDB2*   m_pYDDB2;					// 一点稽核数据库接口（DB2）
+
+protected:
 	int         m_taskScheLogID;			// 任务日程日志ID
 	std::string m_tabTaskScheLog;			// 任务日程日志表
 	std::string m_tabAlarmRequest;			// 告警请求表

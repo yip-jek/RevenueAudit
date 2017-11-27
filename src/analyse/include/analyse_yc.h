@@ -1,9 +1,9 @@
 #pragma once
 
-#include <map>
 #include "analyse.h"
 #include "ycinfo.h"
 
+class YCAnaDB2;
 class YCStatFactor;
 
 // 业财稽核-分析模块
@@ -27,6 +27,9 @@ public:
 	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(base::Exception);
 
 protected:
+	// 创建新的数据库连接
+	virtual CAnaDB2* CreateDBConnection() throw(base::Exception);
+
 	// 获取后续参数任务信息
 	virtual void GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception);
 
@@ -110,6 +113,9 @@ protected:
 
 	// 更新维度取值范围
 	virtual void UpdateDimValue();
+
+protected:
+	YCAnaDB2*   m_pYCDB2;					// 业财数据库接口（DB2）
 
 protected:
 	std::string m_tabYCTaskReq;				// （业财）任务请求表

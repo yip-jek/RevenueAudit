@@ -29,7 +29,7 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 5.1.12.1 released. Compiled at " __TIME__ " on " __DATE__);
+	return ("Analyse: Version 5.2.0.0 released. Compiled at " __TIME__ " on " __DATE__);
 }
 
 void Analyse::LoadConfig() throw(base::Exception)
@@ -96,10 +96,10 @@ void Analyse::Init() throw(base::Exception)
 {
 	GetParameterTaskInfo(GetTaskParaInfo());
 
-	m_pDB2 = new CAnaDB2(m_sDBName, m_sUsrName, m_sPasswd);
+	m_pDB2 = CreateDBConnection();
 	if ( NULL == m_pDB2 )
 	{
-		throw base::Exception(ANAERR_INIT_FAILED, "new CAnaDB2 failed: 无法申请到内存空间!");
+		throw base::Exception(ANAERR_INIT_FAILED, "Create new DB connection failed: 无法申请到内存空间! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 	m_pAnaDB2 = dynamic_cast<CAnaDB2*>(m_pDB2);
 
@@ -127,7 +127,7 @@ void Analyse::Init() throw(base::Exception)
 
 	if ( NULL == m_pHive )
 	{
-		throw base::Exception(ANAERR_INIT_FAILED, "new CAnaHive failed: 无法申请到内存空间!");
+		throw base::Exception(ANAERR_INIT_FAILED, "new CAnaHive failed: 无法申请到内存空间! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 	m_pAnaHive = dynamic_cast<CAnaHive*>(m_pHive);
 
@@ -160,6 +160,11 @@ void Analyse::End(int err_code, const std::string& err_msg /*= std::string()*/) 
 	{
 		m_pAnaDB2->Disconnect();
 	}
+}
+
+CAnaDB2* Analyse::CreateDBConnection() throw(base::Exception)
+{
+	return new CAnaDB2(m_sDBName, m_sUsrName, m_sPasswd);
 }
 
 void Analyse::ReleaseSQLTranslator()

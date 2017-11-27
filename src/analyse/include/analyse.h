@@ -50,6 +50,9 @@ public:
 	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(base::Exception);
 
 protected:
+	// 创建新的数据库连接
+	virtual CAnaDB2* CreateDBConnection() throw(base::Exception);
+
 	// 释放 SQLTranslator 资源
 	void ReleaseSQLTranslator();
 

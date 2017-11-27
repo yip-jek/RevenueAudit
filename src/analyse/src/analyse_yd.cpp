@@ -2,12 +2,14 @@
 #include "pubstr.h"
 #include "simpletime.h"
 #include "log.h"
-#include "canadb2.h"
+#include "ydanadb2.h"
+
 
 const char* const Analyse_YD::S_CHANNEL_MARK = "CHANNEL";			// 渠道标识
 
 Analyse_YD::Analyse_YD()
-:m_taskScheLogID(0)
+:m_pYDDB2(NULL)
+,m_taskScheLogID(0)
 ,m_dimEtlDayIndex(0)
 ,m_dimNowDayIndex(0)
 ,m_dimRegionIndex(0)
@@ -44,8 +46,8 @@ void Analyse_YD::Init() throw(base::Exception)
 {
 	Analyse::Init();
 
-	m_pAnaDB2->SetTabTaskScheLog(m_tabTaskScheLog);
-	m_pAnaDB2->SetTabAlarmRequest(m_tabAlarmRequest);
+	m_pYDDB2->SetTabTaskScheLog(m_tabTaskScheLog);
+	m_pYDDB2->SetTabAlarmRequest(m_tabAlarmRequest);
 
 	m_pLog->Output("[Analyse_YD] Init OK.");
 }
@@ -59,17 +61,22 @@ void Analyse_YD::End(int err_code, const std::string& err_msg /*= std::string()*
 		AlarmRequest();
 
 		// 更新任务日志状态为："ANA_SUCCEED"（分析成功）
-		m_pAnaDB2->UpdateTaskScheLogState(m_taskScheLogID, base::SimpleTime::Now().Time14(), "ANA_SUCCEED", "分析成功完成", "");
+		m_pYDDB2->UpdateTaskScheLogState(m_taskScheLogID, base::SimpleTime::Now().Time14(), "ANA_SUCCEED", "分析成功完成", "");
 	}
 	else	// 分析失败
 	{
 		// 更新任务日志状态为："ANA_FAILED"（分析失败）
 		std::string str_error;
 		base::PubStr::SetFormatString(str_error, "[ERROR] %s, ERROR_CODE: %d", err_msg.c_str(), err_code);
-		m_pAnaDB2->UpdateTaskScheLogState(m_taskScheLogID, base::SimpleTime::Now().Time14(), "ANA_FAILED", "分析失败", str_error);
+		m_pYDDB2->UpdateTaskScheLogState(m_taskScheLogID, base::SimpleTime::Now().Time14(), "ANA_FAILED", "分析失败", str_error);
 	}
 
 	Analyse::End(err_code, err_msg);
+}
+
+CAnaDB2* Analyse_YD::CreateDBConnection() throw(base::Exception)
+{
+	return (m_pYDDB2 = new YDAnaDB2(m_sDBName, m_sUsrName, m_sPasswd));
 }
 
 void Analyse_YD::GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception)
@@ -226,7 +233,7 @@ void Analyse_YD::FilterTheMissingCity(const VEC_STRING& vec_channel, std::map<st
 
 	// 全部地市
 	VEC_STRING vec_all_city;
-	m_pAnaDB2->SelectAllCity(vec_all_city);
+	m_pYDDB2->SelectAllCity(vec_all_city);
 
 	// 找出缺少的地市
 	std::string str_chann;

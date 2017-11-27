@@ -2,7 +2,7 @@
 #include "log.h"
 #include "pubstr.h"
 #include "simpletime.h"
-#include "canadb2.h"
+#include "ycanadb2.h"
 #include "canahive.h"
 #include "ycresult_xqb.h"
 #include "ycstatfactor_hdb.h"
@@ -10,7 +10,8 @@
 
 
 Analyse_YC::Analyse_YC()
-:m_pStatFactor(NULL)
+:m_pYCDB2(NULL)
+,m_pStatFactor(NULL)
 {
 	m_sType = "业财稽核";
 }
@@ -56,18 +57,18 @@ void Analyse_YC::Init() throw(base::Exception)
 {
 	Analyse::Init();
 
-	m_pAnaDB2->SetTabYCTaskReq(m_tabYCTaskReq);
-	m_pAnaDB2->SetTabYCStatRule(m_tabStatRule);
-	m_pAnaDB2->SetTabYCStatLog(m_tabStatLog);
-	m_pAnaDB2->SetTabYCReportStat(m_tabReportStat);
-	m_pAnaDB2->SetTabYCProcessLog(m_tabProcessLog);
+	m_pYCDB2->SetTabYCTaskReq(m_tabYCTaskReq);
+	m_pYCDB2->SetTabYCStatRule(m_tabStatRule);
+	m_pYCDB2->SetTabYCStatLog(m_tabStatLog);
+	m_pYCDB2->SetTabYCReportStat(m_tabReportStat);
+	m_pYCDB2->SetTabYCProcessLog(m_tabProcessLog);
 
 	// 更新任务状态为："21"（正在分析）
 	m_taskReq.state      = "21";
 	m_taskReq.state_desc = "正在分析";
 	m_taskReq.task_batch = -1;
 	m_taskReq.task_desc  = "分析开始时间：" + base::SimpleTime::Now().TimeStamp();
-	m_pAnaDB2->UpdateYCTaskReq(m_taskReq);
+	m_pYCDB2->UpdateYCTaskReq(m_taskReq);
 
 	m_pLog->Output("[Analyse_YC] Init OK.");
 }
@@ -90,9 +91,14 @@ void Analyse_YC::End(int err_code, const std::string& err_msg /*= std::string()*
 		m_taskReq.task_batch = -1;
 		base::PubStr::SetFormatString(m_taskReq.task_desc, "[ERROR] %s, ERROR_CODE: %d", err_msg.c_str(), err_code);
 	}
-	m_pAnaDB2->UpdateYCTaskReq(m_taskReq);
+	m_pYCDB2->UpdateYCTaskReq(m_taskReq);
 
 	Analyse::End(err_code, err_msg);
+}
+
+CAnaDB2* Analyse_YC::CreateDBConnection() throw(base::Exception)
+{
+	return (m_pYCDB2 = new YCAnaDB2(m_sDBName, m_sUsrName, m_sPasswd));
 }
 
 void Analyse_YC::GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception)
@@ -206,7 +212,7 @@ void Analyse_YC::ReleaseStatFactor()
 void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 {
 	// (首先) 获取任务信息
-	m_pAnaDB2->SelectYCTaskReq(m_taskReq);
+	m_pYCDB2->SelectYCTaskReq(m_taskReq);
 	base::PubStr::Trim(m_taskReq.task_city);
 	m_pLog->Output("[Analyse_YC] Get task request: %s", m_taskReq.LogPrintInfo().c_str());
 
@@ -214,7 +220,7 @@ void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 
 	m_pLog->Output("[Analyse_YC] 获取业财稽核因子规则信息 ...");
 	std::vector<YCStatInfo> vec_ycsinfo;
-	m_pAnaDB2->SelectYCStatRule(m_sKpiID, vec_ycsinfo);
+	m_pYCDB2->SelectYCStatRule(m_sKpiID, vec_ycsinfo);
 
 	CreateStatFactor();
 	m_pStatFactor->LoadStatInfo(vec_ycsinfo);
@@ -349,7 +355,7 @@ void Analyse_YC::SetNewBatch_HDB()
 	hd_batch.stat_date   = m_dbinfo.GetEtlDay();
 	hd_batch.stat_city   = m_taskReq.task_city;
 	hd_batch.stat_batch  = 0;
-	m_pAnaDB2->SelectHDBMaxBatch(m_dbinfo.target_table, hd_batch);
+	m_pYCDB2->SelectHDBMaxBatch(m_dbinfo.target_table, hd_batch);
 	m_pLog->Output("[Analyse_YC] 地市核对表的最新批次: %d", hd_batch.stat_batch);
 
 	// 生成当前统计结果的批次
@@ -365,7 +371,7 @@ void Analyse_YC::SetNewBatch_XQB() throw(base::Exception)
 	xq_batch.city       = GetCity_XQB();
 	xq_batch.type       = "0";			// 类型：0-固定项，1-浮动项
 	xq_batch.busi_batch = 0;
-	m_pAnaDB2->SelectXQBMaxBatch(m_dbinfo.target_table, xq_batch);
+	m_pYCDB2->SelectXQBMaxBatch(m_dbinfo.target_table, xq_batch);
 	m_pLog->Output("[Analyse_YC] 地市详情表的最新批次: %d", xq_batch.busi_batch);
 
 	// 生成当前统计结果的批次
@@ -448,7 +454,7 @@ void Analyse_YC::StoreReportResult()
 	else	// 非详情表（财务侧）数据
 	{
 		m_pLog->Output("[Analyse_YC] 准备入库：业财报表稽核统计结果数据");
-		m_pAnaDB2->InsertResultData(m_dbinfo, m_v3HiveSrcData[0]);
+		m_pYCDB2->InsertResultData(m_dbinfo, m_v3HiveSrcData[0]);
 
 		if ( AnalyseRule::ANATYPE_YCHDB == m_taskInfo.AnaRule.AnaType )	// 核对表
 		{
@@ -484,7 +490,7 @@ void Analyse_YC::StoreDetailResult_CW()
 		}
 	}
 
-	m_pAnaDB2->UpdateDetailCWResult(m_dbinfo, vec_result);
+	m_pYCDB2->UpdateDetailCWResult(m_dbinfo, vec_result);
 	m_pLog->Output("[Analyse_YC] Store detail (CW) result data size: %lu", vec_result.size());
 }
 
@@ -500,7 +506,7 @@ void Analyse_YC::StoreDiffSummaryResult() throw(base::Exception)
 			throw base::Exception(ANAERR_STORE_DIFF_SUMMARY, "差异汇总结果数据导出失败！[INDEX:%d] (KPI_ID:%s, ANA_ID:%s) [FILE:%s, LINE:%d]", (i+1), m_sKpiID.c_str(), m_sAnaID.c_str(), __FILE__, __LINE__);
 		}
 
-		m_pAnaDB2->UpdateInsertYCDIffSummary(m_dbinfo, ycr);
+		m_pYCDB2->UpdateInsertYCDIffSummary(m_dbinfo, ycr);
 	}
 
 	m_pLog->Output("[Analyse_YC] Store diff summary result data size: %d", VEC2_SIZE);
@@ -549,7 +555,7 @@ void Analyse_YC::RecordStatisticsLog()
 		std::string& ref_src = vec_datasrc[i];
 		yc_srcinfo.src_tab = ref_src;
 
-		m_pAnaDB2->SelectYCSrcMaxBatch(yc_srcinfo);
+		m_pYCDB2->SelectYCSrcMaxBatch(yc_srcinfo);
 		m_pLog->Output("[Analyse_YC] 取得数据源表(%d): %s, 地市: %s, 最新批次: %d", (i+1), ref_src.c_str(), m_taskReq.task_city.c_str(), yc_srcinfo.batch);
 
 		if ( i != 0 )	// Not first
@@ -563,7 +569,7 @@ void Analyse_YC::RecordStatisticsLog()
 	}
 
 	m_pLog->Output("[Analyse_YC] 更新业财稽核记录日志表");
-	m_pAnaDB2->InsertYCStatLog(yc_log);
+	m_pYCDB2->InsertYCStatLog(yc_log);
 }
 
 std::string Analyse_YC::GetCity_XQB()
@@ -612,7 +618,7 @@ void Analyse_YC::RecordReportState(YCReportState& report_state)
 	report_state.type      = GetReportStateType();
 	report_state.actor     = m_taskReq.actor;
 
-	m_pAnaDB2->UpdateInsertReportState(report_state);
+	m_pYCDB2->UpdateInsertReportState(report_state);
 }
 
 void Analyse_YC::RecordProcessLog(const YCReportState& report_state)
@@ -628,7 +634,7 @@ void Analyse_YC::RecordProcessLog(const YCReportState& report_state)
 	proc_log.version   = m_taskReq.task_batch;
 	proc_log.uptime    = base::SimpleTime::Now().Time14();
 
-	m_pAnaDB2->InsertProcessLog(proc_log);
+	m_pYCDB2->InsertProcessLog(proc_log);
 }
 
 void Analyse_YC::DropEtlTargetTable()
