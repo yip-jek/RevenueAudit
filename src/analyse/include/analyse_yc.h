@@ -51,6 +51,9 @@ protected:
 	// 采集时间转换
 	virtual void EtlTimeConvertion() throw(base::Exception);
 
+	// 取得详情表-业务侧更新字段列表
+	void FetchUpdateFields_YW();
+
 	// 创建稽核统计因子
 	void CreateStatFactor() throw(base::Exception);
 
@@ -75,7 +78,7 @@ protected:
 	// 统计因子转换
 	void ConvertStatFactor() throw(base::Exception);
 
-	// 生成业财稽核结果数据
+	// 生成稽核结果数据
 	void GenerateResultData() throw(base::Exception);
 
 	// 结果数据入库 [DB2]
@@ -89,6 +92,9 @@ protected:
 
 	// 入库差异汇总结果
 	void StoreDiffSummaryResult() throw(base::Exception);
+
+	// 保留上一批次的手工填列的数据
+	void KeepLastBatchManualData();
 
 	// 登记信息
 	void RecordInformation();
@@ -118,14 +124,17 @@ protected:
 	YCAnaDB2*   m_pYCDB2;					// 业财数据库接口（DB2）
 
 protected:
-	std::string m_tabYCTaskReq;				// （业财）任务请求表
-	std::string m_tabStatRule;				// （业财）统计因子规则表
-	std::string m_tabStatLog;				// （业财）稽核记录日志表
-	std::string m_tabReportStat;			// （业财）报表状态表
-	std::string m_tabProcessLog;			// （业财）流程记录日志表
+	std::string m_tabYCTaskReq;				// 任务请求表
+	std::string m_tabStatRule;				// 统计因子规则表
+	std::string m_tabStatLog;				// 稽核记录日志表
+	std::string m_tabReportStat;			// 报表状态表
+	std::string m_tabProcessLog;			// 流程记录日志表
 	std::string m_fieldPeriod;				// 账期字段名
 	std::string m_fieldCity;				// 地市字段名
 	std::string m_fieldBatch;				// 批次字段名
+
+protected:
+	VEC_STRING  m_vUpdateFields;			// 详情表业务侧更新字段列表
 
 protected:
 	YCTaskReq     m_taskReq;				// 任务请求信息

@@ -271,6 +271,7 @@ public:
 		// 业财稽核
 		EWTYPE_YC_ITEM        = 100,			// (业财) 项目内容
 		EWTYPE_YC_VALUE       = 101,			// (业财) 值 (VALUE)
+		EWTYPE_YC_UPD_FD_YW   = 102,			// (业财) 业务侧更新字段
 	};
 
 public:
@@ -396,6 +397,10 @@ public:
 		else if ( "YC_VALUE" == TYPE )			// (业财) 值 (VALUE)
 		{
 			ExpWay = EWTYPE_YC_VALUE;
+		}
+		else if ( "YC_UPDATE_FIELD" == TYPE )	// (业财) 业务侧更新字段
+		{
+			ExpWay = EWTYPE_YC_UPD_FD_YW;
 		}
 		else	// 未知表示方式
 		{

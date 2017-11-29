@@ -218,6 +218,9 @@ void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 
 	Analyse::FetchTaskInfo();
 
+	// 获取（详情表-业务侧）更新字段列表
+	FetchUpdateFields_YW();
+
 	m_pLog->Output("[Analyse_YC] 获取业财稽核因子规则信息 ...");
 	std::vector<YCStatInfo> vec_ycsinfo;
 	m_pYCDB2->SelectYCStatRule(m_sKpiID, vec_ycsinfo);
@@ -267,6 +270,24 @@ void Analyse_YC::EtlTimeConvertion() throw(base::Exception)
 	}
 
 	m_pLog->Output("[Analyse_YC] 完成采集账期时间转换：[%s] -> [%s]", etl_time.c_str(), m_dbinfo.GetEtlDay().c_str());
+}
+
+void Analyse_YC::FetchUpdateFields_YW()
+{
+	VEC_STRING vec_upd_fd;
+	int vec_size = m_taskInfo.vecKpiDimCol.size();
+	for ( int i = 0; i < vec_size; ++i )
+	{
+		KpiColumn& ref_col = m_taskInfo.vecKpiDimCol[i];
+		if ( KpiColumn::EWTYPE_YC_UPD_FD_YW == ref_col.ExpWay )
+		{
+		}
+	}
+
+	vec_size = m_taskInfo.vecKpiValCol.size();
+	for ( int i = 0; i < vec_size; ++i )
+	{
+	}
 }
 
 void Analyse_YC::CreateStatFactor() throw(base::Exception)
@@ -330,7 +351,7 @@ void Analyse_YC::AnalyseSourceData() throw(base::Exception)
 
 	GenerateResultData();
 
-	// 生成了业财稽核的统计数据，再进行数据补全
+	// 生成了统计数据，再进行数据补全
 	DataSupplement();
 }
 
@@ -436,6 +457,9 @@ void Analyse_YC::StoreResult() throw(base::Exception)
 	// 入库业财报表稽核结果
 	StoreReportResult();
 
+	// 保留上一批次手工列数据
+	KeepLastBatchManualData();
+
 	// 登记信息：日志信息、报表状态、流程记录 等
 	RecordInformation();
 
@@ -510,6 +534,25 @@ void Analyse_YC::StoreDiffSummaryResult() throw(base::Exception)
 	}
 
 	m_pLog->Output("[Analyse_YC] Store diff summary result data size: %d", VEC2_SIZE);
+}
+
+void Analyse_YC::KeepLastBatchManualData()
+{
+	// 只有在进行业务侧稽核时，才拷贝上一批次手工填列数据
+	if ( m_taskInfo.AnaRule.AnaType != AnalyseRule::ANATYPE_YCXQB_YW )
+	{
+		return;
+	}
+
+	// 是否存在上一批次数据？
+	// 当前批次小于2，没有上一批次数据
+	if ( m_taskReq.task_batch < 2 )
+	{
+		return;
+	}
+
+	// 
+	m_pLog->Output("[Analyse_YC] Update the last batch manual data ...");
 }
 
 void Analyse_YC::RecordInformation()
