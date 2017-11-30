@@ -61,6 +61,9 @@ public:
 	// 插入流程记录日志
 	void InsertProcessLog(const YCProcessLog& proc_log) throw(base::Exception);
 
+	// 更新上一批次的手工填列数
+	void UpdateLastBatchManualData(const std::string& tab, const UpdateFields_YW& upd_fld, std::vector<std::vector<std::string> >& v2_data) throw(base::Exception);
+
 protected:
 	std::string m_tabYCTaskReq;			// （任务调度）任务请求表
 	std::string m_tabYCStatRule;		// 统计因子规则表

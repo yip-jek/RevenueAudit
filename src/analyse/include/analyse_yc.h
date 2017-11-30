@@ -52,10 +52,10 @@ protected:
 	virtual void EtlTimeConvertion() throw(base::Exception);
 
 	// 取得详情表-业务侧更新字段列表
-	void FetchUpdateFields_YW();
+	void FetchUpdateFields_YW() throw(base::Exception);
 
 	// 从指标字段集中获取更新字段
-	void FetchUpdateFieldsFromKpiCol(const std::vector<KpiColumn>& vec_kc, VEC_STRING& vec_up_fd);
+	void FetchUpdateFieldsFromKpiCol(std::vector<KpiColumn>& vec_kc, VEC_STRING& vec_up_fd);
 
 	// 创建稽核统计因子
 	void CreateStatFactor() throw(base::Exception);
@@ -112,10 +112,11 @@ protected:
 	std::string GetReportStateType();
 
 	// 登记报表状态
-	void RecordReportState(YCReportState& report_state);
+	// "00"-待审核，"07"-正在稽核，"08"-稽核失败
+	void RecordReportState(const std::string& state);
 
 	// 登记流程记录日志
-	void RecordProcessLog(const YCReportState& report_state);
+	void RecordProcessLog();
 
 	// 删除采集目标表
 	void DropEtlTargetTable();
@@ -137,7 +138,8 @@ protected:
 	std::string m_fieldBatch;				// 批次字段名
 
 protected:
-	VEC_STRING  m_vUpdateFields;			// 详情表业务侧更新字段列表
+	UpdateFields_YW m_updFields;			// 详情表（业务侧）更新字段
+	YCReportState   m_reportState;			// 报表状态
 
 protected:
 	YCTaskReq     m_taskReq;				// 任务请求信息

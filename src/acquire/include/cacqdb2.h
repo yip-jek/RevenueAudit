@@ -31,6 +31,9 @@ public:
 	// 设置统计因子规则表
 	void SetTabYCStatRule(const std::string& t_statrule);
 
+	// 设置稽核报表状态表
+	void SetTabReportState(const std::string& t_report);
+
 	// 设置地市统一编码表
 	void SetTabYCDictCity(const std::string& t_dictcity);
 
@@ -86,6 +89,7 @@ private:
 
 	std::string m_tabYCTaskReq;			// （业财）任务请求表
 	std::string m_tabYCStatRule;		// （业财）统计因子规则表
+	std::string m_tabReportStat;		// 稽核报表状态表
 	std::string m_tabYCDictCity;		// （业财）地市统一编码表
 };
 

@@ -47,6 +47,11 @@ void CAcqDB2::SetTabYCStatRule(const std::string& t_statrule)
 	m_tabYCStatRule = t_statrule;
 }
 
+void CAcqDB2::SetTabReportState(const std::string& t_report)
+{
+	m_tabReportStat = t_report;
+}
+
 void CAcqDB2::SetTabYCDictCity(const std::string& t_dictcity)
 {
 	m_tabYCDictCity = t_dictcity;

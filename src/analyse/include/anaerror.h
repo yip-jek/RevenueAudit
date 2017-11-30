@@ -33,6 +33,7 @@ enum ANALYSE_ERROR
 	ANAERR_STORE_DIFF_SUMMARY     = -3000027,			// 入库差异汇总结果数据失败
 	ANAERR_STORE_DETAIL_CW        = -3000028,			// 入库详情表（财务侧）结果失败
 	ANAERR_ETLTIME_CONVERTION     = -3000029,			// 采集时间转换失败
+	ANAERR_FETCH_UPD_FLD_YW       = -3000030,			// 取得业务侧更新字段列表失败
 
 	// HIVE类错误码
 	ANAERR_FETCH_SRCDATA_FAILED   = -3001001,			// 获取源数据失败
@@ -70,6 +71,7 @@ enum ANALYSE_ERROR
 	ANAERR_UPD_INS_DIFFSUMMARY    = -3002029,			// (业财) 更新或插入差异汇总结果数据出错
 	ANAERR_UPD_INS_REPORTSTATE    = -3002030,			// (业财) 更新或插入报表状态表出错
 	ANAERR_INS_PROCESSLOG         = -3002031,			// (业财) 插入流程记录日志出错
+	ANAERR_UPD_LAST_BATCH_MANUAL  = -3002032,			// 更新上一批次的手工填列数出错
 
 	// 编码转换错误码
 	ANAERR_INPUT_CHANN_UNICODE    = -3003001,			// 录入渠道统一编码信息失败

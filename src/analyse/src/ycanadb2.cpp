@@ -564,3 +564,97 @@ void YCAnaDB2::InsertProcessLog(const YCProcessLog& proc_log) throw(base::Except
 	}
 }
 
+void YCAnaDB2::UpdateLastBatchManualData(const std::string& tab, const UpdateFields_YW& upd_fld, std::vector<std::vector<std::string> >& v2_data) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql_sel = "SELECT ";
+	std::string sql_upd = "UPDATE " + tab + " SET ";
+	const int FLD_SIZE = upd_fld.upd_fields.size();
+	for ( int i = 0; i < FLD_SIZE; ++i )
+	{
+		if ( i > 0 )
+		{
+			sql_sel += ", " + upd_fld.upd_fields[i];
+			sql_upd += ", " + upd_fld.upd_fields[i] + " = ?";
+		}
+		else
+		{
+			sql_sel += upd_fld.upd_fields[i];
+			sql_upd += upd_fld.upd_fields[i] + " = ?";
+		}
+	}
+
+	sql_sel += " FROM " + tab + " WHERE " + upd_fld.fld_billcyc + " = ? and " + upd_fld.fld_city;
+	sql_sel += " = ? and decimal(" + upd_fld.fld_batch + ",12,0) = ? and " + upd_fld.fld_dim + " = ?";
+	m_pLog->Output("[DB2] Select last batch manual data: %s", sql_sel.c_str());
+
+	sql_upd += " WHERE " + upd_fld.fld_billcyc + " = ? and " + upd_fld.fld_city;
+	sql_upd += " = ? and decimal(" + upd_fld.fld_batch + ",12,0) = ? and " + upd_fld.fld_dim + " = ?";
+	m_pLog->Output("[DB2] Update manual data in current batch: %s", sql_upd.c_str());
+
+	int upd_count = 0;
+	try
+	{
+		std::vector<std::string> vec_manual;
+		const int VEC2_SIZE = v2_data.size();
+		for ( int i = 0; i < VEC2_SIZE; ++i )
+		{
+			std::vector<std::string>& ref_vec = v2_data[i];
+
+			rs.Prepare(sql_sel.c_str(), XDBO2::CRecordset::forwardOnly);
+
+			int index = 1;
+			rs.Parameter(index++) = ref_vec[0];
+			rs.Parameter(index++) = ref_vec[1];
+			rs.Parameter(index++) = last_batch;
+			rs.Parameter(index++) = ref_vec[YCResult_XQB::S_PUBLIC_MEMBERS];
+			rs.Execute();
+
+			std::vector<std::string>().swap(vec_manual);
+			while ( !rs.IsEOF() )
+			{
+				for ( int j = 0; j < FLD_SIZE; ++j )
+				{
+					vec_manual.push_back((const char*)rs[j+1]);
+				}
+
+				rs.MoveNext();
+			}
+			rs.Close();
+
+			// 不存在满足条件的手工填列数
+			if ( vec_manual.empty() )
+			{
+				continue;
+			}
+
+			rs.Prepare(sql_upd.c_str(), XDBO2::CRecordset::forwardOnly);
+
+			index = 1;
+			for ( int k = 0; k < FLD_SIZE; ++k )
+			{
+				rs.Parameter(index++) = vec_manual[k];
+			}
+
+			rs.Parameter(index++) = ref_vec[0];
+			rs.Parameter(index++) = ref_vec[1];
+			rs.Parameter(index++) = last_batch + 1;
+			rs.Parameter(index++) = ref_vec[YCResult_XQB::S_PUBLIC_MEMBERS];
+			rs.Execute();
+
+			Commit();
+			rs.Close();
+
+			++upd_count;
+		}
+
+		m_pLog->Output("[DB2] Select last batch: [%d], update current batch: [%d]", VEC2_SIZE, upd_count);
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ANAERR_UPD_LAST_BATCH_MANUAL, "[DB2] Update last batch manual data to table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", tab.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+

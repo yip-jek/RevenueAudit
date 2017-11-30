@@ -85,6 +85,9 @@ void Analyse_YC::End(int err_code, const std::string& err_msg /*= std::string()*
 	}
 	else	// 异常退出
 	{
+		// 登记报表状态："08"-稽核失败
+		RecordReportState("08");
+
 		// 更新任务状态为："23"（分析失败）
 		m_taskReq.state      = "23";
 		m_taskReq.state_desc = "分析失败";
@@ -272,52 +275,62 @@ void Analyse_YC::EtlTimeConvertion() throw(base::Exception)
 	m_pLog->Output("[Analyse_YC] 完成采集账期时间转换：[%s] -> [%s]", etl_time.c_str(), m_dbinfo.GetEtlDay().c_str());
 }
 
-void Analyse_YC::FetchUpdateFields_YW()
+void Analyse_YC::FetchUpdateFields_YW() throw(base::Exception)
 {
-	VEC_STRING             vec_upd_fd;
+	// 只有在进行详情表业务侧稽核时，才需获取更新字段
+	if ( m_taskInfo.AnaRule.AnaType != AnalyseRule::ANATYPE_YCXQB_YW )
+	{
+		return;
+	}
 
-	std::vector<KpiColumn> vec_kc_dim;
-	std::vector<KpiColumn> vec_kc_val;
-
+	VEC_STRING vec_upd_fd;
 	FetchUpdateFieldsFromKpiCol(m_taskInfo.vecKpiDimCol, vec_upd_fd);
 	FetchUpdateFieldsFromKpiCol(m_taskInfo.vecKpiValCol, vec_upd_fd);
 
-	// 从指标维度字段集提取业务更新字段
-	int vec_size = m_taskInfo.vecKpiDimCol.size();
-	for ( int i = 0; i < vec_size; ++i )
+	vec_upd_fd.swap(m_updFields.upd_fields);
+	m_pLog->Output("[Analyse_YC] 获得详情表(业务侧)更新字段总数：%lu", m_updFields.upd_fields.size());
+
+	if ( m_taskInfo.vecKpiDimCol.size() < YCResult_XQB::S_PUBLIC_MEMBERS + 1 )
 	{
-		KpiColumn& ref_col = m_taskInfo.vecKpiDimCol[i];
-		if ( KpiColumn::EWTYPE_YC_UPD_FD_YW == ref_col.ExpWay )
-		{
-			vec_upd_fd.push_back(ref_col.DBName);
-		}
-		else
-		{
-			vec_kc_dim.push_back(ref_col);
-		}
+		throw base::Exception(ANAERR_FETCH_UPD_FLD_YW, "获取业务侧更新字段失败！指标维度字段数为%lu，不足%d! [FILE:%s, LINE:%d]", m_taskInfo.vecKpiDimCol.size(), (YCResult_XQB::S_PUBLIC_MEMBERS+1), __FILE__, __LINE__);
 	}
 
-	// 从指标值字段集提取业务更新字段
-	vec_size = m_taskInfo.vecKpiValCol.size();
-	for ( int i = 0; i < vec_size; ++i )
-	{
-		KpiColumn& ref_col = m_taskInfo.vecKpiValCol[i];
-		if ( KpiColumn::EWTYPE_YC_UPD_FD_YW == ref_col.ExpWay )
-		{
-			vec_upd_fd.push_back(ref_col.DBName);
-		}
-		else
-		{
-			vec_kc_val.push_back(ref_col);
-		}
-	}
-
-	vec_kc_dim.swap(m_taskInfo.vecKpiDimCol);
-	vec_kc_val.swap(m_taskInfo.vecKpiValCol);
+	// 取详情表字段名
+	m_updFields.fld_billcyc = m_taskInfo.vecKpiDimCol[0].DBName;
+	m_updFields.fld_city    = m_taskInfo.vecKpiDimCol[1].DBName;
+	m_updFields.fld_batch   = m_taskInfo.vecKpiDimCol[YCResult_XQB::S_PUBLIC_MEMBERS-1].DBName;
+	m_updFields.fld_dim     = m_taskInfo.vecKpiDimCol[YCResult_XQB::S_PUBLIC_MEMBERS].DBName;
 }
 
-void Analyse_YC::FetchUpdateFieldsFromKpiCol(const std::vector<KpiColumn>& vec_kc, VEC_STRING& vec_up_fd)
+void Analyse_YC::FetchUpdateFieldsFromKpiCol(std::vector<KpiColumn>& vec_kc, VEC_STRING& vec_up_fd)
 {
+	std::vector<KpiColumn> v_kc;
+
+	// 从指标字段集提取业务更新字段
+	const int VEC_SIZE = vec_kc.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		KpiColumn& ref_col = vec_kc[i];
+		if ( KpiColumn::EWTYPE_YC_UPD_FD_YW == ref_col.ExpWay )
+		{
+			vec_up_fd.push_back(ref_col.DBName);
+
+			m_pLog->Output("[Analyse_YC] 取得详情表(业务侧)更新字段：TYPE=[%s], 
+																	 SEQ=[%d], 
+																	 DB_NAME=[%s], 
+																	 CN_NAME=[%s]", 
+																	 (KpiColumn::CTYPE_DIM == ref_col.ColType ? "DIM" : "VAL"), 
+																	 ref_col.ColSeq, 
+																	 ref_col.DBName.c_str(), 
+																	 ref_col.CNName.c_str());
+		}
+		else
+		{
+			v_kc.push_back(ref_col);
+		}
+	}
+
+	v_kc.swap(vec_kc);
 }
 
 void Analyse_YC::CreateStatFactor() throw(base::Exception)
@@ -578,11 +591,19 @@ void Analyse_YC::KeepLastBatchManualData()
 	// 当前批次小于2，没有上一批次数据
 	if ( m_taskReq.task_batch < 2 )
 	{
+		m_pLog->Output("[Analyse_YC] No need to update the last batch manual data: NO last batch!");
 		return;
 	}
 
-	// 
+	if ( m_updFields.upd_fields.empty() )
+	{
+		m_pLog->Output("[Analyse_YC] No need to update the last batch manual data: NO update fields!");
+		return;
+	}
+
 	m_pLog->Output("[Analyse_YC] Update the last batch manual data ...");
+	m_updFields.last_batch = m_taskReq.task_batch - 1;
+	m_pYCDB2->UpdateLastBatchManualData(m_dbinfo.target_table, m_updFields, m_v3HiveSrcData[0]);
 }
 
 void Analyse_YC::RecordInformation()
@@ -593,12 +614,11 @@ void Analyse_YC::RecordInformation()
 		RecordStatisticsLog();
 	}
 
-	// 登记报表状态
-	YCReportState report_state;
-	RecordReportState(report_state);
+	// 登记报表状态："00"-待审核
+	RecordReportState("00");
 
 	// 登记流程记录日志
-	RecordProcessLog(report_state);
+	RecordProcessLog();
 }
 
 void Analyse_YC::RecordStatisticsLog()
@@ -682,27 +702,33 @@ std::string Analyse_YC::GetReportStateType()
 	}
 }
 
-void Analyse_YC::RecordReportState(YCReportState& report_state)
+void Analyse_YC::RecordReportState(const std::string& state)
 {
-	report_state.report_id = m_pStatFactor->GetStatReport();
-	report_state.bill_cyc  = m_dbinfo.GetEtlDay().substr(0, 6);
-	report_state.city      = GetCity_XQB();
-	report_state.status    = "00";			// 状态：00-待审核
-	report_state.type      = GetReportStateType();
-	report_state.actor     = m_taskReq.actor;
+	if ( NULL == m_pStatFactor )
+	{
+		m_pLog->Output("[Analyse_YC] <WARNING> YCStatFactor 还没有生成，无法记录报表状态!!!");
+		return;
+	}
 
-	m_pYCDB2->UpdateInsertReportState(report_state);
+	m_reportState.report_id = m_pStatFactor->GetStatReport();
+	m_reportState.bill_cyc  = m_dbinfo.GetEtlDay().substr(0, 6);
+	m_reportState.city      = GetCity_XQB();
+	m_reportState.status    = state;
+	m_reportState.type      = GetReportStateType();
+	m_reportState.actor     = m_taskReq.actor;
+
+	m_pYCDB2->UpdateInsertReportState(m_reportState);
 }
 
-void Analyse_YC::RecordProcessLog(const YCReportState& report_state)
+void Analyse_YC::RecordProcessLog()
 {
 	YCProcessLog proc_log;
-	proc_log.report_id = report_state.report_id;
-	proc_log.bill_cyc  = report_state.bill_cyc;
-	proc_log.city      = report_state.city;
-	proc_log.status    = report_state.status;
-	proc_log.type      = report_state.type;
-	proc_log.actor     = report_state.actor;
+	proc_log.report_id = m_reportState.report_id;
+	proc_log.bill_cyc  = m_reportState.bill_cyc;
+	proc_log.city      = m_reportState.city;
+	proc_log.status    = m_reportState.status;
+	proc_log.type      = m_reportState.type;
+	proc_log.actor     = m_reportState.actor;
 	proc_log.oper      = m_taskReq.oper;
 	proc_log.version   = m_taskReq.task_batch;
 	proc_log.uptime    = base::SimpleTime::Now().Time14();

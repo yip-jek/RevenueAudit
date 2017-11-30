@@ -27,6 +27,7 @@ void Acquire_YC::LoadConfig() throw(base::Exception)
 
 	m_cfg.RegisterItem("TABLE", "TAB_YC_TASK_REQ");
 	m_cfg.RegisterItem("TABLE", "TAB_YCRA_STATRULE");
+	m_cfg.RegisterItem("TABLE", "TAB_YCRA_REPORTSTAT");
 	m_cfg.RegisterItem("TABLE", "TAB_DICT_CITY");
 	m_cfg.RegisterItem("FIELD", "SRC_FIELD_PERIOD");
 	m_cfg.RegisterItem("FIELD", "SRC_FIELD_CITY");
@@ -34,12 +35,13 @@ void Acquire_YC::LoadConfig() throw(base::Exception)
 
 	m_cfg.ReadConfig();
 
-	m_tabYCTaskReq = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
-	m_tabStatRule  = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
-	m_tabDictCity  = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
-	m_fieldPeriod  = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_PERIOD");
-	m_fieldCity    = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_CITY");
-	m_fieldBatch   = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_BATCH");
+	m_tabYCTaskReq  = m_cfg.GetCfgValue("TABLE", "TAB_YC_TASK_REQ");
+	m_tabStatRule   = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_STATRULE");
+	m_tabReportStat = m_cfg.GetCfgValue("TABLE", "TAB_YCRA_REPORTSTAT");
+	m_tabDictCity   = m_cfg.GetCfgValue("TABLE", "TAB_DICT_CITY");
+	m_fieldPeriod   = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_PERIOD");
+	m_fieldCity     = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_CITY");
+	m_fieldBatch    = m_cfg.GetCfgValue("FIELD", "SRC_FIELD_BATCH");
 
 	m_pLog->Output("[Acquire_YC] Load configuration OK.");
 }
@@ -55,6 +57,7 @@ void Acquire_YC::Init() throw(base::Exception)
 
 	m_pAcqDB2->SetTabYCTaskReq(m_tabYCTaskReq);
 	m_pAcqDB2->SetTabYCStatRule(m_tabStatRule);
+	m_pAcqDB2->SetTabReportState(m_tabReportStat);
 	m_pAcqDB2->SetTabYCDictCity(m_tabDictCity);
 
 	// 更新任务状态为："11"（正在采集）

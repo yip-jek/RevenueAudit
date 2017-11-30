@@ -67,9 +67,10 @@ protected:
 	void MakeYCResultComplete(const std::string& dim, const int& fields, std::vector<std::vector<std::string> >& vec_result);
 
 protected:
-	std::string         m_tabYCTaskReq;				// （业财）任务请求表
-	std::string         m_tabStatRule;				// （业财）统计因子规则表
-	std::string         m_tabDictCity;				// （业财）地市统一编码表
+	std::string         m_tabYCTaskReq;				// 任务请求表
+	std::string         m_tabStatRule;				// 统计因子规则表
+	std::string         m_tabReportStat;			// 稽核报表状态表
+	std::string         m_tabDictCity;				// 地市统一编码表
 	std::string         m_fieldPeriod;				// 源表账期字段名
 	std::string         m_fieldCity;				// 源表地市字段名
 	std::string         m_fieldBatch;				// 源表批次字段名

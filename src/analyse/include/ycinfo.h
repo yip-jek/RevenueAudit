@@ -410,3 +410,19 @@ public:
 	std::string uptime;					// 更新时间
 };
 
+// 详情表（业务侧）更新字段
+struct UpdateFields_YW
+{
+public:
+	UpdateFields_YW(): last_batch(0)
+	{}
+
+public:
+	std::vector<std::string> upd_fields;			// 详情表（业务侧）更新字段名列表
+	std::string fld_billcyc;						// 详情表账期字段名
+	std::string fld_city;							// 详情表地市字段名
+	std::string fld_batch;							// 详情表批次字段名
+	std::string fld_dim;							// 详情表维度字段名
+	int         last_batch;							// 上一批次
+};
+
