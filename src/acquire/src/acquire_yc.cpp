@@ -317,7 +317,7 @@ void Acquire_YC::CreateSqlExtendConv()
 	sql_ex_data.field_period = m_fieldPeriod;
 	sql_ex_data.field_city   = m_fieldCity;
 	sql_ex_data.field_batch  = m_fieldBatch;
-	sql_ex_data.period       = m_acqDate;
+	sql_ex_data.period       = m_acqDate.substr(0, 6);		// 账期改为6位，格式：YYYYMM
 	sql_ex_data.city         = m_taskCity;
 	sql_ex_data.cityCN       = m_taskCityCN;
 

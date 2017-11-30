@@ -61,13 +61,15 @@ void SQLExtendConverter::CityConvert(std::string& sql)
 
 void SQLExtendConverter::Init()
 {
-	base::PubStr::SetFormatString(m_subCond, "%s = '%s' and %s = '%s'", 
+	// 账期改为6位，格式：YYYYMM
+	// 为了兼容YYYYMMDD和YYYYMM两种账期，此处用模糊匹配
+	base::PubStr::SetFormatString(m_subCond, "%s like '%s%%' and %s = '%s'", 
 								m_sqlExData.field_period.c_str(), 
 								m_sqlExData.period.c_str(), 
 								m_sqlExData.field_city.c_str(), 
 								m_sqlExData.city.c_str());
 
-	base::PubStr::SetFormatString(m_extendCond, "%s and decimal(%s,12,2) in (select max(decimal(%s,12,2)) from", 
+	base::PubStr::SetFormatString(m_extendCond, "%s and decimal(%s,12,0) in (select max(decimal(%s,12,0)) from", 
 								m_subCond.c_str(), 
 								m_sqlExData.field_batch.c_str(), 
 								m_sqlExData.field_batch.c_str());

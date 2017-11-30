@@ -274,20 +274,50 @@ void Analyse_YC::EtlTimeConvertion() throw(base::Exception)
 
 void Analyse_YC::FetchUpdateFields_YW()
 {
-	VEC_STRING vec_upd_fd;
+	VEC_STRING             vec_upd_fd;
+
+	std::vector<KpiColumn> vec_kc_dim;
+	std::vector<KpiColumn> vec_kc_val;
+
+	FetchUpdateFieldsFromKpiCol(m_taskInfo.vecKpiDimCol, vec_upd_fd);
+	FetchUpdateFieldsFromKpiCol(m_taskInfo.vecKpiValCol, vec_upd_fd);
+
+	// 从指标维度字段集提取业务更新字段
 	int vec_size = m_taskInfo.vecKpiDimCol.size();
 	for ( int i = 0; i < vec_size; ++i )
 	{
 		KpiColumn& ref_col = m_taskInfo.vecKpiDimCol[i];
 		if ( KpiColumn::EWTYPE_YC_UPD_FD_YW == ref_col.ExpWay )
 		{
+			vec_upd_fd.push_back(ref_col.DBName);
+		}
+		else
+		{
+			vec_kc_dim.push_back(ref_col);
 		}
 	}
 
+	// 从指标值字段集提取业务更新字段
 	vec_size = m_taskInfo.vecKpiValCol.size();
 	for ( int i = 0; i < vec_size; ++i )
 	{
+		KpiColumn& ref_col = m_taskInfo.vecKpiValCol[i];
+		if ( KpiColumn::EWTYPE_YC_UPD_FD_YW == ref_col.ExpWay )
+		{
+			vec_upd_fd.push_back(ref_col.DBName);
+		}
+		else
+		{
+			vec_kc_val.push_back(ref_col);
+		}
 	}
+
+	vec_kc_dim.swap(m_taskInfo.vecKpiDimCol);
+	vec_kc_val.swap(m_taskInfo.vecKpiValCol);
+}
+
+void Analyse_YC::FetchUpdateFieldsFromKpiCol(const std::vector<KpiColumn>& vec_kc, VEC_STRING& vec_up_fd)
+{
 }
 
 void Analyse_YC::CreateStatFactor() throw(base::Exception)

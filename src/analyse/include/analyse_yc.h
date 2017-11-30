@@ -54,6 +54,9 @@ protected:
 	// 取得详情表-业务侧更新字段列表
 	void FetchUpdateFields_YW();
 
+	// 从指标字段集中获取更新字段
+	void FetchUpdateFieldsFromKpiCol(const std::vector<KpiColumn>& vec_kc, VEC_STRING& vec_up_fd);
+
 	// 创建稽核统计因子
 	void CreateStatFactor() throw(base::Exception);
 
