@@ -606,10 +606,10 @@ void YCAnaDB2::UpdateLastBatchManualData(const std::string& tab, const UpdateFie
 			rs.Prepare(sql_sel.c_str(), XDBO2::CRecordset::forwardOnly);
 
 			int index = 1;
-			rs.Parameter(index++) = ref_vec[0];
-			rs.Parameter(index++) = ref_vec[1];
-			rs.Parameter(index++) = last_batch;
-			rs.Parameter(index++) = ref_vec[YCResult_XQB::S_PUBLIC_MEMBERS];
+			rs.Parameter(index++) = ref_vec[0].c_str();
+			rs.Parameter(index++) = ref_vec[1].c_str();
+			rs.Parameter(index++) = upd_fld.last_batch;
+			rs.Parameter(index++) = ref_vec[YCResult_XQB::S_PUBLIC_MEMBERS].c_str();
 			rs.Execute();
 
 			std::vector<std::string>().swap(vec_manual);
@@ -635,13 +635,13 @@ void YCAnaDB2::UpdateLastBatchManualData(const std::string& tab, const UpdateFie
 			index = 1;
 			for ( int k = 0; k < FLD_SIZE; ++k )
 			{
-				rs.Parameter(index++) = vec_manual[k];
+				rs.Parameter(index++) = vec_manual[k].c_str();
 			}
 
-			rs.Parameter(index++) = ref_vec[0];
-			rs.Parameter(index++) = ref_vec[1];
-			rs.Parameter(index++) = last_batch + 1;
-			rs.Parameter(index++) = ref_vec[YCResult_XQB::S_PUBLIC_MEMBERS];
+			rs.Parameter(index++) = ref_vec[0].c_str();
+			rs.Parameter(index++) = ref_vec[1].c_str();
+			rs.Parameter(index++) = upd_fld.last_batch + 1;
+			rs.Parameter(index++) = ref_vec[YCResult_XQB::S_PUBLIC_MEMBERS].c_str();
 			rs.Execute();
 
 			Commit();

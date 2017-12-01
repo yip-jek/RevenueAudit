@@ -40,6 +40,8 @@ enum ACQUIRE_ERROR
 	ACQERR_UPD_YC_TASK_REQ         = -2002009,			// （业财）更新任务请求表出错
 	ACQERR_UPD_TSLOG_STATE         = -2002010,			// 更新任务日程日志表状态出错
 	ACQERR_SEL_YCTASKCITY_CN       = -2002011,			// 查询任务地市的中文名称出错
+	ACQERR_UPD_INS_REPORTSTATE     = -2002012,			// 更新或插入报表状态表出错
+	ACQERR_SEL_KPI_RULE_TYPE       = -2002013,			// 查询指标规则类型出错
 
 	// 采集任务信息的错误码
 	ACQERR_TRANS_VAL_SRC_NAME      = -2003001,			// 采集值对应源字段名转换失败

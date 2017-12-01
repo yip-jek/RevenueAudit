@@ -13,6 +13,15 @@ public:
 
 	static const char* const S_YC_ETLRULE_TYPE;			// 业财稽核-采集规则类型
 
+	// 任务请求状态
+	enum TASK_REQUEST_STATE
+	{
+		TREQ_STATE_UNKNOWN   = 0,				// 未知状态
+		TREQ_STATE_BEGIN     = 1,				// 开始采集状态
+		TREQ_STATE_SUCCESS   = 2,				// 采集成功状态
+		TREQ_STATE_FAIL      = 3,				// 彩信失败状态
+	};
+
 public:
 	// 载入参数配置信息
 	virtual void LoadConfig() throw(base::Exception);
@@ -29,6 +38,18 @@ public:
 protected:
 	// 获取后续参数任务信息
 	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
+
+	// 初始化报表状态信息
+	void InitReportState();
+
+	// 获取报表状态类型
+	std::string GetReportStateType();
+
+	// 登记报表状态
+	void RegisterReportState(const std::string& state);
+
+	// 更新任务请求状态
+	void UpdateTaskRequestState(TASK_REQUEST_STATE t_state);
 
 	// 获取任务信息
 	virtual void FetchTaskInfo() throw(base::Exception);
@@ -76,10 +97,10 @@ protected:
 	std::string         m_fieldBatch;				// 源表批次字段名
 
 protected:
-	int                 m_ycSeqID;					// 任务流水号
-	std::string         m_taskCity;					// 任务地市（编码）
+	YCTaskRequest       m_taskRequest;				// 任务请求信息
 	std::string         m_taskCityCN;				// 任务地市（中文名称）
 	std::vector<YCInfo> m_vecYCInfo;				// 业财稽核因子规则信息
 	SQLExtendConverter* m_pSqlExConv;				// SQL 扩展转换
+	YCReportState       m_reportState;				// 稽核报表状态
 };
 

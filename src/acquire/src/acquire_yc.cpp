@@ -10,8 +10,7 @@
 const char* const Acquire_YC::S_YC_ETLRULE_TYPE = "YCRA";				// 业财稽核-采集规则类型
 
 Acquire_YC::Acquire_YC()
-:m_ycSeqID(0)
-,m_pSqlExConv(NULL)
+:m_pSqlExConv(NULL)
 {
 	m_sType = "业财稽核";
 }
@@ -60,27 +59,36 @@ void Acquire_YC::Init() throw(base::Exception)
 	m_pAcqDB2->SetTabReportState(m_tabReportStat);
 	m_pAcqDB2->SetTabYCDictCity(m_tabDictCity);
 
-	// 更新任务状态为："11"（正在采集）
-	m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "11", "正在采集", "采集开始时间："+base::SimpleTime::Now().TimeStamp());
+	// 获取任务账期与地市信息
+	m_pAcqDB2->SelectYCTaskRequest(m_taskRequest);
 
+	// 初始化报表状态信息
+	InitReportState();
+
+	// 登记报表状态："07"-正在稽核
+	RegisterReportState("07");
+
+	// 更新任务状态为：正在采集
+	UpdateTaskRequestState(TREQ_STATE_BEGIN);
 	m_pLog->Output("[Acquire_YC] Init OK.");
 }
 
 void Acquire_YC::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
 {
 	// 更新任务状态
-	std::string task_desc;
 	if ( 0 == err_code )	// 正常退出
 	{
-		// 更新任务状态为："12"（采集完成）
-		task_desc = "采集结束时间：" + base::SimpleTime::Now().TimeStamp();
-		m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "12", "采集完成", task_desc);
+		// 更新任务状态为：采集完成
+		UpdateTaskRequestState(TREQ_STATE_SUCCESS);
 	}
 	else	// 异常退出
 	{
-		// 更新任务状态为："13"（采集失败）
-		base::PubStr::SetFormatString(task_desc, "[ERROR] %s, ERROR_CODE: %d", err_msg.c_str(), err_code);
-		m_pAcqDB2->UpdateYCTaskReq(m_ycSeqID, "13", "采集失败", task_desc);
+		// 登记报表状态："08"-稽核失败
+		RegisterReportState("08");
+
+		// 更新任务状态为：采集失败
+		base::PubStr::SetFormatString(m_taskRequest.task_desc, "[ERROR] %s, ERROR_CODE: %d", err_msg.c_str(), err_code);
+		UpdateTaskRequestState(TREQ_STATE_FAIL);
 	}
 
 	Acquire::End(err_code, err_msg);
@@ -93,27 +101,104 @@ void Acquire_YC::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(
 		throw base::Exception(ACQERR_TASKINFO_ERROR, "任务参数信息异常(split size:%lu), 无法拆分出业财任务流水号! [FILE:%s, LINE:%d]", vec_str.size(), __FILE__, __LINE__);
 	}
 
-	if ( !base::PubStr::Str2Int(vec_str[3], m_ycSeqID) )
+	if ( !base::PubStr::Str2Int(vec_str[3], m_taskRequest.seq) )
 	{
 		throw base::Exception(ACQERR_TASKINFO_ERROR, "无效的业财任务流水号：%s [FILE:%s, LINE:%d]", vec_str[3].c_str(), __FILE__, __LINE__);
 	}
-	m_pLog->Output("[Acquire_YC] 业财稽核任务流水号：%d", m_ycSeqID);
+	m_pLog->Output("[Acquire_YC] 业财稽核任务流水号：%d", m_taskRequest.seq);
+}
+
+void Acquire_YC::InitReportState()
+{
+	m_reportState.report_id = m_taskRequest.stat_id;
+	m_reportState.bill_cyc  = m_taskRequest.bill_cyc;
+	m_reportState.city      = m_taskRequest.city;
+	m_reportState.type      = GetReportStateType();
+	m_reportState.actor     = m_taskRequest.actor;
+
+	// 状态延迟到登记报表状态入库时才设置
+	m_reportState.status.clear();
+}
+
+std::string Acquire_YC::GetReportStateType()
+{
+	/// 类型：
+	// 00-核对表
+	// 01-地市账务业务详情表
+	// 02-监控表
+	// 03-地市财务对账详情表
+	// 04-省财务详情表
+	// 05-省财务监控表
+	const std::string KPI_TYPE = base::PubStr::TrimUpperB(m_pAcqDB2->SelectKpiRuleType(m_taskRequest.kpi_id));
+	if ( KPI_TYPE == "YC_HDB" )				// 业财核对表
+	{
+		return "00";
+	}
+	else if ( KPI_TYPE == "YC_XQB_YW" )		// 业财详情表（业务侧）
+	{
+		return "01";
+	}
+	else if ( KPI_TYPE == "YC_XQB_CW" )		// 业财详情表（财务侧）
+	{
+		return "03";
+	}
+	else if ( KPI_TYPE == "YC_XQB_GD" )		// 业财详情表（省财务侧）
+	{
+		return "04";
+	}
+	else		// 未知
+	{
+		return "";
+	}
+}
+
+void Acquire_YC::RegisterReportState(const std::string& state)
+{
+	m_reportState.status = state;
+	m_pAcqDB2->UpdateInsertReportState(m_reportState);
+}
+
+void Acquire_YC::UpdateTaskRequestState(TASK_REQUEST_STATE t_state)
+{
+	// 设置任务状态
+	switch ( t_state )
+	{
+	case TREQ_STATE_BEGIN:
+		m_taskRequest.task_state = "11";
+		m_taskRequest.state_desc = "正在采集";
+		m_taskRequest.task_desc  = "采集开始时间：" + base::SimpleTime::Now().TimeStamp();
+		break;
+	case TREQ_STATE_SUCCESS:
+		m_taskRequest.task_state = "12";
+		m_taskRequest.state_desc = "采集完成";
+		m_taskRequest.task_desc  = "采集结束时间：" + base::SimpleTime::Now().TimeStamp();
+		break;
+	case TREQ_STATE_FAIL:
+		m_taskRequest.task_state = "13";
+		m_taskRequest.state_desc = "采集失败";
+		//m_taskRequest.task_desc  = "";			// 采集失败的任务备注信息在之前设置
+		break;
+	case TREQ_STATE_UNKNOWN:		// 未知，错误
+	default:
+		m_pLog->Output("[Acquire_YC] <WARNING> Update task request state failed! Unknown state: [%d]", t_state);
+		return;
+	}
+
+	// 更新任务状态
+	m_pAcqDB2->UpdateYCTaskReq(m_taskRequest);
 }
 
 void Acquire_YC::FetchTaskInfo() throw(base::Exception)
 {
 	Acquire::FetchTaskInfo();
 
-	// 获取任务账期与地市信息
-	m_pAcqDB2->SelectYCTaskRequest(m_ycSeqID, m_acqDate, m_taskCity);
-
-	base::PubStr::Trim(m_acqDate);
+	m_acqDate = base::PubStr::TrimB(m_taskRequest.bill_cyc);
 	m_pLog->Output("[Acquire_YC] Get task request period: [%s]", m_acqDate.c_str());
 
-	base::PubStr::Trim(m_taskCity);
-	m_pLog->Output("[Acquire_YC] Get task request city: [%s]", m_taskCity.c_str());
+	base::PubStr::Trim(m_taskRequest.city);
+	m_pLog->Output("[Acquire_YC] Get task request city: [%s]", m_taskRequest.city.c_str());
 
-	if ( m_pAcqDB2->SelectYCTaskCityCN(m_taskCity, m_taskCityCN) )
+	if ( m_pAcqDB2->SelectYCTaskCityCN(m_taskRequest.city, m_taskCityCN) )
 	{
 		m_pLog->Output("[Acquire_YC] Get task city CN: [%s]", m_taskCityCN.c_str());
 	}
@@ -242,7 +327,7 @@ std::string Acquire_YC::GeneralHdfsFileName()
 	base::PubStr::SetFormatString(hdfs_file_name, "%s_%s_%s_%s_%s%02d", 
 												  m_sKpiID.c_str(), 
 												  m_sEtlID.c_str(), 
-												  m_taskCity.c_str(), 
+												  m_taskRequest.city.c_str(), 
 												  m_acqDate.c_str(), 
 												  base::SimpleTime::Now().Time14().c_str(), 
 												  ++m_seqHdfsFile);
@@ -280,7 +365,7 @@ void Acquire_YC::GenerateEtlDate(const std::string& date_fmt) throw(base::Except
 	}
 
 	// 重设采集 (HIVE) 目标表名：加上地市与账期
-	base::PubStr::SetFormatString(m_taskInfo.EtlRuleTarget, "%s_%s_%s", m_taskInfo.EtlRuleTarget.c_str(), m_taskCity.c_str(), m_acqDate.c_str());
+	base::PubStr::SetFormatString(m_taskInfo.EtlRuleTarget, "%s_%s_%s", m_taskInfo.EtlRuleTarget.c_str(), m_taskRequest.city.c_str(), m_acqDate.c_str());
 	m_pLog->Output("[Acquire_YC] 重设采集 (HIVE) 目标表名为: %s", m_taskInfo.EtlRuleTarget.c_str());
 }
 
@@ -321,7 +406,7 @@ void Acquire_YC::CreateSqlExtendConv()
 	sql_ex_data.field_city   = m_fieldCity;
 	sql_ex_data.field_batch  = m_fieldBatch;
 	sql_ex_data.period       = m_acqDate.substr(0, 6);		// 账期改为6位，格式：YYYYMM
-	sql_ex_data.city         = m_taskCity;
+	sql_ex_data.city         = m_taskRequest.city;
 	sql_ex_data.cityCN       = m_taskCityCN;
 
 	m_pSqlExConv = new SQLExtendConverter(sql_ex_data);

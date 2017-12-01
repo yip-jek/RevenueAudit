@@ -315,10 +315,10 @@ void Analyse_YC::FetchUpdateFieldsFromKpiCol(std::vector<KpiColumn>& vec_kc, VEC
 		{
 			vec_up_fd.push_back(ref_col.DBName);
 
-			m_pLog->Output("[Analyse_YC] 取得详情表(业务侧)更新字段：TYPE=[%s], 
-																	 SEQ=[%d], 
-																	 DB_NAME=[%s], 
-																	 CN_NAME=[%s]", 
+			m_pLog->Output("[Analyse_YC] 取得详情表(业务侧)更新字段：TYPE=[%s], "
+																	"SEQ=[%d], "
+																	"DB_NAME=[%s], "
+																	"CN_NAME=[%s]", 
 																	 (KpiColumn::CTYPE_DIM == ref_col.ColType ? "DIM" : "VAL"), 
 																	 ref_col.ColSeq, 
 																	 ref_col.DBName.c_str(), 

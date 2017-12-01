@@ -189,3 +189,70 @@ public:
 	std::string stat_sql;				// 统计SQL
 };
 
+// (业财稽核) 任务请求
+struct YCTaskRequest
+{
+public:
+	YCTaskRequest(): seq(0)
+	{}
+
+	std::string LogPrintInfo() const
+	{
+		std::string info;
+		base::PubStr::SetFormatString(info, "SEQ=[%d], "
+											"BILL_CYC=[%s], "
+											"CITY=[%s], "
+											"ACTOR=[%s], "
+											"OPER=[%s]", 
+											seq, 
+											bill_cyc.c_str(), 
+											city.c_str(), 
+											actor.c_str(), 
+											oper.c_str());
+		return info;
+	}
+
+public:
+	int         seq;					// 任务流水号
+	std::string kpi_id;					// 指标ID
+	std::string stat_id;				// 报表ID
+	std::string bill_cyc;				// 任务账期
+	std::string city;					// 任务地市
+	std::string actor;					// 角色
+	std::string oper;					// 操作员
+	std::string task_state;				// 任务状态
+	std::string state_desc;				// 任务状态描述
+	std::string task_desc;				// 任务备注
+};
+
+// (业财稽核) 报表状态
+struct YCReportState
+{
+public:
+	std::string LogPrintInfo() const
+	{
+		std::string info;
+		base::PubStr::SetFormatString(info, "REPORT_ID=[%s], "
+											"BILL_CYC=[%s], "
+											"CITY=[%s], "
+											"STATUS=[%s], "
+											"TYPE=[%s], "
+											"ACTOR=[%s]", 
+											report_id.c_str(), 
+											bill_cyc.c_str(), 
+											city.c_str(), 
+											status.c_str(), 
+											type.c_str(), 
+											actor.c_str());
+		return info;
+	}
+
+public:
+	std::string report_id;				// 报表 ID
+	std::string bill_cyc;				// 账期
+	std::string city;					// 地市
+	std::string status;					// 状态
+	std::string type;					// 类型
+	std::string actor;					// 角色
+};
+

@@ -54,16 +54,22 @@ public:
 	void SetTabYCTaskReq(const std::string& t_yc_taskreq);
 
 	// 查询任务请求表的信息
-	void SelectYCTaskRequest(int seq, std::string& period, std::string& city) throw(base::Exception);
+	void SelectYCTaskRequest(YCTaskRequest& task_req) throw(base::Exception);
 
 	// 查询任务地市的中文名称
 	bool SelectYCTaskCityCN(const std::string& task_city, std::string& city_cn) throw(base::Exception);
 
+	// 查询指标规则类型
+	std::string SelectKpiRuleType(const std::string& kpi_id) throw(base::Exception);
+
 	// 更新任务请求表
-	void UpdateYCTaskReq(int seq, const std::string& state, const std::string& state_desc, const std::string& task_desc) throw(base::Exception);
+	void UpdateYCTaskReq(const YCTaskRequest& task_req) throw(base::Exception);
 
 	// 更新任务日程日志表状态
 	void UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark) throw(base::Exception);
+
+	// 更新或插入报表状态表
+	void UpdateInsertReportState(const YCReportState& report_state) throw(base::Exception);
 
 private:
 	// 查询采集规则信息

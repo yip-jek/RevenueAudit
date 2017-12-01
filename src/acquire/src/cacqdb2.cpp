@@ -62,40 +62,45 @@ void CAcqDB2::SetTabYCTaskReq(const std::string& t_yc_taskreq)
 	m_tabYCTaskReq = t_yc_taskreq;
 }
 
-void CAcqDB2::SelectYCTaskRequest(int seq, std::string& period, std::string& city) throw(base::Exception)
+void CAcqDB2::SelectYCTaskRequest(YCTaskRequest& task_req) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT STAT_CYCLE, TASK_CITY FROM " + m_tabYCTaskReq + " WHERE SEQ_ID = ?";
-	m_pLog->Output("[DB2] Select YC task request table [%s]: SEQ=[%d]", m_tabYCTaskReq.c_str(), seq);
+	std::string sql = "SELECT KPI_ID, STAT_ID, STAT_CYCLE, TASK_CITY, ACTOR, OPERATOR FROM " + m_tabYCTaskReq + " WHERE SEQ_ID = ?";
+	m_pLog->Output("[DB2] Select YC task request table [%s]: SEQ=[%d]", m_tabYCTaskReq.c_str(), task_req.seq);
 
 	int counter = 0;
 	try
 	{
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
-		rs.Parameter(1) = seq;
+		rs.Parameter(1) = task_req.seq;
 		rs.Execute();
 
 		while ( !rs.IsEOF() )
 		{
 			++counter;
 
-			period = (const char*)rs[1];
-			city   = (const char*)rs[2];
+			int index = 1;
+			task_req.kpi_id   = (const char*)rs[index++];
+			task_req.stat_id  = (const char*)rs[index++];
+			task_req.bill_cyc = (const char*)rs[index++];
+			task_req.city     = (const char*)rs[index++];
+			task_req.actor    = (const char*)rs[index++];
+			task_req.oper     = (const char*)rs[index++];
+
 			rs.MoveNext();
 		}
-
 		rs.Close();
 
 		if ( 0 == counter )
 		{
-			throw base::Exception(ACQERR_SEL_YCTASKREQ, "[DB2] Select YC task request table '%s' failed! [SEQ:%d] NO Record! [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, __FILE__, __LINE__);
+			throw base::Exception(ACQERR_SEL_YCTASKREQ, "[DB2] Select YC task request table '%s' failed! [SEQ:%d] NO Record! [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), task_req.seq, __FILE__, __LINE__);
 		}
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ACQERR_SEL_YCTASKREQ, "[DB2] Select YC task request table '%s' failed! [SEQ:%d, REC:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, counter, ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_SEL_YCTASKREQ, "[DB2] Select YC task request table '%s' failed! [SEQ:%d, REC:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), task_req.seq, counter, ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -130,32 +135,61 @@ bool CAcqDB2::SelectYCTaskCityCN(const std::string& task_city, std::string& city
 	}
 }
 
-void CAcqDB2::UpdateYCTaskReq(int seq, const std::string& state, const std::string& state_desc, const std::string& task_desc) throw(base::Exception)
+std::string CAcqDB2::SelectKpiRuleType(const std::string& kpi_id) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	std::string sql = "SELECT KPI_TYPE FROM " + m_tabKpiRule + " WHERE KPI_ID = '" + kpi_id + "'";
+	m_pLog->Output("[DB2] Select kpi_rule type: KPI_ID=[%s]", kpi_id.c_str());
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+		rs.Execute();
+
+		std::string kpi_type;
+		while ( !rs.IsEOF() )
+		{
+			kpi_type = (const char*)rs[1];
+
+			rs.MoveNext();
+		}
+
+		rs.Close();
+		return kpi_type;
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ACQERR_SEL_KPI_RULE_TYPE, "[DB2] Select kpi_rule type from table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabKpiRule.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void CAcqDB2::UpdateYCTaskReq(const YCTaskRequest& task_req) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
 	std::string sql = "UPDATE " + m_tabYCTaskReq + " SET TASK_STATUS = ?, STATUS_DESC = ?, TASK_DESC = ? WHERE SEQ_ID = ?";
-	m_pLog->Output("[DB2] Update task request: STATE=%s, STATE_DESC=%s (SEQ:%d)", state.c_str(), state_desc.c_str(), seq);
+	m_pLog->Output("[DB2] Update task request: STATE=%s, STATE_DESC=%s (SEQ:%d)", task_req.task_state.c_str(), task_req.state_desc.c_str(), task_req.seq);
 
 	try
 	{
 		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
 		int index = 1;
-		rs.Parameter(index++) = state.c_str();
-		rs.Parameter(index++) = state_desc.c_str();
-		rs.Parameter(index++) = task_desc.c_str();
-		rs.Parameter(index++) = seq;
+		rs.Parameter(index++) = task_req.task_state.c_str();
+		rs.Parameter(index++) = task_req.state_desc.c_str();
+		rs.Parameter(index++) = task_req.task_desc.c_str();
+		rs.Parameter(index++) = task_req.seq;
 		rs.Execute();
 
 		Commit();
-
 		rs.Close();
 	}
 	catch ( const XDBO2::CDBException& ex )
 	{
-		throw base::Exception(ACQERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), seq, ex.what(), __FILE__, __LINE__);
+		throw base::Exception(ACQERR_UPD_YC_TASK_REQ, "[DB2] Update task request to table '%s' failed! [SEQ:%d] [CDBException] %s [FILE:%s, LINE:%d]", m_tabYCTaskReq.c_str(), task_req.seq, ex.what(), __FILE__, __LINE__);
 	}
 }
 
@@ -606,6 +640,83 @@ void CAcqDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const
 	catch ( const XDBO2::CDBException& ex )
 	{
 		throw base::Exception(ACQERR_UPD_TSLOG_STATE, "[DB2] Update state of task schedule log in table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabTaskScheLog.c_str(), ex.what(), __FILE__, __LINE__);
+	}
+}
+
+void CAcqDB2::UpdateInsertReportState(const YCReportState& report_state) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	// 忽略角色（用户）
+	std::string sql = "SELECT COUNT(0) FROM " + m_tabReportStat + " WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ?";
+	m_pLog->Output("[DB2] Update or insert report state to table: [%s]", m_tabReportStat.c_str());
+
+	try
+	{
+		rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		int index = 1;
+		rs.Parameter(index++) = report_state.report_id.c_str();
+		rs.Parameter(index++) = report_state.bill_cyc.c_str();
+		rs.Parameter(index++) = report_state.city.c_str();
+		//rs.Parameter(index++) = report_state.actor.c_str();		// 忽略角色（用户）
+		rs.Execute();
+
+		int record_count = 0;
+		while ( !rs.IsEOF() )
+		{
+			record_count = (int)rs[1];
+
+			rs.MoveNext();
+		}
+		rs.Close();
+
+		m_pLog->Output("[DB2] Record count in report state: [%d]", record_count);
+		if ( record_count > 0 )		// 已存在
+		{
+			// 角色（用户）也一并更新
+			sql  = "UPDATE " + m_tabReportStat + " SET ACTOR = ?, STATUS = ?, TYPE = ?";
+			sql += " WHERE REPORTNAME = ? AND BILLCYC = ? AND CITY = ?";
+
+			m_pLog->Output("[DB2] UPDATE REPORT STATE: %s", report_state.LogPrintInfo().c_str());
+			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+			index = 1;
+			rs.Parameter(index++) = report_state.actor.c_str();
+			rs.Parameter(index++) = report_state.status.c_str();
+			rs.Parameter(index++) = report_state.type.c_str();
+			rs.Parameter(index++) = report_state.report_id.c_str();
+			rs.Parameter(index++) = report_state.bill_cyc.c_str();
+			rs.Parameter(index++) = report_state.city.c_str();
+			rs.Execute();
+
+			Commit();
+			rs.Close();
+		}
+		else	// 不存在
+		{
+			sql = "INSERT INTO " + m_tabReportStat + "(REPORTNAME, BILLCYC, CITY, STATUS, TYPE, ACTOR) VALUES(?, ?, ?, ?, ?, ?)";
+
+			m_pLog->Output("[DB2] INSERT REPORT STATE: %s", report_state.LogPrintInfo().c_str());
+			rs.Prepare(sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+			index = 1;
+			rs.Parameter(index++) = report_state.report_id.c_str();
+			rs.Parameter(index++) = report_state.bill_cyc.c_str();
+			rs.Parameter(index++) = report_state.city.c_str();
+			rs.Parameter(index++) = report_state.status.c_str();
+			rs.Parameter(index++) = report_state.type.c_str();
+			rs.Parameter(index++) = report_state.actor.c_str();
+			rs.Execute();
+
+			Commit();
+			rs.Close();
+		}
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ACQERR_UPD_INS_REPORTSTATE, "[DB2] Update or insert report state to table '%s' failed! [CDBException] %s [FILE:%s, LINE:%d]", m_tabReportStat.c_str(), ex.what(), __FILE__, __LINE__);
 	}
 }
 
