@@ -416,7 +416,7 @@ void Analyse_YC::SetNewBatch_HDB()
 	YCHDBBatch hd_batch;
 	hd_batch.stat_report = m_pStatFactor->GetStatReport();
 	hd_batch.stat_id     = m_pStatFactor->GetStatID();
-	hd_batch.stat_date   = m_dbinfo.GetEtlDay();
+	hd_batch.stat_date   = m_dbinfo.GetEtlDay().substr(0, 6);
 	hd_batch.stat_city   = m_taskReq.task_city;
 	hd_batch.stat_batch  = 0;
 	m_pYCDB2->SelectHDBMaxBatch(m_dbinfo.target_table, hd_batch);

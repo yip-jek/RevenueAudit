@@ -93,7 +93,9 @@ void YCAnaDB2::UpdateYCTaskReq(const YCTaskReq& t_req) throw(base::Exception)
 	std::string sql = "UPDATE " + m_tabYCTaskReq + " SET TASK_STATUS = ?, STATUS_DESC = ?, TASK_DESC = ?";
 	if ( t_req.task_batch < 0 )		// 批次无效
 	{
-		sql += ", TASK_NUM = NULL WHERE SEQ_ID = ?";
+		// 批次无效时，不更新批次
+		//sql += ", TASK_NUM = NULL WHERE SEQ_ID = ?";
+		sql += " WHERE SEQ_ID = ?";
 	}
 	else	// 批次有效
 	{
@@ -175,8 +177,9 @@ void YCAnaDB2::SelectHDBMaxBatch(const std::string& tab_hdb, YCHDBBatch& hd_batc
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
+	// STAT_DATE 账期时间兼容格式：YYYYMMDD 与 YYYYMM
 	std::string sql = "SELECT NVL(MAX(STAT_NUM), 0) FROM " + tab_hdb;
-	sql += " WHERE STAT_REPORT = ? AND STAT_ID = ? AND STAT_DATE = ? AND STAT_CITY = ?";
+	sql += " WHERE STAT_REPORT = ? AND STAT_ID = ? AND STAT_DATE like '" + hd_batch.stat_date + "%' AND STAT_CITY = ?";
 	m_pLog->Output("[DB2] Select max batch from HDB table: %s [REPORT:%s, STAT_ID:%s, DATE:%s, CITY:%s]", tab_hdb.c_str(), hd_batch.stat_report.c_str(), hd_batch.stat_id.c_str(), hd_batch.stat_date.c_str(), hd_batch.stat_city.c_str());
 
 	try
@@ -186,7 +189,7 @@ void YCAnaDB2::SelectHDBMaxBatch(const std::string& tab_hdb, YCHDBBatch& hd_batc
 		int index = 1;
 		rs.Parameter(index++) = hd_batch.stat_report.c_str();
 		rs.Parameter(index++) = hd_batch.stat_id.c_str();
-		rs.Parameter(index++) = hd_batch.stat_date.c_str();
+		//rs.Parameter(index++) = hd_batch.stat_date.c_str();
 		rs.Parameter(index++) = hd_batch.stat_city.c_str();
 		rs.Execute();
 
@@ -304,6 +307,7 @@ void YCAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCResul
 
 	const std::string ETL_DAY = db_info.GetEtlDay();
 	const std::string NOW_DAY = db_info.GetNowDay();
+
 	std::string sql = "SELECT COUNT(0) FROM " + db_info.target_table + " WHERE STAT_REPORT = ? ";
 	sql += "and STAT_ID = ? and STATDIM_ID = ? and STAT_DATE = ? and STAT_CITY = ?";
 	m_pLog->Output("[DB2] Update or insert diff summary to table: [%s]", db_info.target_table.c_str());
