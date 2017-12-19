@@ -149,7 +149,7 @@ void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_
 	}
 
 	const int FACTOR_VALUE_SIZE = factor.GetValueSize();
-	VEC_STRING vec_result(FACTOR_VALUE_SIZE, "");
+	VEC_DOUBLE vec_result(FACTOR_VALUE_SIZE, 0.0);
 
 	// 组合因子表达式：[ A1, A2, A3, ...|+, -, ... ]
 	m_pLog->Output("[YCStatFactor_XQB] 组合因子表达式：%s", vec_fmt_first[AREA_ITEM_SIZE].c_str());
@@ -189,13 +189,15 @@ void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_
 		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
 	}
 
-	if ( !factor.ImportValue(vec_result) )
+	VEC_STRING vs_result;
+	ConvertVectorResultType(vec_result, vs_result);
+	if ( !factor.ImportValue(vs_result) )
 	{
 		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "Import value of complex factor failed: DIM=[%s], COMPLEX_FMT=[%s] [FILE:%s, LINE:%d]", factor.GetDimID().c_str(), cmplx_fmt.c_str(), __FILE__, __LINE__);
 	}
 }
 
-void YCStatFactor_XQB::CalcOneFactor(VEC_STRING& vec_result, const std::string& op, const std::string& dim) throw(base::Exception)
+void YCStatFactor_XQB::CalcOneFactor(VEC_DOUBLE& vec_result, const std::string& op, const std::string& dim) throw(base::Exception)
 {
 	VEC_STRING vec_value;
 	double     dou      = 0.0;
@@ -224,7 +226,20 @@ void YCStatFactor_XQB::CalcOneFactor(VEC_STRING& vec_result, const std::string& 
 
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
-		OperateOneFactor(vec_result[i], op, vec_value[i]);
+		vec_result[i] = OperateOneFactor(vec_result[i], op, vec_value[i]);
 	}
+}
+
+void YCStatFactor_XQB::ConvertVectorResultType(const VEC_DOUBLE& vec_dou, VEC_STRING& vec_result)
+{
+	VEC_STRING vec_res;
+
+	const int VEC_SIZE = vec_dou.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		vec_res.push_back(ConvertResultType(vec_dou[i]));
+	}
+
+	vec_res.swap(vec_result);
 }
 

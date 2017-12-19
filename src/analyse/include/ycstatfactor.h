@@ -55,7 +55,10 @@ protected:
 	virtual void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception) = 0;
 
 	// 计算单个因子
-	virtual std::string OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception);
+	virtual double OperateOneFactor(double left, const std::string& op, const std::string& factor) throw(base::Exception);
+
+	// 结果数据类型转换：Double -> String，保留2位小数，“四舍五入”
+	std::string ConvertResultType(double result);
 
 protected:
 	base::Log*       m_pLog;

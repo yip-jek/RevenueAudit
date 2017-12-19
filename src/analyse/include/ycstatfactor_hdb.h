@@ -40,7 +40,7 @@ private:
 	std::string CalcComplexFactor(const std::string& cmplx_fmt) throw(base::Exception);
 
 	// 计算单个因子的维度值
-	std::string CalcOneFactor(std::string& result, const std::string& op, const std::string& dim) throw(base::Exception);
+	double CalcOneFactor(double result, const std::string& op, const std::string& dim) throw(base::Exception);
 
 	// 计算组合分类因子的维度值
 	std::string CalcCategoryFactor(const std::string& ctg_fmt) throw(base::Exception);

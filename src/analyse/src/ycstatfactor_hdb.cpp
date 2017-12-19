@@ -126,47 +126,50 @@ std::string YCStatFactor_HDB::CalcComplexFactor(const std::string& cmplx_fmt) th
 
 	VEC_STRING vec_fmt_first;
 	VEC_STRING vec_fmt_second;
-	std::string cmplx_result;
+	double complex_result = 0.0;
 
 	// 组合因子格式：[ A1, A2, A3, ...|+, -, ... ]
 	base::PubStr::Str2StrVector(cmplx_fmt, "|", vec_fmt_first);
-	if ( vec_fmt_first.size() != 2 )
+
+	int vec_size = vec_fmt_first.size();
+	if ( 1 == vec_size )
 	{
-		if ( vec_fmt_first.size() != 1 )
+		// 特殊的组合因子：不含运算符，直接等于某个因子（一般因子或者组合因子）
+		complex_result = CalcOneFactor(complex_result, "+", vec_fmt_first[0]);
+	}
+	else if ( 2 == vec_size )
+	{
+		std::string yc_dims = base::PubStr::TrimUpperB(vec_fmt_first[0]);
+		std::string yc_oper = base::PubStr::TrimUpperB(vec_fmt_first[1]);
+
+		base::PubStr::Str2StrVector(yc_dims, ",", vec_fmt_first);
+		base::PubStr::Str2StrVector(yc_oper, ",", vec_fmt_second);
+
+		// 至少两个统计维度；且运算符个数比维度少一个
+		vec_size = vec_fmt_first.size();
+		if ( vec_size < 2 || (size_t)vec_size != (vec_fmt_second.size() + 1) )
 		{
-			throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
+			throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不匹配的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
 		}
 
-		// 特殊的组合因子：不含运算符，直接等于某个因子（一般因子或者组合因子）
-		return CalcOneFactor(cmplx_result, "+", vec_fmt_first[0]);
+		// 计算首个因子
+		complex_result = CalcOneFactor(complex_result, "+", vec_fmt_first[0]);
+
+		// 计算结果
+		for ( int i = 1; i < vec_size; ++i )
+		{
+			complex_result = CalcOneFactor(complex_result, vec_fmt_second[i-1], vec_fmt_first[i]);
+		}
 	}
-
-	std::string yc_dims = base::PubStr::TrimUpperB(vec_fmt_first[0]);
-	std::string yc_oper = base::PubStr::TrimUpperB(vec_fmt_first[1]);
-
-	base::PubStr::Str2StrVector(yc_dims, ",", vec_fmt_first);
-	base::PubStr::Str2StrVector(yc_oper, ",", vec_fmt_second);
-
-	// 至少两个统计维度；且运算符个数比维度少一个
-	const int VEC_DIM_SIZE = vec_fmt_first.size();
-	if ( VEC_DIM_SIZE < 2 || (size_t)VEC_DIM_SIZE != (vec_fmt_second.size() + 1) )
+	else
 	{
-		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不匹配的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
+		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
 	}
 
-	// 计算首个因子
-	CalcOneFactor(cmplx_result, "+", vec_fmt_first[0]);
-
-	// 计算结果
-	for ( int i = 1; i < VEC_DIM_SIZE; ++i )
-	{
-		CalcOneFactor(cmplx_result, vec_fmt_second[i-1], vec_fmt_first[i]);
-	}
-
-	return cmplx_result;
+	return ConvertResultType(complex_result);
 }
 
-std::string YCStatFactor_HDB::CalcOneFactor(std::string& result, const std::string& op, const std::string& dim) throw(base::Exception)
+double YCStatFactor_HDB::CalcOneFactor(double result, const std::string& op, const std::string& dim) throw(base::Exception)
 {
 	MAP_STRING::iterator m_it;
 
@@ -207,18 +210,19 @@ std::string YCStatFactor_HDB::CalcCategoryFactor(const std::string& ctg_fmt) thr
 			throw base::Exception(ANAERR_CALC_CATEGORY_FACTOR, "无法识别的组合分类因子表达式：%s [FILE:%s, LINE:%d]", ctg_fmt.c_str(), __FILE__, __LINE__);
 		}
 
-		int ctg_index = 1;
-		std::string ctg_result;
+		int         ctg_index  = 1;
+		double      ctg_result = 0.0;
 		std::string factor;
+
 		while ( GetCategoryFactorValue(fmt, ctg_index, factor) )
 		{
-			OperateOneFactor(ctg_result, "+", factor);
+			ctg_result = OperateOneFactor(ctg_result, "+", factor);
 
 			++ctg_index;
 		}
 
 		m_pLog->Output("[YCStatFactor_HDB] 组合分类因子表达式 %s 共包含 [%d] 个分类因子", ctg_fmt.c_str(), (ctg_index-1));
-		return ctg_result;
+		return ConvertResultType(ctg_result);
 	}
 	else
 	{
@@ -416,16 +420,16 @@ void YCStatFactor_HDB::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool ag
 			throw base::Exception(ANAERR_EXPAND_CATEGORY_INFO, "不匹配的组合分类因子表达式：%s [FILE:%s, LINE:%d]", st_info.stat_sql.c_str(), __FILE__, __LINE__);
 		}
 
-		int              index = 1;
+		int              index            = 1;
+		double           cmpl_fctr_result = 0.0;
 		std::string      fctr_value;
-		std::string      cmpl_fctr_result;
 		YCCategoryFactor ctg_factor;
 
 		// 计算结果
 		while ( true )
 		{
-			// 结果值初始化（清空）
-			cmpl_fctr_result.clear();
+			// 结果值初始化
+			cmpl_fctr_result = 0.0;
 
 			// 首个组合分类因子
 			// 没有找到首个组合分类因子的维度值
@@ -433,7 +437,8 @@ void YCStatFactor_HDB::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool ag
 			{
 				break;
 			}
-			OperateOneFactor(cmpl_fctr_result, "+", fctr_value);
+
+			cmpl_fctr_result = OperateOneFactor(cmpl_fctr_result, "+", fctr_value);
 
 			int i = 1;
 			for ( ; i < VEC_DIM_SIZE; ++i )
@@ -444,7 +449,7 @@ void YCStatFactor_HDB::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool ag
 					break;
 				}
 
-				OperateOneFactor(cmpl_fctr_result, vec_oper[i-1], fctr_value);
+				cmpl_fctr_result = OperateOneFactor(cmpl_fctr_result, vec_oper[i-1], fctr_value);
 			}
 
 			// 没有遍历完成
@@ -454,7 +459,7 @@ void YCStatFactor_HDB::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool ag
 			}
 
 			ctg_factor.dim_id = ExtendCategoryDim(st_info.GetDim(), index);
-			ctg_factor.value  = cmpl_fctr_result;
+			ctg_factor.value  = ConvertResultType(cmpl_fctr_result);
 			vec_cf.push_back(ctg_factor);
 
 			++index;

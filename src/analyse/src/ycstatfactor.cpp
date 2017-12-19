@@ -131,44 +131,45 @@ void YCStatFactor::GenerateStatResult(VEC2_STRING& v2_result) throw(base::Except
 	vec2_result.swap(v2_result);
 }
 
-std::string YCStatFactor::OperateOneFactor(std::string& result, const std::string& op, const std::string& factor) throw(base::Exception)
+double YCStatFactor::OperateOneFactor(double left, const std::string& op, const std::string& factor) throw(base::Exception)
 {
-	double dou_res = 0.0;
-	if ( !result.empty() && !base::PubStr::Str2Double(result, dou_res) )
-	{
-		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "结果值无法转化为精度型：%s [FILE:%s, LINE:%d]", result.c_str(), __FILE__, __LINE__);
-	}
-
-	double dou_fctr = 0.0;
-	if ( factor.empty() || !base::PubStr::Str2Double(factor, dou_fctr) )
+	double d_factor = 0.0;
+	if ( factor.empty() || !base::PubStr::Str2Double(factor, d_factor) )
 	{
 		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "非有效因子值：%s [FILE:%s, LINE:%d]", factor.c_str(), __FILE__, __LINE__);
 	}
 
 	if ( "+" == op )
 	{
-		dou_res += dou_fctr;
+		left += d_factor;
 	}
 	else if ( "-" == op )
 	{
-		dou_res -= dou_fctr;
+		left -= d_factor;
 	}
 	else if ( "*" == op )
 	{
-		dou_res *= dou_fctr;
+		left *= d_factor;
 	}
 	else if ( "/" == op )
 	{
-		dou_res /= dou_fctr;
+		left /= d_factor;
 	}
 	else
 	{
 		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "无法识别的因子运算符：%s [FILE:%s, LINE:%d]", op.c_str(), __FILE__, __LINE__);
 	}
 
+	return left;
+}
+
+std::string YCStatFactor::ConvertResultType(double result)
+{
 	// 加上辅助值(0.000001)，
 	// 以避免小数点后第三位是5但“四舍五入”不进位的问题
-	dou_res += 1e-6;
-	return (result = base::PubStr::Double2FormatStr(dou_res));
+	result += 1e-6;
+
+	// Double -> String，保留2位小数
+	return base::PubStr::Double2FormatStr(result);
 }
 

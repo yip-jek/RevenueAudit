@@ -8,6 +8,8 @@ class YCFactor_XQB;
 class YCStatFactor_XQB : public YCStatFactor
 {
 public:
+	typedef std::vector<double>                         VEC_DOUBLE;
+
 	typedef std::pair<std::string, YCFactor_XQB>		PAIR_FACTOR;
 	typedef std::map<std::string, YCFactor_XQB>			MAP_FACTOR;
 
@@ -37,7 +39,10 @@ private:
 	void CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB& factor) throw(base::Exception);
 
 	// 计算单个因子
-	void CalcOneFactor(VEC_STRING& vec_result, const std::string& op, const std::string& dim) throw(base::Exception);
+	void CalcOneFactor(VEC_DOUBLE& vec_result, const std::string& op, const std::string& dim) throw(base::Exception);
+
+	// 结果数据集类型转换
+	void ConvertVectorResultType(const VEC_DOUBLE& vec_dou, VEC_STRING& vec_result);
 
 private:
 	const int  ANA_TYPE;				// 分析类型
