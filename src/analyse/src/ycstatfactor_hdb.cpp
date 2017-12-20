@@ -100,6 +100,19 @@ void YCStatFactor_HDB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
 	vec3_result.swap(v3_result);
 }
 
+void YCStatFactor_HDB::GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val) throw(base::Exception)
+{
+	MAP_STRING::iterator m_it = m_mFactor.find(dim);
+	if ( m_it != m_mFactor.end() )
+	{
+		vec_val.assign(1, m_it->second);
+	}
+	else
+	{
+		throw base::Exception(ANAERR_GET_DIM_FACTOR_VAL, "无法匹配到的维度ID：%s [FILE:%s, LINE:%d]", dim.c_str(), __FILE__, __LINE__);
+	}
+}
+
 void YCStatFactor_HDB::GenerateDiffSummaryResult(VEC2_STRING& v2_result) throw(base::Exception)
 {
 	VEC2_STRING vec2_result;

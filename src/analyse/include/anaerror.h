@@ -34,6 +34,7 @@ enum ANALYSE_ERROR
 	ANAERR_STORE_DETAIL_CW        = -3000028,			// 入库详情表（财务侧）结果失败
 	ANAERR_ETLTIME_CONVERTION     = -3000029,			// 采集时间转换失败
 	ANAERR_FETCH_UPD_FLD_YW       = -3000030,			// 取得业务侧更新字段列表失败
+	ANAERR_GET_DIM_FACTOR_VAL     = -3000031,			// 获取维度因子值失败
 
 	// HIVE类错误码
 	ANAERR_FETCH_SRCDATA_FAILED   = -3001001,			// 获取源数据失败
@@ -91,5 +92,6 @@ enum ANALYSE_ERROR
 	ANAERR_EXPAND_CATEGORY_INFO   = -3005007,			// 扩展分类因子信息失败
 	ANAERR_MATCH_CATEGORY_FACTOR  = -3005008,			// 匹配一般分类因子失败
 	ANAERR_FACTOR_XQB_INIT        = -3005009,			// 详情表因子初始化失败
+	ANAERR_OPERATE_FAILED         = -3005010,			// 运算操作失败
 };
 

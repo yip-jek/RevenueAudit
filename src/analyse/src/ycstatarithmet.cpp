@@ -1,7 +1,115 @@
 #include "ycstatarithmet.h"
 #include "pubstr.h"
+#include "anaerror.h"
 
-YCStatArithmet::YCStatArithmet()
+
+YCOutputItem::YCOutputItem(OutputItemType type /*= OIT_Unknown*/)
+:m_type(type)
+{
+}
+
+YCOutputItem::~YCOutputItem()
+{
+}
+
+void YCOutputItem::SetType(OutputItemType type)
+{
+	m_type = type;
+}
+
+OutputItemType YCOutputItem::GetType() const
+{
+	return m_type;
+}
+
+std::string YCOutputItem::GetOutputItem(size_t index) const
+{
+	if ( index < m_vecOutputItem.size() )
+	{
+		return m_vecOutputItem[index];
+	}
+
+	return std::string();
+}
+
+size_t YCOutputItem::GetItemSize() const
+{
+	return m_vecOutputItem.size();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool YCStatArithmet::IsLeftParenthesis(const std::string& str)
+{
+	return ("(" == str);
+}
+
+bool YCStatArithmet::IsLowLevelOper(const std::string& str)
+{
+	return ("(" == str || "+" == str || "-" == str);
+}
+
+std::string YCStatArithmet::OperatePlus(const std::string& left, const std::string& right) throw(base::Exception)
+{
+	double d_left  = 0.0;
+	double d_right = 0.0;
+
+	// Error !
+	if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
+	{
+		throw base::Exception(ANAERR_OPERATE_FAILED, "Operate plus failed! Can not convert to double type: left=[%s], right=[%s] [FILE:%s, LINE:%d]", left.c_str(), right.c_str(), __FILE__, __LINE__);
+	}
+
+	d_left += d_right;
+	return base::PubStr::Double2Str(d_left);
+}
+
+std::string YCStatArithmet::OperateMinus(const std::string& left, const std::string& right) throw(base::Exception)
+{
+	double d_left  = 0.0;
+	double d_right = 0.0;
+
+	// Error !
+	if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
+	{
+		throw base::Exception(ANAERR_OPERATE_FAILED, "Operate minus failed! Can not convert to double type: left=[%s], right=[%s] [FILE:%s, LINE:%d]", left.c_str(), right.c_str(), __FILE__, __LINE__);
+	}
+
+	d_left -= d_right;
+	return base::PubStr::Double2Str(d_left);
+}
+
+std::string YCStatArithmet::OperateMultiply(const std::string& left, const std::string& right) throw(base::Exception)
+{
+	double d_left  = 0.0;
+	double d_right = 0.0;
+
+	// Error !
+	if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
+	{
+		throw base::Exception(ANAERR_OPERATE_FAILED, "Operate multiply failed! Can not convert to double type: left=[%s], right=[%s] [FILE:%s, LINE:%d]", left.c_str(), right.c_str(), __FILE__, __LINE__);
+	}
+
+	d_left *= d_right;
+	return base::PubStr::Double2Str(d_left);
+}
+
+std::string YCStatArithmet::OperateDivide(const std::string& left, const std::string& right) throw(base::Exception)
+{
+	double d_left  = 0.0;
+	double d_right = 0.0;
+
+	// Error !
+	if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
+	{
+		throw base::Exception(ANAERR_OPERATE_FAILED, "Operate divide failed! Can not convert to double type: left=[%s], right=[%s] [FILE:%s, LINE:%d]", left.c_str(), right.c_str(), __FILE__, __LINE__);
+	}
+
+	d_left /= d_right;
+	return base::PubStr::Double2Str(d_left);
+}
+
+YCStatArithmet::YCStatArithmet(YCStatFactor* p_stat_factor)
+:m_pStatFactor(p_stat_factor)
 {
 }
 
@@ -9,13 +117,17 @@ YCStatArithmet::~YCStatArithmet()
 {
 }
 
-void Arithmetic::Calc(const std::string& expr)
+void YCStatArithmet::Load(const std::string& expression) throw(base::Exception)
+{
+}
+
+void YCStatArithmet::Calculate(std::vector<std::string>& vec_val) throw(base::Exception)
 {
 	Convert(expr);
 	DoCalc();
 }
 
-void Arithmetic::Convert(const std::string& expr)
+void YCStatArithmet::Convert(const std::string& expr)
 {
 	Clear();
 
@@ -26,7 +138,7 @@ void Arithmetic::Convert(const std::string& expr)
 
 	while ( (index = GetOne(EXP, index, one)) >= 0 )
 	{
-		m_vecOut.push_back(one);
+		m_vecOutputItem.push_back(one);
 	}
 
 	if ( RPN() )
@@ -35,15 +147,15 @@ void Arithmetic::Convert(const std::string& expr)
 	}
 }
 
-void Arithmetic::DoCalc()
+void YCStatArithmet::DoCalc()
 {
-	if ( m_vecOut.empty() )
+	if ( m_vecOutputItem.empty() )
 	{
-		std::cerr << "[CALC] m_vecOut is empty !!!" << std::endl;
+		std::cerr << "[CALC] m_vecOutputItem is empty !!!" << std::endl;
 	}
 	else
 	{
-		while ( m_vecOut.size() > 1 )
+		while ( m_vecOutputItem.size() > 1 )
 		{
 			if ( !CalcOnce() )
 			{
@@ -52,11 +164,11 @@ void Arithmetic::DoCalc()
 			}
 		}
 
-		std::cout << "Calc result: " << base::PubStr::StringDoubleFormat(m_vecOut[0]) << std::endl;
+		std::cout << "Calc result: " << base::PubStr::StringDoubleFormat(m_vecOutputItem[0]) << std::endl;
 	}
 }
 
-void Arithmetic::Clear()
+void YCStatArithmet::Clear()
 {
 	// Clear stack
 	while ( !m_stackOper.empty() )
@@ -65,26 +177,10 @@ void Arithmetic::Clear()
 	}
 
 	// Clear vector
-	std::vector<std::string>().swap(m_vecOut);
+	std::vector<std::string>().swap(m_vecOutputItem);
 }
 
-std::string Arithmetic::NoSpaces(const std::string& expr)
-{
-	std::string n_exp;
-
-	const int EXP_SIZE = expr.size();
-	for ( int i = 0; i < EXP_SIZE; ++i )
-	{
-		if ( expr[i] != '\x20' )
-		{
-			n_exp += expr[i];
-		}
-	}
-
-	return n_exp;
-}
-
-bool Arithmetic::IsOper(const std::string& str)
+bool YCStatArithmet::IsOper(const std::string& str)
 {
 	return ( "+" == str 
 			|| "-" == str 
@@ -94,7 +190,7 @@ bool Arithmetic::IsOper(const std::string& str)
 			|| ")" == str);
 }
 
-int Arithmetic::GetOne(const std::string& expr, int index, std::string& one)
+int YCStatArithmet::GetOne(const std::string& expr, int index, std::string& one)
 {
 	const int EXP_SIZE = expr.size();
 	if ( index >= EXP_SIZE )
@@ -127,10 +223,10 @@ int Arithmetic::GetOne(const std::string& expr, int index, std::string& one)
 	return n_idx;
 }
 
-bool Arithmetic::RPN()
+bool YCStatArithmet::RPN()
 {
 	std::vector<std::string> vec_out;
-	vec_out.swap(m_vecOut);
+	vec_out.swap(m_vecOutputItem);
 
 	const int VEC_SIZE = vec_out.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
@@ -150,7 +246,7 @@ bool Arithmetic::RPN()
 		}
 		else
 		{
-			m_vecOut.push_back(ref_str);
+			m_vecOutputItem.push_back(ref_str);
 		}
 	}
 
@@ -168,13 +264,13 @@ bool Arithmetic::RPN()
 			return false;
 		}
 
-		m_vecOut.push_back(str);
+		m_vecOutputItem.push_back(str);
 	}
 
 	return true;
 }
 
-void Arithmetic::DealWithOper(const std::string& oper)
+void YCStatArithmet::DealWithOper(const std::string& oper)
 {
 	if ( "(" == oper )
 	{
@@ -193,7 +289,7 @@ void Arithmetic::DealWithOper(const std::string& oper)
 		//	}
 		//	else
 		//	{
-		//		m_vecOut.push_back(str);
+		//		m_vecOutputItem.push_back(str);
 		//	}
 		//}
 		PopStack(&IsLeftParenthesis);
@@ -219,7 +315,7 @@ void Arithmetic::DealWithOper(const std::string& oper)
 			//	else
 			//	{
 			//		m_stackOper.pop();
-			//		m_vecOut.push_back(str);
+			//		m_vecOutputItem.push_back(str);
 			//	}
 			//}
 			PopStack(&IsLeftParenthesis);
@@ -233,7 +329,7 @@ void Arithmetic::DealWithOper(const std::string& oper)
 			//	if ( "*" == str || "/" == str )
 			//	{
 			//		m_stackOper.pop();
-			//		m_vecOut.push_back(str);
+			//		m_vecOutputItem.push_back(str);
 			//	}
 			//	else
 			//	{
@@ -247,7 +343,7 @@ void Arithmetic::DealWithOper(const std::string& oper)
 	}
 }
 
-void Arithmetic::PopStack(pFunIsCondition fun_cond)
+void YCStatArithmet::PopStack(pFunIsCondition fun_cond)
 {
 	std::string str;
 
@@ -262,114 +358,32 @@ void Arithmetic::PopStack(pFunIsCondition fun_cond)
 		else
 		{
 			m_stackOper.pop();
-			m_vecOut.push_back(str);
+			m_vecOutputItem.push_back(str);
 		}
 	}
 }
 
-bool Arithmetic::IsLeftParenthesis(const std::string& str)
-{
-	return ("(" == str);
-}
-
-bool Arithmetic::IsLowLevelOper(const std::string& str)
-{
-	return ("(" == str || "+" == str || "-" == str);
-}
-
-std::string Arithmetic::OperatePlus(const std::string& left, const std::string& right)
-{
-	double d_left  = 0.0;
-	double d_right = 0.0;
-
-	// Error !
-	if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
-	{
-		//std::cout << "OperatePlus failed !!!" << std::endl;
-		return std::string();
-	}
-
-	//std::cout << "OperatePlus: double_left=" << d_left << ", double_right=" << d_right << std::endl;
-	d_left += d_right;
-	//std::cout << "OperatePlus: left=" << left << ", right=" << right << ", result=" << d_left << std::endl;
-	return base::PubStr::Double2Str(d_left);
-}
-
-std::string Arithmetic::OperateMinus(const std::string& left, const std::string& right)
-{
-	double d_left  = 0.0;
-	double d_right = 0.0;
-
-	// Error !
-	if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
-	{
-		//std::cout << "OperateMinus failed !!!" << std::endl;
-		return std::string();
-	}
-
-	//std::cout << "OperateMinus: double_left=" << d_left << ", double_right=" << d_right << std::endl;
-	d_left -= d_right;
-	//std::cout << "OperateMinus: left=" << left << ", right=" << right << ", result=" << d_left << std::endl;
-	return base::PubStr::Double2Str(d_left);
-}
-
-std::string Arithmetic::OperateMultiply(const std::string& left, const std::string& right)
-{
-	double d_left  = 0.0;
-	double d_right = 0.0;
-
-	// Error !
-	if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
-	{
-		//std::cout << "OperateMultiply failed !!!" << std::endl;
-		return std::string();
-	}
-
-	//std::cout << "OperateMultiply: double_left=" << d_left << ", double_right=" << d_right << std::endl;
-	d_left *= d_right;
-	//std::cout << "OperateMultiply: left=" << left << ", right=" << right << ", result=" << d_left << std::endl;
-	return base::PubStr::Double2Str(d_left);
-}
-
-std::string Arithmetic::OperateDivide(const std::string& left, const std::string& right)
-{
-	double d_left  = 0.0;
-	double d_right = 0.0;
-
-	// Error !
-	if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
-	{
-		//std::cout << "OperateDivide failed !!!" << std::endl;
-		return std::string();
-	}
-
-	//std::cout << "OperateDivide: double_left=" << d_left << ", double_right=" << d_right << std::endl;
-	d_left /= d_right;
-	//std::cout << "OperateDivide: left=" << left << ", right=" << right << ", result=" << d_left << std::endl;
-	return base::PubStr::Double2Str(d_left);
-}
-
-std::string Arithmetic::ListOut()
+std::string YCStatArithmet::ListOut()
 {
 	std::string out;
 
-	const int VEC_SIZE = m_vecOut.size();
+	const int VEC_SIZE = m_vecOutputItem.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
-		//std::cout << "_vec[" << (i+1) << "]=" << m_vecOut[i] << std::endl;
-		out += m_vecOut[i] + " ";
+		//std::cout << "_vec[" << (i+1) << "]=" << m_vecOutputItem[i] << std::endl;
+		out += m_vecOutputItem[i] + " ";
 	}
 
 	//std::cout << std::endl;
 	return out;
 }
 
-bool Arithmetic::CalcOnce()
+bool YCStatArithmet::CalcOnce()
 {
-	const int VEC_SIZE = m_vecOut.size();
+	const int VEC_SIZE = m_vecOutputItem.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
-		std::string& ref_out = m_vecOut[i];
+		std::string& ref_out = m_vecOutputItem[i];
 
 		pFunOperate pfun_op = GetOperator(ref_out);
 		if ( pfun_op != NULL )
@@ -379,10 +393,10 @@ bool Arithmetic::CalcOnce()
 				return false;
 			}
 
-			std::string result = (*pfun_op)(m_vecOut[i-2], m_vecOut[i-1]);
+			std::string result = (*pfun_op)(m_vecOutputItem[i-2], m_vecOutputItem[i-1]);
 
-			m_vecOut.erase(m_vecOut.begin()+i-2, m_vecOut.begin()+i+1);
-			m_vecOut.insert(m_vecOut.begin()+i-2, result);
+			m_vecOutputItem.erase(m_vecOutputItem.begin()+i-2, m_vecOutputItem.begin()+i+1);
+			m_vecOutputItem.insert(m_vecOutputItem.begin()+i-2, result);
 			return true;
 		}
 	}
@@ -390,7 +404,7 @@ bool Arithmetic::CalcOnce()
 	return false;
 }
 
-Arithmetic::pFunOperate Arithmetic::GetOperator(const std::string& oper)
+YCStatArithmet::pFunOperate YCStatArithmet::GetOperator(const std::string& oper)
 {
 	if ( "+" == oper )
 	{

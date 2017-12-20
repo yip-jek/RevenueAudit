@@ -22,6 +22,9 @@ public:
 	// 生成稽核统计结果
 	virtual void MakeResult(VEC3_STRING& v3_result) throw(base::Exception);
 
+	// 获取维度因子值
+	virtual void GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val) throw(base::Exception);
+
 protected:
 	// 释放因子资源
 	virtual void ReleaseFactors();
