@@ -3,41 +3,6 @@
 #include "anaerror.h"
 
 
-YCOutputItem::YCOutputItem(OutputItemType type /*= OIT_Unknown*/)
-:m_type(type)
-{
-}
-
-YCOutputItem::~YCOutputItem()
-{
-}
-
-void YCOutputItem::SetType(OutputItemType type)
-{
-	m_type = type;
-}
-
-OutputItemType YCOutputItem::GetType() const
-{
-	return m_type;
-}
-
-std::string YCOutputItem::GetOutputItem(size_t index) const
-{
-	if ( index < m_vecOutputItem.size() )
-	{
-		return m_vecOutputItem[index];
-	}
-
-	return std::string();
-}
-
-size_t YCOutputItem::GetItemSize() const
-{
-	return m_vecOutputItem.size();
-}
-
-////////////////////////////////////////////////////////////////////////////////
 bool YCStatArithmet::IsLeftParenthesis(const std::string& str)
 {
 	return ("(" == str);
@@ -119,33 +84,235 @@ YCStatArithmet::~YCStatArithmet()
 
 void YCStatArithmet::Load(const std::string& expression) throw(base::Exception)
 {
+	if ( expression.empty() )
+	{
+		throw base::Exception(ANAERR_ARITHMET_LOAD, "The arithmetic expression is a blank! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	// 清理旧数据
+	Clear();
+
+	// 转换为后序
+	Convert2Postorder(expression);
 }
 
 void YCStatArithmet::Calculate(std::vector<std::string>& vec_val) throw(base::Exception)
 {
-	Convert(expr);
 	DoCalc();
 }
 
-void YCStatArithmet::Convert(const std::string& expr)
+void YCStatArithmet::Clear()
 {
-	Clear();
-
-	const std::string EXP = NoSpaces(expr);
-
-	int         index = 0;
-	std::string one;
-
-	while ( (index = GetOne(EXP, index, one)) >= 0 )
+	// Clear stack
+	while ( !m_stackOper.empty() )
 	{
-		m_vecOutputItem.push_back(one);
+		m_stackOper.pop();
 	}
 
-	if ( RPN() )
+	// Clear vector
+	std::vector<YCOutputItem>().swap(m_vecOutputItem);
+}
+
+void YCStatArithmet::Convert2Postorder(const std::string& expression throw(base::Exception))
+{
+	int         index = 0;
+	std::string element;
+
+	// 获取所有元素
+	std::vector<std::string> vec_element;
+	while ( (index = GetElement(expression, index, element)) >= 0 )
 	{
-		std::cout << "Convert to: " << ListOut() << std::endl;
+		// 是否为有效元素？
+		// 舍弃为空的无效元素
+		if ( !element.empty() )
+		{
+			vec_element.push_back(element);
+		}
+	}
+
+	// 后序
+	Postorder(vec_element);
+}
+
+int YCStatArithmet::GetElement(const std::string& expression, int index, std::string& element)
+{
+	// 索引位置是否合法？
+	const int EXP_SIZE = expression.size();
+	if ( index >= EXP_SIZE )
+	{
+		return -1;
+	}
+
+	// 查找元素
+	// 运算符即是元素，也是分隔
+	int n_index = index;
+	while ( n_index < EXP_SIZE )
+	{
+		const char CH = expression[n_index];
+
+		// 是否找到运算符？
+		if ( IsOper(std::string(1, CH)) )
+		{
+			// 是否在第一位？
+			if ( index == n_index )
+			{
+				element = CH;
+				return (++n_index);
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		++n_index;
+	}
+
+	element = base::PubStr::TrimB(expression.substr(index, n_index-index));
+	return n_index;
+}
+
+bool YCStatArithmet::IsOper(const std::string& str)
+{
+	return ( "+" == str 
+			|| "-" == str 
+			|| "*" == str 
+			|| "/" == str 
+			|| "(" == str 
+			|| ")" == str);
+}
+
+void YCStatArithmet::Postorder(const std::vector<std::string>& vec_element) throw(base::Exception)
+{
+	if ( vec_element.empty() )
+	{
+		throw base::Exception(ANAERR_ARITHMET_LOAD, "The element vector is empty! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	double       dou_val = 0.0;
+	YCOutputItem output_item;
+
+	// 进行后序转换
+	const int VEC_SIZE = vec_element.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		const std::string& ref_str = vec_element[i];
+
+		// 是否为运算符？
+		if ( IsOper(ref_str) )
+		{
+			if ( m_stackOper.empty() )		// 直接放入堆栈
+			{
+				m_stackOper.push(ref_str);
+			}
+			else
+			{
+				DealWithOper(ref_str);
+			}
+		}
+		else	// 不是运算符，则直接输出
+		{
+			// 是否为常量？
+			if ( base::PubStr::Str2Double(ref_str, dou_val) )	// 常量
+			{
+				output_item.item_type = YCOutputItem::OIT_CONSTANT;
+			}
+			else	// 维度
+			{
+				output_item.item_type = YCOutputItem::OIT_DIM;
+			}
+
+			output_item.vec_out.assign(1, ref_str);
+			m_vecOutputItem.push_back(output_item);
+		}
+	}
+
+	std::string oper;
+	while ( !m_stackOper.empty() )
+	{
+		oper = m_stackOper.top();
+		m_stackOper.pop();
+
+		// Syntax error
+		// 注意：最后全部pop出时，还存在左括号，则表明表达式括号不匹配，错误 !!!
+		if ( "(" == oper )
+		{
+			throw base::Exception(ANAERR_ARITHMET_LOAD, "SYNTAX ERROR: Parentheses do not match !!! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		}
+
+		output_item.item_type = YCOutputItem::OIT_OPERATOR;
+		output_item.vec_out.assign(1, oper);
+		m_vecOutputItem.push_back(output_item);
 	}
 }
+
+void YCStatArithmet::DealWithOper(const std::string& oper) throw(base::Exception)
+{
+	if ( "(" == oper )
+	{
+		// 左括号直接压入堆栈
+		m_stackOper.push(oper);
+	}
+	else if ( ")" == oper )
+	{
+		// pop 出左括号后的所有运算符
+		PopStack(&IsLeftParenthesis);
+
+		// 是否有左括号？
+		if ( m_stackOper.empty() )
+		{
+			throw base::Exception(ANAERR_ARITHMET_LOAD, "SYNTAX ERROR: Parentheses do not match !!! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		}
+		else
+		{
+			// POP 出左括号
+			m_stackOper.pop();
+		}
+	}
+	else
+	{
+		if ( "+" == oper || "-" == oper )	// 低级运算符："+"和"-"
+		{
+			PopStack(&IsLeftParenthesis);
+		}
+		else	// 高级运算符："*"和"/"
+		{
+			PopStack(&IsLowLevelOper);
+		}
+
+		m_stackOper.push(oper);
+	}
+}
+
+void YCStatArithmet::PopStack(pFunIsCondition fun_cond)
+{
+	std::string  oper;
+	YCOutputItem output_item(YCOutputItem::OIT_OPERATOR);
+
+	while ( !m_stackOper.empty() )
+	{
+		oper = m_stackOper.top();
+
+		if ( (*fun_cond)(oper) )
+		{
+			break;
+		}
+		else
+		{
+			m_stackOper.pop();
+
+			output_item.vec_out.assign(1, oper);
+			m_vecOutputItem.push_back(output_item);
+		}
+	}
+}
+
+
+
+
+
+
+
 
 void YCStatArithmet::DoCalc()
 {
@@ -165,201 +332,6 @@ void YCStatArithmet::DoCalc()
 		}
 
 		std::cout << "Calc result: " << base::PubStr::StringDoubleFormat(m_vecOutputItem[0]) << std::endl;
-	}
-}
-
-void YCStatArithmet::Clear()
-{
-	// Clear stack
-	while ( !m_stackOper.empty() )
-	{
-		m_stackOper.pop();
-	}
-
-	// Clear vector
-	std::vector<std::string>().swap(m_vecOutputItem);
-}
-
-bool YCStatArithmet::IsOper(const std::string& str)
-{
-	return ( "+" == str 
-			|| "-" == str 
-			|| "*" == str 
-			|| "/" == str 
-			|| "(" == str 
-			|| ")" == str);
-}
-
-int YCStatArithmet::GetOne(const std::string& expr, int index, std::string& one)
-{
-	const int EXP_SIZE = expr.size();
-	if ( index >= EXP_SIZE )
-	{
-		return -1;
-	}
-
-	int n_idx = index;
-	while ( n_idx < EXP_SIZE )
-	{
-		const char CH = expr[n_idx];
-		if ( IsOper(std::string(1, CH)) )
-		{
-			if ( index == n_idx )
-			{
-				one = CH;
-
-				return (++n_idx);
-			}
-			else
-			{
-				break;
-			}
-		}
-
-		++n_idx;
-	}
-
-	one = expr.substr(index, n_idx-index);
-	return n_idx;
-}
-
-bool YCStatArithmet::RPN()
-{
-	std::vector<std::string> vec_out;
-	vec_out.swap(m_vecOutputItem);
-
-	const int VEC_SIZE = vec_out.size();
-	for ( int i = 0; i < VEC_SIZE; ++i )
-	{
-		const std::string& ref_str = vec_out[i];
-
-		if ( IsOper(ref_str) )
-		{
-			if ( m_stackOper.empty() )
-			{
-				m_stackOper.push(ref_str);
-			}
-			else
-			{
-				DealWithOper(ref_str);
-			}
-		}
-		else
-		{
-			m_vecOutputItem.push_back(ref_str);
-		}
-	}
-
-	std::string str;
-	while ( !m_stackOper.empty() )
-	{
-		str = m_stackOper.top();
-		m_stackOper.pop();
-
-		// syntax error
-		// 注意：最后全部pop出时，还存在左括号，则表明表达式括号不匹配，错误 !!!
-		if ( "(" == str )
-		{
-			std::cerr << "SYNTAX ERROR: Parentheses do not match !!!" << std::endl;
-			return false;
-		}
-
-		m_vecOutputItem.push_back(str);
-	}
-
-	return true;
-}
-
-void YCStatArithmet::DealWithOper(const std::string& oper)
-{
-	if ( "(" == oper )
-	{
-		m_stackOper.push(oper);
-	}
-	else if ( ")" == oper )
-	{
-		//while ( !m_stackOper.empty() )
-		//{
-		//	str = m_stackOper.top();
-		//	m_stackOper.pop();
-
-		//	if ( "(" == str )
-		//	{
-		//		break;
-		//	}
-		//	else
-		//	{
-		//		m_vecOutputItem.push_back(str);
-		//	}
-		//}
-		PopStack(&IsLeftParenthesis);
-
-		// POP 出左括号
-		if ( !m_stackOper.empty() )
-		{
-			m_stackOper.pop();
-		}
-	}
-	else
-	{
-		if ( "+" == oper || "-" == oper )	// 低级运算符："+"和"-"
-		{
-			//while ( !m_stackOper.empty() )
-			//{
-			//	str = m_stackOper.top();
-
-			//	if ( "(" == str )
-			//	{
-			//		break;
-			//	}
-			//	else
-			//	{
-			//		m_stackOper.pop();
-			//		m_vecOutputItem.push_back(str);
-			//	}
-			//}
-			PopStack(&IsLeftParenthesis);
-		}
-		else	// 高级运算符："*"和"/"
-		{
-			//while ( !m_stackOper.empty() )
-			//{
-			//	str = m_stackOper.top();
-
-			//	if ( "*" == str || "/" == str )
-			//	{
-			//		m_stackOper.pop();
-			//		m_vecOutputItem.push_back(str);
-			//	}
-			//	else
-			//	{
-			//		break;
-			//	}
-			//}
-			PopStack(&IsLowLevelOper);
-		}
-
-		m_stackOper.push(oper);
-	}
-}
-
-void YCStatArithmet::PopStack(pFunIsCondition fun_cond)
-{
-	std::string str;
-
-	while ( !m_stackOper.empty() )
-	{
-		str = m_stackOper.top();
-
-		if ( (*fun_cond)(str) )
-		{
-			break;
-		}
-		else
-		{
-			m_stackOper.pop();
-			m_vecOutputItem.push_back(str);
-		}
 	}
 }
 

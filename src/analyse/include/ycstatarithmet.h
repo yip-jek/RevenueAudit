@@ -13,31 +13,20 @@ public:
 	// 输出项类型
 	enum OutputItemType
 	{
-		OIT_Unknown    = 0,				// 未知类型（初始值）
-		OIT_DIM        = 1,				// 维度ID
-		OIT_OPERATOR   = 2,				// 运算符
-		OIT_DATE_VALUE = 3,				// 数值（可参与运算）
+		OIT_UNKNOWN  = 0,			// 未知类型（初始值）
+		OIT_CONSTANT = 1,			// 常量
+		OIT_DIM      = 2,			// 维度ID
+		OIT_OPERATOR = 3,			// 运算符
+		OIT_VALUE    = 4,			// 数值（可参与运算）
 	};
 
-	YCOutputItem(OutputItemType type = OIT_Unknown);
-	~YCOutputItem();
+public:
+	YCOutputItem(OutputItemType type = OIT_UNKNOWN): item_type(type) {}
+	~YCOutputItem() {}
 
 public:
-	// 设置类型
-	void SetType(OutputItemType type);
-
-	// 获取类型
-	OutputItemType GetType() const;
-
-	// 获取输出项
-	std::string GetOutputItem(size_t index) const;
-
-	// 获取输出项个数
-	size_t GetItemSize() const;
-
-private:
-	OutputItemType           m_type;
-	std::vector<std::string> m_vecOut;
+	OutputItemType           item_type;
+	std::vector<std::string> vec_out;
 };
 
 
@@ -77,22 +66,29 @@ public:
 	void Calculate(std::vector<std::string>& vec_val) throw(base::Exception);
 
 private:
-	// 算术表达式后序转换
-	void Convert(const std::string& expr);
-
-	void DoCalc();
-
+	// 清空
 	void Clear();
 
+	// 算术表达式后序转换
+	void Convert2Postorder(const std::string& expression) throw(base::Exception);
+
+	// 获取单个元素
+	int GetElement(const std::string& expression, int index, std::string& element);
+
+	// 是否为运算符
 	bool IsOper(const std::string& str);
 
-	int GetOne(const std::string& expr, int index, std::string& one);
+	// 后序
+	void Postorder(const std::vector<std::string>& vec_element) throw(base::Exception);
 
-	bool RPN();
+	// 处理运算符
+	void DealWithOper(const std::string& oper) throw(base::Exception);
 
-	void DealWithOper(const std::string& oper);
-
+	// 当达到条件时，pop出堆栈
 	void PopStack(pFunIsCondition fun_cond);
+
+
+	void DoCalc();
 
 	std::string ListOut();
 
