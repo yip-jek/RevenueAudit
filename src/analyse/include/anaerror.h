@@ -94,5 +94,6 @@ enum ANALYSE_ERROR
 	ANAERR_FACTOR_XQB_INIT        = -3005009,			// 详情表因子初始化失败
 	ANAERR_OPERATE_FAILED         = -3005010,			// 运算操作失败
 	ANAERR_ARITHMET_LOAD          = -3005011,			// 载入四则运算表达式失败
+	ANAERR_ARITHMET_CALCULATE     = -3005012,			// 生成四则运算结果失败
 };
 

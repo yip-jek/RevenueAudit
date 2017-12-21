@@ -87,18 +87,22 @@ private:
 	// 当达到条件时，pop出堆栈
 	void PopStack(pFunIsCondition fun_cond);
 
+	// 进行一次四则运算
+	void CalcOnce() throw(base::Exception);
 
-	void DoCalc();
+	// 获取运算符对应的运算操作
+	// 不为运算符则返回 NULL
+	pFunOperate GetOperate(const std::string& oper);
 
-	std::string ListOut();
+	// 计算结果
+	void OperateResult(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception);
 
-	bool CalcOnce();
-
-	pFunOperate GetOperator(const std::string& oper);
+	// 获取维度对应的数值
+	void GetDimDataValue(YCOutputItem& item) throw(base::Exception);
 
 private:
-	YCStatFactor*             m_pStatFactor;
-	std::stack<std::string>   m_stackOper;
-	std::vector<YCOutputItem> m_vecOutputItem;
+	YCStatFactor*             m_pStatFactor;				// 统计因子接口
+	std::stack<std::string>   m_stackOper;					// 运算符堆栈
+	std::vector<YCOutputItem> m_vecOutputItem;				// 输出项队列
 };
 

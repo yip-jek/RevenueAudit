@@ -98,7 +98,20 @@ void YCStatArithmet::Load(const std::string& expression) throw(base::Exception)
 
 void YCStatArithmet::Calculate(std::vector<std::string>& vec_val) throw(base::Exception)
 {
-	DoCalc();
+	if ( m_vecOutputItem.empty() )
+	{
+		throw base::Exception(ANAERR_ARITHMET_CALCULATE, "The output item vector is empty! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	// 从输出项队列中，取出数据项与运算符进行四则运算
+	// 直至得出最终的结果
+	do
+	{
+		CalcOnce();
+	}
+	while ( m_vecOutputItem.size() > 1 );
+
+	m_vecOutputItem[0].vec_out.swap(vec_val);
 }
 
 void YCStatArithmet::Clear()
@@ -307,76 +320,46 @@ void YCStatArithmet::PopStack(pFunIsCondition fun_cond)
 	}
 }
 
-
-
-
-
-
-
-
-void YCStatArithmet::DoCalc()
-{
-	if ( m_vecOutputItem.empty() )
-	{
-		std::cerr << "[CALC] m_vecOutputItem is empty !!!" << std::endl;
-	}
-	else
-	{
-		while ( m_vecOutputItem.size() > 1 )
-		{
-			if ( !CalcOnce() )
-			{
-				std::cerr << "[CALC] CalcOnce failed !!!" << std::endl;
-				return;
-			}
-		}
-
-		std::cout << "Calc result: " << base::PubStr::StringDoubleFormat(m_vecOutputItem[0]) << std::endl;
-	}
-}
-
-std::string YCStatArithmet::ListOut()
-{
-	std::string out;
-
-	const int VEC_SIZE = m_vecOutputItem.size();
-	for ( int i = 0; i < VEC_SIZE; ++i )
-	{
-		//std::cout << "_vec[" << (i+1) << "]=" << m_vecOutputItem[i] << std::endl;
-		out += m_vecOutputItem[i] + " ";
-	}
-
-	//std::cout << std::endl;
-	return out;
-}
-
-bool YCStatArithmet::CalcOnce()
+void YCStatArithmet::CalcOnce() throw(base::Exception)
 {
 	const int VEC_SIZE = m_vecOutputItem.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
-		std::string& ref_out = m_vecOutputItem[i];
+		YCOutputItem& ref_item = m_vecOutputItem[i];
 
-		pFunOperate pfun_op = GetOperator(ref_out);
-		if ( pfun_op != NULL )
+		// 是否为运算符？
+		if ( ref_item.item_type != YCOutputItem::OIT_OPERATOR )
 		{
-			if ( i < 2 )	// 少于2个操作数
-			{
-				return false;
-			}
-
-			std::string result = (*pfun_op)(m_vecOutputItem[i-2], m_vecOutputItem[i-1]);
-
-			m_vecOutputItem.erase(m_vecOutputItem.begin()+i-2, m_vecOutputItem.begin()+i+1);
-			m_vecOutputItem.insert(m_vecOutputItem.begin()+i-2, result);
-			return true;
+			continue;
 		}
+
+		// 直到取到第一个运算符，才进行计算
+		pFunOperate pfun_oper = GetOperate(ref_item.vec_out[0]);
+		if ( NULL == pfun_oper )
+		{
+			throw base::Exception(ANAERR_ARITHMET_CALCULATE, "NO operate for operator: [%s] [FILE:%s, LINE:%d]", ref_item.vec_out[0].c_str(), __FILE__, __LINE__);
+		}
+
+		// 是否少于 2 个操作数？
+		if ( i < 2 )
+		{
+			throw base::Exception(ANAERR_ARITHMET_CALCULATE, "Less than 2 operands: [%d] [FILE:%s, LINE:%d]", i, __FILE__, __LINE__);
+		}
+
+		// 结果计算
+		YCOutputItem item_result;
+		OperateResult(m_vecOutputItem[i-2], m_vecOutputItem[i-1], pfun_oper, item_result);
+
+		// 参与运算的元素全部删除，并将结果插入到删除元素的起始位置
+		m_vecOutputItem.erase(m_vecOutputItem.begin()+i-2, m_vecOutputItem.begin()+i+1);
+		m_vecOutputItem.insert(m_vecOutputItem.begin()+i-2, item_result);
 	}
 
-	return false;
+	// 运算符不存在，无法进行计算
+	throw base::Exception(ANAERR_ARITHMET_CALCULATE, "The operator: NOT FOUND! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 }
 
-YCStatArithmet::pFunOperate YCStatArithmet::GetOperator(const std::string& oper)
+YCStatArithmet::pFunOperate YCStatArithmet::GetOperate(const std::string& oper)
 {
 	if ( "+" == oper )
 	{
@@ -398,5 +381,16 @@ YCStatArithmet::pFunOperate YCStatArithmet::GetOperator(const std::string& oper)
 	{
 		return NULL;
 	}
+}
+
+void YCStatArithmet::OperateResult(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception)
+{
+	GetDimDataValue(item_left);
+	GetDimDataValue(item_right);
+
+}
+
+void YCStatArithmet::GetDimDataValue(YCOutputItem& item) throw(base::Exception)
+{
 }
 
