@@ -103,6 +103,11 @@ void YCStatArithmet::Calculate(std::vector<std::string>& vec_val) throw(base::Ex
 		throw base::Exception(ANAERR_ARITHMET_CALCULATE, "The output item vector is empty! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
+	if ( NULL == m_pStatFactor )
+	{
+		throw base::Exception(ANAERR_ARITHMET_CALCULATE, "The pointer of YCStatFactor is NULL! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
 	// 从输出项队列中，取出数据项与运算符进行四则运算
 	// 直至得出最终的结果
 	do
@@ -111,6 +116,7 @@ void YCStatArithmet::Calculate(std::vector<std::string>& vec_val) throw(base::Ex
 	}
 	while ( m_vecOutputItem.size() > 1 );
 
+	// 计算得出的最终结果
 	m_vecOutputItem[0].vec_out.swap(vec_val);
 }
 
@@ -327,6 +333,12 @@ void YCStatArithmet::CalcOnce() throw(base::Exception)
 	{
 		YCOutputItem& ref_item = m_vecOutputItem[i];
 
+		// 未知类型
+		if ( YCOutputItem::OIT_UNKNOWN == ref_item.item_type )
+		{
+			throw base::Exception(ANAERR_ARITHMET_CALCULATE, "Unknown output item type! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		}
+
 		// 是否为运算符？
 		if ( ref_item.item_type != YCOutputItem::OIT_OPERATOR )
 		{
@@ -385,12 +397,67 @@ YCStatArithmet::pFunOperate YCStatArithmet::GetOperate(const std::string& oper)
 
 void YCStatArithmet::OperateResult(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception)
 {
-	GetDimDataValue(item_left);
-	GetDimDataValue(item_right);
+	if ( YCOutputItem::OIT_CONSTANT == item_left.item_type 
+		&& YCOutputItem::OIT_CONSTANT == item_right.item_type )	// 左右操作数同为常量
+	{
+		std::string data = (*pfun_oper)(item_left.vec_out[0], item_right.vec_out[0]);
 
+		item_result.item_type = YCOutputItem::OIT_CONSTANT;
+		item_result.vec_out.assign(1, data);
+	}
+	else
+	{
+		// 通过维度找到对应的数值
+		TryGetDimDataValue(item_left);
+		TryGetDimDataValue(item_right);
+
+		// 此时，输出项类型只存在2种情况："常量类型"或者"数值类型"
+		// 且至少有一个输出项类型为"数值类型"
+		TryMatchOutputItem(item_right, item_left);
+		TryMatchOutputItem(item_left, item_right);
+
+		OperateValue(item_left, item_right, pfun_oper, item_result);
+	}
 }
 
-void YCStatArithmet::GetDimDataValue(YCOutputItem& item) throw(base::Exception)
+void YCStatArithmet::TryGetDimDataValue(YCOutputItem& item) throw(base::Exception)
 {
+	if ( YCOutputItem::OIT_DIM == item.item_type )
+	{
+		m_pStatFactor->GetDimFactorValue(item.vec_out[0], item.vec_out);
+		item.item_type = YCOutputItem::OIT_VALUE;
+	}
+}
+
+void YCStatArithmet::TryMatchOutputItem(const YCOutputItem& item_val, YCOutputItem& item_const)
+{
+	// 是否为常量类型？
+	if ( YCOutputItem::OIT_CONSTANT == item_const.item_type )
+	{
+		// 匹配
+		size_t off_size = item_val.vec_out.size() - item_const.vec_out.size();
+		if ( off_size > 0 )
+		{
+			item_const.vec_out.insert(item_const.vec_out.end(), off_size, item_const.vec_out[0]);
+		}
+	}
+}
+
+void YCStatArithmet::OperateValue(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception)
+{
+	const int VEC_SIZE = item_left.vec_out.size();
+	if ( (size_t)VEC_SIZE != item_right.vec_out.size() )
+	{
+		throw base::Exception(ANAERR_ARITHMET_CALCULATE, "The size of output items do not match: Left output item size [%lu], right output item size [%lu] [FILE:%s, LINE:%d]", VEC_SIZE, item_right.vec_out.size(), __FILE__, __LINE__);
+	}
+
+	std::vector<std::string> vec_val;
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		vec_val.push_back((*pfun_oper)(item_left.vec_out[i], item_right.vec_out[i]));
+	}
+
+	item_result.item_type = YCOutputItem::OIT_VALUE;
+	item_result.vec_out.swap(vec_val);
 }
 

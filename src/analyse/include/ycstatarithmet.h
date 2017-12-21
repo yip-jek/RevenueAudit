@@ -97,8 +97,14 @@ private:
 	// 计算结果
 	void OperateResult(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception);
 
-	// 获取维度对应的数值
-	void GetDimDataValue(YCOutputItem& item) throw(base::Exception);
+	// 尝试获取维度对应的数值
+	void TryGetDimDataValue(YCOutputItem& item) throw(base::Exception);
+
+	// 尝试匹配输出项
+	void TryMatchOutputItem(const YCOutputItem& item_val, YCOutputItem& item_const);
+
+	// 数值计算
+	void OperateValue(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception);
 
 private:
 	YCStatFactor*             m_pStatFactor;				// 统计因子接口
