@@ -366,6 +366,7 @@ void YCStatArithmet::CalcOnce() throw(base::Exception)
 		// 参与运算的元素全部删除，并将结果插入到删除元素的起始位置
 		m_vecOutputItem.erase(m_vecOutputItem.begin()+i-2, m_vecOutputItem.begin()+i+1);
 		m_vecOutputItem.insert(m_vecOutputItem.begin()+i-2, item_result);
+		return;
 	}
 
 	// 运算符不存在，无法进行计算
