@@ -63,7 +63,7 @@ public:
 	void Load(const std::string& expression) throw(base::Exception);
 
 	// 生成计算结果
-	void Calculate(std::vector<std::string>& vec_val) throw(base::Exception);
+	void Calculate(std::vector<double>& vec_val) throw(base::Exception);
 
 private:
 	// 清空
@@ -105,6 +105,9 @@ private:
 
 	// 数值计算
 	void OperateValue(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception);
+
+	// 输出结果
+	void OutputResult(std::vector<double>& vec_result) throw(base::Exception);
 
 private:
 	YCStatFactor*             m_pStatFactor;				// 统计因子接口

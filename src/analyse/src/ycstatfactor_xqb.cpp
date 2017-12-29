@@ -65,10 +65,10 @@ void YCStatFactor_XQB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
 
 void YCStatFactor_XQB::GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val) throw(base::Exception)
 {
-	MAP_STRING::iterator m_it = m_mFactor.find(dim);
+	MAP_FACTOR::iterator m_it = m_mFactor.find(dim);
 	if ( m_it != m_mFactor.end() )
 	{
-		m_it->ExportValue(vec_val);
+		m_it->second.ExportValue(vec_val);
 	}
 	else
 	{
@@ -161,45 +161,56 @@ void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_
 		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "Import items of complex factor failed: DIM=[%s], COMPLEX_FMT=[%s] [FILE:%s, LINE:%d]", factor.GetDimID().c_str(), cmplx_fmt.c_str(), __FILE__, __LINE__);
 	}
 
-	const int FACTOR_VALUE_SIZE = factor.GetValueSize();
-	VEC_DOUBLE vec_result(FACTOR_VALUE_SIZE, 0.0);
+	std::string expr;
+	VEC_DOUBLE  vec_result;
 
-	// 组合因子表达式：[ A1, A2, A3, ...|+, -, ... ]
-	m_pLog->Output("[YCStatFactor_XQB] 组合因子表达式：%s", vec_fmt_first[AREA_ITEM_SIZE].c_str());
-	base::PubStr::Str2StrVector(vec_fmt_first[AREA_ITEM_SIZE], "|", vec_fmt_first);
-
-	const int VEC_FMT_SIZE = vec_fmt_first.size();
-	if ( VEC_FMT_SIZE == 1 )	// 特殊的组合因子：不含运算符，直接等于某个因子（一般因子或者组合因子）
+	// 是否为四则运算组合因子？
+	if ( IsArithmetic(vec_fmt_first[AREA_ITEM_SIZE], expr) )	// 四则运算组合因子
 	{
-		CalcOneFactor(vec_result, "+", vec_fmt_first[0]);
+		CalcArithmeticFactor(expr, vec_result);
 	}
-	else if ( VEC_FMT_SIZE == 2 )	// 正常的组合因子：左边维度ID集，右边操作符集
+	else	// 非四则运算
 	{
-		std::string fmt_dim = base::PubStr::TrimUpperB(vec_fmt_first[0]);
-		std::string fmt_op  = base::PubStr::TrimUpperB(vec_fmt_first[1]);
+		const int FACTOR_VALUE_SIZE = factor.GetValueSize();
+		vec_result.assign(FACTOR_VALUE_SIZE, 0.0);
 
-		base::PubStr::Str2StrVector(fmt_dim, ",", vec_fmt_first);
-		base::PubStr::Str2StrVector(fmt_op,  ",", vec_fmt_second);
+		// 组合因子表达式：[ A1, A2, A3, ...|+, -, ... ]
+		m_pLog->Output("[YCStatFactor_XQB] 组合因子表达式：%s", vec_fmt_first[AREA_ITEM_SIZE].c_str());
+		base::PubStr::Str2StrVector(vec_fmt_first[AREA_ITEM_SIZE], "|", vec_fmt_first);
 
-		// 至少两个统计维度；且运算符个数比维度少一个
-		const int VEC_DIM_SIZE = vec_fmt_first.size();
-		if ( VEC_DIM_SIZE < 2 || (size_t)VEC_DIM_SIZE != (vec_fmt_second.size() + 1) )
+		const int VEC_FMT_SIZE = vec_fmt_first.size();
+		if ( VEC_FMT_SIZE == 1 )	// 特殊的组合因子：不含运算符，直接等于某个因子（一般因子或者组合因子）
 		{
-			throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不匹配的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
+			CalcOneFactor(vec_result, "+", vec_fmt_first[0]);
 		}
-
-		// 计算结果：首个因子
-		CalcOneFactor(vec_result, "+", vec_fmt_first[0]);
-
-		// 计算结果：剩余因子
-		for ( int i = 1; i < VEC_DIM_SIZE; ++i )
+		else if ( VEC_FMT_SIZE == 2 )	// 正常的组合因子：左边维度ID集，右边操作符集
 		{
-			CalcOneFactor(vec_result, vec_fmt_second[i-1], vec_fmt_first[i]);
+			std::string fmt_dim = base::PubStr::TrimUpperB(vec_fmt_first[0]);
+			std::string fmt_op  = base::PubStr::TrimUpperB(vec_fmt_first[1]);
+
+			base::PubStr::Str2StrVector(fmt_dim, ",", vec_fmt_first);
+			base::PubStr::Str2StrVector(fmt_op,  ",", vec_fmt_second);
+
+			// 至少两个统计维度；且运算符个数比维度少一个
+			const int VEC_DIM_SIZE = vec_fmt_first.size();
+			if ( VEC_DIM_SIZE < 2 || (size_t)VEC_DIM_SIZE != (vec_fmt_second.size() + 1) )
+			{
+				throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "不匹配的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
+			}
+
+			// 计算结果：首个因子
+			CalcOneFactor(vec_result, "+", vec_fmt_first[0]);
+
+			// 计算结果：剩余因子
+			for ( int i = 1; i < VEC_DIM_SIZE; ++i )
+			{
+				CalcOneFactor(vec_result, vec_fmt_second[i-1], vec_fmt_first[i]);
+			}
 		}
-	}
-	else
-	{
-		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
+		else
+		{
+			throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "无法识别的组合因子表达式：%s [FILE:%s, LINE:%d]", cmplx_fmt.c_str(), __FILE__, __LINE__);
+		}
 	}
 
 	VEC_STRING vs_result;
@@ -208,6 +219,14 @@ void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_
 	{
 		throw base::Exception(ANAERR_CALC_COMPLEX_FACTOR, "Import value of complex factor failed: DIM=[%s], COMPLEX_FMT=[%s] [FILE:%s, LINE:%d]", factor.GetDimID().c_str(), cmplx_fmt.c_str(), __FILE__, __LINE__);
 	}
+}
+
+void YCStatFactor_XQB::CalcArithmeticFactor(const std::string& expr, VEC_DOUBLE& vec_result) throw(base::Exception)
+{
+	m_pLog->Output("[YCStatFactor_XQB] 四则运算表达式：%s", expr.c_str());
+
+	m_statArithmet.Load(expr);
+	m_statArithmet.Calculate(vec_result);
 }
 
 void YCStatFactor_XQB::CalcOneFactor(VEC_DOUBLE& vec_result, const std::string& op, const std::string& dim) throw(base::Exception)

@@ -2,12 +2,14 @@
 #include "anaerror.h"
 #include "log.h"
 
-const char* const YCStatFactor::S_TOP_PRIORITY  = "NN";			// 最高优先级 (差异汇总)
+const char* const YCStatFactor::S_TOP_PRIORITY = "NN";					// 最高优先级 (差异汇总)
+const char* const YCStatFactor::S_ARITHMETIC   = "ARITHMETIC";			// 四则运算标识
 
 YCStatFactor::YCStatFactor(const std::string& etl_day, YCTaskReq& task_req)
 :m_pLog(base::Log::Instance())
 ,m_etlDay(etl_day)
 ,m_refTaskReq(task_req)
+,m_statArithmet(this)
 {
 }
 
@@ -171,5 +173,39 @@ std::string YCStatFactor::ConvertResultType(double result)
 
 	// Double -> String，保留2位小数
 	return base::PubStr::Double2FormatStr(result);
+}
+
+bool YCStatFactor::IsArithmetic(const std::string& expr, std::string& arith_exp)
+{
+	// 四则运算标识：表达式首部为"[ARITHMETIC]"
+	std::string expr_head = base::PubStr::TrimB(expr);
+
+	// 表达式是否满足最小长度？
+	if ( expr_head.size() <= (std::string(S_ARITHMETIC).size() + 2) )
+	{
+		return false;
+	}
+
+	// 不是以'['开始？
+	if ( expr_head[0] != '[' )
+	{
+		return false;
+	}
+
+	// 是否存在']'？
+	const size_t POS_END = expr_head.find(']');
+	if ( POS_END == std::string::npos )
+	{
+		return false;
+	}
+
+	// 是否为四则运算标识？
+	if ( base::PubStr::TrimUpperB(expr_head.substr(1, POS_END-1)) != S_ARITHMETIC )
+	{
+		return false;
+	}
+
+	arith_exp = base::PubStr::TrimB(expr_head.substr(POS_END+1));
+	return true;
 }
 

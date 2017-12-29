@@ -8,10 +8,8 @@ class YCFactor_XQB;
 class YCStatFactor_XQB : public YCStatFactor
 {
 public:
-	typedef std::vector<double>                         VEC_DOUBLE;
-
-	typedef std::pair<std::string, YCFactor_XQB>		PAIR_FACTOR;
-	typedef std::map<std::string, YCFactor_XQB>			MAP_FACTOR;
+	typedef std::pair<std::string, YCFactor_XQB>        PAIR_FACTOR;
+	typedef std::map<std::string, YCFactor_XQB>         MAP_FACTOR;
 
 public:
 	YCStatFactor_XQB(const std::string& etl_day, YCTaskReq& task_req, int ana_type, int item_size, int val_size);
@@ -40,6 +38,9 @@ private:
 
 	// 计算组合因子
 	void CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB& factor) throw(base::Exception);
+
+	// 计算四则运算组合因子
+	void CalcArithmeticFactor(const std::string& expr, VEC_DOUBLE& vec_result) throw(base::Exception);
 
 	// 计算单个因子
 	void CalcOneFactor(VEC_DOUBLE& vec_result, const std::string& op, const std::string& dim) throw(base::Exception);

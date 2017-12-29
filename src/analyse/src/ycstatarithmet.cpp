@@ -1,6 +1,7 @@
 #include "ycstatarithmet.h"
 #include "pubstr.h"
 #include "anaerror.h"
+#include "ycstatfactor.h"
 
 
 bool YCStatArithmet::IsLeftParenthesis(const std::string& str)
@@ -96,7 +97,7 @@ void YCStatArithmet::Load(const std::string& expression) throw(base::Exception)
 	Convert2Postorder(expression);
 }
 
-void YCStatArithmet::Calculate(std::vector<std::string>& vec_val) throw(base::Exception)
+void YCStatArithmet::Calculate(std::vector<double>& vec_val) throw(base::Exception)
 {
 	if ( m_vecOutputItem.empty() )
 	{
@@ -117,7 +118,7 @@ void YCStatArithmet::Calculate(std::vector<std::string>& vec_val) throw(base::Ex
 	while ( m_vecOutputItem.size() > 1 );
 
 	// 计算得出的最终结果
-	m_vecOutputItem[0].vec_out.swap(vec_val);
+	OutputResult(vec_val);
 }
 
 void YCStatArithmet::Clear()
@@ -132,7 +133,7 @@ void YCStatArithmet::Clear()
 	std::vector<YCOutputItem>().swap(m_vecOutputItem);
 }
 
-void YCStatArithmet::Convert2Postorder(const std::string& expression throw(base::Exception))
+void YCStatArithmet::Convert2Postorder(const std::string& expression) throw(base::Exception)
 {
 	int         index = 0;
 	std::string element;
@@ -459,5 +460,25 @@ void YCStatArithmet::OperateValue(YCOutputItem& item_left, YCOutputItem& item_ri
 
 	item_result.item_type = YCOutputItem::OIT_VALUE;
 	item_result.vec_out.swap(vec_val);
+}
+
+void YCStatArithmet::OutputResult(std::vector<double>& vec_result) throw(base::Exception)
+{
+	double d_val = 0.0;
+	std::vector<double> vec_val;
+
+	std::vector<std::string>& ref_vec_out = m_vecOutputItem[0].vec_out;
+	const int VEC_SIZE = ref_vec_out.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		if ( !base::PubStr::Str2Double(ref_vec_out[i], d_val) )
+		{
+			throw base::Exception(ANAERR_ARITHMET_CALCULATE, "无法转换为精度类型的结果值：[%s] [FILE:%s, LINE:%d]", ref_vec_out[i].c_str(), __FILE__, __LINE__);
+		}
+
+		vec_val.push_back(d_val);
+	}
+
+	vec_val.swap(vec_result);
 }
 

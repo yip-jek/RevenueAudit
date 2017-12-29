@@ -2,6 +2,7 @@
 
 #include <map>
 #include "ycinfo.h"
+#include "ycstatarithmet.h"
 
 namespace base
 {
@@ -12,14 +13,16 @@ class Log;
 class YCStatFactor
 {
 public:
-	typedef std::vector<std::string>		VEC_STRING;
-	typedef std::vector<VEC_STRING>			VEC2_STRING;
-	typedef std::vector<VEC2_STRING>		VEC3_STRING;
+	typedef std::vector<double>                         VEC_DOUBLE;
+	typedef std::vector<std::string>                    VEC_STRING;
+	typedef std::vector<VEC_STRING>                     VEC2_STRING;
+	typedef std::vector<VEC2_STRING>                    VEC3_STRING;
 
-	typedef std::vector<YCStatInfo>			VEC_STATINFO;
-	typedef std::map<int, VEC_STATINFO>		MAP_VEC_STATINFO;
+	typedef std::vector<YCStatInfo>                     VEC_STATINFO;
+	typedef std::map<int, VEC_STATINFO>                 MAP_VEC_STATINFO;
 
 	static const char* const S_TOP_PRIORITY;			// 最高优先级 (差异汇总)
+	static const char* const S_ARITHMETIC;				// 四则运算标识
 
 public:
 	YCStatFactor(const std::string& etl_day, YCTaskReq& task_req);
@@ -63,12 +66,17 @@ protected:
 	// 结果数据类型转换：Double -> String，保留2位小数，“四舍五入”
 	std::string ConvertResultType(double result);
 
+	// 是否为四则运算表达式？
+	// 四则运算表达式格式：以"[ARITHMETIC]"为表达式首部
+	bool IsArithmetic(const std::string& expr, std::string& arith_exp);
+
 protected:
 	base::Log*       m_pLog;
 	std::string      m_statID;					// 统计指标ID
 	std::string      m_statReport;				// 关联报表
 	std::string      m_etlDay;					// 采集账期
 	YCTaskReq&       m_refTaskReq;				// 任务请求信息
+	YCStatArithmet   m_statArithmet;			// 四则运算统计
 	MAP_VEC_STATINFO m_mvStatInfo;				// 规则因子信息列表
 };
 

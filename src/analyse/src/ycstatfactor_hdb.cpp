@@ -137,6 +137,13 @@ std::string YCStatFactor_HDB::CalcComplexFactor(const std::string& cmplx_fmt) th
 {
 	m_pLog->Output("[YCStatFactor_HDB] 组合因子表达式：%s", cmplx_fmt.c_str());
 
+	// 四则运算组合因子
+	std::string expr;
+	if ( IsArithmetic(cmplx_fmt, expr) )
+	{
+		return CalcArithmeticFactor(expr);
+	}
+
 	VEC_STRING vec_fmt_first;
 	VEC_STRING vec_fmt_second;
 	double complex_result = 0.0;
@@ -180,6 +187,17 @@ std::string YCStatFactor_HDB::CalcComplexFactor(const std::string& cmplx_fmt) th
 	}
 
 	return ConvertResultType(complex_result);
+}
+
+std::string YCStatFactor_HDB::CalcArithmeticFactor(const std::string& expr) throw(base::Exception)
+{
+	m_pLog->Output("[YCStatFactor_HDB] 四则运算表达式：%s", expr.c_str());
+
+	// 四则运算
+	VEC_DOUBLE vec_val;
+	m_statArithmet.Load(expr);
+	m_statArithmet.Calculate(vec_val);
+	return ConvertResultType(vec_val[0]);
 }
 
 double YCStatFactor_HDB::CalcOneFactor(double result, const std::string& op, const std::string& dim) throw(base::Exception)

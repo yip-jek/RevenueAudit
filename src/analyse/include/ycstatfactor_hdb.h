@@ -6,10 +6,10 @@
 class YCStatFactor_HDB : public YCStatFactor
 {
 public:
-	typedef std::vector<YCCategoryFactor>				VEC_CATEGORYFACTOR;
-	typedef std::map<std::string, std::string>			MAP_STRING;
+	typedef std::vector<YCCategoryFactor>               VEC_CATEGORYFACTOR;
+	typedef std::map<std::string, std::string>          MAP_STRING;
 	typedef std::map<std::string, YCPairCategoryFactor> MAP_PAIRCATEGORYFACTOR;
-	typedef std::map<std::string, VEC_CATEGORYFACTOR>	MAP_VEC_CATEGORYFACTOR;
+	typedef std::map<std::string, VEC_CATEGORYFACTOR>   MAP_VEC_CATEGORYFACTOR;
 
 public:
 	YCStatFactor_HDB(const std::string& etl_day, YCTaskReq& task_req);
@@ -41,6 +41,9 @@ private:
 
 	// 计算组合因子的维度值
 	std::string CalcComplexFactor(const std::string& cmplx_fmt) throw(base::Exception);
+
+	// 计算四则运算组合因子
+	std::string CalcArithmeticFactor(const std::string& expr) throw(base::Exception);
 
 	// 计算单个因子的维度值
 	double CalcOneFactor(double result, const std::string& op, const std::string& dim) throw(base::Exception);
