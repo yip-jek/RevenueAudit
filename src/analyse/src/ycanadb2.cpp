@@ -394,7 +394,7 @@ void YCAnaDB2::SelectYCSrcMaxBatch(YCSrcInfo& yc_info) throw(base::Exception)
 	rs.EnableWarning(true);
 
 	std::string sql;
-	base::PubStr::SetFormatString(sql, "select max(decimal(%s,12,2)) from %s where %s = '%s' and %s = '%s'", yc_info.field_batch.c_str(), yc_info.src_tab.c_str(), yc_info.field_period.c_str(), yc_info.period.c_str(), yc_info.field_city.c_str(), yc_info.city.c_str());
+	base::PubStr::SetFormatString(sql, "select max(decimal(%s,12,2)) from %s where %s like '%s%%' and %s = '%s'", yc_info.field_batch.c_str(), yc_info.src_tab.c_str(), yc_info.field_period.c_str(), yc_info.period.c_str(), yc_info.field_city.c_str(), yc_info.city.c_str());
 
 	try
 	{

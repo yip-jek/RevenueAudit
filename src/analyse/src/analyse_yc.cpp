@@ -635,7 +635,7 @@ void Analyse_YC::RecordStatisticsLog()
 
 	YCSrcInfo yc_srcinfo;
 	yc_srcinfo.field_period = m_fieldPeriod;
-	yc_srcinfo.period       = yc_log.stat_cycle;
+	yc_srcinfo.period       = yc_log.stat_cycle.substr(0, 6);	// 取6位账期：YYYYMM
 	yc_srcinfo.field_city   = m_fieldCity;
 	yc_srcinfo.city         = m_taskReq.task_city;
 	yc_srcinfo.field_batch  = m_fieldBatch;
