@@ -283,12 +283,11 @@ void Analyse_YC::FetchUpdateFields_YW() throw(base::Exception)
 		return;
 	}
 
-	VEC_STRING vec_upd_fd;
-	FetchUpdateFieldsFromKpiCol(m_taskInfo.vecKpiDimCol, vec_upd_fd);
-	FetchUpdateFieldsFromKpiCol(m_taskInfo.vecKpiValCol, vec_upd_fd);
+	FetchUpdateFieldsFromKpiCol(m_taskInfo.vecKpiDimCol, m_updFields.dim_upd_fields);
+	m_pLog->Output("[Analyse_YC] 获得详情表(业务侧) DIM 更新字段总数：%lu", m_updFields.dim_upd_fields.size());
 
-	vec_upd_fd.swap(m_updFields.upd_fields);
-	m_pLog->Output("[Analyse_YC] 获得详情表(业务侧)更新字段总数：%lu", m_updFields.upd_fields.size());
+	FetchUpdateFieldsFromKpiCol(m_taskInfo.vecKpiValCol, m_updFields.val_upd_fields);
+	m_pLog->Output("[Analyse_YC] 获得详情表(业务侧) VAL 更新字段总数：%lu", m_updFields.val_upd_fields.size());
 
 	if ( m_taskInfo.vecKpiDimCol.size() < YCResult_XQB::S_PUBLIC_MEMBERS + 1 )
 	{
@@ -305,6 +304,7 @@ void Analyse_YC::FetchUpdateFields_YW() throw(base::Exception)
 void Analyse_YC::FetchUpdateFieldsFromKpiCol(std::vector<KpiColumn>& vec_kc, VEC_STRING& vec_up_fd)
 {
 	std::vector<KpiColumn> v_kc;
+	VEC_STRING             v_upfd;
 
 	// 从指标字段集提取业务更新字段
 	const int VEC_SIZE = vec_kc.size();
@@ -313,7 +313,7 @@ void Analyse_YC::FetchUpdateFieldsFromKpiCol(std::vector<KpiColumn>& vec_kc, VEC
 		KpiColumn& ref_col = vec_kc[i];
 		if ( KpiColumn::EWTYPE_YC_UPD_FD_YW == ref_col.ExpWay )
 		{
-			vec_up_fd.push_back(ref_col.DBName);
+			v_upfd.push_back(ref_col.DBName);
 
 			m_pLog->Output("[Analyse_YC] 取得详情表(业务侧)更新字段：TYPE=[%s], "
 																	"SEQ=[%d], "
@@ -331,6 +331,7 @@ void Analyse_YC::FetchUpdateFieldsFromKpiCol(std::vector<KpiColumn>& vec_kc, VEC
 	}
 
 	v_kc.swap(vec_kc);
+	v_upfd.swap(vec_up_fd);
 }
 
 void Analyse_YC::CreateStatFactor() throw(base::Exception)
@@ -595,7 +596,7 @@ void Analyse_YC::KeepLastBatchManualData()
 		return;
 	}
 
-	if ( m_updFields.upd_fields.empty() )
+	if ( m_updFields.dim_upd_fields.empty() && m_updFields.val_upd_fields.empty() )
 	{
 		m_pLog->Output("[Analyse_YC] No need to update the last batch manual data: NO update fields!");
 		return;
