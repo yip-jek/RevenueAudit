@@ -573,27 +573,47 @@ void YCAnaDB2::UpdateLastBatchManualData(const std::string& tab, const UpdateFie
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql_sel = "SELECT ";
-	std::string sql_upd = "UPDATE " + tab + " SET ";
-	const int FLD_SIZE = upd_fld.upd_fields.size();
-	for ( int i = 0; i < FLD_SIZE; ++i )
+	std::string str_tmp_s;
+	std::string str_tmp_u;
+
+	// DIM 更新字段
+	const int DIM_FLD_SIZE = upd_fld.dim_upd_fields.size();
+	for ( int i = 0; i < DIM_FLD_SIZE; ++i )
 	{
 		if ( i > 0 )
 		{
-			sql_sel += ", " + upd_fld.upd_fields[i];
-			sql_upd += ", " + upd_fld.upd_fields[i] + " = ?";
+			str_tmp_s += ", " + upd_fld.dim_upd_fields[i];
+			str_tmp_u += ", " + upd_fld.dim_upd_fields[i] + " = ?";
 		}
 		else
 		{
-			sql_sel += upd_fld.upd_fields[i];
-			sql_upd += upd_fld.upd_fields[i] + " = ?";
+			str_tmp_s += upd_fld.dim_upd_fields[i];
+			str_tmp_u += upd_fld.dim_upd_fields[i] + " = ?";
 		}
 	}
 
+	// VAL 更新字段
+	const int VAL_FLD_SIZE = upd_fld.val_upd_fields.size();
+	for ( int i = 0; i < VAL_FLD_SIZE; ++i )
+	{
+		if ( str_tmp_u.empty() )
+		{
+			str_tmp_s += upd_fld.val_upd_fields[i];
+			str_tmp_u += upd_fld.val_upd_fields[i] + " = ?";
+		}
+		else
+		{
+			str_tmp_s += ", " + upd_fld.val_upd_fields[i];
+			str_tmp_u += ", " + upd_fld.val_upd_fields[i] + " = ?";
+		}
+	}
+
+	std::string sql_sel = "SELECT " + str_tmp_s;
 	sql_sel += " FROM " + tab + " WHERE " + upd_fld.fld_billcyc + " = ? and " + upd_fld.fld_city;
 	sql_sel += " = ? and decimal(" + upd_fld.fld_batch + ",12,0) = ? and " + upd_fld.fld_dim + " = ?";
 	m_pLog->Output("[DB2] Select last batch manual data: %s", sql_sel.c_str());
 
+	std::string sql_upd = "UPDATE " + tab + " SET " + str_tmp_u;
 	sql_upd += " WHERE " + upd_fld.fld_billcyc + " = ? and " + upd_fld.fld_city;
 	sql_upd += " = ? and decimal(" + upd_fld.fld_batch + ",12,0) = ? and " + upd_fld.fld_dim + " = ?";
 	m_pLog->Output("[DB2] Update manual data in current batch: %s", sql_upd.c_str());
@@ -619,9 +639,23 @@ void YCAnaDB2::UpdateLastBatchManualData(const std::string& tab, const UpdateFie
 			std::vector<std::string>().swap(vec_manual);
 			while ( !rs.IsEOF() )
 			{
-				for ( int j = 0; j < FLD_SIZE; ++j )
+				// DIM 字段值
+				for ( int j = 0; j < DIM_FLD_SIZE; ++j )
 				{
 					vec_manual.push_back((const char*)rs[j+1]);
+				}
+
+				// VAL 字段值
+				for ( int k = 0; k < VAL_FLD_SIZE; ++k )
+				{
+					str_tmp_s = (const char*)rs[DIM_FLD_SIZE+k+1];
+					if ( base::PubStr::TrimB(str_tmp_s).empty() )	// VAL 字段值为空
+					{
+						// 设置默认值：0
+						str_tmp_s = "0";
+					}
+
+					vec_manual.push_back(str_tmp_s);
 				}
 
 				rs.MoveNext();
@@ -631,15 +665,16 @@ void YCAnaDB2::UpdateLastBatchManualData(const std::string& tab, const UpdateFie
 			// 不存在满足条件的手工填列数
 			if ( vec_manual.empty() )
 			{
+				m_pLog->Output("[DB2] <WARNING> NO such manual data record: BILL_CYC=[%s], CITY=[%s], BATCH=[%d], DIM=[%s]", ref_vec[0].c_str(), ref_vec[1].c_str(), upd_fld.last_batch, ref_vec[YCResult_XQB::S_PUBLIC_MEMBERS].c_str());
 				continue;
 			}
 
 			rs.Prepare(sql_upd.c_str(), XDBO2::CRecordset::forwardOnly);
 
 			index = 1;
-			for ( int k = 0; k < FLD_SIZE; ++k )
+			for ( int l = 0; l < (DIM_FLD_SIZE + VAL_FLD_SIZE); ++l )
 			{
-				rs.Parameter(index++) = vec_manual[k].c_str();
+				rs.Parameter(index++) = vec_manual[l].c_str();
 			}
 
 			rs.Parameter(index++) = ref_vec[0].c_str();
