@@ -31,6 +31,12 @@ public:
 	// 设置采集规则表
 	void SetTabEtlRule(const std::string& tab_etlrule);
 
+    //设置详情表提交状态表
+    void SetTabYLStatus(const std::string& tab_ylStatus);
+
+    //设置报表指标关联表
+    void SetTabReportKpiRela(const std::string &tab_reportkpirela);
+
 	// 表是否存在
 	bool IsTableExists(const std::string& tab_name) throw(base::Exception);
 
@@ -49,9 +55,17 @@ public:
 	// 更新采集时间
 	void UpdateEtlTime(const std::string& etl_id, const std::string& etl_time) throw(base::Exception);
 
+    // 统计21个地市详情表状态为已提交个数
+    int CountAllSubmitStatu(TaskReqInfo& ref_taskreq) throw(base::Exception);
+
+    void SelectUndoneTaskRequest(std::vector<TaskReqInfo>& vec_Undone,const std::string& FinalStage) throw(base::Exception);
+
 private:
 	std::string m_tabTaskReq;				// 任务请求表
 	std::string m_tabKpiRule;				// 指标规则表
 	std::string m_tabEtlRule;				// 采集规则表
+	std::string m_tabYLStatus;              // 详情表提交状态 add for <广东移动NG3BASS项目－业财系统重构需求>
+	std::string m_tabCfgPfLfRela;           // 报表指标关联表
+
 };
 

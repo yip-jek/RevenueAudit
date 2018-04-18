@@ -1,4 +1,5 @@
 #include "sectimer.h"
+#include <unistd.h>
 #include "simpletime.h"
 
 SecTimer::SecTimer(long sec)

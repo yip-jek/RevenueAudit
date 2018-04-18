@@ -28,7 +28,7 @@ Task::~Task()
 
 std::string Task::Version()
 {
-	return ("Version 3.0031.20170603 released. Compiled at "__TIME__" on "__DATE__);
+	return ("Version 4.0.0.0 released. Compiled at " __TIME__ " on " __DATE__);
 }
 
 void Task::Run() throw(base::Exception)
@@ -124,6 +124,9 @@ void Task::DealTasks() throw(base::Exception)
 	m_showTimer.Set(m_showSeconds);
 	wait_timer.Start();
 	m_showTimer.Start();
+
+    //异常退出后重置任务
+    GetUndoneTask();
 
 	while ( Running() )
 	{
@@ -236,6 +239,30 @@ bool Task::IsProcessAlive(long long proc_task_id) throw(base::Exception)
 	return (strlen(buffer) > 1);
 }
 
+bool Task::IsProcessAlive(const TaskInfo& task_info,const TaskReqInfo& ref_tri,bool IsGDAudiKPIType) throw(base::Exception)
+{
+    //keyword e.g. :00001:KPI_YC_BOSSYHQFDZXQBHFF_YW:ANA_YC_BOSSYHQFDZXQBHFF_YW:21219:
+	std::string str_cmd;
+	if(IsGDAudiKPIType){
+		base::PubStr::SetFormatString(str_cmd, "ps -ef | grep -w \"[a-zA-Z][a-zA-Z]-%s:%s:.*\" | grep -v grep | wc -l",ref_tri.stat_cycle.c_str(),task_info.kpi_id.c_str());
+	}else{
+		base::PubStr::SetFormatString(str_cmd, "ps -ef | grep -w \"%s-%s:%s:.*\" | grep -v grep | wc -l",ref_tri.stat_city.c_str(),ref_tri.stat_cycle.c_str(),task_info.kpi_id.c_str());
+	}
+
+	FILE* fp_pipe = popen(str_cmd.c_str(), "r");
+	if ( NULL == fp_pipe )
+	{
+		throw base::Exception(TERR_IS_PROC_EXIST, "Popen() failed: (%d) %s [FILE:%s, LINE:%d]", errno, strerror(errno), __FILE__, __LINE__);
+	}
+
+	char buffer[512] = "";
+	fgets(buffer, 512, fp_pipe);
+
+	pclose(fp_pipe);
+	return (atoi(buffer) > 0);
+}
+
+
 long long Task::GenerateTaskID()
 {
 	// 取14位时间（格式：YYYYMMDDHHMISS）的后12位
@@ -291,14 +318,25 @@ std::string Task::EtlTimeTransform(const std::string& cycle) throw(base::Excepti
 
 	const base::SimpleTime ST_NOW(base::SimpleTime::Now());
 	long day_diff = base::PubTime::DayDifference(ST_CYCLE, ST_NOW);
-	if ( day_diff < 0 )
-	{
-		std::string today = ST_NOW.DayTime8();
-		throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle is greater than today (%s): %s [FILE:%s, LINE:%d]", today.c_str(), cycle.c_str(), __FILE__, __LINE__);
-	}
 
 	std::string etlrule_time;
-	base::PubStr::SetFormatString(etlrule_time, "day-%ld", day_diff);
+	if ( day_diff < 0 )
+	{
+		//std::string today = ST_NOW.DayTime8();
+		//throw base::Exception(TERR_ETLTIME_TRANSFORM, "The statistic cycle is greater than today (%s): %s [FILE:%s, LINE:%d]", today.c_str(), cycle.c_str(), __FILE__, __LINE__);
+		base::PubStr::SetFormatString(etlrule_time, "day+%ld", -day_diff);
+	}
+	else
+	{
+		base::PubStr::SetFormatString(etlrule_time, "day-%ld", day_diff);
+	}
+
 	return etlrule_time;
+}
+
+void Task::GetUndoneTask() throw(base::Exception)
+{
+    //NOTHING
+    return ;
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include "ycstruct.h"
 #include "task.h"
 
@@ -22,6 +23,8 @@ public:
 		TSTS_AnalyseException = 4,				// 分析异常
 		TSTS_End              = 5,				// 任务完成
 		TSTS_Fail             = 6,				// 任务失败
+		TSTS_NoEffect         = 7,              // 无效任务
+		TSTS_WAIT             = 8,              // 任务等待
 	};
 
 	// 任务错误代码
@@ -73,6 +76,11 @@ protected:
 	// 任务完成
 	virtual void FinishTask() throw(base::Exception);
 
+    // 处理业财二期地市详情汇总省详情表请求
+    bool NeedToDealwithYC2ndPhaseGDTaskReq(TaskReqInfo& ref_taskreq,std::set<std::string> & set_IsTaskCreated);
+
+    virtual void GetUndoneTask() throw(base::Exception);
+
 private:
 	// 释放数据库连接
 	void ReleaseDB();
@@ -87,7 +95,7 @@ private:
 	void TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) throw(base::Exception);
 
 	// 下发任务
-	void CreateTask(const TaskInfo& t_info) throw(base::Exception);
+	void CreateTask(const TaskInfo& t_info,const TaskReqInfo& ref_tri) throw(base::Exception);
 
 	// 删除已存在的旧任务
 	void RemoveOldTask(int task_seq);
@@ -122,19 +130,28 @@ private:
 	std::string m_etlStateError;			// 采集异常状态
 	std::string m_anaStateEnd;				// 分析完成状态
 	std::string m_anaStateError;			// 分析异常状态
+	std::string m_stateTaskNoEffect;        // 任务无效
+	std::string m_stateTaskWait;            // 任务等待
 
 private:
 	std::string m_tabTaskReq;				// 任务请求表
 	std::string m_tabKpiRule;				// 指标规则表
 	std::string m_tabEtlRule;				// 采集规则表
+	std::string m_tabYLStatus;              // 详情表提交状态 add for <广东移动NG3BASS项目－业财系统重构需求>
+	std::string m_tabCfgPfLfRela;         // 报表指标关联表
+	std::string m_gdKpiType;                // 省汇总详情指标类型
 
 private:
 	std::vector<TaskReqInfo>           m_vecNewTask;					// 新任务列表
+	std::vector<TaskReqInfo>           m_vecWaitTask;					// 等待任务列表
 	std::vector<TaskReqInfo>           m_vecEndTask;					// 已完成的任务列表
 	std::map<int, TaskReqInfo>         m_mTaskReqInfo;					// 执行的任务列表
 	std::map<std::string, KpiRuleInfo> m_mKpiRuleInfo;					// 指标规则信息列表
 
 	std::vector<TaskInfo> m_vecEtlTaskInfo;					// 采集任务列表
 	std::vector<TaskInfo> m_vecAnaTaskInfo;					// 分析任务列表
+
+    std::multimap<std::string,TaskReqInfo> m_mutiMapIgnoreTaskReq;  //重复的地市请求
+    std::string m_FinalStage;               // 任务终结状态，在任务调度异常退出重启时，重做稽核请求用。
 };
 

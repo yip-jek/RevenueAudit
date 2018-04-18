@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "config.h"
 #include "log.h"
 #include "ydtaskdb2.h"

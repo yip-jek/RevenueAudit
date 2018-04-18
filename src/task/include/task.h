@@ -3,6 +3,7 @@
 #include "exception.h"
 #include "sectimer.h"
 #include "taskstatusswitch.h"
+#include "ycstruct.h"
 
 namespace base
 {
@@ -104,12 +105,15 @@ protected:
 
 	// 查看进程是否存在
 	virtual bool IsProcessAlive(long long proc_task_id) throw(base::Exception);
+    virtual bool IsProcessAlive(const TaskInfo& task_info,const TaskReqInfo& ref_tri,bool IsGDAudiKPIType) throw(base::Exception);
 
 	// 生成新的任务ID
 	long long GenerateTaskID();
 
 	// 采集时间转换
 	std::string EtlTimeTransform(const std::string& cycle) throw(base::Exception);
+
+    virtual void GetUndoneTask() throw(base::Exception);
 
 protected:
 	base::Config*    m_pCfg;					// 配置文件

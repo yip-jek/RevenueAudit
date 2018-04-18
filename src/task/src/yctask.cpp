@@ -2,13 +2,13 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "config.h"
 #include "log.h"
 #include "pubstr.h"
 #include "pubtime.h"
 #include "simpletime.h"
 #include "yctaskdb2.h"
-
 
 YCTask::YCTask(base::Config& cfg)
 :Task(cfg)
@@ -73,10 +73,17 @@ void YCTask::LoadConfig() throw(base::Exception)
 	m_pCfg->RegisterItem("STATE", "ETL_ERROR_STATE");
 	m_pCfg->RegisterItem("STATE", "ANA_END_STATE");
 	m_pCfg->RegisterItem("STATE", "ANA_ERROR_STATE");
+    m_pCfg->RegisterItem("STATE", "STATE_TASK_NOEFFECT");
+    m_pCfg->RegisterItem("STATE", "STATE_TASK_WAIT");
+    m_pCfg->RegisterItem("STATE", "STATE_TASK_FINALSTAGE");
 
 	m_pCfg->RegisterItem("TABLE", "TAB_TASK_REQUEST");
 	m_pCfg->RegisterItem("TABLE", "TAB_KPI_RULE");
 	m_pCfg->RegisterItem("TABLE", "TAB_ETL_RULE");
+    m_pCfg->RegisterItem("TABLE", "TAB_YL_STATU");
+    m_pCfg->RegisterItem("TABLE", "TAB_CFG_PFLFRELA");
+
+    m_pCfg->RegisterItem("TYPE","KPI_TYPE_GD");
 
 	m_pCfg->ReadConfig();
 
@@ -103,10 +110,17 @@ void YCTask::LoadConfig() throw(base::Exception)
 	m_etlStateError     = m_pCfg->GetCfgValue("STATE", "ETL_ERROR_STATE");
 	m_anaStateEnd       = m_pCfg->GetCfgValue("STATE", "ANA_END_STATE");
 	m_anaStateError     = m_pCfg->GetCfgValue("STATE", "ANA_ERROR_STATE");
+    m_stateTaskNoEffect = m_pCfg->GetCfgValue("STATE", "STATE_TASK_NOEFFECT");
+    m_stateTaskWait     = m_pCfg->GetCfgValue("STATE", "STATE_TASK_WAIT");
+    m_FinalStage        = m_pCfg->GetCfgValue("STATE", "STATE_TASK_FINALSTAGE");
 
 	m_tabTaskReq = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_REQUEST");
 	m_tabKpiRule = m_pCfg->GetCfgValue("TABLE", "TAB_KPI_RULE");
 	m_tabEtlRule = m_pCfg->GetCfgValue("TABLE", "TAB_ETL_RULE");
+    m_tabYLStatus = m_pCfg->GetCfgValue("TABLE", "TAB_YL_STATU");
+    m_tabCfgPfLfRela  = m_pCfg->GetCfgValue("TABLE", "TAB_CFG_PFLFRELA");
+
+    m_gdKpiType = m_pCfg->GetCfgValue("TYPE","KPI_TYPE_GD");
 
 	m_pLog->Output("[YC_TASK] Load config OK.");
 }
@@ -124,6 +138,8 @@ void YCTask::InitConnect() throw(base::Exception)
 	m_pTaskDB->SetTabTaskRequest(m_tabTaskReq);
 	m_pTaskDB->SetTabKpiRule(m_tabKpiRule);
 	m_pTaskDB->SetTabEtlRule(m_tabEtlRule);
+    m_pTaskDB->SetTabYLStatus(m_tabYLStatus);
+    m_pTaskDB->SetTabReportKpiRela(m_tabCfgPfLfRela);
 	m_pTaskDB->Connect();
 }
 
@@ -181,6 +197,18 @@ void YCTask::GetNewTask() throw(base::Exception)
 	}
 }
 
+void YCTask::GetUndoneTask() throw(base::Exception)
+{
+    //任务调度退出后，未及时更新状态的请求。
+    std::vector<TaskReqInfo>  vec_undoneTask;
+    m_pTaskDB->SelectUndoneTaskRequest(vec_undoneTask,m_FinalStage);
+    m_pLog->Output("Get unDonetask size:%d",vec_undoneTask.size());
+
+    //等待执行
+    vec_undoneTask.swap(m_vecWaitTask);
+
+}
+
 void YCTask::GetNoTask() throw(base::Exception)
 {
 	// 不获取新任务，清空！
@@ -236,6 +264,18 @@ void YCTask::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) thr
 		task_req_info.status_desc = "任务失败";
 		task_req_info.finishtime  = base::SimpleTime::Now().Time14();
 		break;
+    case TSTS_NoEffect:
+        task_req_info.status      = m_stateTaskNoEffect;
+		task_req_info.status_desc = "任务结束";
+		task_req_info.desc        = "已有稽核请求触发省财务汇总请求";//add for <广东移动NG3BASS项目－业财系统重构需求>
+		task_req_info.finishtime  = base::SimpleTime::Now().Time14();
+        break;
+    case TSTS_WAIT:							// 任务等待
+		task_req_info.status      = m_stateTaskWait;
+		task_req_info.status_desc = "任务等待";
+		task_req_info.desc        = "已有相同的任务在执行，等待中";
+		task_req_info.finishtime.clear();
+		break;
 	case TSTS_Unknown:							// 未知状态
 	default:
 		throw base::Exception(YCTERR_UPD_TASK_REQ, "Unknown tasksche task state: %d [FILE:%s, LINE:%d]", ts, __FILE__, __LINE__);
@@ -286,7 +326,7 @@ void YCTask::HandleEtlTask() throw(base::Exception)
 				{
 					// 开始分析任务
 					m_pLog->Output("[YC_TASK] Analyse: TASK_ID=[%ld], KPI_ID=[%s], ANA_ID=[%s], CITY=[%s]", ref_ti.task_id, ref_ti.kpi_id.c_str(), ref_ti.sub_id.c_str(), ref_tri.stat_city.c_str());
-					CreateTask(ref_ti);
+					CreateTask(ref_ti,ref_tri);
 
 					m_vecAnaTaskInfo.push_back(ref_ti);
 				}
@@ -397,7 +437,7 @@ void YCTask::HandleAnaTask() throw(base::Exception)
 	vAnaTaskInfo.swap(m_vecAnaTaskInfo);
 }
 
-void YCTask::CreateTask(const TaskInfo& t_info) throw(base::Exception)
+void YCTask::CreateTask(const TaskInfo& t_info,const TaskReqInfo& ref_tri) throw(base::Exception)
 {
 	std::string command;
 	if ( TaskInfo::TT_Acquire == t_info.t_type )		// 采集
@@ -409,12 +449,12 @@ void YCTask::CreateTask(const TaskInfo& t_info) throw(base::Exception)
 		sleep(1);
 
 		// 采集程序：守护进程
-		base::PubStr::SetFormatString(command, "%s 1 %lld %s %s %s 00001:%s:%s:%d:", m_binAcquire.c_str(), t_info.task_id, m_modeAcquire.c_str(), m_binVer.c_str(), m_cfgAcquire.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str(), t_info.seq_id);
+		base::PubStr::SetFormatString(command, "%s 1 %lld %s %s %s %s-%s:%s:%s:%d:", m_binAcquire.c_str(), t_info.task_id, m_modeAcquire.c_str(), m_binVer.c_str(), m_cfgAcquire.c_str(), ref_tri.stat_city.c_str(),ref_tri.stat_cycle.c_str(),t_info.kpi_id.c_str(), t_info.sub_id.c_str(), t_info.seq_id);
 	}
 	else if ( TaskInfo::TT_Analyse == t_info.t_type )	// 分析
 	{
 		// 分析程序：守护进程
-		base::PubStr::SetFormatString(command, "%s 1 %lld %s %s %s 00001:%s:%s:%d:", m_binAnalyse.c_str(), t_info.task_id, m_modeAnalyse.c_str(), m_binVer.c_str(), m_cfgAnalyse.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str(), t_info.seq_id);
+		base::PubStr::SetFormatString(command, "%s 1 %lld %s %s %s %s-%s:%s:%s:%d:", m_binAnalyse.c_str(), t_info.task_id, m_modeAnalyse.c_str(), m_binVer.c_str(), m_cfgAnalyse.c_str(), ref_tri.stat_city.c_str(),ref_tri.stat_cycle.c_str(), t_info.kpi_id.c_str(), t_info.sub_id.c_str(), t_info.seq_id);
 	}
 	else	// 未知
 	{
@@ -428,8 +468,16 @@ void YCTask::CreateTask(const TaskInfo& t_info) throw(base::Exception)
 
 void YCTask::BuildNewTask() throw(base::Exception)
 {
-	TaskInfo task_info;
+    std::set<std::string> set_TaskCreated;
+    m_mutiMapIgnoreTaskReq.clear();
 
+    if(!m_vecWaitTask.empty()){
+        //m_vecNewTask.insert(m_vecNewTask.begin(),m_vecWaitTask.begin(),m_vecWaitTask.end());
+        m_vecNewTask.insert(m_vecNewTask.end(),m_vecWaitTask.begin(),m_vecWaitTask.end());
+        m_vecWaitTask.clear();
+    }
+
+	TaskInfo task_info;
 	// 新建采集任务
 	const int VEC_NEW_TASK_SIZE = m_vecNewTask.size();
 	for ( int i = 0; i < VEC_NEW_TASK_SIZE; ++i )
@@ -445,20 +493,41 @@ void YCTask::BuildNewTask() throw(base::Exception)
 			RemoveOldTask(ref_tri.seq_id);
 		}
 
-		task_info.seq_id   = ref_tri.seq_id;
-		task_info.t_type   = TaskInfo::TT_Acquire;
-		task_info.task_id  = GenerateTaskID();
 		task_info.kpi_id   = ref_tri.kpi_id;
-		task_info.etl_time = EtlTimeTransform(ref_tri.stat_cycle);
 
 		if ( GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Acquire, task_info.sub_id) )
 		{
-			// 开始采集任务
-			m_pLog->Output("[YC_TASK] Acquire: TASK_ID=[%ld], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], CITY=[%s]", task_info.task_id, task_info.kpi_id.c_str(), task_info.sub_id.c_str(), task_info.etl_time.c_str(), ref_tri.stat_city.c_str());
-			CreateTask(task_info);
+            std::map<std::string, KpiRuleInfo>::iterator it = m_mKpiRuleInfo.find(ref_tri.kpi_id);
+            KpiRuleInfo &kpi_rule = it->second;
+			bool IsGDAudiKPIType = false;
+			m_gdKpiType == kpi_rule.kpi_type ? IsGDAudiKPIType = true : IsGDAudiKPIType = false;
+            if(IsGDAudiKPIType) {
 
-			m_vecEtlTaskInfo.push_back(task_info);
-			m_mTaskReqInfo[ref_tri.seq_id] = ref_tri;
+                // 处理业财二期地市详情汇总省详情表请求
+                if( false == NeedToDealwithYC2ndPhaseGDTaskReq(ref_tri,set_TaskCreated) ){
+                    continue;
+                }
+            }
+
+            if(false == IsProcessAlive(task_info,ref_tri,IsGDAudiKPIType)){
+
+                task_info.seq_id   = ref_tri.seq_id;
+        		task_info.t_type   = TaskInfo::TT_Acquire;
+        		task_info.task_id  = GenerateTaskID();
+        		task_info.etl_time = EtlTimeTransform(ref_tri.stat_cycle);
+
+                // 开始采集任务
+        		m_pLog->Output("[YC_TASK] Acquire: TASK_ID=[%ld], KPI_ID=[%s], ETL_ID=[%s], ETL_TIME=[%s], CITY=[%s]", task_info.task_id, task_info.kpi_id.c_str(), task_info.sub_id.c_str(), task_info.etl_time.c_str(), ref_tri.stat_city.c_str());
+        		CreateTask(task_info,ref_tri);
+
+        		m_vecEtlTaskInfo.push_back(task_info);
+        		m_mTaskReqInfo[ref_tri.seq_id] = ref_tri;
+
+            }else{
+                //m_pLog->Output("%d-%s-%s-%s put in WaitQueue",ref_tri.seq_id,ref_tri.kpi_id.c_str(),ref_tri.stat_city.c_str(),ref_tri.stat_cycle.c_str());
+                m_vecWaitTask.push_back(ref_tri);
+            }
+
 		}
 		else	// 找不到
 		{
@@ -468,6 +537,19 @@ void YCTask::BuildNewTask() throw(base::Exception)
 			m_pLog->Output("[YC_TASK] Task failed: SEQ=[%d], KPI=[%s], CITY=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_city.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
 		}
 	}
+
+    if ( !m_vecWaitTask.empty() )
+	{
+		// 更新任务状态
+		const int VEC_WAIT_TASK_SIZE = m_vecWaitTask.size();
+
+		for ( int i = 0; i < VEC_WAIT_TASK_SIZE; ++i )
+		{
+			TaskRequestUpdate(TSTS_WAIT, m_vecWaitTask[i]);
+		}
+	}
+
+    set_TaskCreated.clear();
 }
 
 void YCTask::RemoveOldTask(int task_seq)
@@ -560,10 +642,54 @@ void YCTask::FinishTask() throw(base::Exception)
 		m_pLog->Output("[YC_TASK] Finish task: SEQ=[%d], KPI=[%s], CITY=[%s], CYCLE=[%s], END_TIME=[%s]", ref_tri.seq_id, ref_tri.kpi_id.c_str(), ref_tri.stat_city.c_str(), ref_tri.stat_cycle.c_str(), ref_tri.finishtime.c_str());
 	}
 
+    std::multimap<std::string,TaskReqInfo>::iterator it;
+    for(it  = m_mutiMapIgnoreTaskReq.begin();it  != m_mutiMapIgnoreTaskReq.end();++it )
+    {
+        TaskReqInfo& ref_tri = (*it).second;
+
+        TaskRequestUpdate(TSTS_NoEffect, ref_tri);
+
+        m_pLog->Output("业财省详情表汇总无效指标[sed = %d][kpi = %s][city = %s][cycle = %s][end_time = %s]。更新状态为无效[%d]",ref_tri.seq_id,ref_tri.kpi_id.c_str(),ref_tri.stat_city.c_str(),ref_tri.stat_cycle.c_str(),ref_tri.finishtime.c_str(),TSTS_NoEffect);
+    }
+
+    m_mutiMapIgnoreTaskReq.clear();
+
 	// 统计任务完成数
 	m_taskFinished += VEC_END_TASK_SIZE;
 
 	// 清空已完成任务列表
 	std::vector<TaskReqInfo>().swap(m_vecEndTask);
+}
+
+// 处理业财二期地市详情汇总省详情表请求
+bool YCTask::NeedToDealwithYC2ndPhaseGDTaskReq(TaskReqInfo& ref_taskreq,std::set<std::string>  & set_TaskCreated)
+{
+    bool b_Ret = true;
+    std::string taskreq_key;
+
+    int i_SubmitStatuCount = m_pTaskDB->CountAllSubmitStatu(ref_taskreq);
+    taskreq_key = ref_taskreq.kpi_id + "|" + ref_taskreq.stat_cycle + "|" + ref_taskreq.status;
+
+    //if(i_SubmitStatuCount != 21)//21个地市是否均已提交
+    if(i_SubmitStatuCount <= 0) //不限制全地市提交才触发省财务稽核，有地市提交就下发稽核任务
+    {
+        m_mutiMapIgnoreTaskReq.insert(make_pair(taskreq_key,ref_taskreq));
+        b_Ret = false;
+        m_pLog->Output("指标[%s]账期[%s],财务详情表处于提交状态的地市为[%d]个,未能触发稽核任务。",ref_taskreq.kpi_id.c_str(),ref_taskreq.stat_cycle.c_str(),i_SubmitStatuCount);
+    }else{
+
+        std::set<std::string>::iterator iter = set_TaskCreated.find(taskreq_key);
+        if(iter != set_TaskCreated.end()){
+            //已下发了稽核任务，忽略剩下的稽核请求。
+            m_mutiMapIgnoreTaskReq.insert(make_pair(taskreq_key,ref_taskreq));
+            b_Ret = false;
+            m_pLog->Output("指标[%s]账期[%s] 已下发详情表汇总稽核任务，对该请求[%d]视为无效。",ref_taskreq.kpi_id.c_str(),ref_taskreq.stat_cycle.c_str(),ref_taskreq.seq_id);
+        }else{
+            set_TaskCreated.insert(taskreq_key);
+            b_Ret = true;
+        }
+    }
+
+    return b_Ret;
 }
 
