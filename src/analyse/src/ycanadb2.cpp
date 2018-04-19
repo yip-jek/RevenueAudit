@@ -178,7 +178,7 @@ void YCAnaDB2::SelectHDBMaxBatch(const std::string& tab_hdb, YCHDBBatch& hd_batc
 	rs.EnableWarning(true);
 
 	// STAT_DATE 账期时间兼容格式：YYYYMMDD 与 YYYYMM
-	std::string sql = "SELECT NVL(MAX(STAT_NUM), 0) FROM " + tab_hdb;
+	std::string sql = "SELECT NVL(MAX(DECIMAL(STAT_NUM,12,0)), 0) FROM " + tab_hdb;
 	sql += " WHERE STAT_REPORT = ? AND STAT_ID = ? AND STAT_DATE like '" + hd_batch.stat_date + "%' AND STAT_CITY = ?";
 	m_pLog->Output("[DB2] Select max batch from HDB table: %s [REPORT:%s, STAT_ID:%s, DATE:%s, CITY:%s]", tab_hdb.c_str(), hd_batch.stat_report.c_str(), hd_batch.stat_id.c_str(), hd_batch.stat_date.c_str(), hd_batch.stat_city.c_str());
 
@@ -214,7 +214,7 @@ void YCAnaDB2::SelectXQBMaxBatch(const std::string& tab_xqb, YCXQBBatch& xq_batc
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
 
-	std::string sql = "SELECT NVL(MAX(BUSIVERSION), 0) FROM " + tab_xqb;
+	std::string sql = "SELECT NVL(MAX(DECIMAL(BUSIVERSION,12,0)), 0) FROM " + tab_xqb;
 	sql += " WHERE BILLCYC = ? AND CITY = ? AND TYPE = ?";
 	m_pLog->Output("[DB2] Select max batch from XQB table: %s (%s)", tab_xqb.c_str(), xq_batch.LogPrintInfo().c_str());
 
@@ -394,7 +394,7 @@ void YCAnaDB2::SelectYCSrcMaxBatch(YCSrcInfo& yc_info) throw(base::Exception)
 	rs.EnableWarning(true);
 
 	std::string sql;
-	base::PubStr::SetFormatString(sql, "select max(decimal(%s,12,2)) from %s where %s like '%s%%' and %s = '%s'", yc_info.field_batch.c_str(), yc_info.src_tab.c_str(), yc_info.field_period.c_str(), yc_info.period.c_str(), yc_info.field_city.c_str(), yc_info.city.c_str());
+	base::PubStr::SetFormatString(sql, "select max(decimal(%s,12,0)) from %s where %s like '%s%%' and %s = '%s'", yc_info.field_batch.c_str(), yc_info.src_tab.c_str(), yc_info.field_period.c_str(), yc_info.period.c_str(), yc_info.field_city.c_str(), yc_info.city.c_str());
 
 	try
 	{
