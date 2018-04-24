@@ -36,6 +36,9 @@ protected:
 	// 解析分析规则，生成Hive取数逻辑
 	virtual void AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception);
 
+	// Delete the SQL function: sum
+	void RemoveSumFunc(VEC_STRING& vec_hivesql);
+
 	// 检查：是否为业财稽核类型。输出中文描述
 	bool CheckYCAnalyseType(std::string& cn_type) const;
 

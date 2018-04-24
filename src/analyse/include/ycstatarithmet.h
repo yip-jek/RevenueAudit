@@ -46,6 +46,8 @@ public:
 	// "("为特殊运算符，也算作低级运算符
 	static bool IsLowLevelOper(const std::string& str);
 
+	// 运算
+	static std::string Operate(const std::string& left, const std::string& right, const char op) throw(base::Exception);
 	// 加运算
 	static std::string OperatePlus(const std::string& left, const std::string& right) throw(base::Exception);
 	// 减运算

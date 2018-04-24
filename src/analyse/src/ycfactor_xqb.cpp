@@ -133,13 +133,19 @@ void YCFactor_XQB::ExportItems(VEC_STRING& vec_item) const
 
 bool YCFactor_XQB::ImportValue(const VEC_STRING& vec_value)
 {
+	std::string val;
+
 	const size_t VEC_VAL_SIZE = vec_value.size();
 	if ( VEC_VAL_SIZE == m_vecVals.size() )
 	{
 		// 避免VALUE出现科学计数法（带E）
 		for ( size_t i = 0; i < VEC_VAL_SIZE; ++i )
 		{
-			m_vecVals[i] = base::PubStr::StringDoubleFormat(vec_value[i]);
+			//m_vecVals[i] = base::PubStr::StringDoubleFormat(vec_value[i]);
+			val = base::PubStr::StringDoubleFormat(vec_value[i]);
+
+			// 若转换失败，则采用原值
+			m_vecVals[i] = (val.empty() ? vec_value[i] : val);
 		}
 		return true;
 	}

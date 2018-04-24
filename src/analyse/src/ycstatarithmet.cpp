@@ -14,64 +14,107 @@ bool YCStatArithmet::IsLowLevelOper(const std::string& str)
 	return ("(" == str || "+" == str || "-" == str);
 }
 
-std::string YCStatArithmet::OperatePlus(const std::string& left, const std::string& right) throw(base::Exception)
+std::string YCStatArithmet::Operate(const std::string& left, const std::string& right, const char op) throw(base::Exception)
 {
 	double d_left  = 0.0;
 	double d_right = 0.0;
 
-	// Error !
-	if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
+	if ( left.empty() && right.empty() )
 	{
-		throw base::Exception(ANAERR_OPERATE_FAILED, "Operate plus failed! Can not convert to double type: left=[%s], right=[%s] [FILE:%s, LINE:%d]", left.c_str(), right.c_str(), __FILE__, __LINE__);
+		return "";
 	}
 
-	d_left += d_right;
+	// Left: 转换失败，默认取 0
+	if ( !left.empty() && !base::PubStr::Str2Double(left, d_left) )
+	{
+		d_left = 0.0;
+	}
+
+	// Right: 转换失败，默认取 0
+	if ( !right.empty() && !base::PubStr::Str2Double(right, d_right) )
+	{
+		d_right = 0.0;
+	}
+
+	switch ( op )
+	{
+	case '+': d_left += d_right; break;
+	case '-': d_left -= d_right; break;
+	case '*': d_left *= d_right; break;
+	case '/': d_left /= d_right; break;
+	default:
+		throw base::Exception(ANAERR_OPERATE_FAILED, "Operate failed! Unknown operator type: [%c] [FILE:%s, LINE:%d]", op, __FILE__, __LINE__);
+	}
+
 	return base::PubStr::Double2Str(d_left);
+}
+
+std::string YCStatArithmet::OperatePlus(const std::string& left, const std::string& right) throw(base::Exception)
+{
+	return Operate(left, right, '+');
+
+	//double d_left  = 0.0;
+	//double d_right = 0.0;
+
+	//// Error !
+	//if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
+	//{
+	//	throw base::Exception(ANAERR_OPERATE_FAILED, "Operate plus failed! Can not convert to double type: left=[%s], right=[%s] [FILE:%s, LINE:%d]", left.c_str(), right.c_str(), __FILE__, __LINE__);
+	//}
+
+	//d_left += d_right;
+	//return base::PubStr::Double2Str(d_left);
 }
 
 std::string YCStatArithmet::OperateMinus(const std::string& left, const std::string& right) throw(base::Exception)
 {
-	double d_left  = 0.0;
-	double d_right = 0.0;
+	return Operate(left, right, '-');
 
-	// Error !
-	if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
-	{
-		throw base::Exception(ANAERR_OPERATE_FAILED, "Operate minus failed! Can not convert to double type: left=[%s], right=[%s] [FILE:%s, LINE:%d]", left.c_str(), right.c_str(), __FILE__, __LINE__);
-	}
+	//double d_left  = 0.0;
+	//double d_right = 0.0;
 
-	d_left -= d_right;
-	return base::PubStr::Double2Str(d_left);
+	//// Error !
+	//if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
+	//{
+	//	throw base::Exception(ANAERR_OPERATE_FAILED, "Operate minus failed! Can not convert to double type: left=[%s], right=[%s] [FILE:%s, LINE:%d]", left.c_str(), right.c_str(), __FILE__, __LINE__);
+	//}
+
+	//d_left -= d_right;
+	//return base::PubStr::Double2Str(d_left);
 }
 
 std::string YCStatArithmet::OperateMultiply(const std::string& left, const std::string& right) throw(base::Exception)
 {
-	double d_left  = 0.0;
-	double d_right = 0.0;
+	return Operate(left, right, '*');
 
-	// Error !
-	if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
-	{
-		throw base::Exception(ANAERR_OPERATE_FAILED, "Operate multiply failed! Can not convert to double type: left=[%s], right=[%s] [FILE:%s, LINE:%d]", left.c_str(), right.c_str(), __FILE__, __LINE__);
-	}
+	//double d_left  = 0.0;
+	//double d_right = 0.0;
 
-	d_left *= d_right;
-	return base::PubStr::Double2Str(d_left);
+	//// Error !
+	//if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
+	//{
+	//	throw base::Exception(ANAERR_OPERATE_FAILED, "Operate multiply failed! Can not convert to double type: left=[%s], right=[%s] [FILE:%s, LINE:%d]", left.c_str(), right.c_str(), __FILE__, __LINE__);
+	//}
+
+	//d_left *= d_right;
+	//return base::PubStr::Double2Str(d_left);
 }
 
 std::string YCStatArithmet::OperateDivide(const std::string& left, const std::string& right) throw(base::Exception)
 {
-	double d_left  = 0.0;
-	double d_right = 0.0;
+	return Operate(left, right, '/');
 
-	// Error !
-	if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
-	{
-		throw base::Exception(ANAERR_OPERATE_FAILED, "Operate divide failed! Can not convert to double type: left=[%s], right=[%s] [FILE:%s, LINE:%d]", left.c_str(), right.c_str(), __FILE__, __LINE__);
-	}
+	//double d_left  = 0.0;
+	//double d_right = 0.0;
 
-	d_left /= d_right;
-	return base::PubStr::Double2Str(d_left);
+	//// Error !
+	//if ( !base::PubStr::Str2Double(left, d_left) || !base::PubStr::Str2Double(right, d_right) )
+	//{
+	//	throw base::Exception(ANAERR_OPERATE_FAILED, "Operate divide failed! Can not convert to double type: left=[%s], right=[%s] [FILE:%s, LINE:%d]", left.c_str(), right.c_str(), __FILE__, __LINE__);
+	//}
+
+	//d_left /= d_right;
+	//return base::PubStr::Double2Str(d_left);
 }
 
 YCStatArithmet::YCStatArithmet(YCStatFactor* p_stat_factor)
@@ -474,7 +517,10 @@ void YCStatArithmet::OutputResult(std::vector<double>& vec_result) throw(base::E
 	{
 		if ( !base::PubStr::Str2Double(ref_vec_out[i], d_val) )
 		{
-			throw base::Exception(ANAERR_ARITHMET_CALCULATE, "无法转换为精度类型的结果值：[%s] [FILE:%s, LINE:%d]", ref_vec_out[i].c_str(), __FILE__, __LINE__);
+			//throw base::Exception(ANAERR_ARITHMET_CALCULATE, "无法转换为精度类型的结果值：[%s] [FILE:%s, LINE:%d]", ref_vec_out[i].c_str(), __FILE__, __LINE__);
+
+			// 无法转换为精度类型，默认取 0
+			d_val = 0.0;
 		}
 
 		vec_val.push_back(d_val);

@@ -141,6 +141,43 @@ void Analyse_YC::AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception)
 	m_pLog->Output("[Analyse_YC] 重置采集 (HIVE) 目标表名为: %s", ref_target.c_str());
 
 	GetStatisticsHiveSQL(vec_hivesql);
+
+	RemoveSumFunc(vec_hivesql);
+}
+
+void Analyse_YC::RemoveSumFunc(VEC_STRING& vec_hivesql)
+{
+	std::string UPPER_SQL;
+	size_t pos = 0;
+
+	// Remove the SQL function: sum()
+	const int VEC_SIZE = vec_hivesql.size();
+	for ( int i = 0; i < VEC_SIZE; ++i )
+	{
+		std::string& ref_sql = vec_hivesql[i];
+
+		UPPER_SQL = base::PubStr::UpperB(ref_sql);
+		while ( (pos = UPPER_SQL.find(" SUM(")) != std::string::npos )
+		{
+			UPPER_SQL.erase(pos+1, 4);
+			ref_sql.erase(pos+1, 4);
+
+			pos = UPPER_SQL.find(')');
+			if ( std::string::npos == pos )
+			{
+				break;
+			}
+
+			UPPER_SQL.erase(pos, 1);
+			ref_sql.erase(pos, 1);
+		}
+
+		// Remove the SQL function: group by ...
+		if ( (pos = UPPER_SQL.find(" GROUP BY ")) != std::string::npos )
+		{
+			ref_sql.erase(pos);
+		}
+	}
 }
 
 bool Analyse_YC::CheckYCAnalyseType(std::string& cn_type) const

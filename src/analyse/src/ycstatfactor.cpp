@@ -136,9 +136,13 @@ void YCStatFactor::GenerateStatResult(VEC2_STRING& v2_result) throw(base::Except
 double YCStatFactor::OperateOneFactor(double left, const std::string& op, const std::string& factor) throw(base::Exception)
 {
 	double d_factor = 0.0;
-	if ( factor.empty() || !base::PubStr::Str2Double(factor, d_factor) )
+	//if ( factor.empty() || !base::PubStr::Str2Double(factor, d_factor) )
+	if ( !factor.empty() && !base::PubStr::Str2Double(factor, d_factor) )
 	{
-		throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "非有效因子值：%s [FILE:%s, LINE:%d]", factor.c_str(), __FILE__, __LINE__);
+		//throw base::Exception(ANAERR_OPERATE_ONE_FACTOR, "非有效因子值：%s [FILE:%s, LINE:%d]", factor.c_str(), __FILE__, __LINE__);
+
+		d_factor = 0.0;
+		m_pLog->Output("<WARNING> [YCStatFactor] 非精度型因子：[%s], 其精度值取 0", factor.c_str());
 	}
 
 	if ( "+" == op )
