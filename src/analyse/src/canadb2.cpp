@@ -449,7 +449,7 @@ void CAnaDB2::InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Excepti
 			if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
 			{
 				//m_pLog->Output("[DB2] [%s] To commit: %lu", m_tabDimValue.c_str(), i);
-				Commit();
+				Commit(false);
 			}
 		}
 
@@ -1112,7 +1112,7 @@ void CAnaDB2::ResultDataInsert(const std::string& db_sql, std::vector<std::vecto
 			// 每达到最大值提交一次
 			if ( (i % DB_MAX_COMMIT) == 0 && i != 0 )
 			{
-				Commit();
+				Commit(false);
 			}
 		}
 

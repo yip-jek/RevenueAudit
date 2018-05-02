@@ -89,7 +89,7 @@ void BaseDB2::Begin() throw(Exception)
 	}
 }
 
-void BaseDB2::Commit() throw(Exception)
+void BaseDB2::Commit(bool output /*= true*/) throw(Exception)
 {
 	if ( m_bConnected )
 	{
@@ -105,8 +105,11 @@ void BaseDB2::Commit() throw(Exception)
 			throw Exception(BDB_COMMIT_FAILED, "[DB2] Commit failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
 		}
 
-		std::cout << "[DB2] Commit OK." << std::endl;
-		m_pLog->Output("[DB2] Commit OK.");
+		if ( output )
+		{
+			std::cout << "[DB2] Commit OK." << std::endl;
+			m_pLog->Output("[DB2] Commit OK.");
+		}
 	}
 }
 

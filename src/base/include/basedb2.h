@@ -26,7 +26,7 @@ public:
 	virtual void Begin() throw(Exception);
 
 	// 提交事务
-	virtual void Commit() throw(Exception);
+	virtual void Commit(bool output = true) throw(Exception);
 
 	// 回滚事务
 	virtual void Rollback() throw(Exception);

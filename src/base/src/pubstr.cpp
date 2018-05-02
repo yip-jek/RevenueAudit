@@ -430,7 +430,9 @@ bool PubStr::StrTrans2Double(const std::string& str, double& d)
 
 void PubStr::FormatValueStrVector(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos)
 {
-	const int    BEGIN_POS = (start_pos < 0 ? 0 : start_pos);
+	const int   BEGIN_POS = (start_pos < 0 ? 0 : start_pos);
+	std::string str_val;
+
 	const size_t VEC2_SIZE = vec2_str.size();
 	for ( size_t i = 0; i < VEC2_SIZE; ++i )
 	{
@@ -440,7 +442,13 @@ void PubStr::FormatValueStrVector(std::vector<std::vector<std::string> >& vec2_s
 		for ( int j = BEGIN_POS; j < LAST_POS; ++j )
 		{
 			std::string& ref_str = ref_vec[j];
-			ref_str = StringDoubleFormat(ref_str);
+
+			// 转换失败，则保持原值不变！
+			str_val = StringDoubleFormat(ref_str);
+			if ( !str_val.empty() )
+			{
+				ref_str = str_val;
+			}
 		}
 	}
 }
