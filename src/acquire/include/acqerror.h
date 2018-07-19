@@ -22,6 +22,9 @@ enum ACQUIRE_ERROR
 	ACQERR_SQL_EXTEND_CONV_FAILED  = -2000017,			// SQL 扩展转换失败
 	ACQERR_CHECK_OUTER_TAB_FAILED  = -2000018,			// 检查外连表失败
 	ACQERR_CREATE_SQLEXTENDCONV    = -2000019,			// 创建 SQL 扩展转换失败
+	ACQERR_ARITHMET_LOAD           = -2000020,			// 载入四则运算源数据失败
+	ACQERR_ARITHMET_CALCULATE      = -2000021,			// 生成四则运算结果失败
+	ACQERR_OPERATE_FAILED          = -2000022,			// 运算操作失败
 
 	// HIVE 类错误码
 	ACQERR_REBUILD_TABLE           = -2001001,			// 重建Hive表失败
@@ -42,6 +45,7 @@ enum ACQUIRE_ERROR
 	ACQERR_SEL_YCTASKCITY_CN       = -2002011,			// 查询任务地市的中文名称出错
 	ACQERR_UPD_INS_REPORTSTATE     = -2002012,			// 更新或插入报表状态表出错
 	ACQERR_SEL_KPI_RULE_TYPE       = -2002013,			// 查询指标规则类型出错
+	ACQERR_SEL_YC_STATSQL          = -2002014,			// 获取业财稽核因子的SQL语句出错
 
 	// 采集任务信息的错误码
 	ACQERR_TRANS_VAL_SRC_NAME      = -2003001,			// 采集值对应源字段名转换失败

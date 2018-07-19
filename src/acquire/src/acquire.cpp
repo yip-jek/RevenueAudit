@@ -31,7 +31,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 5.1.4.0 released. Compiled at " __TIME__ " on " __DATE__);
+	return ("Acquire: Version 5.2.0.0 released. Compiled at " __TIME__ " on " __DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)
@@ -348,7 +348,7 @@ void Acquire::DB2DataAcquisition() throw(base::Exception)
 	base::AutoDisconnect a_disconn(pHdfsConnector);		// 资源自动释放
 	a_disconn.Connect();
 
-	const int FIELD_SIZE = RebuildHiveTable();
+	RebuildHiveTable();
 
 	// 重建目标表后，再检查源表是否存在
 	CheckSourceTable(false);
@@ -363,7 +363,7 @@ void Acquire::DB2DataAcquisition() throw(base::Exception)
 	{
 		// 从 DB2 数据库中采集结果数据
 		std::vector<std::vector<std::string> > vec2_data;
-		m_pAcqDB2->FetchEtlData(vec_sql[i], FIELD_SIZE, vec2_data);
+		m_pAcqDB2->FetchEtlData(vec_sql[i], vec2_data);
 
 		// 将采集结果数据写入 HDFS 再 load 到 HIVE
 		std::string hdfsFile = GeneralHdfsFileName();

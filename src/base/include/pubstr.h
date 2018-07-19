@@ -89,6 +89,9 @@ public:
 	// 参数 start_pos 和 end_pos 组成前闭后开区间，即[start_pos, end_pos)
 	static void FormatValueStrVector(std::vector<std::vector<std::string> >& vec2_str, int start_pos, int end_pos);
 
+	// 合并std::vector<std::vector<std::string>>
+	static void MergeVec2Str(std::vector<std::vector<std::string> >& des_vec2, const std::vector<std::vector<std::string> >& src_vec2);
+
 public:
 	// 将Vector进行交换push back
 	template <typename T>

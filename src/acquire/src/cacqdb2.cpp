@@ -488,7 +488,7 @@ void CAcqDB2::SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcIn
 	m_pLog->Output("[DB2] Select %s successfully! (ETLRULE_ID:%s) [Record(s):%lu]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), map_src.size());
 }
 
-void CAcqDB2::FetchEtlData(const std::string& sql, int data_size, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
+void CAcqDB2::FetchEtlData(const std::string& sql, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(false);
@@ -504,9 +504,10 @@ void CAcqDB2::FetchEtlData(const std::string& sql, int data_size, std::vector<st
 		//rs.Execute();
 		rs.Open(sql.c_str(), XDBO2::CRecordset::forwardOnly);
 
+		const int FIELD_SIZE = rs.GetFieldCount();
 		while ( !rs.IsEOF() )
 		{
-			for ( int i = 1; i <= data_size; ++i )
+			for ( int i = 1; i <= FIELD_SIZE; ++i )
 			{
 				v_dat.push_back((const char*)rs[i]);
 			}
@@ -581,6 +582,7 @@ void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& v
 	rs.EnableWarning(true);
 
 	YCInfo yc_info;
+	std::string stat_sql;
 	std::vector<YCInfo> v_yc_info;
 
 	try
@@ -595,8 +597,20 @@ void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& v
 
 		while ( !rs.IsEOF() )
 		{
+			yc_info.Clear();
+
 			yc_info.stat_dimid = (const char*)rs[1];
-			yc_info.stat_sql   = (const char*)rs[2];
+			stat_sql           = (const char*)rs[2];
+
+			if ( YCInfo::IsExternalSQL(stat_sql) )
+			{
+				SelectYCStatSQL(stat_sql, yc_info.vec_statsql);
+			}
+			else
+			{
+				yc_info.vec_statsql.push_back(stat_sql);
+			}
+
 			v_yc_info.push_back(yc_info);
 
 			rs.MoveNext();
@@ -610,6 +624,33 @@ void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& v
 
 	v_yc_info.swap(vec_ycinfo);
 	m_pLog->Output("[DB2] Select YCRA stat_rule successfully! Record(s): %lu", vec_ycinfo.size());
+}
+
+void CAcqDB2::SelectYCStatSQL(const std::string& src_sql, std::vector<std::string>& vec_sql) throw(base::Exception)
+{
+	XDBO2::CRecordset rs(&m_CDB);
+	rs.EnableWarning(true);
+
+	m_pLog->Output("[DB2] External SQL: %s", src_sql.c_str());
+
+	try
+	{
+		rs.Open(src_sql.c_str(), XDBO2::CRecordset::forwardOnly);
+
+		while ( !rs.IsEOF() )
+		{
+			vec_sql.push_back((const char*)rs[1]);
+
+			rs.MoveNext();
+		}
+		rs.Close();
+	}
+	catch ( const XDBO2::CDBException& ex )
+	{
+		throw base::Exception(ACQERR_SEL_YC_STATSQL, "[DB2] Select external SQL failed! [CDBException] %s [FILE:%s, LINE:%d]", ex.what(), __FILE__, __LINE__);
+	}
+
+	m_pLog->Output("[DB2] Select external SQL size: %lu", vec_sql.size());
 }
 
 void CAcqDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark) throw(base::Exception)

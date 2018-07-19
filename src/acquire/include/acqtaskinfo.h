@@ -185,8 +185,27 @@ public:
 class YCInfo
 {
 public:
-	std::string stat_dimid;				// 统计维度ID
-	std::string stat_sql;				// 统计SQL
+	static const char* const S_EXTERNAL_SQL;			// 外部SQL
+
+	// 是否为外部SQL
+	static bool IsExternalSQL(const std::string& sql)
+	{
+		const std::string C_SQL = base::PubStr::TrimUpperB(sql);
+		const size_t EXTERNAL_SIZE = std::string(S_EXTERNAL_SQL).size();
+
+		return (C_SQL.substr(0, EXTERNAL_SIZE) == S_EXTERNAL_SQL);
+	}
+
+public:
+	void Clear()
+	{
+		stat_dimid.clear();
+		std::vector<std::string>().swap(vec_statsql);
+	}
+
+public:
+	std::string              stat_dimid;			// 统计维度ID
+	std::vector<std::string> vec_statsql;			// 统计SQL
 };
 
 // (业财稽核) 任务请求

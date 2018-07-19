@@ -6,8 +6,10 @@
 #include "cacqhive.h"
 #include "sqlextendconverter.h"
 #include "sqltranslator.h"
+#include "acqarithmet.h"
 
 const char* const Acquire_YC::S_YC_ETLRULE_TYPE = "YCRA";				// 业财稽核-采集规则类型
+const char* const YCInfo::S_EXTERNAL_SQL        = "[EXTERNAL_SQL]";		// 外部SQL
 
 Acquire_YC::Acquire_YC()
 :m_pSqlExConv(NULL)
@@ -258,15 +260,38 @@ void Acquire_YC::YCDataAcquisition() throw(base::Exception)
 
 	m_pLog->Output("[Acquire_YC] 执行 DB2 的业财数据采集 ...");
 	hdfsFS hd_fs = pHdfsConnector->GetHdfsFS();
-	std::vector<std::vector<std::string> > vec2_data;
+
+	AcqArithmet acq_arith;
 
 	const int VEC_YCI_SIZE = m_vecYCInfo.size();
 	for ( int i = 0; i < VEC_YCI_SIZE; ++i )
 	{
 		YCInfo& ref_yci = m_vecYCInfo[i];
 
-		// 从 DB2 数据库中采集结果数据
-		m_pAcqDB2->FetchEtlData(ref_yci.stat_sql, FIELD_SIZE, vec2_data);
+		std::vector<std::vector<std::string> > vec2_data;
+		const int VEC_SIZE = ref_yci.vec_statsql.size();
+		for ( int j = 0; j < VEC_SIZE; ++j )
+		{
+			std::string& ref_sql = ref_yci.vec_statsql[j];
+
+			std::vector<std::vector<std::string> > v2_data;
+			if ( AcqArithmet::IsArithmetic(ref_sql) )		// 计算表达式
+			{
+				// 保留计算式，下一步进行运算
+				std::vector<std::string> vec_arith;
+				vec_arith.push_back(ref_sql);
+				v2_data.push_back(vec_arith);
+			}
+			else	// 采集SQL，非计算表达式
+			{
+				// 从 DB2 数据库中采集结果数据
+				m_pAcqDB2->FetchEtlData(ref_sql, v2_data);
+			}
+
+			base::PubStr::MergeVec2Str(vec2_data, v2_data);
+		}
+
+		acq_arith.DoCalculate(vec2_data);
 		MakeYCResultComplete(ref_yci.stat_dimid, FIELD_SIZE, vec2_data);
 
 		// 将采集结果数据写入 HDFS 再 load 到 HIVE
@@ -390,10 +415,16 @@ void Acquire_YC::HandleYCInfo() throw(base::Exception)
 			throw base::Exception(ACQERR_HANDLE_YCINFO_FAILED, "业财稽核统计因子维度ID为空值！[INDEX:%d] (KPI_ID:%s, ETLRULE_ID:%s) [FILE:%s, LINE:%d]", seq, m_taskInfo.KpiID.c_str(), m_taskInfo.EtlRuleID.c_str(), __FILE__, __LINE__);
 		}
 
-		m_pLog->Output("[Acquire_YC] 原业财统计因子 SQL(%d) [%s]: %s", seq, ref_yci.stat_dimid.c_str(), ref_yci.stat_sql.c_str());
-		ExchangeSQLMark(ref_yci.stat_sql);
-		SQLExtendConvert(ref_yci.stat_sql);
-		m_pLog->Output("[Acquire_YC] (转换后) 新统计因子 SQL(%d) [%s]: %s", seq, ref_yci.stat_dimid.c_str(), ref_yci.stat_sql.c_str());
+		const int VEC_SIZE = ref_yci.vec_statsql.size();
+		for ( int j = 0; j < VEC_SIZE; ++j )
+		{
+			std::string& ref_sql = ref_yci.vec_statsql[j];
+
+			m_pLog->Output("[Acquire_YC] 原业财统计因子 SQL(%d) [%s]: %s", seq, ref_yci.stat_dimid.c_str(), ref_sql.c_str());
+			ExchangeSQLMark(ref_sql);
+			SQLExtendConvert(ref_sql);
+			m_pLog->Output("[Acquire_YC] (转换后) 新统计因子 SQL(%d) [%s]: %s", seq, ref_yci.stat_dimid.c_str(), ref_sql.c_str());
+		}
 	}
 }
 

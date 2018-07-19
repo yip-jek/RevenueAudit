@@ -453,5 +453,25 @@ void PubStr::FormatValueStrVector(std::vector<std::vector<std::string> >& vec2_s
 	}
 }
 
+void PubStr::MergeVec2Str(std::vector<std::vector<std::string> >& des_vec2, const std::vector<std::vector<std::string> >& src_vec2)
+{
+	if ( des_vec2.empty() )
+	{
+		des_vec2 = src_vec2;
+	}
+	else
+	{
+		const int MIN_SIZE = (src_vec2.size() < des_vec2.size() ? src_vec2.size() : des_vec2.size());
+
+		for ( int i = 0; i < MIN_SIZE; ++i )
+		{
+			std::vector<std::string>&       ref_des = des_vec2[i];
+			const std::vector<std::string>& REF_SRC = src_vec2[i];
+
+			ref_des.insert(ref_des.end(), REF_SRC.begin(), REF_SRC.end());
+		}
+	}
+}
+
 }	// namespace base
 

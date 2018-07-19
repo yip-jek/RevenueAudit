@@ -41,7 +41,7 @@ public:
 	void SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception);
 
 	// 执行数据采集
-	void FetchEtlData(const std::string& sql, int data_size, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
+	void FetchEtlData(const std::string& sql, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
 
 	// 表是否存在
 	// 返回：true-表存在，false-表不存在
@@ -49,6 +49,9 @@ public:
 
 	// 查询业财稽核因子规则信息
 	void SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& vec_ycinfo) throw(base::Exception);
+
+	// 获取业财稽核因子的SQL语句
+	void SelectYCStatSQL(const std::string& src_sql, std::vector<std::string>& vec_sql) throw(base::Exception);
 
 	// 设置任务请求表
 	void SetTabYCTaskReq(const std::string& t_yc_taskreq);
