@@ -5,6 +5,17 @@
 #include <vector>
 #include "exception.h"
 
+// 表达式信息
+struct ExprInfo
+{
+public:
+	ExprInfo(): index(-1) {}
+
+public:
+	int         index;				// 所在索引位置
+	std::string expr;				// 表达式
+};
+
 // 输出项类
 class YCOutputItem
 {
@@ -38,6 +49,7 @@ public:
 	typedef std::string (*pFunOperate)(const std::string&, const std::string&);
 
 	static const char* const S_ARITHMETIC_TAG;
+	static const char* const S_DATVAL_PREFIX;
 
 	// 是否计算式
 	static bool IsArithmetic(const std::string& expr);
@@ -68,15 +80,15 @@ public:
 	// 进行四则运算
 	void DoCalculate(std::vector<std::vector<std::string> >& vec2_srcdata) throw(base::Exception);
 
-	// 生成计算结果
-	void Calculate(std::vector<double>& vec_val) throw(base::Exception);
-
 private:
 	// 清空
 	void Clear();
 
 	// 载入计算表达式
 	void LoadExpression() throw(base::Exception);
+
+	// 进行计算
+	void Calculate();
 
 	// 算术表达式后序转换
 	void Convert2Postorder(const std::string& expression) throw(base::Exception);
@@ -96,6 +108,9 @@ private:
 	// 当达到条件时，pop出堆栈
 	void PopStack(pFunIsCondition fun_cond);
 
+	// 计算结果
+	std::string CalcResult() throw(base::Exception);
+
 	// 进行一次四则运算
 	void CalcOnce() throw(base::Exception);
 
@@ -106,8 +121,8 @@ private:
 	// 计算结果
 	void OperateResult(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception);
 
-	// 尝试获取维度对应的数值
-	void TryGetDimDataValue(YCOutputItem& item) throw(base::Exception);
+	// 尝试获取对应的数值
+	void TryGetDataValue(YCOutputItem& item) throw(base::Exception);
 
 	// 尝试匹配输出项
 	void TryMatchOutputItem(const YCOutputItem& item_val, YCOutputItem& item_const);
@@ -115,13 +130,10 @@ private:
 	// 数值计算
 	void OperateValue(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception);
 
-	// 输出结果
-	void OutputResult(std::vector<double>& vec_result) throw(base::Exception);
-
 private:
-	std::vector<std::string>*  m_pVecData;					// 源数据
-	std::map<int, std::string> m_mExpression;				// 计算表达式队列
-	std::stack<std::string>    m_stackOper;					// 运算符堆栈
-	std::vector<YCOutputItem>  m_vecOutputItem;				// 输出项队列
+	std::vector<std::string>* m_pVecData;					// 源数据
+	std::map<int, ExprInfo>   m_mExpression;				// 计算表达式队列
+	std::stack<std::string>   m_stackOper;					// 运算符堆栈
+	std::vector<YCOutputItem> m_vecOutputItem;				// 输出项队列
 };
 

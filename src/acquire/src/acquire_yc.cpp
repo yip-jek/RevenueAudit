@@ -291,6 +291,7 @@ void Acquire_YC::YCDataAcquisition() throw(base::Exception)
 			base::PubStr::MergeVec2Str(vec2_data, v2_data);
 		}
 
+		// 进行运算
 		acq_arith.DoCalculate(vec2_data);
 		MakeYCResultComplete(ref_yci.stat_dimid, FIELD_SIZE, vec2_data);
 

@@ -4,6 +4,7 @@
 
 
 const char* const AcqArithmet::S_ARITHMETIC_TAG = "ACQ_ARITHMET";
+const char* const AcqArithmet::S_DATVAL_PREFIX  = "VAL_";
 
 bool AcqArithmet::IsArithmetic(const std::string& expr)
 {
@@ -137,11 +138,11 @@ std::string AcqArithmet::OperateDivide(const std::string& left, const std::strin
 }
 
 AcqArithmet::AcqArithmet()
+:m_pVecData(NULL)
 {
 }
 
 AcqArithmet::~AcqArithmet()
-:m_pVecData(NULL)
 {
 }
 
@@ -149,7 +150,7 @@ void AcqArithmet::DoCalculate(std::vector<std::vector<std::string> >& vec2_srcda
 {
 	if ( vec2_srcdata.empty() )
 	{
-		throw base::Exception(ACQERR_ARITHMET_CALCULATE, "NO source data! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		throw base::Exception(ACQERR_ARITHMET_LOAD, "NO source data! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
 	}
 
 	const int VEC2_SIZE = vec2_srcdata.size();
@@ -162,34 +163,18 @@ void AcqArithmet::DoCalculate(std::vector<std::vector<std::string> >& vec2_srcda
 
 		LoadExpression();
 		Calculate();
-
-		// 转换为后序
-		Convert2Postorder(expression);
 	}
 }
 
-void AcqArithmet::Calculate(std::vector<double>& vec_val) throw(base::Exception)
+void AcqArithmet::Calculate()
 {
-	if ( m_vecOutputItem.empty() )
+	for ( std::map<int, ExprInfo>::iterator it = m_mExpression.begin(); it != m_mExpression.end(); ++it )
 	{
-		throw base::Exception(ACQERR_ARITHMET_CALCULATE, "The output item vector is empty! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
-	}
+		// 转换为后序
+		Convert2Postorder(it->second.expr);
 
-	if ( NULL == m_pVec2Data )
-	{
-		throw base::Exception(ACQERR_ARITHMET_CALCULATE, "The source data vector is not setting correctly! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+		(*m_pVecData)[it->second.index] = CalcResult();
 	}
-
-	// 从输出项队列中，取出数据项与运算符进行四则运算
-	// 直至得出最终的结果
-	do
-	{
-		CalcOnce();
-	}
-	while ( m_vecOutputItem.size() > 1 );
-
-	// 计算得出的最终结果
-	OutputResult(vec_val);
 }
 
 void AcqArithmet::Clear()
@@ -211,6 +196,9 @@ void AcqArithmet::Clear()
 
 void AcqArithmet::LoadExpression() throw(base::Exception)
 {
+	int level = 0;
+	ExprInfo expInfo;
+
 	const int VEC_SIZE = m_pVecData->size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
 	{
@@ -223,12 +211,21 @@ void AcqArithmet::LoadExpression() throw(base::Exception)
 		}
 
 		// 格式：[ACQ_ARITHMET:
-		size_t pos = ref_str.find(':');
-		if ( std::string::npos == pos )
+		size_t pos_c = ref_str.find(':');
+		if ( std::string::npos == pos_c )
 		{
 			throw base::Exception(ACQERR_ARITHMET_LOAD, "Unknown acquire arithmetic expression: [%s] (%d) [FILE:%s, LINE:%d]", ref_str.c_str(), (i+1), __FILE__, __LINE__);
 		}
 
+		size_t pos_b = ref_str.find(']');
+		if ( !base::PubStr::Str2Int(ref_str.substr(pos_c+1, pos_b-pos_c-1), level) )
+		{
+			throw base::Exception(ACQERR_ARITHMET_LOAD, "Unknown acquire arithmetic level: [%s] (%d) [FILE:%s, LINE:%d]", ref_str.c_str(), (i+1), __FILE__, __LINE__);
+		}
+
+		expInfo.index = i;
+		expInfo.expr  = base::PubStr::TrimUpperB(ref_str.substr(pos_b+1));
+		m_mExpression[level] = expInfo;
 	}
 }
 
@@ -426,6 +423,24 @@ void AcqArithmet::PopStack(pFunIsCondition fun_cond)
 	}
 }
 
+std::string AcqArithmet::CalcResult() throw(base::Exception)
+{
+	if ( m_vecOutputItem.empty() )
+	{
+		throw base::Exception(ACQERR_ARITHMET_CALCULATE, "NO output item! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	// 从输出项队列中，取出数据项与运算符进行四则运算
+	// 直至得出最终的结果
+	do
+	{
+		CalcOnce();
+	}
+	while ( m_vecOutputItem.size() > 1 );
+
+	return m_vecOutputItem[0].vec_out[0];
+}
+
 void AcqArithmet::CalcOnce() throw(base::Exception)
 {
 	const int VEC_SIZE = m_vecOutputItem.size();
@@ -509,8 +524,8 @@ void AcqArithmet::OperateResult(YCOutputItem& item_left, YCOutputItem& item_righ
 	else
 	{
 		// 通过维度找到对应的数值
-		TryGetDimDataValue(item_left);
-		TryGetDimDataValue(item_right);
+		TryGetDataValue(item_left);
+		TryGetDataValue(item_right);
 
 		// 此时，输出项类型只存在2种情况："常量类型"或者"数值类型"
 		// 且至少有一个输出项类型为"数值类型"
@@ -521,11 +536,35 @@ void AcqArithmet::OperateResult(YCOutputItem& item_left, YCOutputItem& item_righ
 	}
 }
 
-void AcqArithmet::TryGetDimDataValue(YCOutputItem& item) throw(base::Exception)
+void AcqArithmet::TryGetDataValue(YCOutputItem& item) throw(base::Exception)
 {
 	if ( YCOutputItem::OIT_DIM == item.item_type )
 	{
-		//m_pStatFactor->GetDimFactorValue(item.vec_out[0], item.vec_out);
+		std::string& ref_out = item.vec_out[0];
+
+		const size_t DV_PREFIX_SIZE = std::string(S_DATVAL_PREFIX).size();
+		if ( ref_out.size() <= DV_PREFIX_SIZE )
+		{
+			throw base::Exception(ACQERR_ARITHMET_CALCULATE, "Unknown data mark: [%s] [FILE:%s, LINE:%d]", ref_out.c_str(), __FILE__, __LINE__);
+		}
+
+		if ( ref_out.substr(0, DV_PREFIX_SIZE) != S_DATVAL_PREFIX )
+		{
+			throw base::Exception(ACQERR_ARITHMET_CALCULATE, "Unknown data mark prefix: [%s] [FILE:%s, LINE:%d]", ref_out.c_str(), __FILE__, __LINE__);
+		}
+
+		int dv_index = 0;
+		if ( !base::PubStr::Str2Int(ref_out.substr(DV_PREFIX_SIZE), dv_index) )
+		{
+			throw base::Exception(ACQERR_ARITHMET_CALCULATE, "Unknown data value index: [%s] [FILE:%s, LINE:%d]", ref_out.c_str(), __FILE__, __LINE__);
+		}
+
+		if ( dv_index < 1 || dv_index > (int)m_pVecData->size() )
+		{
+			throw base::Exception(ACQERR_ARITHMET_CALCULATE, "Invalid data value index: [%d] [FILE:%s, LINE:%d]", dv_index, __FILE__, __LINE__);
+		}
+
+		item.vec_out.assign(1, (*m_pVecData)[dv_index-1]);
 		item.item_type = YCOutputItem::OIT_VALUE;
 	}
 }
@@ -560,28 +599,5 @@ void AcqArithmet::OperateValue(YCOutputItem& item_left, YCOutputItem& item_right
 
 	item_result.item_type = YCOutputItem::OIT_VALUE;
 	item_result.vec_out.swap(vec_val);
-}
-
-void AcqArithmet::OutputResult(std::vector<double>& vec_result) throw(base::Exception)
-{
-	double d_val = 0.0;
-	std::vector<double> vec_val;
-
-	std::vector<std::string>& ref_vec_out = m_vecOutputItem[0].vec_out;
-	const int VEC_SIZE = ref_vec_out.size();
-	for ( int i = 0; i < VEC_SIZE; ++i )
-	{
-		if ( !base::PubStr::Str2Double(ref_vec_out[i], d_val) )
-		{
-			//throw base::Exception(ACQERR_ARITHMET_CALCULATE, "无法转换为精度类型的结果值：[%s] [FILE:%s, LINE:%d]", ref_vec_out[i].c_str(), __FILE__, __LINE__);
-
-			// 无法转换为精度类型，默认取 0
-			d_val = 0.0;
-		}
-
-		vec_val.push_back(d_val);
-	}
-
-	vec_val.swap(vec_result);
 }
 
