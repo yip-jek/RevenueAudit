@@ -604,7 +604,7 @@ void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& v
 
 			if ( YCInfo::IsExternalSQL(stat_sql) )
 			{
-				SelectYCStatSQL(stat_sql, yc_info.vec_statsql);
+				SelectYCStatSQL(stat_sql.substr(stat_sql.find(']')+1), yc_info.vec_statsql);
 			}
 			else
 			{
