@@ -156,9 +156,6 @@ void AcqArithmet::DoCalculate(std::vector<std::vector<std::string> >& vec2_srcda
 	const int VEC2_SIZE = vec2_srcdata.size();
 	for ( int i = 0; i < VEC2_SIZE; ++i )
 	{
-		// 清理缓存数据
-		Clear();
-
 		m_pVecData = &vec2_srcdata[i];
 
 		LoadExpression();
@@ -170,6 +167,9 @@ void AcqArithmet::Calculate()
 {
 	for ( std::map<int, ExprInfo>::iterator it = m_mExpression.begin(); it != m_mExpression.end(); ++it )
 	{
+		// 清空缓存数据
+		Clear();
+
 		// 转换为后序
 		Convert2Postorder(it->second.expr);
 
@@ -179,11 +179,6 @@ void AcqArithmet::Calculate()
 
 void AcqArithmet::Clear()
 {
-	m_pVecData = NULL;
-
-	// Clear map
-	m_mExpression.clear();
-
 	// Clear stack
 	while ( !m_stackOper.empty() )
 	{
@@ -198,6 +193,9 @@ void AcqArithmet::LoadExpression() throw(base::Exception)
 {
 	int level = 0;
 	ExprInfo expInfo;
+
+	// 清除旧数据
+	m_mExpression.clear();
 
 	const int VEC_SIZE = m_pVecData->size();
 	for ( int i = 0; i < VEC_SIZE; ++i )

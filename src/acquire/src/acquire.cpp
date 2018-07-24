@@ -31,7 +31,7 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 5.2.0.1 released. Compiled at " __TIME__ " on " __DATE__);
+	return ("Acquire: Version 5.2.0.2 released. Compiled at " __TIME__ " on " __DATE__);
 }
 
 void Acquire::LoadConfig() throw(base::Exception)

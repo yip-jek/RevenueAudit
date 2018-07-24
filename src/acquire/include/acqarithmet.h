@@ -81,7 +81,7 @@ public:
 	void DoCalculate(std::vector<std::vector<std::string> >& vec2_srcdata) throw(base::Exception);
 
 private:
-	// 清空
+	// 清空缓存
 	void Clear();
 
 	// 载入计算表达式
