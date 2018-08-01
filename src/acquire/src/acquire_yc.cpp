@@ -67,8 +67,9 @@ void Acquire_YC::Init() throw(base::Exception)
 	// 初始化报表状态信息
 	InitReportState();
 
-	// 登记报表状态："07"-正在稽核
-	RegisterReportState("07");
+	// --删除"07"-正在稽核状态，2018年7月24日
+	//// 登记报表状态："07"-正在稽核
+	//RegisterReportState("07");
 
 	// 更新任务状态为：正在采集
 	UpdateTaskRequestState(TREQ_STATE_BEGIN);
