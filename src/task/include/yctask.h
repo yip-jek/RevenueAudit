@@ -2,6 +2,7 @@
 
 #include <map>
 #include <set>
+#include "yctaskexception.h"
 #include "ycstruct.h"
 #include "task.h"
 

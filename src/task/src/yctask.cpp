@@ -201,7 +201,7 @@ void YCTask::GetUndoneTask() throw(base::Exception)
 {
     //任务调度退出后，未及时更新状态的请求。
     std::vector<TaskReqInfo>  vec_undoneTask;
-    m_pTaskDB->SelectUndoneTaskRequest(vec_undoneTask,m_FinalStage);
+    m_pTaskDB->SelectUndoneTaskRequest(vec_undoneTask, m_FinalStage);
     m_pLog->Output("Get unDonetask size:%d",vec_undoneTask.size());
 
     //等待执行
