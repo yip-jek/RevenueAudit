@@ -28,7 +28,7 @@ Task::~Task()
 
 std::string Task::Version()
 {
-	return ("Version 4.0.0.0 released. Compiled at " __TIME__ " on " __DATE__);
+	return ("Version 4.0.2.0 released. Compiled at " __TIME__ " on " __DATE__);
 }
 
 void Task::Run() throw(base::Exception)
@@ -221,47 +221,46 @@ void Task::ExecuteTask() throw(base::Exception)
 	}
 }
 
+std::string Task::FetchPipeBuffer(const std::string& cmd) throw(base::Exception)
+{
+	FILE* fp_pipe = popen(cmd.c_str(), "r");
+	if ( NULL == fp_pipe )
+	{
+		throw base::Exception(TERR_IS_PROC_EXIST, "Popen(r:\"%s\") failed: (%d) %s [FILE:%s, LINE:%d]", cmd.c_str(), errno, strerror(errno), __FILE__, __LINE__);
+	}
+
+	char buffer[512] = "";
+	fgets(buffer, 512, fp_pipe);
+
+	pclose(fp_pipe);
+	return buffer;
+}
+
 bool Task::IsProcessAlive(long long proc_task_id) throw(base::Exception)
 {
 	std::string str_cmd;
 	base::PubStr::SetFormatString(str_cmd, "ps -ef | grep -w %lld | grep -v grep", proc_task_id);
 
-	FILE* fp_pipe = popen(str_cmd.c_str(), "r");
-	if ( NULL == fp_pipe )
-	{
-		throw base::Exception(TERR_IS_PROC_EXIST, "Popen() failed: (%d) %s [FILE:%s, LINE:%d]", errno, strerror(errno), __FILE__, __LINE__);
-	}
-
-	char buffer[512] = "";
-	fgets(buffer, 512, fp_pipe);
-
-	pclose(fp_pipe);
-	return (strlen(buffer) > 1);
+	return !FetchPipeBuffer(str_cmd).empty();
 }
 
-bool Task::IsProcessAlive(const TaskInfo& task_info,const TaskReqInfo& ref_tri,bool IsGDAudiKPIType) throw(base::Exception)
+bool Task::IsProcessAlive(const TaskInfo& task_info, const TaskReqInfo& tri, bool IsGDAudiKPIType) throw(base::Exception)
 {
     //keyword e.g. :00001:KPI_YC_BOSSYHQFDZXQBHFF_YW:ANA_YC_BOSSYHQFDZXQBHFF_YW:21219:
 	std::string str_cmd;
-	if(IsGDAudiKPIType){
-		base::PubStr::SetFormatString(str_cmd, "ps -ef | grep -w \"[a-zA-Z][a-zA-Z]-%s:%s:.*\" | grep -v grep | wc -l",ref_tri.stat_cycle.c_str(),task_info.kpi_id.c_str());
-	}else{
-		base::PubStr::SetFormatString(str_cmd, "ps -ef | grep -w \"%s-%s:%s:.*\" | grep -v grep | wc -l",ref_tri.stat_city.c_str(),ref_tri.stat_cycle.c_str(),task_info.kpi_id.c_str());
-	}
-
-	FILE* fp_pipe = popen(str_cmd.c_str(), "r");
-	if ( NULL == fp_pipe )
+	if ( IsGDAudiKPIType )
 	{
-		throw base::Exception(TERR_IS_PROC_EXIST, "Popen() failed: (%d) %s [FILE:%s, LINE:%d]", errno, strerror(errno), __FILE__, __LINE__);
+		base::PubStr::SetFormatString(str_cmd, "ps -ef | grep -w \"[a-zA-Z][a-zA-Z]-%s:%s:.*\" | grep -v grep | wc -l", tri.stat_cycle.c_str(), task_info.kpi_id.c_str());
+	}
+	else
+	{
+		base::PubStr::SetFormatString(str_cmd, "ps -ef | grep -w \"%s-%s:%s:.*\" | grep -v grep | wc -l", tri.stat_city.c_str(), tri.stat_cycle.c_str(), task_info.kpi_id.c_str());
 	}
 
-	char buffer[512] = "";
-	fgets(buffer, 512, fp_pipe);
-
-	pclose(fp_pipe);
-	return (atoi(buffer) > 0);
+	int proc_count = 0;
+	base::PubStr::Str2Int(FetchPipeBuffer(str_cmd), proc_count);
+	return (proc_count > 0);
 }
-
 
 long long Task::GenerateTaskID()
 {

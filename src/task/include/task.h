@@ -105,7 +105,7 @@ protected:
 
 	// 查看进程是否存在
 	virtual bool IsProcessAlive(long long proc_task_id) throw(base::Exception);
-    virtual bool IsProcessAlive(const TaskInfo& task_info,const TaskReqInfo& ref_tri,bool IsGDAudiKPIType) throw(base::Exception);
+    virtual bool IsProcessAlive(const TaskInfo& task_info, const TaskReqInfo& tri, bool IsGDAudiKPIType) throw(base::Exception);
 
 	// 生成新的任务ID
 	long long GenerateTaskID();
@@ -114,6 +114,9 @@ protected:
 	std::string EtlTimeTransform(const std::string& cycle) throw(base::Exception);
 
     virtual void GetUndoneTask() throw(base::Exception);
+
+private:
+	std::string FetchPipeBuffer(const std::string& cmd) throw(base::Exception);
 
 protected:
 	base::Config*    m_pCfg;					// 配置文件

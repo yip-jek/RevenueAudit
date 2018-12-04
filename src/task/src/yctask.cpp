@@ -220,10 +220,11 @@ void YCTask::ShowTasksInfo()
 	m_pLog->Output(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 	m_pLog->Output("[YC_TASK] 指标规则数: %llu", m_mKpiRuleInfo.size());
 	m_pLog->Output("[YC_TASK] 新建任务数: %llu", m_vecNewTask.size());
+	m_pLog->Output("[YC_TASK] 等待任务数: %llu", m_vecWaitTask.size());
 	m_pLog->Output("[YC_TASK] 执行任务数: %llu", m_mTaskReqInfo.size());
 	m_pLog->Output("[YC_TASK] 采集任务数: %llu", m_vecEtlTaskInfo.size());
 	m_pLog->Output("[YC_TASK] 分析任务数: %llu", m_vecAnaTaskInfo.size());
-	m_pLog->Output("[YC_TASK] 完成任务数: %d", m_taskFinished);
+	m_pLog->Output("[YC_TASK] 完成任务数: %d"  , m_taskFinished);
 	m_pLog->Output("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 }
 
@@ -264,13 +265,13 @@ void YCTask::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) thr
 		task_req_info.status_desc = "任务失败";
 		task_req_info.finishtime  = base::SimpleTime::Now().Time14();
 		break;
-    case TSTS_NoEffect:
+    case TSTS_NoEffect:							// 无效任务
         task_req_info.status      = m_stateTaskNoEffect;
 		task_req_info.status_desc = "任务结束";
 		task_req_info.desc        = "已有稽核请求触发省财务汇总请求";//add for <广东移动NG3BASS项目－业财系统重构需求>
 		task_req_info.finishtime  = base::SimpleTime::Now().Time14();
         break;
-    case TSTS_WAIT:							// 任务等待
+    case TSTS_WAIT:								// 任务等待
 		task_req_info.status      = m_stateTaskWait;
 		task_req_info.status_desc = "任务等待";
 		task_req_info.desc        = "已有相同的任务在执行，等待中";
@@ -471,7 +472,8 @@ void YCTask::BuildNewTask() throw(base::Exception)
     std::set<std::string> set_TaskCreated;
     m_mutiMapIgnoreTaskReq.clear();
 
-    if(!m_vecWaitTask.empty()){
+    if( !m_vecWaitTask.empty() )
+	{
         //m_vecNewTask.insert(m_vecNewTask.begin(),m_vecWaitTask.begin(),m_vecWaitTask.end());
         m_vecNewTask.insert(m_vecNewTask.end(),m_vecWaitTask.begin(),m_vecWaitTask.end());
         m_vecWaitTask.clear();
@@ -497,20 +499,24 @@ void YCTask::BuildNewTask() throw(base::Exception)
 
 		if ( GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Acquire, task_info.sub_id) )
 		{
-            std::map<std::string, KpiRuleInfo>::iterator it = m_mKpiRuleInfo.find(ref_tri.kpi_id);
-            KpiRuleInfo &kpi_rule = it->second;
+            //std::map<std::string, KpiRuleInfo>::iterator it = m_mKpiRuleInfo.find(ref_tri.kpi_id);
+            //KpiRuleInfo &kpi_rule = it->second;
+            KpiRuleInfo &kpi_rule = m_mKpiRuleInfo.find(ref_tri.kpi_id)->second;
+
 			bool IsGDAudiKPIType = false;
-			m_gdKpiType == kpi_rule.kpi_type ? IsGDAudiKPIType = true : IsGDAudiKPIType = false;
-            if(IsGDAudiKPIType) {
+			if ( kpi_rule.kpi_type == m_gdKpiType )
+			{
+				IsGDAudiKPIType = true;
 
                 // 处理业财二期地市详情汇总省详情表请求
-                if( false == NeedToDealwithYC2ndPhaseGDTaskReq(ref_tri,set_TaskCreated) ){
+                if( !NeedToDealwithYC2ndPhaseGDTaskReq(ref_tri,set_TaskCreated) )
+				{
                     continue;
                 }
-            }
+			}
 
-            if(false == IsProcessAlive(task_info,ref_tri,IsGDAudiKPIType)){
-
+            if( !IsProcessAlive(task_info,ref_tri,IsGDAudiKPIType) )
+			{
                 task_info.seq_id   = ref_tri.seq_id;
         		task_info.t_type   = TaskInfo::TT_Acquire;
         		task_info.task_id  = GenerateTaskID();
@@ -522,12 +528,12 @@ void YCTask::BuildNewTask() throw(base::Exception)
 
         		m_vecEtlTaskInfo.push_back(task_info);
         		m_mTaskReqInfo[ref_tri.seq_id] = ref_tri;
-
-            }else{
+            }
+			else
+			{
                 //m_pLog->Output("%d-%s-%s-%s put in WaitQueue",ref_tri.seq_id,ref_tri.kpi_id.c_str(),ref_tri.stat_city.c_str(),ref_tri.stat_cycle.c_str());
                 m_vecWaitTask.push_back(ref_tri);
             }
-
 		}
 		else	// 找不到
 		{

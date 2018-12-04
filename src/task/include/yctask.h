@@ -24,8 +24,8 @@ public:
 		TSTS_AnalyseException = 4,				// 分析异常
 		TSTS_End              = 5,				// 任务完成
 		TSTS_Fail             = 6,				// 任务失败
-		TSTS_NoEffect         = 7,              // 无效任务
-		TSTS_WAIT             = 8,              // 任务等待
+		TSTS_NoEffect         = 7,				// 无效任务
+		TSTS_WAIT             = 8,				// 任务等待
 	};
 
 	// 任务错误代码
