@@ -495,8 +495,7 @@ void YCTask::BuildNewTask() throw(base::Exception)
 			RemoveOldTask(ref_tri.seq_id);
 		}
 
-		task_info.kpi_id   = ref_tri.kpi_id;
-
+		task_info.kpi_id = ref_tri.kpi_id;
 		if ( GetSubRuleID(ref_tri.kpi_id, TaskInfo::TT_Acquire, task_info.sub_id) )
 		{
             //std::map<std::string, KpiRuleInfo>::iterator it = m_mKpiRuleInfo.find(ref_tri.kpi_id);
