@@ -64,8 +64,7 @@ private:
 	std::string m_tabTaskReq;				// 任务请求表
 	std::string m_tabKpiRule;				// 指标规则表
 	std::string m_tabEtlRule;				// 采集规则表
-	std::string m_tabYLStatus;              // 详情表提交状态 add for <广东移动NG3BASS项目－业财系统重构需求>
-	std::string m_tabCfgPfLfRela;           // 报表指标关联表
-
+	std::string m_tabYLStatus;				// 详情表提交状态
+	std::string m_tabCfgPfLfRela;			// 报表指标关联表
 };
 

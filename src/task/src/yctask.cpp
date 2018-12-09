@@ -106,12 +106,14 @@ void YCTask::LoadConfig() throw(base::Exception)
 	m_stateAnaException = m_pCfg->GetCfgValue("STATE", "STATE_TASK_ANA_EXP");
 	m_stateTaskEnd      = m_pCfg->GetCfgValue("STATE", "STATE_TASK_END");
 	m_stateTaskFail     = m_pCfg->GetCfgValue("STATE", "STATE_TASK_FAIL");
+	m_stateTaskError    = m_pCfg->GetCfgValue("STATE", "STATE_TASK_ERROR");
 	m_etlStateEnd       = m_pCfg->GetCfgValue("STATE", "ETL_END_STATE");
 	m_etlStateError     = m_pCfg->GetCfgValue("STATE", "ETL_ERROR_STATE");
 	m_anaStateEnd       = m_pCfg->GetCfgValue("STATE", "ANA_END_STATE");
 	m_anaStateError     = m_pCfg->GetCfgValue("STATE", "ANA_ERROR_STATE");
     m_stateTaskNoEffect = m_pCfg->GetCfgValue("STATE", "STATE_TASK_NOEFFECT");
     m_stateTaskWait     = m_pCfg->GetCfgValue("STATE", "STATE_TASK_WAIT");
+	m_stateUnknown      = m_pCfg->GetCfgValue("STATE", "STATE_UNKNOWN");
     m_FinalStage        = m_pCfg->GetCfgValue("STATE", "STATE_TASK_FINALSTAGE");
 
 	m_tabTaskReq = m_pCfg->GetCfgValue("TABLE", "TAB_TASK_REQUEST");
@@ -257,7 +259,7 @@ void YCTask::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) thr
 	case TSTS_End:								// 任务完成
 		task_req_info.status      = m_stateTaskEnd;
 		task_req_info.status_desc = "稽核完成";
-		task_req_info.desc        = "任务结束";
+		task_req_info.desc        = "稽核任务已结束";
 		task_req_info.finishtime  = base::SimpleTime::Now().Time14();
 		break;
 	case TSTS_Fail:								// 任务失败
@@ -268,10 +270,10 @@ void YCTask::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) thr
     case TSTS_NoEffect:							// 无效任务
         task_req_info.status      = m_stateTaskNoEffect;
 		task_req_info.status_desc = "任务结束";
-		task_req_info.desc        = "已有稽核请求触发省财务汇总请求";//add for <广东移动NG3BASS项目－业财系统重构需求>
+		task_req_info.desc        = "已有稽核请求触发省财务汇总请求";
 		task_req_info.finishtime  = base::SimpleTime::Now().Time14();
         break;
-    case TSTS_WAIT:								// 任务等待
+    case TSTS_Wait:								// 任务等待
 		task_req_info.status      = m_stateTaskWait;
 		task_req_info.status_desc = "任务等待";
 		task_req_info.desc        = "已有相同的任务在执行，等待中";
@@ -279,6 +281,11 @@ void YCTask::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) thr
 		break;
 	case TSTS_Unknown:							// 未知状态
 	default:
+		task_req_info.status      = m_stateUnknown;
+		task_req_info.status_desc = "未知";
+		task_req_info.desc        = "Unknown task state: %d";
+		task_req_info.finishtime  = base::SimpleTime::Now().Time14();
+		bre;
 		throw base::Exception(YCTERR_UPD_TASK_REQ, "Unknown tasksche task state: %d [FILE:%s, LINE:%d]", ts, __FILE__, __LINE__);
 	}
 
@@ -550,7 +557,7 @@ void YCTask::BuildNewTask() throw(base::Exception)
 
 		for ( int i = 0; i < VEC_WAIT_TASK_SIZE; ++i )
 		{
-			TaskRequestUpdate(TSTS_WAIT, m_vecWaitTask[i]);
+			TaskRequestUpdate(TSTS_Wait, m_vecWaitTask[i]);
 		}
 	}
 

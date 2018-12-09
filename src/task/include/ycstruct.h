@@ -29,7 +29,7 @@ struct KpiRuleInfo
 	std::string kpi_id;					// 指标规则ID
 	std::string etl_id;					// 采集规则ID
 	std::string ana_id;					// 分析规则ID
-	std::string kpi_type;               // 指标类型，add for <广东移动NG3BASS项目－业财系统重构需求> by zhongwb
+	std::string kpi_type;               // 指标类型
 };
 
 // 任务信息

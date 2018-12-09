@@ -25,7 +25,7 @@ public:
 		TSTS_End              = 5,				// 任务完成
 		TSTS_Fail             = 6,				// 任务失败
 		TSTS_NoEffect         = 7,				// 无效任务
-		TSTS_WAIT             = 8,				// 任务等待
+		TSTS_Wait             = 8,				// 任务等待
 	};
 
 	// 任务错误代码
@@ -133,14 +133,15 @@ private:
 	std::string m_anaStateError;			// 分析异常状态
 	std::string m_stateTaskNoEffect;        // 任务无效
 	std::string m_stateTaskWait;            // 任务等待
+	std::string m_stateUnknown;				// 未知状态
 
 private:
 	std::string m_tabTaskReq;				// 任务请求表
 	std::string m_tabKpiRule;				// 指标规则表
 	std::string m_tabEtlRule;				// 采集规则表
-	std::string m_tabYLStatus;              // 详情表提交状态 add for <广东移动NG3BASS项目－业财系统重构需求>
-	std::string m_tabCfgPfLfRela;         // 报表指标关联表
-	std::string m_gdKpiType;                // 省汇总详情指标类型
+	std::string m_tabYLStatus;				// 详情表提交状态
+	std::string m_tabCfgPfLfRela;			// 报表指标关联表
+	std::string m_gdKpiType;				// 省汇总详情指标类型
 
 private:
 	std::vector<TaskReqInfo>           m_vecNewTask;					// 新任务列表
