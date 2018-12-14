@@ -69,6 +69,7 @@ void YCTask::LoadConfig() throw(base::Exception)
 	m_pCfg->RegisterItem("STATE", "STATE_TASK_ANA_EXP");
 	m_pCfg->RegisterItem("STATE", "STATE_TASK_END");
 	m_pCfg->RegisterItem("STATE", "STATE_TASK_FAIL");
+	m_pCfg->RegisterItem("STATE", "STATE_TASK_ERROR");
 	m_pCfg->RegisterItem("STATE", "ETL_END_STATE");
 	m_pCfg->RegisterItem("STATE", "ETL_ERROR_STATE");
 	m_pCfg->RegisterItem("STATE", "ANA_END_STATE");
