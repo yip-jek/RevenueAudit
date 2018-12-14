@@ -286,8 +286,6 @@ int YCTaskDB2::CountAllSubmitStatu(TaskReqInfo& ref_taskreq) throw(base::Excepti
     return i_SubmitStatuCount;
 }
 
-
-
 void YCTaskDB2::SelectUndoneTaskRequest(std::vector<TaskReqInfo>& vec_Undone,const std::string& FinalStage) throw(base::Exception)
 {
     std::string datestr_yyyymm = "yyyyMM";

@@ -2,7 +2,6 @@
 
 #include <map>
 #include <set>
-#include "yctaskexception.h"
 #include "ycstruct.h"
 #include "task.h"
 
@@ -24,8 +23,9 @@ public:
 		TSTS_AnalyseException = 4,				// 分析异常
 		TSTS_End              = 5,				// 任务完成
 		TSTS_Fail             = 6,				// 任务失败
-		TSTS_NoEffect         = 7,				// 无效任务
-		TSTS_Wait             = 8,				// 任务等待
+		TSTS_Error            = 7,				// 任务出错
+		TSTS_NoEffect         = 8,				// 无效任务
+		TSTS_Wait             = 9,				// 任务等待
 	};
 
 	// 任务错误代码
@@ -127,13 +127,13 @@ private:
 	std::string m_stateAnaException;		// 任务分析异常
 	std::string m_stateTaskEnd;				// 任务完成
 	std::string m_stateTaskFail;			// 任务失败
+	std::string m_stateTaskError;			// 任务出错
 	std::string m_etlStateEnd;				// 采集完成状态
 	std::string m_etlStateError;			// 采集异常状态
 	std::string m_anaStateEnd;				// 分析完成状态
 	std::string m_anaStateError;			// 分析异常状态
 	std::string m_stateTaskNoEffect;        // 任务无效
 	std::string m_stateTaskWait;            // 任务等待
-	std::string m_stateUnknown;				// 未知状态
 
 private:
 	std::string m_tabTaskReq;				// 任务请求表
