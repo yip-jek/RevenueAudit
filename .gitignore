@@ -1,0 +1,7 @@
+# C++ object files
+*.o
+
+# C++ library files
+*.a
+*.so
+
