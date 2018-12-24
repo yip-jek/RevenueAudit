@@ -8,6 +8,7 @@ namespace base
 {
 
 class Log;
+class LogStrategy;
 class BaseDB2;
 class BaseJHive;
 
@@ -33,8 +34,8 @@ public:
 	// 获取配置文件名(含路径)
 	virtual std::string GetConfigFile();
 
-	// 获取日志路径
-	virtual std::string GetLogPathConfig();
+	// 导出日志配置
+	virtual void ExportLogConfig(LogStrategy& ls);
 
 	// 获取任务参数信息
 	virtual std::string GetTaskParaInfo();

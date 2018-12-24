@@ -48,6 +48,9 @@ public:
 	// 版本号
 	virtual std::string Version();
 
+	// 日志文件名前缀
+	virtual std::string LogPrefix() const = 0;
+
 	// 执行
 	void Run() throw(base::Exception);
 

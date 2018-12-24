@@ -15,8 +15,6 @@ YCTask::YCTask(base::Config& cfg)
 ,m_taskFinished(0)
 ,m_pTaskDB(NULL)
 {
-	// 日志文件前缀
-	base::Log::SetLogFilePrefix("YCTask");
 }
 
 YCTask::~YCTask()
@@ -45,6 +43,12 @@ void YCTask::Init() throw(base::Exception)
 	Check();
 
 	m_pLog->Output("[YC_TASK] Init OK.");
+}
+
+std::string YCTask::LogPrefix() const
+{
+	// 日志文件前缀
+	return "YCTask";
 }
 
 void YCTask::LoadConfig() throw(base::Exception)

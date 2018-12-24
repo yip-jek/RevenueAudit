@@ -14,8 +14,6 @@ YDTask::YDTask(base::Config& cfg)
 ,m_taskFinished(0)
 ,m_pTaskDB2(NULL)
 {
-	// 日志文件前缀
-	base::Log::SetLogFilePrefix("YDTask");
 }
 
 YDTask::~YDTask()
@@ -174,6 +172,13 @@ void YDTask::Init() throw(base::Exception)
 	OutputConfiguration();
 	m_pLog->Output("[YD_TASK] Init OK.");
 }
+
+std::string YDTask::LogPrefix() const
+{
+	// 日志文件前缀
+	return "YDTask";
+}
+
 
 void YDTask::OutputConfiguration()
 {

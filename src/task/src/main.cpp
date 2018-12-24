@@ -45,11 +45,9 @@ int main(int argc, char* argv[])
 		std::cerr << "[ERROR] Unknown log ID: '" << argv[2] << "'" << std::endl;
 		return -1;
 	}
-	if ( !base::Log::SetLogID(log_id) )
-	{
-		std::cerr << "[ERROR] Invalid log ID: " << log_id << std::endl;
-		return -1;
-	}
+
+	base::LogStrategy log_strategy;
+	log_strategy.log_id = log_id;
 
 	base::AutoLogger aLog;
 	base::Log* pLog = aLog.Get();
@@ -59,28 +57,34 @@ int main(int argc, char* argv[])
 		// 读取配置
 		base::Config cfg;
 		cfg.SetCfgFile(argv[4]);
-		cfg.RegisterItem("SYS", "LOG_PATH");
+		cfg.RegisterItem("LOG", "PATH");
+		cfg.RegisterItem("LOG", "MAX_LINE");
+		cfg.RegisterItem("LOG", "MAX_SIZE");
+		cfg.RegisterItem("LOG", "INTERVAL");
 		cfg.ReadConfig();
 
+		log_strategy.log_path = cfg.GetCfgValue("LOG", "PATH");
+		log_strategy.max_line = cfg.GetCfgLongVal("LOG", "MAX_LINE");
+		log_strategy.max_size = cfg.GetCfgLongVal("LOG", "MAX_SIZE");
+		log_strategy.interval = cfg.GetCfgValue("LOG", "INTERVAL");
+
 		TaskFactory t_factory(cfg);
-		std::string str_error;
-		Task* pTask = t_factory.Create(argv[3], &str_error);
-
-		pLog->SetPath(cfg.GetCfgValue("SYS", "LOG_PATH"));
-		pLog->Init();
-		pLog->Output("%s: PID=[%d]", (is_daemon?"守护进程":"一般进程"), getpid());
-
-		// 任务调整程序是否创建成功？
+		std::string str_tmp;
+		Task* pTask = t_factory.Create(argv[3], &str_tmp);
 		if ( NULL == pTask )
 		{
-			pLog->Output("[ERROR] Create task failed: %s", str_error.c_str());
+			std::cerr << "[ERROR] Create task failed: " << str_tmp << std::endl;
 			return -1;
 		}
 
-		// 输出版本号
-		std::cout << pTask->Version() << std::endl;
-		pLog->Output(pTask->Version().c_str());
+		base::PubStr::SetFormatString(str_tmp, "%s: PID=[%d]", (is_daemon?"守护进程":"一般进程"), getpid());
+		log_strategy.log_headers.push_back(str_tmp);
+		log_strategy.log_headers.push_back(pTask->Version());
+		log_strategy.log_prefix = pTask->LogPrefix();
 
+		pLog->Init(log_strategy);
+
+		std::cout << pTask->Version() << std::endl;
 		pTask->Run();
 	}
 	catch ( base::Exception& ex )

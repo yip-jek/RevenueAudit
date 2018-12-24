@@ -11,17 +11,17 @@ namespace base
 int Log::_sInstances = 0;
 Log* Log::_spLogger = NULL;		// single log pointer
 
-long long Log::_sLogID = 0;
-unsigned long long Log::_sMaxLogFileSize = 10*1024*1024;	// default log file size 10M
-
-std::string Log::_sLogFilePrefix = "LOG";			// default log file prefix
-
 Log::Log()
+:m_llLineCount(0)
 {
 }
 
 Log::~Log()
 {
+	if ( m_iLogTimer.IsRunning() )
+	{
+		m_iLogTimer.Stop();
+	}
 }
 
 Log* Log::Instance()
@@ -55,61 +55,15 @@ void Log::Release()
 	}
 }
 
-bool Log::SetLogID(long long log_id)
+void Log::Init(const LogStrategy& strategy)
 {
-	if ( log_id > 0 )
-	{
-		_sLogID = log_id;
-		return true;
-	}
+	AutoLock a_lock(m_mLock);
 
-	return false;
-}
+	ImportStrategy(strategy);
 
-bool Log::ResetFileSize(unsigned long long fsize)
-{
-	if ( fsize > 0 )
-	{
-		_sMaxLogFileSize = fsize;
-		return true;
-	}
-
-	return false;
-}
-
-void Log::SetLogFilePrefix(const std::string& log_prefix)
-{
-	if ( !log_prefix.empty() )
-	{
-		_sLogFilePrefix = log_prefix;
-	}
-}
-
-void Log::Init() throw(Exception)
-{
-	if ( m_sLogPath.empty() )
-	{
-		throw Exception(LG_INIT_FAIL, "[LOG] The log path is not configured! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
-	}
+	StartTimer();
 
 	OpenNewLogger();
-}
-
-void Log::SetPath(const std::string& path) throw(Exception)
-{
-	if ( path.empty() )
-	{
-		throw Exception(LG_FILE_PATH_EMPTY, "[LOG] The log path is empty! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
-	}
-
-	// 自动建日志路径
-	if ( !BaseDir::CreateFullPath(path) )
-	{
-		throw Exception(LG_FILE_PATH_INVALID, "[LOG] The log path is invalid: %s [FILE:%s, LINE:%d]", path.c_str(), __FILE__, __LINE__);
-	}
-
-	m_sLogPath = path;
-	BaseDir::DirWithSlash(m_sLogPath);
 }
 
 bool Log::Output(const char* format, ...)
@@ -119,6 +73,8 @@ bool Log::Output(const char* format, ...)
 		return false;
 	}
 
+	AutoLock a_lock(m_mLock);
+
 	char buf[MAX_BUFFER_SIZE] = "";
 	va_list arg_ptr;
 	va_start(arg_ptr, format);
@@ -127,29 +83,88 @@ bool Log::Output(const char* format, ...)
 
 	std::string str_out = SimpleTime::Now().LLTimeStamp() + std::string("\x20\x20") + buf;
 	m_bfLogger.Write(str_out);
+	++m_llLineCount;
 
-	// Maximum file size
-	if ( m_bfLogger.FileSize() >= _sMaxLogFileSize )
+	// Maximum file ?
+	if ( CheckFileMaximum(str_out) )
 	{
-		str_out = "\n\n\x20\x20\x20\x20( MAXIMUM FILE SIZE )";
 		m_bfLogger.Write(str_out);
-		m_bfLogger.Close();
 
 		OpenNewLogger();
 	}
+
 	return true;
 }
 
-void Log::OpenNewLogger() throw(Exception)
+void Log::Notify()
 {
-	int log_id = 0;
-	std::string fullLogPath;
+	AutoLock a_lock(m_mLock);
 
-	const std::string DAY_TIME = SimpleTime::Now().DayTime8();
+	m_bfLogger.Write("\n\n\x20\x20\x20\x20( INTERVAL TIME END )");
+
+	OpenNewLogger();
+}
+
+void Log::ImportStrategy(const LogStrategy& strategy)
+{
+	// 自动建日志路径
+	if ( !BaseDir::CreateFullPath(strategy.log_path) )
+	{
+		throw Exception(LG_INIT_FAIL, "[LOG] The log path is invalid: [%s] [FILE:%s, LINE:%d]", strategy.log_path.c_str(), __FILE__, __LINE__);
+	}
+
+	if ( strategy.log_prefix.empty() )
+	{
+		throw Exception(LG_INIT_FAIL, "[LOG] The log prefix is not specified! [FILE:%s, LINE:%d]", __FILE__, __LINE__);
+	}
+
+	m_strategy = strategy;
+	BaseDir::DirWithSlash(m_strategy.log_path);
+}
+
+void Log::StartTimer()
+{
+	if ( !m_iLogTimer.SetIntervalType(m_strategy.interval) )
+	{
+		throw Exception(LG_INIT_FAIL, "[LOG] Unknown interval type of log timer: [%s] [FILE:%s, LINE:%d]", m_strategy.interval.c_str(), __FILE__, __LINE__);
+	}
+
+	m_iLogTimer.Register(this);
+	m_iLogTimer.Start();
+}
+
+bool Log::CheckFileMaximum(std::string& tail)
+{
+	// Max line ?
+	if ( m_strategy.max_line > 0 && m_llLineCount >= m_strategy.max_line )
+	{
+		tail = "\n\n\x20\x20\x20\x20( MAXIMUM FILE LINE )";
+		return true;
+	}
+
+	// Max file size ?
+	if ( m_strategy.max_size > 0 && m_bfLogger.FileSize() >= m_strategy.max_size )
+	{
+		tail = "\n\n\x20\x20\x20\x20( MAXIMUM FILE SIZE )";
+		return true;
+	}
+
+	return false;
+}
+
+void Log::OpenNewLogger()
+{
+	if ( m_bfLogger.IsOpen() )
+	{
+		m_bfLogger.Close();
+	}
+
+	int log_count = 0;
+	std::string fullLogPath;
 
 	do
 	{
-		PubStr::SetFormatString(fullLogPath, "%s%s_%lld_%s_%04d.log", m_sLogPath.c_str(), _sLogFilePrefix.c_str(), _sLogID, DAY_TIME.c_str(), log_id++);
+		PubStr::SetFormatString(fullLogPath, "%s%s_%lld_%s_%04d.log", m_strategy.log_path.c_str(), m_strategy.log_prefix.c_str(), m_strategy.log_id, m_iLogTimer.GetIntervalTypeTime().c_str(), log_count++);
 
 	} while ( BaseFile::IsFileExist(fullLogPath) );
 
@@ -157,6 +172,21 @@ void Log::OpenNewLogger() throw(Exception)
 	{
 		throw Exception(LG_OPEN_FILE_FAIL, "[LOG] Can not open log file: %s [FILE:%s, LINE:%d]", fullLogPath.c_str(), __FILE__, __LINE__);
 	}
+
+	WriteLogHeaders();
+}
+
+void Log::WriteLogHeaders()
+{
+	std::string str_out;
+	const unsigned int V_HEADER_SIZE = m_strategy.log_headers.size();
+	for ( unsigned int u = 0; u < V_HEADER_SIZE; ++u )
+	{
+		str_out = SimpleTime::Now().LLTimeStamp() + std::string("\x20\x20") + m_strategy.log_headers[u];
+		m_bfLogger.Write(str_out);
+	}
+
+	m_llLineCount = V_HEADER_SIZE;
 }
 
 }	// namespace base

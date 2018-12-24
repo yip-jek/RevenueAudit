@@ -39,6 +39,9 @@ protected:
 	// 初始化
 	virtual void Init() throw(base::Exception);
 
+	// 日志文件名前缀
+	virtual std::string LogPrefix() const;
+
 	// 输出配置信息
 	void OutputConfiguration();
 

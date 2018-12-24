@@ -53,6 +53,9 @@ protected:
 	// 初始化
 	virtual void Init() throw(base::Exception);
 
+	// 日志文件名前缀
+	virtual std::string LogPrefix() const;
+
 	// 确认退出？
 	virtual bool ConfirmQuit();
 

@@ -62,13 +62,19 @@ std::string BaseFrameApp::GetConfigFile()
 	return m_ppArgv[5];
 }
 
-std::string BaseFrameApp::GetLogPathConfig()
+void BaseFrameApp::ExportLogConfig(LogStrategy& ls)
 {
 	m_cfg.SetCfgFile(GetConfigFile());
-	m_cfg.RegisterItem("SYS", "LOG_PATH");
+	m_cfg.RegisterItem("LOG", "PATH");
+	m_cfg.RegisterItem("LOG", "MAX_LINE");
+	m_cfg.RegisterItem("LOG", "MAX_SIZE");
+	m_cfg.RegisterItem("LOG", "INTERVAL");
 	m_cfg.ReadConfig();
 
-	return m_cfg.GetCfgValue("SYS", "LOG_PATH");
+	ls.log_path = m_cfg.GetCfgValue("LOG", "PATH");
+	ls.max_line = m_cfg.GetCfgLongVal("LOG", "MAX_LINE");
+	ls.max_size = m_cfg.GetCfgLongVal("LOG", "MAX_SIZE");
+	ls.interval = m_cfg.GetCfgValue("LOG", "INTERVAL");
 }
 
 std::string BaseFrameApp::GetTaskParaInfo()
@@ -113,27 +119,27 @@ int main(int argc, char* argv[])
 		std::cerr << "[ERROR] [MAIN] Invalid log ID: " << argv[2] << std::endl;
 		return -1;
 	}
-	if ( !Log::SetLogID(log_id) )
-	{
-		std::cerr << "[ERROR] [LOG] Set log ID failed !" << std::endl;
-		return -1;
-	}
+
+	LogStrategy log_strategy;
+	log_strategy.log_id = log_id;
 
 	assert(g_pFactory);
 	FactoryAssist fa(g_pFactory);
 
-	std::string str_error;
-	BaseFrameApp* pApp = g_pFactory->Create(argv[3], argv[4], &str_error);
+	std::string str_tmp;
+	BaseFrameApp* pApp = g_pFactory->Create(argv[3], argv[4], &str_tmp);
 	if ( NULL == pApp )
 	{
-		std::cerr << "[ERROR] [MAIN] " << str_error << std::endl;
+		std::cerr << "[ERROR] [MAIN] " << str_tmp << std::endl;
 		return -1;
 	}
 
 	pApp->SetArgv(argv);
 
-	// 设置日志文件名称前缀
-	Log::SetLogFilePrefix(pApp->GetLogFilePrefix());
+	PubStr::SetFormatString(str_tmp, "%s: PID=[%d]", (daemon_proc?"守护进程":"一般进程"), getpid());
+	log_strategy.log_headers.push_back(str_tmp);
+	log_strategy.log_headers.push_back(pApp->Version());
+	log_strategy.log_prefix = pApp->GetLogFilePrefix();
 
 	AutoLogger aLog;
 	Log* pLog = aLog.Get();
@@ -145,12 +151,9 @@ int main(int argc, char* argv[])
 	{
 		try
 		{
-			pLog->SetPath(pApp->GetLogPathConfig());
-			pLog->Init();
-			pLog->Output("%s: PID=[%d]", (daemon_proc?"守护进程":"一般进程"), getpid());
-
+			pApp->ExportLogConfig(log_strategy);
+			pLog->Init(log_strategy);
 			std::cout << pApp->Version() << std::endl;
-			pLog->Output(pApp->Version());
 
 			pApp->LoadConfig();
 			pApp->Init();
