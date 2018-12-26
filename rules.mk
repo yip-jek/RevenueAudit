@@ -9,6 +9,7 @@ JNI_INCL  = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 HDFS_INCL = -I$(HADOOP_HOME)/include
 
 ################################################################
+SYS_LIB  = -lpthread
 BASE_LIB = -L$(LIB_DIR) -lbase
 XDBO_LIB = -L$(XDBO2_HOME)/lib -lxdbo2
 JNI_LIB  = -L$(JAVA_HOME)/jre/lib/amd64/server -ljvm
@@ -29,5 +30,5 @@ RM = rm -f
 
 ################################################################
 INCLS = $(APP_INCL) $(BASE_INCL) $(XDBO_INCL) $(JNI_INCL) $(HDFS_INCL)
-LIBS  = $(BASE_LIB) $(XDBO_LIB) $(JNI_LIB) $(HDFS_LIB)
+LIBS  = $(SYS_LIB) $(BASE_LIB) $(XDBO_LIB) $(JNI_LIB) $(HDFS_LIB)
 

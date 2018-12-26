@@ -1,7 +1,7 @@
 include ../../../rules.mk
 
 INCLS = $(APP_INCL) $(BASE_INCL) $(XDBO_INCL)
-LIBS  = $(BASE_LIB) $(XDBO_LIB)
+LIBS  = $(SYS_LIB) $(BASE_LIB) $(XDBO_LIB)
 
 srcs = $(wildcard *.cpp)
 objs = $(srcs:.cpp=.o)

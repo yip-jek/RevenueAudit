@@ -46,15 +46,15 @@ public:
 	// 版本号
 	virtual std::string Version();
 
+	// 日志文件名前缀
+	virtual std::string LogPrefix() const;
+
 protected:
 	// 载入配置
 	virtual void LoadConfig() throw(base::Exception);
 
 	// 初始化
 	virtual void Init() throw(base::Exception);
-
-	// 日志文件名前缀
-	virtual std::string LogPrefix() const;
 
 	// 确认退出？
 	virtual bool ConfirmQuit();
