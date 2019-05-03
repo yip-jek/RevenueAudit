@@ -24,20 +24,20 @@ public:
 	virtual const char* Version();
 
 	// 载入配置信息
-	virtual void LoadConfig() throw(base::Exception);
+	virtual void LoadConfig();
 
 	// 初始化
-	virtual void Init() throw(base::Exception);
+	virtual void Init();
 
 	// 任务执行
-	virtual void Run() throw(base::Exception);
+	virtual void Run();
 
 	// 任务结束（资源回收）
-	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(base::Exception);
+	virtual void End(int err_code, const std::string& err_msg = std::string());
 
 protected:
 	// 载入扩展配置
-	virtual void LoadExtendedConfig() throw(base::Exception) = 0;
+	virtual void LoadExtendedConfig() = 0;
 
 	// 输出扩展配置信息
 	virtual void OutputExtendedConfig() = 0;
@@ -46,11 +46,11 @@ protected:
 	virtual bool ConfirmQuit() = 0;
 
 	// 告警处理
-	virtual void AlarmProcessing() throw(base::Exception) = 0;
+	virtual void AlarmProcessing() = 0;
 
 private:
 	// 载入基础配置
-	void LoadBasicConfig() throw(base::Exception);
+	void LoadBasicConfig();
 
 	// 输出基础配置信息
 	void OutputBasicConfig();

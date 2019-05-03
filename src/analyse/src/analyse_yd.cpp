@@ -27,7 +27,7 @@ std::string Analyse_YD::GetLogFilePrefix()
 	return std::string("Analyse_YD");
 }
 
-void Analyse_YD::LoadConfig() throw(base::Exception)
+void Analyse_YD::LoadConfig()
 {
 	Analyse::LoadConfig();
 
@@ -42,7 +42,7 @@ void Analyse_YD::LoadConfig() throw(base::Exception)
 	m_pLog->Output("[Analyse_YD] Load configuration OK.");
 }
 
-void Analyse_YD::Init() throw(base::Exception)
+void Analyse_YD::Init()
 {
 	Analyse::Init();
 
@@ -52,7 +52,7 @@ void Analyse_YD::Init() throw(base::Exception)
 	m_pLog->Output("[Analyse_YD] Init OK.");
 }
 
-void Analyse_YD::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
+void Analyse_YD::End(int err_code, const std::string& err_msg /*= std::string()*/)
 {
 	// 更新任务日程日志状态
 	if ( 0 == err_code )	// 分析成功
@@ -74,12 +74,12 @@ void Analyse_YD::End(int err_code, const std::string& err_msg /*= std::string()*
 	Analyse::End(err_code, err_msg);
 }
 
-CAnaDB2* Analyse_YD::CreateDBConnection() throw(base::Exception)
+CAnaDB2* Analyse_YD::CreateDBConnection()
 {
 	return (m_pYDDB2 = new YDAnaDB2(m_sDBName, m_sUsrName, m_sPasswd));
 }
 
-void Analyse_YD::GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception)
+void Analyse_YD::GetExtendParaTaskInfo(VEC_STRING& vec_str)
 {
 	if ( vec_str.size() < 4 )
 	{
@@ -94,7 +94,7 @@ void Analyse_YD::GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exceptio
 	m_pLog->Output("[Analyse_YD] 任务日程日志ID：%d", m_taskScheLogID);
 }
 
-void Analyse_YD::AnalyseSourceData() throw(base::Exception)
+void Analyse_YD::AnalyseSourceData()
 {
 	GetDimIndex();
 

@@ -32,7 +32,7 @@ void YDTaskDB2::SetTabEtlRule(const std::string& tab_etlrule)
 	m_tabEtlRule = tab_etlrule;
 }
 
-bool YDTaskDB2::IsTableExists(const std::string& tab_name) throw(base::Exception)
+bool YDTaskDB2::IsTableExists(const std::string& tab_name)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -69,7 +69,7 @@ bool YDTaskDB2::IsTableExists(const std::string& tab_name) throw(base::Exception
 	}
 }
 
-void YDTaskDB2::GetTaskSchedule(std::map<int, TaskSchedule>& m_tasksche) throw(base::Exception)
+void YDTaskDB2::GetTaskSchedule(std::map<int, TaskSchedule>& m_tasksche)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -111,7 +111,7 @@ void YDTaskDB2::GetTaskSchedule(std::map<int, TaskSchedule>& m_tasksche) throw(b
 	m_ts.swap(m_tasksche);
 }
 
-bool YDTaskDB2::IsTaskScheExist(int id) throw(base::Exception)
+bool YDTaskDB2::IsTaskScheExist(int id)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -141,7 +141,7 @@ bool YDTaskDB2::IsTaskScheExist(int id) throw(base::Exception)
 	return (ct > 0);
 }
 
-void YDTaskDB2::UpdateTaskScheTaskTime(int id, const std::string& start_time, const std::string& finish_time) throw(base::Exception)
+void YDTaskDB2::UpdateTaskScheTaskTime(int id, const std::string& start_time, const std::string& finish_time)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -169,7 +169,7 @@ void YDTaskDB2::UpdateTaskScheTaskTime(int id, const std::string& start_time, co
 	}
 }
 
-void YDTaskDB2::SetTaskScheNotActive(int id) throw(base::Exception)
+void YDTaskDB2::SetTaskScheNotActive(int id)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -193,7 +193,7 @@ void YDTaskDB2::SetTaskScheNotActive(int id) throw(base::Exception)
 	}
 }
 
-bool YDTaskDB2::GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, std::string& ana_id) throw(base::Exception)
+bool YDTaskDB2::GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, std::string& ana_id)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -226,7 +226,7 @@ bool YDTaskDB2::GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, 
 	return (ct > 0);
 }
 
-int YDTaskDB2::GetTaskScheLogMaxID() throw(base::Exception)
+int YDTaskDB2::GetTaskScheLogMaxID()
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -256,7 +256,7 @@ int YDTaskDB2::GetTaskScheLogMaxID() throw(base::Exception)
 	return max_log_id;
 }
 
-void YDTaskDB2::InsertTaskScheLog(const TaskScheLog& ts_log) throw(base::Exception)
+void YDTaskDB2::InsertTaskScheLog(const TaskScheLog& ts_log)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -295,7 +295,7 @@ void YDTaskDB2::InsertTaskScheLog(const TaskScheLog& ts_log) throw(base::Excepti
 	}
 }
 
-void YDTaskDB2::SelectTaskScheLogState(TaskScheLog& ts_log) throw(base::Exception)
+void YDTaskDB2::SelectTaskScheLogState(TaskScheLog& ts_log)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -327,7 +327,7 @@ void YDTaskDB2::SelectTaskScheLogState(TaskScheLog& ts_log) throw(base::Exceptio
 	}
 }
 
-void YDTaskDB2::UpdateEtlTime(const std::string& etl_id, const std::string& etl_time) throw(base::Exception)
+void YDTaskDB2::UpdateEtlTime(const std::string& etl_id, const std::string& etl_time)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -350,7 +350,7 @@ void YDTaskDB2::UpdateEtlTime(const std::string& etl_id, const std::string& etl_
 	}
 }
 
-void YDTaskDB2::UpdateTaskScheLog(const TaskScheLog& ts_log) throw(base::Exception)
+void YDTaskDB2::UpdateTaskScheLog(const TaskScheLog& ts_log)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);

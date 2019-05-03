@@ -51,55 +51,55 @@ public:
 
 protected:
 	// 载入配置
-	virtual void LoadConfig() throw(base::Exception);
+	virtual void LoadConfig();
 
 	// 初始化
-	virtual void Init() throw(base::Exception);
+	virtual void Init();
 
 	// 确认退出？
 	virtual bool ConfirmQuit();
 
 	// 获取新任务
-	virtual void GetNewTask() throw(base::Exception);
+	virtual void GetNewTask();
 
 	// 不获取任务
-	virtual void GetNoTask() throw(base::Exception);
+	virtual void GetNoTask();
 
 	// 输出任务信息
 	virtual void ShowTasksInfo();
 
 	// 处理分析任务
-	virtual void HandleAnaTask() throw(base::Exception);
+	virtual void HandleAnaTask();
 
 	// 处理采集任务
-	virtual void HandleEtlTask() throw(base::Exception);
+	virtual void HandleEtlTask();
 
 	// 创建新任务
-	virtual void BuildNewTask() throw(base::Exception);
+	virtual void BuildNewTask();
 
 	// 任务完成
-	virtual void FinishTask() throw(base::Exception);
+	virtual void FinishTask();
 
     // 处理业财二期地市详情汇总省详情表请求
     bool NeedToDealwithYC2ndPhaseGDTaskReq(TaskReqInfo& ref_taskreq,std::set<std::string> & set_IsTaskCreated);
 
-    virtual void GetUndoneTask() throw(base::Exception);
+    virtual void GetUndoneTask();
 
 private:
 	// 释放数据库连接
 	void ReleaseDB();
 
 	// 初始化数据库连接
-	void InitConnect() throw(base::Exception);
+	void InitConnect();
 
 	// 检查
-	void Check() throw(base::Exception);
+	void Check();
 
 	// 更新任务请求
-	void TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) throw(base::Exception);
+	void TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info);
 
 	// 下发任务
-	void CreateTask(const TaskInfo& t_info,const TaskReqInfo& ref_tri) throw(base::Exception);
+	void CreateTask(const TaskInfo& t_info,const TaskReqInfo& ref_tri);
 
 	// 删除已存在的旧任务
 	void RemoveOldTask(int task_seq);

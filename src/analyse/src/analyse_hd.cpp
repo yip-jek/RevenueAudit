@@ -20,12 +20,12 @@ std::string Analyse_HD::GetLogFilePrefix()
 	return std::string("Analyse_HD");
 }
 
-void Analyse_HD::GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception)
+void Analyse_HD::GetExtendParaTaskInfo(VEC_STRING& vec_str)
 {
 	// Do nothing !
 }
 
-void Analyse_HD::AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception)
+void Analyse_HD::AnalyseRules(VEC_STRING& vec_hivesql)
 {
 	if ( m_taskInfo.AnaRule.AnaType != AnalyseRule::ANATYPE_HDJH_STAT )		// 话单稽核统计类型
 	{
@@ -48,7 +48,7 @@ void Analyse_HD::AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception)
 	GetExecuteSQL();
 }
 
-void Analyse_HD::GetExpressHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception)
+void Analyse_HD::GetExpressHiveSQL(VEC_STRING& vec_hivesql)
 {
 	// HIVE SQL 语句就在分析表达式中
 	std::string hive_sql = base::PubStr::TrimB(m_taskInfo.AnaRule.AnaExpress);
@@ -176,7 +176,7 @@ bool Analyse_HD::GetSequenceInHiveSQL(std::string& hive_sql)
 	return true;
 }
 
-void Analyse_HD::GenerateDeleteTime() throw(base::Exception)
+void Analyse_HD::GenerateDeleteTime()
 {
 	// 没有设置时间标志
 	// 删除时间(段)在分析规则的备注2字段
@@ -249,7 +249,7 @@ void Analyse_HD::GetExecuteSQL()
 	}
 }
 
-void Analyse_HD::GenerateTableNameByType() throw(base::Exception)
+void Analyse_HD::GenerateTableNameByType()
 {
 	const base::PubTime::DATE_TYPE DT = m_dbinfo.GetEtlDateType();
 	const std::string ETL_DAY         = m_dbinfo.GetEtlDay();
@@ -300,7 +300,7 @@ void Analyse_HD::DataSupplement()
 	m_pLog->Output("[Analyse_HD] 序列数据补全完成！");
 }
 
-void Analyse_HD::StoreResult() throw(base::Exception)
+void Analyse_HD::StoreResult()
 {
 	Analyse::StoreResult();
 
@@ -311,7 +311,7 @@ void Analyse_HD::StoreResult() throw(base::Exception)
 	}
 }
 
-void Analyse_HD::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception)
+void Analyse_HD::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype)
 {
 	// 是否带时间戳
 	// 只有带时间戳才可以按采集时间删除结果数据

@@ -31,7 +31,7 @@ std::string YDAlarmManager::GetLogFilePrefix()
 	return ("YDAlarmManager");
 }
 
-void YDAlarmManager::Init() throw(base::Exception)
+void YDAlarmManager::Init()
 {
 	AlarmManager::Init();
 
@@ -42,7 +42,7 @@ void YDAlarmManager::Init() throw(base::Exception)
 	m_pLog->Output("[YDAlarmManager] Init OK.");
 }
 
-void YDAlarmManager::LoadExtendedConfig() throw(base::Exception)
+void YDAlarmManager::LoadExtendedConfig()
 {
 	m_cfg.RegisterItem("SYS", "ALARM_SHOW_TIME");
 
@@ -93,7 +93,7 @@ bool YDAlarmManager::ConfirmQuit()
 	return m_mAlarmReq.empty();
 }
 
-void YDAlarmManager::AlarmProcessing() throw(base::Exception)
+void YDAlarmManager::AlarmProcessing()
 {
 	// 是否有告警请求
 	if ( ResponseAlarmRequest() )
@@ -131,7 +131,7 @@ void YDAlarmManager::ReleaseAlarmSMSFile()
 	}
 }
 
-void YDAlarmManager::InitAlarmShowTime() throw(base::Exception)
+void YDAlarmManager::InitAlarmShowTime()
 {
 	if ( m_alarmShowTime <= 0 )
 	{
@@ -149,7 +149,7 @@ void YDAlarmManager::InitAlarmShowTime() throw(base::Exception)
 	}
 }
 
-void YDAlarmManager::InitDBConnection() throw(base::Exception)
+void YDAlarmManager::InitDBConnection()
 {
 	ReleaseDBConnection();
 
@@ -166,7 +166,7 @@ void YDAlarmManager::InitDBConnection() throw(base::Exception)
 	m_pAlarmDB->SetTabSrcData(m_tabSrcData);
 }
 
-void YDAlarmManager::InitAlarmSMSFile() throw(base::Exception)
+void YDAlarmManager::InitAlarmSMSFile()
 {
 	ReleaseAlarmSMSFile();
 

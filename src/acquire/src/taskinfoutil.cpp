@@ -194,7 +194,7 @@ std::string TaskInfoUtil::AddPrefixVal(const std::string& val_sql, const std::st
 	return prefix_val;
 }
 
-std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix /*= std::string()*/) throw(base::Exception)
+std::string TaskInfoUtil::TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix /*= std::string()*/)
 {
 	std::string val_src = base::PubStr::TrimUpperB(val.EtlValSrcName);
 	if ( val_src.empty() )

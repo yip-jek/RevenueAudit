@@ -36,7 +36,7 @@ void YCTask::ReleaseDB()
 	}
 }
 
-void YCTask::Init() throw(base::Exception)
+void YCTask::Init()
 {
 	InitConnect();
 
@@ -51,7 +51,7 @@ std::string YCTask::LogPrefix() const
 	return "YCTask";
 }
 
-void YCTask::LoadConfig() throw(base::Exception)
+void YCTask::LoadConfig()
 {
 	// 读取任务配置
 	m_pCfg->RegisterItem("DATABASE", "DB_NAME");
@@ -131,7 +131,7 @@ void YCTask::LoadConfig() throw(base::Exception)
 	m_pLog->Output("[YC_TASK] Load config OK.");
 }
 
-void YCTask::InitConnect() throw(base::Exception)
+void YCTask::InitConnect()
 {
 	ReleaseDB();
 
@@ -149,7 +149,7 @@ void YCTask::InitConnect() throw(base::Exception)
 	m_pTaskDB->Connect();
 }
 
-void YCTask::Check() throw(base::Exception)
+void YCTask::Check()
 {
 	// 指定工作目录为Hive代理的路径
 	if ( chdir(m_hiveAgentPath.c_str()) < 0 )
@@ -186,7 +186,7 @@ bool YCTask::ConfirmQuit()
 		&& m_vecAnaTaskInfo.empty() );
 }
 
-void YCTask::GetNewTask() throw(base::Exception)
+void YCTask::GetNewTask()
 {
 	m_pTaskDB->SelectNewTaskRequest(m_vecNewTask);
 
@@ -203,7 +203,7 @@ void YCTask::GetNewTask() throw(base::Exception)
 	}
 }
 
-void YCTask::GetUndoneTask() throw(base::Exception)
+void YCTask::GetUndoneTask()
 {
     //任务调度退出后，未及时更新状态的请求。
     std::vector<TaskReqInfo>  vec_undoneTask;
@@ -215,7 +215,7 @@ void YCTask::GetUndoneTask() throw(base::Exception)
 
 }
 
-void YCTask::GetNoTask() throw(base::Exception)
+void YCTask::GetNoTask()
 {
 	// 不获取新任务，清空！
 	m_vecNewTask.clear();
@@ -234,7 +234,7 @@ void YCTask::ShowTasksInfo()
 	m_pLog->Output("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 }
 
-void YCTask::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) throw(base::Exception)
+void YCTask::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info)
 {
 	switch ( ts )
 	{
@@ -297,7 +297,7 @@ void YCTask::TaskRequestUpdate(TS_TASK_STATE ts, TaskReqInfo& task_req_info) thr
 	m_pTaskDB->UpdateTaskRequest(task_req_info);
 }
 
-void YCTask::HandleEtlTask() throw(base::Exception)
+void YCTask::HandleEtlTask()
 {
 	if ( m_vecEtlTaskInfo.empty() )
 	{
@@ -384,7 +384,7 @@ void YCTask::HandleEtlTask() throw(base::Exception)
 	vEtlTaskInfo.swap(m_vecEtlTaskInfo);
 }
 
-void YCTask::HandleAnaTask() throw(base::Exception)
+void YCTask::HandleAnaTask()
 {
 	if ( m_vecAnaTaskInfo.empty() )
 	{
@@ -448,7 +448,7 @@ void YCTask::HandleAnaTask() throw(base::Exception)
 	vAnaTaskInfo.swap(m_vecAnaTaskInfo);
 }
 
-void YCTask::CreateTask(const TaskInfo& t_info,const TaskReqInfo& ref_tri) throw(base::Exception)
+void YCTask::CreateTask(const TaskInfo& t_info,const TaskReqInfo& ref_tri)
 {
 	std::string command;
 	if ( TaskInfo::TT_Acquire == t_info.t_type )		// 采集
@@ -477,7 +477,7 @@ void YCTask::CreateTask(const TaskInfo& t_info,const TaskReqInfo& ref_tri) throw
 	system(command.c_str());
 }
 
-void YCTask::BuildNewTask() throw(base::Exception)
+void YCTask::BuildNewTask()
 {
     std::set<std::string> set_TaskCreated;
     m_mutiMapIgnoreTaskReq.clear();
@@ -664,7 +664,7 @@ bool YCTask::GetSubRuleID(const std::string& kpi_id, TaskInfo::TASK_TYPE t_type,
 	}
 }
 
-void YCTask::FinishTask() throw(base::Exception)
+void YCTask::FinishTask()
 {
 	const int VEC_END_TASK_SIZE = m_vecEndTask.size();
 	for ( int i = 0; i < VEC_END_TASK_SIZE; ++i )

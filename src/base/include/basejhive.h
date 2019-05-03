@@ -38,10 +38,10 @@ public:
 	// 初始化
 	// 输入：
 	// 	load_jar_path：依赖的 jar 包的路径（建议使用绝对路径）
-	virtual void Init(const std::string& load_jar_path) throw(Exception);
+	virtual void Init(const std::string& load_jar_path);
 
 	// 连接 Hive Server
-	virtual void Connect() throw(Exception);
+	virtual void Connect();
 
 	// 断开 Hive Server 的连接
 	virtual bool Disconnect();
@@ -53,27 +53,27 @@ public:
 	virtual std::string GetErrorMsg();
 
 	// 执行 HIVE SQL 语句
-	virtual void ExecuteSQL(const std::string& sql) throw(Exception);
+	virtual void ExecuteSQL(const std::string& sql);
 
 	// 获取 HIVE 数据
-	virtual void FetchSQL(const std::string& sql, std::vector<std::vector<std::string> >& vec2_data) throw(Exception);
+	virtual void FetchSQL(const std::string& sql, std::vector<std::vector<std::string> >& vec2_data);
 
 protected:
 	// 获取 jar 包的 classpath
 	// 输入：
 	// 	load_jar_path：依赖的 jar 包的路径（建议使用绝对路径）
-	virtual std::string GetJarClasspath(const std::string& load_jar_path) throw(Exception);
+	virtual std::string GetJarClasspath(const std::string& load_jar_path);
 
 	// 创建 Java 虚拟机
 	// 输入：
 	// 	load_jar_path：依赖的 jar 包的路径（建议使用绝对路径）
-	virtual void CreateJVM(const std::string& load_jar_path) throw(Exception);
+	virtual void CreateJVM(const std::string& load_jar_path);
 
 	// 销毁 Java 虚拟机
 	virtual void DestroyJVM();
 
 	// 初始化 (Java) HiveAgent
-	virtual void InitHiveAgent() throw(Exception);
+	virtual void InitHiveAgent();
 
 protected:
 	static unsigned int s_jvm_init_mem_size;			// Java 虚拟机初始化内存大小（单位：MB）

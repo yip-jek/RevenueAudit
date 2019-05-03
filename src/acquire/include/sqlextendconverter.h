@@ -50,7 +50,7 @@ private:
 	bool NoNeedExtend(std::string& sql);
 
 	// 进行 SQL 扩展
-	void DoExtend(std::string& sql) throw(base::Exception);
+	void DoExtend(std::string& sql);
 
 	// 处理表名后带右括号的情况：带右括号返回true，否则返回false
 	bool DealWithRightParenthes(std::string& sql, const std::string& tab, size_t& end, size_t& off);

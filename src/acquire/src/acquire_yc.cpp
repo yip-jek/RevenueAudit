@@ -22,7 +22,7 @@ Acquire_YC::~Acquire_YC()
 	ReleaseSqlExtendConv();
 }
 
-void Acquire_YC::LoadConfig() throw(base::Exception)
+void Acquire_YC::LoadConfig()
 {
 	Acquire::LoadConfig();
 
@@ -52,7 +52,7 @@ std::string Acquire_YC::GetLogFilePrefix()
 	return std::string("Acquire_YC");
 }
 
-void Acquire_YC::Init() throw(base::Exception)
+void Acquire_YC::Init()
 {
 	Acquire::Init();
 
@@ -76,7 +76,7 @@ void Acquire_YC::Init() throw(base::Exception)
 	m_pLog->Output("[Acquire_YC] Init OK.");
 }
 
-void Acquire_YC::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
+void Acquire_YC::End(int err_code, const std::string& err_msg /*= std::string()*/)
 {
 	// 更新任务状态
 	if ( 0 == err_code )	// 正常退出
@@ -97,7 +97,7 @@ void Acquire_YC::End(int err_code, const std::string& err_msg /*= std::string()*
 	Acquire::End(err_code, err_msg);
 }
 
-void Acquire_YC::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
+void Acquire_YC::GetExtendParaTaskInfo(std::vector<std::string>& vec_str)
 {
 	if ( vec_str.size() < 4 )
 	{
@@ -191,7 +191,7 @@ void Acquire_YC::UpdateTaskRequestState(TASK_REQUEST_STATE t_state)
 	m_pAcqDB2->UpdateYCTaskReq(m_taskRequest);
 }
 
-void Acquire_YC::FetchTaskInfo() throw(base::Exception)
+void Acquire_YC::FetchTaskInfo()
 {
 	Acquire::FetchTaskInfo();
 
@@ -214,7 +214,7 @@ void Acquire_YC::FetchTaskInfo() throw(base::Exception)
 	m_pAcqDB2->SelectYCStatRule(m_taskInfo.KpiID, m_vecYCInfo);
 }
 
-void Acquire_YC::CheckTaskInfo() throw(base::Exception)
+void Acquire_YC::CheckTaskInfo()
 {
 	Acquire::CheckTaskInfo();
 
@@ -225,7 +225,7 @@ void Acquire_YC::CheckTaskInfo() throw(base::Exception)
 	}
 }
 
-void Acquire_YC::DoDataAcquisition() throw(base::Exception)
+void Acquire_YC::DoDataAcquisition()
 {
 	m_pLog->Output("[Acquire_YC] 分析业财稽核采集规则 ...");
 	GenerateEtlDate(m_taskInfo.EtlRuleTime);
@@ -240,7 +240,7 @@ void Acquire_YC::DoDataAcquisition() throw(base::Exception)
 	m_pLog->Output("[Acquire_YC] 采集业财稽核数据完成.");
 }
 
-void Acquire_YC::YCDataAcquisition() throw(base::Exception)
+void Acquire_YC::YCDataAcquisition()
 {
 	// 载入 HDFS 配置
 	LoadHdfsConfig();
@@ -303,7 +303,7 @@ void Acquire_YC::YCDataAcquisition() throw(base::Exception)
 	}
 }
 
-void Acquire_YC::CheckSourceTable(bool hive) throw(base::Exception)
+void Acquire_YC::CheckSourceTable(bool hive)
 {
 	m_pLog->Output("[Acquire_YC] Check source table whether exists or not ?");
 
@@ -361,7 +361,7 @@ std::string Acquire_YC::GeneralHdfsFileName()
 	return hdfs_file_name;
 }
 
-void Acquire_YC::GenerateEtlDate(const std::string& date_fmt) throw(base::Exception)
+void Acquire_YC::GenerateEtlDate(const std::string& date_fmt)
 {
 	std::string acq_date;
 	if ( !base::PubTime::DateApartFromNow(date_fmt, m_acqDateType, acq_date) )
@@ -396,7 +396,7 @@ void Acquire_YC::GenerateEtlDate(const std::string& date_fmt) throw(base::Except
 	m_pLog->Output("[Acquire_YC] 重设采集 (HIVE) 目标表名为: %s", m_taskInfo.EtlRuleTarget.c_str());
 }
 
-void Acquire_YC::HandleYCInfo() throw(base::Exception)
+void Acquire_YC::HandleYCInfo()
 {
 	if ( m_vecYCInfo.empty() )
 	{

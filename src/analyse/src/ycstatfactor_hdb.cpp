@@ -11,7 +11,7 @@ YCStatFactor_HDB::~YCStatFactor_HDB()
 {
 }
 
-void YCStatFactor_HDB::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception)
+void YCStatFactor_HDB::LoadStatInfo(VEC_STATINFO& vec_statinfo)
 {
 	YCStatFactor::LoadStatInfo(vec_statinfo);
 
@@ -43,7 +43,7 @@ void YCStatFactor_HDB::ReleaseFactors()
 	}
 }
 
-void YCStatFactor_HDB::LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception)
+void YCStatFactor_HDB::LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat)
 {
 	YCStatInfo yc_si;
 	yc_si.SetDim(dim);
@@ -84,7 +84,7 @@ void YCStatFactor_HDB::LoadOneFactor(const std::string& dim, const VEC_STRING& v
 	}
 }
 
-void YCStatFactor_HDB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
+void YCStatFactor_HDB::MakeResult(VEC3_STRING& v3_result)
 {
 	VEC2_STRING vec2_result;
 	VEC3_STRING vec3_result;
@@ -100,7 +100,7 @@ void YCStatFactor_HDB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
 	vec3_result.swap(v3_result);
 }
 
-void YCStatFactor_HDB::GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val) throw(base::Exception)
+void YCStatFactor_HDB::GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val)
 {
 	MAP_STRING::iterator m_it = m_mFactor.find(dim);
 	if ( m_it != m_mFactor.end() )
@@ -113,7 +113,7 @@ void YCStatFactor_HDB::GetDimFactorValue(const std::string& dim, VEC_STRING& vec
 	}
 }
 
-void YCStatFactor_HDB::GenerateDiffSummaryResult(VEC2_STRING& v2_result) throw(base::Exception)
+void YCStatFactor_HDB::GenerateDiffSummaryResult(VEC2_STRING& v2_result)
 {
 	VEC2_STRING vec2_result;
 
@@ -133,7 +133,7 @@ void YCStatFactor_HDB::GenerateDiffSummaryResult(VEC2_STRING& v2_result) throw(b
 	vec2_result.swap(v2_result);
 }
 
-std::string YCStatFactor_HDB::CalcComplexFactor(const std::string& cmplx_fmt) throw(base::Exception)
+std::string YCStatFactor_HDB::CalcComplexFactor(const std::string& cmplx_fmt)
 {
 	m_pLog->Output("[YCStatFactor_HDB] 组合因子表达式：%s", cmplx_fmt.c_str());
 
@@ -189,7 +189,7 @@ std::string YCStatFactor_HDB::CalcComplexFactor(const std::string& cmplx_fmt) th
 	return ConvertResultType(complex_result);
 }
 
-std::string YCStatFactor_HDB::CalcArithmeticFactor(const std::string& expr) throw(base::Exception)
+std::string YCStatFactor_HDB::CalcArithmeticFactor(const std::string& expr)
 {
 	m_pLog->Output("[YCStatFactor_HDB] 四则运算表达式：%s", expr.c_str());
 
@@ -200,7 +200,7 @@ std::string YCStatFactor_HDB::CalcArithmeticFactor(const std::string& expr) thro
 	return ConvertResultType(vec_val[0]);
 }
 
-double YCStatFactor_HDB::CalcOneFactor(double result, const std::string& op, const std::string& dim) throw(base::Exception)
+double YCStatFactor_HDB::CalcOneFactor(double result, const std::string& op, const std::string& dim)
 {
 	MAP_STRING::iterator m_it;
 
@@ -224,7 +224,7 @@ double YCStatFactor_HDB::CalcOneFactor(double result, const std::string& op, con
 	}
 }
 
-std::string YCStatFactor_HDB::CalcCategoryFactor(const std::string& ctg_fmt) throw(base::Exception)
+std::string YCStatFactor_HDB::CalcCategoryFactor(const std::string& ctg_fmt)
 {
 	std::string fmt = base::PubStr::TrimUpperB(ctg_fmt);
 	m_pLog->Output("[YCStatFactor_HDB] 组合分类因子表达式：%s", fmt.c_str());
@@ -318,7 +318,7 @@ bool YCStatFactor_HDB::IsCategoryDim(const std::string& dim)
 	return false;
 }
 
-void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception)
+void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result)
 {
 	YCResult_HDB ycr;
 	ycr.stat_city   = m_refTaskReq.task_city;
@@ -423,7 +423,7 @@ void YCStatFactor_HDB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, 
 	}
 }
 
-void YCStatFactor_HDB::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, VEC_CATEGORYFACTOR& vec_ctgfctr) throw(base::Exception)
+void YCStatFactor_HDB::ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, VEC_CATEGORYFACTOR& vec_ctgfctr)
 {
 	VEC_CATEGORYFACTOR vec_cf;
 	VEC_STRING         vec_fmt;

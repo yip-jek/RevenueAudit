@@ -42,7 +42,7 @@ BaseFrameApp::~BaseFrameApp()
 
 const char* BaseFrameApp::Version()
 {
-	return ("BaseFrameApp: Version 2.00 released. Compiled at " __TIME__ " on " __DATE__);
+	return ("BaseFrameApp: Version 3.00 released. Compiled at " __TIME__ " on " __DATE__ ", by G++-" __VERSION__);
 }
 
 void BaseFrameApp::SetTestFlag(bool is_test)

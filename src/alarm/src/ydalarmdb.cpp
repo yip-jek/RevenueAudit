@@ -35,7 +35,7 @@ void YDAlarmDB::SetTabSrcData(const std::string& tab_srcdata)
 	m_tabSrcData = tab_srcdata;
 }
 
-void YDAlarmDB::SelectAlarmRequest(std::map<int, YDAlarmReq>& mapAlarmReq) throw(base::Exception)
+void YDAlarmDB::SelectAlarmRequest(std::map<int, YDAlarmReq>& mapAlarmReq)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -80,7 +80,7 @@ void YDAlarmDB::SelectAlarmRequest(std::map<int, YDAlarmReq>& mapAlarmReq) throw
 	mapReq.swap(mapAlarmReq);
 }
 
-void YDAlarmDB::UpdateAlarmRequest(const YDAlarmReq& alarm_req) throw(base::Exception)
+void YDAlarmDB::UpdateAlarmRequest(const YDAlarmReq& alarm_req)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -107,7 +107,7 @@ void YDAlarmDB::UpdateAlarmRequest(const YDAlarmReq& alarm_req) throw(base::Exce
 	}
 }
 
-void YDAlarmDB::SelectAlarmThreshold(std::vector<YDAlarmThreshold>& vecAlarmThres) throw(base::Exception)
+void YDAlarmDB::SelectAlarmThreshold(std::vector<YDAlarmThreshold>& vecAlarmThres)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -152,7 +152,7 @@ void YDAlarmDB::SelectAlarmThreshold(std::vector<YDAlarmThreshold>& vecAlarmThre
 	vecThres.swap(vecAlarmThres);
 }
 
-void YDAlarmDB::SelectAlarmData(int seq, const std::string& condition, std::vector<YDAlarmData>& vecData) throw(base::Exception)
+void YDAlarmDB::SelectAlarmData(int seq, const std::string& condition, std::vector<YDAlarmData>& vecData)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -193,7 +193,7 @@ void YDAlarmDB::SelectAlarmData(int seq, const std::string& condition, std::vect
 	}
 }
 
-void YDAlarmDB::InsertAlarmInfo(const YDAlarmInfo& alarm_info) throw(base::Exception)
+void YDAlarmDB::InsertAlarmInfo(const YDAlarmInfo& alarm_info)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);

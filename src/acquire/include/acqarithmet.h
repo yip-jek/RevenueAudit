@@ -63,35 +63,35 @@ public:
 	static bool IsLowLevelOper(const std::string& str);
 
 	// 运算
-	static std::string Operate(const std::string& left, const std::string& right, const char op) throw(base::Exception);
+	static std::string Operate(const std::string& left, const std::string& right, const char op);
 	// 加运算
-	static std::string OperatePlus(const std::string& left, const std::string& right) throw(base::Exception);
+	static std::string OperatePlus(const std::string& left, const std::string& right);
 	// 减运算
-	static std::string OperateMinus(const std::string& left, const std::string& right) throw(base::Exception);
+	static std::string OperateMinus(const std::string& left, const std::string& right);
 	// 乘运算
-	static std::string OperateMultiply(const std::string& left, const std::string& right) throw(base::Exception);
+	static std::string OperateMultiply(const std::string& left, const std::string& right);
 	// 除运算
-	static std::string OperateDivide(const std::string& left, const std::string& right) throw(base::Exception);
+	static std::string OperateDivide(const std::string& left, const std::string& right);
 
 public:
 	AcqArithmet();
 	~AcqArithmet();
 
 	// 进行四则运算
-	void DoCalculate(std::vector<std::vector<std::string> >& vec2_srcdata) throw(base::Exception);
+	void DoCalculate(std::vector<std::vector<std::string> >& vec2_srcdata);
 
 private:
 	// 清空缓存
 	void Clear();
 
 	// 载入计算表达式
-	void LoadExpression() throw(base::Exception);
+	void LoadExpression();
 
 	// 进行计算
 	void Calculate();
 
 	// 算术表达式后序转换
-	void Convert2Postorder(const std::string& expression) throw(base::Exception);
+	void Convert2Postorder(const std::string& expression);
 
 	// 获取单个元素
 	int GetElement(const std::string& expression, int index, std::string& element);
@@ -100,35 +100,35 @@ private:
 	bool IsOper(const std::string& str);
 
 	// 后序
-	void Postorder(const std::vector<std::string>& vec_element) throw(base::Exception);
+	void Postorder(const std::vector<std::string>& vec_element);
 
 	// 处理运算符
-	void DealWithOper(const std::string& oper) throw(base::Exception);
+	void DealWithOper(const std::string& oper);
 
 	// 当达到条件时，pop出堆栈
 	void PopStack(pFunIsCondition fun_cond);
 
 	// 计算结果
-	std::string CalcResult() throw(base::Exception);
+	std::string CalcResult();
 
 	// 进行一次四则运算
-	void CalcOnce() throw(base::Exception);
+	void CalcOnce();
 
 	// 获取运算符对应的运算操作
 	// 不为运算符则返回 NULL
 	pFunOperate GetOperate(const std::string& oper);
 
 	// 计算结果
-	void OperateResult(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception);
+	void OperateResult(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result);
 
 	// 尝试获取对应的数值
-	void TryGetDataValue(YCOutputItem& item) throw(base::Exception);
+	void TryGetDataValue(YCOutputItem& item);
 
 	// 尝试匹配输出项
 	void TryMatchOutputItem(const YCOutputItem& item_val, YCOutputItem& item_const);
 
 	// 数值计算
-	void OperateValue(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception);
+	void OperateValue(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result);
 
 private:
 	std::vector<std::string>* m_pVecData;					// 源数据

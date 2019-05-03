@@ -37,10 +37,10 @@ public:
 
 protected:
 	// 载入配置
-	virtual void LoadConfig() throw(base::Exception);
+	virtual void LoadConfig();
 
 	// 初始化
-	virtual void Init() throw(base::Exception);
+	virtual void Init();
 
 	// 输出配置信息
 	void OutputConfiguration();
@@ -49,7 +49,7 @@ protected:
 	virtual bool ConfirmQuit();
 
 	// 获取新任务
-	virtual void GetNewTask() throw(base::Exception);
+	virtual void GetNewTask();
 
 	// 获取新的任务日程
 	void GetNewTaskSche();
@@ -58,22 +58,22 @@ protected:
 	void DelUnavailableTask();
 
 	// 不获取任务
-	virtual void GetNoTask() throw(base::Exception);
+	virtual void GetNoTask();
 
 	// 输出任务信息
 	virtual void ShowTasksInfo();
 
 	// 处理分析任务
-	virtual void HandleAnaTask() throw(base::Exception);
+	virtual void HandleAnaTask();
 
 	// 处理采集任务
-	virtual void HandleEtlTask() throw(base::Exception);
+	virtual void HandleEtlTask();
 
 	// 采集是否成功？
 	bool IsEtlSucceeded(const TaskScheLog& ts_log) const;
 
 	// 创建新任务
-	virtual void BuildNewTask() throw(base::Exception);
+	virtual void BuildNewTask();
 
 	// 执行新任务
 	int PerformNewTask(const base::SimpleTime& st_now, RATask& rat, bool task_continue);
@@ -88,14 +88,14 @@ protected:
 	bool IsOverMinTimeInterval(const base::SimpleTime& st_time) const;
 
 	// 任务完成
-	virtual void FinishTask() throw(base::Exception);
+	virtual void FinishTask();
 
 private:
 	// 释放数据库连接
 	void ReleaseDB();
 
 	// 初始化数据库连接
-	void InitConnect() throw(base::Exception);
+	void InitConnect();
 
 	// 从任务暂停队列中删除指定序号的任务
 	bool DelTaskPauseWithSEQ(const int& seq);

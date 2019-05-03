@@ -28,7 +28,7 @@ public:
 	static std::string AddPrefixVal(const std::string& val_sql, const std::string& prefix);
 
 	// 采集值对应源字段名转换
-	static std::string TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix = std::string()) throw(base::Exception);
+	static std::string TransEtlValSrcName(OneEtlVal& val, const std::string& tab_prefix = std::string());
 
 	// 获取采集规则的值SQL
 	static std::string GetEtlValSql(AcqEtlVal& etl_val, const std::string& tab_prefix = std::string());

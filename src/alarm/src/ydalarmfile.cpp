@@ -23,7 +23,7 @@ YDAlarmFile::~YDAlarmFile()
 	base::Log::Release();
 }
 
-void YDAlarmFile::SetPath(const std::string& path) throw(base::Exception)
+void YDAlarmFile::SetPath(const std::string& path)
 {
 	if ( path.empty() )
 	{
@@ -46,7 +46,7 @@ void YDAlarmFile::SetPath(const std::string& path) throw(base::Exception)
 	base::BaseDir::DirWithSlash(m_filePath);
 }
 
-void YDAlarmFile::SetFileFormat(const std::string& file_fmt) throw(base::Exception)
+void YDAlarmFile::SetFileFormat(const std::string& file_fmt)
 {
 	if ( file_fmt.empty() )
 	{
@@ -65,7 +65,7 @@ void YDAlarmFile::SetFileFormat(const std::string& file_fmt) throw(base::Excepti
 	}
 }
 
-void YDAlarmFile::SetMaxLine(int max_line) throw(base::Exception)
+void YDAlarmFile::SetMaxLine(int max_line)
 {
 	if ( max_line > 0 )
 	{
@@ -127,7 +127,7 @@ bool YDAlarmFile::TryMakeFileNameByFormat(const std::string& fmt, int serial, st
 	return true;
 }
 
-void YDAlarmFile::OpenNewAlarmFile() throw(base::Exception)
+void YDAlarmFile::OpenNewAlarmFile()
 {
 	CloseAlarmFile();
 

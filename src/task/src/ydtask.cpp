@@ -35,7 +35,7 @@ void YDTask::ReleaseDB()
 	}
 }
 
-void YDTask::LoadConfig() throw(base::Exception)
+void YDTask::LoadConfig()
 {
 	m_pCfg->RegisterItem("SYS", "MIN_RUN_TIMEINTERVAL");
 
@@ -92,7 +92,7 @@ void YDTask::LoadConfig() throw(base::Exception)
 	m_pLog->Output("[YD_TASK] Load config OK.");
 }
 
-void YDTask::InitConnect() throw(base::Exception)
+void YDTask::InitConnect()
 {
 	ReleaseDB();
 
@@ -123,7 +123,7 @@ bool YDTask::DelTaskPauseWithSEQ(const int& seq)
 	return false;
 }
 
-void YDTask::Init() throw(base::Exception)
+void YDTask::Init()
 {
 	InitConnect();
 
@@ -217,7 +217,7 @@ bool YDTask::ConfirmQuit()
 		&& m_mTaskEnd.empty() );
 }
 
-void YDTask::GetNewTask() throw(base::Exception)
+void YDTask::GetNewTask()
 {
 	m_pTaskDB2->GetTaskSchedule(m_mTaskSche);
 
@@ -342,7 +342,7 @@ void YDTask::DelUnavailableTask()
 	}
 }
 
-void YDTask::GetNoTask() throw(base::Exception)
+void YDTask::GetNoTask()
 {
 	m_mTaskSche.clear();
 	m_mTaskSche_bak.clear();
@@ -363,7 +363,7 @@ void YDTask::ShowTasksInfo()
 	m_pLog->Output("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 }
 
-void YDTask::HandleAnaTask() throw(base::Exception)
+void YDTask::HandleAnaTask()
 {
 	if ( m_mAnaTaskRun.empty() )
 	{
@@ -415,7 +415,7 @@ void YDTask::HandleAnaTask() throw(base::Exception)
 	}
 }
 
-void YDTask::HandleEtlTask() throw(base::Exception)
+void YDTask::HandleEtlTask()
 {
 	if ( m_mEtlTaskRun.empty() )
 	{
@@ -541,7 +541,7 @@ bool YDTask::IsEtlSucceeded(const TaskScheLog& ts_log) const
 	return true;
 }
 
-void YDTask::BuildNewTask() throw(base::Exception)
+void YDTask::BuildNewTask()
 {
 	if ( m_mTaskWait.empty() && m_listTaskPause.empty() )
 	{
@@ -875,7 +875,7 @@ bool YDTask::IsOverMinTimeInterval(const base::SimpleTime& st_time) const
 	return (min_off > m_minRunTimeInterval);
 }
 
-void YDTask::FinishTask() throw(base::Exception)
+void YDTask::FinishTask()
 {
 	if ( m_mTaskEnd.empty() )
 	{

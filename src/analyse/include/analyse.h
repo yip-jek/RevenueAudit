@@ -35,101 +35,101 @@ public:
 	virtual const char* Version();
 
 	// 载入参数配置信息
-	virtual void LoadConfig() throw(base::Exception);
+	virtual void LoadConfig();
 
 	// 获取日志文件名称前缀
 	virtual std::string GetLogFilePrefix() = 0;
 
 	// 初始化
-	virtual void Init() throw(base::Exception);
+	virtual void Init();
 
 	// 任务执行
-	virtual void Run() throw(base::Exception);
+	virtual void Run();
 
 	// 任务结束（资源回收）
-	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(base::Exception);
+	virtual void End(int err_code, const std::string& err_msg = std::string());
 
 protected:
 	// 创建新的数据库连接
-	virtual CAnaDB2* CreateDBConnection() throw(base::Exception);
+	virtual CAnaDB2* CreateDBConnection();
 
 	// 释放 SQLTranslator 资源
 	void ReleaseSQLTranslator();
 
 	// 获取参数任务信息
-	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
+	void GetParameterTaskInfo(const std::string& para);
 
 	// 获取后续参数任务信息
-	virtual void GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception) = 0;
+	virtual void GetExtendParaTaskInfo(VEC_STRING& vec_str) = 0;
 
 	// 设置任务信息
 	void SetTaskInfo();
 
 	// 获取任务信息
-	virtual void FetchTaskInfo() throw(base::Exception);
+	virtual void FetchTaskInfo();
 
 	// 检查任务信息
-	void CheckAnaTaskInfo() throw(base::Exception);
+	void CheckAnaTaskInfo();
 
 	// 检查后台表示方式类型
-	void CheckExpWayType() throw(base::Exception);
+	void CheckExpWayType();
 
 	// 获取渠道、地市统一编码信息
-	void FetchUniformCode() throw(base::Exception);
+	void FetchUniformCode();
 
 	// 采集时间转换
-	virtual void EtlTimeConvertion() throw(base::Exception);
+	virtual void EtlTimeConvertion();
 
 	// 进行数据分析
-	void DoDataAnalyse() throw(base::Exception);
+	void DoDataAnalyse();
 
 	// 解析分析规则，生成Hive取数逻辑
-	virtual void AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception);
+	virtual void AnalyseRules(VEC_STRING& vec_hivesql);
 
 	// 生成汇总对比类型的Hive SQL语句
-	void GetSummaryCompareHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception);
+	void GetSummaryCompareHiveSQL(VEC_STRING& vec_hivesql);
 
 	// 生成明细对比类型的Hive SQL语句
-	void GetDetailCompareHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception);
+	void GetDetailCompareHiveSQL(VEC_STRING& vec_hivesql);
 
 	// 生成一般统计类型的Hive SQL语句
-	void GetStatisticsHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception);
+	void GetStatisticsHiveSQL(VEC_STRING& vec_hivesql);
 
 	// 生成报表统计类型的Hive SQL语句
-	void GetReportStatisticsHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception);
+	void GetReportStatisticsHiveSQL(VEC_STRING& vec_hivesql);
 
 	// 生成指定组的统计类型的Hive SQL语句
-	void GetStatisticsHiveSQLBySet(VEC_STRING& vec_hivesql, bool union_all) throw(base::Exception);
+	void GetStatisticsHiveSQLBySet(VEC_STRING& vec_hivesql, bool union_all);
 
 	// 拆分可执行Hive SQL语句
-	void SplitHiveSqlExpress(const std::string& exp_sqls, VEC_STRING& vec_hivesql) throw(base::Exception);
+	void SplitHiveSqlExpress(const std::string& exp_sqls, VEC_STRING& vec_hivesql);
 
 	// 确定所属数据组
-	void DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception);
+	void DetermineDataGroup(const std::string& exp, int& first, int& second);
 
 	// 按类型生成目标表名称
-	virtual void GenerateTableNameByType() throw(base::Exception);
+	virtual void GenerateTableNameByType();
 
 	// 生成数据库信息
-	virtual void GetAnaDBInfo() throw(base::Exception);
+	virtual void GetAnaDBInfo();
 
 	// 标志转换
-	virtual void ExchangeSQLMark(std::string& sql) throw(base::Exception);
+	virtual void ExchangeSQLMark(std::string& sql);
 
 	// 获取Hive源数据
-	void FetchHiveSource(VEC_STRING& vec_hivesql) throw(base::Exception);
+	void FetchHiveSource(VEC_STRING& vec_hivesql);
 
 	// 分析源数据，生成结果数据
-	virtual void AnalyseSourceData() throw(base::Exception);
+	virtual void AnalyseSourceData();
 
 	// 源数据的地市与渠道的统一编码转换
-	void SrcDataUnifiedCoding() throw(base::Exception);
+	void SrcDataUnifiedCoding();
 
 	// 生成报表数据
 	void GenerateReportStatData();
 
 	//// 生成对比结果数据
-	//void CompareResultData() throw(base::Exception);
+	//void CompareResultData();
 
 	// 数据补全
 	virtual void DataSupplement();
@@ -138,10 +138,10 @@ protected:
 	void CollectDimVal();
 
 	// 结果数据入库 [DB2]
-	virtual void StoreResult() throw(base::Exception);
+	virtual void StoreResult();
 
 	// 删除旧数据
-	virtual void RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception);
+	virtual void RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype);
 
 	// 更新维度取值范围
 	virtual void UpdateDimValue();

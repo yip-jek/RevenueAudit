@@ -21,7 +21,7 @@ Analyse_YC::~Analyse_YC()
 	ReleaseStatFactor();
 }
 
-void Analyse_YC::LoadConfig() throw(base::Exception)
+void Analyse_YC::LoadConfig()
 {
 	Analyse::LoadConfig();
 
@@ -53,7 +53,7 @@ std::string Analyse_YC::GetLogFilePrefix()
 	return std::string("Analyse_YC");
 }
 
-void Analyse_YC::Init() throw(base::Exception)
+void Analyse_YC::Init()
 {
 	Analyse::Init();
 
@@ -73,7 +73,7 @@ void Analyse_YC::Init() throw(base::Exception)
 	m_pLog->Output("[Analyse_YC] Init OK.");
 }
 
-void Analyse_YC::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
+void Analyse_YC::End(int err_code, const std::string& err_msg /*= std::string()*/)
 {
 	// 更新任务状态
 	if ( 0 == err_code )	// 正常退出
@@ -99,12 +99,12 @@ void Analyse_YC::End(int err_code, const std::string& err_msg /*= std::string()*
 	Analyse::End(err_code, err_msg);
 }
 
-CAnaDB2* Analyse_YC::CreateDBConnection() throw(base::Exception)
+CAnaDB2* Analyse_YC::CreateDBConnection()
 {
 	return (m_pYCDB2 = new YCAnaDB2(m_sDBName, m_sUsrName, m_sPasswd));
 }
 
-void Analyse_YC::GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception)
+void Analyse_YC::GetExtendParaTaskInfo(VEC_STRING& vec_str)
 {
 	if ( vec_str.size() < 4 )
 	{
@@ -118,7 +118,7 @@ void Analyse_YC::GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exceptio
 	m_pLog->Output("[Analyse_YC] 业财稽核任务流水号：%d", m_taskReq.seq);
 }
 
-void Analyse_YC::AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception)
+void Analyse_YC::AnalyseRules(VEC_STRING& vec_hivesql)
 {
 	// 是否为业财稽核类型
 	std::string cn_anatype;
@@ -201,7 +201,7 @@ bool Analyse_YC::CheckYCAnalyseType(std::string& cn_type) const
 	}
 }
 
-void Analyse_YC::GetAnaDBInfo() throw(base::Exception)
+void Analyse_YC::GetAnaDBInfo()
 {
 	Analyse::GetAnaDBInfo();
 
@@ -249,7 +249,7 @@ void Analyse_YC::ReleaseStatFactor()
 	}
 }
 
-void Analyse_YC::FetchTaskInfo() throw(base::Exception)
+void Analyse_YC::FetchTaskInfo()
 {
 	// (首先) 获取任务信息
 	m_pYCDB2->SelectYCTaskReq(m_taskReq);
@@ -269,7 +269,7 @@ void Analyse_YC::FetchTaskInfo() throw(base::Exception)
 	m_pStatFactor->LoadStatInfo(vec_ycsinfo);
 }
 
-void Analyse_YC::EtlTimeConvertion() throw(base::Exception)
+void Analyse_YC::EtlTimeConvertion()
 {
 	// 任务账期
 	const std::string TASK_CYCLE = base::PubStr::TrimB(m_taskReq.stat_cycle);
@@ -312,7 +312,7 @@ void Analyse_YC::EtlTimeConvertion() throw(base::Exception)
 	m_pLog->Output("[Analyse_YC] 完成采集账期时间转换：[%s] -> [%s]", etl_time.c_str(), m_dbinfo.GetEtlDay().c_str());
 }
 
-void Analyse_YC::FetchUpdateFields_YW() throw(base::Exception)
+void Analyse_YC::FetchUpdateFields_YW()
 {
 	// 只有在进行详情表业务侧稽核时，才需获取更新字段
 	if ( m_taskInfo.AnaRule.AnaType != AnalyseRule::ANATYPE_YCXQB_YW )
@@ -371,7 +371,7 @@ void Analyse_YC::FetchUpdateFieldsFromKpiCol(std::vector<KpiColumn>& vec_kc, VEC
 	v_upfd.swap(vec_up_fd);
 }
 
-void Analyse_YC::CreateStatFactor() throw(base::Exception)
+void Analyse_YC::CreateStatFactor()
 {
 	ReleaseStatFactor();
 
@@ -422,7 +422,7 @@ void Analyse_YC::CountKpiColumnItemValSize(const std::vector<KpiColumn>& vec_col
 	}
 }
 
-void Analyse_YC::AnalyseSourceData() throw(base::Exception)
+void Analyse_YC::AnalyseSourceData()
 {
 	//Analyse::AnalyseSourceData();
 
@@ -465,7 +465,7 @@ void Analyse_YC::SetNewBatch_HDB()
 	m_pLog->Output("[Analyse_YC] 因此，当前统计结果的批次为: %d", m_taskReq.task_batch);
 }
 
-void Analyse_YC::SetNewBatch_XQB() throw(base::Exception)
+void Analyse_YC::SetNewBatch_XQB()
 {
 	// 查询地市详情表的最新批次
 	YCXQBBatch xq_batch;
@@ -497,7 +497,7 @@ void Analyse_YC::SetNewBatch_XQB() throw(base::Exception)
 	}
 }
 
-void Analyse_YC::ConvertStatFactor() throw(base::Exception)
+void Analyse_YC::ConvertStatFactor()
 {
 	int conv_size = m_pStatFactor->LoadFactors(m_v3HiveSrcData);
 	m_pLog->Output("[Analyse_YC] 统计因子转换大小：%d", conv_size);
@@ -508,7 +508,7 @@ void Analyse_YC::ConvertStatFactor() throw(base::Exception)
 	}
 }
 
-void Analyse_YC::GenerateResultData() throw(base::Exception)
+void Analyse_YC::GenerateResultData()
 {
 	m_pStatFactor->MakeResult(m_v3HiveSrcData);
 
@@ -525,7 +525,7 @@ void Analyse_YC::GenerateResultData() throw(base::Exception)
 	}
 }
 
-void Analyse_YC::StoreResult() throw(base::Exception)
+void Analyse_YC::StoreResult()
 {
 	// 保留旧的数据，所以不执行删除操作！
 	// ----RemoveOldResult(m_taskInfo.ResultType);
@@ -599,7 +599,7 @@ void Analyse_YC::StoreDetailResult_CW()
 	m_pLog->Output("[Analyse_YC] Store detail (CW) result data size: %lu", vec_result.size());
 }
 
-void Analyse_YC::StoreDiffSummaryResult() throw(base::Exception)
+void Analyse_YC::StoreDiffSummaryResult()
 {
 	YCResult_HDB ycr;
 

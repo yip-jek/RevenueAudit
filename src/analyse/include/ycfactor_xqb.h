@@ -64,7 +64,7 @@ public:
 
 private:
 	// 初始化
-	void Init(int item_size, int val_size) throw(base::Exception);
+	void Init(int item_size, int val_size);
 
 private:
 	std::string m_dimID;				// 维度ID

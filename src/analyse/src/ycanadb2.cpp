@@ -40,7 +40,7 @@ void YCAnaDB2::SetTabYCProcessLog(const std::string& t_processlog)
 	m_tabProcessLog = t_processlog;
 }
 
-void YCAnaDB2::SelectYCTaskReq(YCTaskReq& task_req) throw(base::Exception)
+void YCAnaDB2::SelectYCTaskReq(YCTaskReq& task_req)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -85,7 +85,7 @@ void YCAnaDB2::SelectYCTaskReq(YCTaskReq& task_req) throw(base::Exception)
 	}
 }
 
-void YCAnaDB2::UpdateYCTaskReq(const YCTaskReq& t_req) throw(base::Exception)
+void YCAnaDB2::UpdateYCTaskReq(const YCTaskReq& t_req)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -129,7 +129,7 @@ void YCAnaDB2::UpdateYCTaskReq(const YCTaskReq& t_req) throw(base::Exception)
 	}
 }
 
-void YCAnaDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCStatInfo>& vec_ycsi) throw(base::Exception)
+void YCAnaDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCStatInfo>& vec_ycsi)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -172,7 +172,7 @@ void YCAnaDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCStatInf
 	m_pLog->Output("[DB2] Select YCRA stat_rule successfully! Record(s): %lu", vec_ycsi.size());
 }
 
-void YCAnaDB2::SelectHDBMaxBatch(const std::string& tab_hdb, YCHDBBatch& hd_batch) throw(base::Exception)
+void YCAnaDB2::SelectHDBMaxBatch(const std::string& tab_hdb, YCHDBBatch& hd_batch)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -209,7 +209,7 @@ void YCAnaDB2::SelectHDBMaxBatch(const std::string& tab_hdb, YCHDBBatch& hd_batc
 	}
 }
 
-void YCAnaDB2::SelectXQBMaxBatch(const std::string& tab_xqb, YCXQBBatch& xq_batch) throw(base::Exception)
+void YCAnaDB2::SelectXQBMaxBatch(const std::string& tab_xqb, YCXQBBatch& xq_batch)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -244,7 +244,7 @@ void YCAnaDB2::SelectXQBMaxBatch(const std::string& tab_xqb, YCXQBBatch& xq_batc
 	}
 }
 
-void YCAnaDB2::UpdateDetailCWResult(const AnaDBInfo& db_info, const std::vector<YCResult_XQB>& vec_result) throw(base::Exception)
+void YCAnaDB2::UpdateDetailCWResult(const AnaDBInfo& db_info, const std::vector<YCResult_XQB>& vec_result)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -300,7 +300,7 @@ void YCAnaDB2::UpdateDetailCWResult(const AnaDBInfo& db_info, const std::vector<
 	}
 }
 
-void YCAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCResult_HDB& ycr) throw(base::Exception)
+void YCAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCResult_HDB& ycr)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -388,7 +388,7 @@ void YCAnaDB2::UpdateInsertYCDIffSummary(const AnaDBInfo& db_info, const YCResul
 	}
 }
 
-void YCAnaDB2::SelectYCSrcMaxBatch(YCSrcInfo& yc_info) throw(base::Exception)
+void YCAnaDB2::SelectYCSrcMaxBatch(YCSrcInfo& yc_info)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -423,7 +423,7 @@ void YCAnaDB2::SelectYCSrcMaxBatch(YCSrcInfo& yc_info) throw(base::Exception)
 	}
 }
 
-void YCAnaDB2::InsertYCStatLog(const YCStatLog& stat_log) throw(base::Exception)
+void YCAnaDB2::InsertYCStatLog(const YCStatLog& stat_log)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -456,7 +456,7 @@ void YCAnaDB2::InsertYCStatLog(const YCStatLog& stat_log) throw(base::Exception)
 	}
 }
 
-void YCAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(base::Exception)
+void YCAnaDB2::UpdateInsertReportState(const YCReportState& report_state)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -534,7 +534,7 @@ void YCAnaDB2::UpdateInsertReportState(const YCReportState& report_state) throw(
 	}
 }
 
-void YCAnaDB2::InsertProcessLog(const YCProcessLog& proc_log) throw(base::Exception)
+void YCAnaDB2::InsertProcessLog(const YCProcessLog& proc_log)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -568,7 +568,7 @@ void YCAnaDB2::InsertProcessLog(const YCProcessLog& proc_log) throw(base::Except
 	}
 }
 
-void YCAnaDB2::UpdateLastBatchManualData(const std::string& tab, const UpdateFields_YW& upd_fld, std::vector<std::vector<std::string> >& v2_data) throw(base::Exception)
+void YCAnaDB2::UpdateLastBatchManualData(const std::string& tab, const UpdateFields_YW& upd_fld, std::vector<std::vector<std::string> >& v2_data)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);

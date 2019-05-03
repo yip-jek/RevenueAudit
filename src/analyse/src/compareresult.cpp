@@ -10,7 +10,7 @@
 //{
 //}
 //
-//ComDataIndex CompareResult::SetCompareData(std::vector<std::vector<std::string> >& vec2_data, int size_dim, int size_val, int size_singledim) throw(base::Exception)
+//ComDataIndex CompareResult::SetCompareData(std::vector<std::vector<std::string> >& vec2_data, int size_dim, int size_val, int size_singledim)
 //{
 //	if ( size_dim <= 0 )
 //	{
@@ -64,7 +64,7 @@
 //}
 //
 //void CompareResult::GetCompareResult(const ComDataIndex& left_index, const ComDataIndex& right_index, COMPARE_TYPE com_type, 
-//	const std::string& result_desc, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception)
+//	const std::string& result_desc, std::vector<std::vector<std::string> >& vec2_result)
 //{
 //	if ( !left_index.IsValid(m_vComData) )
 //	{

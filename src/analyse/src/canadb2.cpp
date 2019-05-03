@@ -60,7 +60,7 @@ void CAnaDB2::SetTabDictCity(const std::string& t_dictcity)
 	m_tabDictCity = t_dictcity;
 }
 
-void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vector<std::string>& vec_seq) throw(base::Exception)
+void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vector<std::string>& vec_seq)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -98,7 +98,7 @@ void CAnaDB2::SelectSequence(const std::string& seq_name, size_t size, std::vect
 	m_pLog->Output("[DB2] Select sequence '%s' size: %llu", seq_name.c_str(), vec_seq.size());
 }
 
-void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
+void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info)
 {
 	// 获取指标规则数据
 	SelectKpiRule(info);
@@ -131,7 +131,7 @@ void CAnaDB2::SelectAnaTaskInfo(AnaTaskInfo& info) throw(base::Exception)
 	SelectCompareResultDesc(info.KpiID, COMPARE_RESULT_DBNAME, info.vecComResDesc);
 }
 
-void CAnaDB2::SelectChannelUniformCode(std::vector<ChannelUniformCode>& vec_channunicode) throw(base::Exception)
+void CAnaDB2::SelectChannelUniformCode(std::vector<ChannelUniformCode>& vec_channunicode)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -171,7 +171,7 @@ void CAnaDB2::SelectChannelUniformCode(std::vector<ChannelUniformCode>& vec_chan
 	v_chann_uc.swap(vec_channunicode);
 }
 
-void CAnaDB2::SelectCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode) throw(base::Exception)
+void CAnaDB2::SelectCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -211,7 +211,7 @@ void CAnaDB2::SelectCityUniformCode(std::vector<CityUniformCode>& vec_cityunicod
 	v_city_uc.swap(vec_cityunicode);
 }
 
-void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
+void CAnaDB2::SelectKpiRule(AnaTaskInfo& info)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -280,7 +280,7 @@ void CAnaDB2::SelectKpiRule(AnaTaskInfo& info) throw(base::Exception)
 	vec_etl.swap(info.vecEtlRule);
 }
 
-void CAnaDB2::SelectKpiColumn(AnaTaskInfo& info) throw(base::Exception)
+void CAnaDB2::SelectKpiColumn(AnaTaskInfo& info)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -381,7 +381,7 @@ void CAnaDB2::SelectKpiColumn(AnaTaskInfo& info) throw(base::Exception)
 	v_right.swap(info.vecRightKpiCol);
 }
 
-void CAnaDB2::SelectDimValue(const std::string& kpi_id, DimValDiffer& differ) throw(base::Exception)
+void CAnaDB2::SelectDimValue(const std::string& kpi_id, DimValDiffer& differ)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -420,7 +420,7 @@ void CAnaDB2::SelectDimValue(const std::string& kpi_id, DimValDiffer& differ) th
 	m_pLog->Output("[DB2] Select %s successfully! (KPI_ID:%s) [DIM_VAL size:%lu]", m_tabDimValue.c_str(), kpi_id.c_str(), differ.GetDBDimValSize());
 }
 
-void CAnaDB2::InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Exception)
+void CAnaDB2::InsertNewDimValue(std::vector<DimVal>& vec_dv)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -466,7 +466,7 @@ void CAnaDB2::InsertNewDimValue(std::vector<DimVal>& vec_dv) throw(base::Excepti
 	m_pLog->Output("[DB2] Insert new dim_value to [%s]: %lu", m_tabDimValue.c_str(), vec_dv.size());
 }
 
-void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
+void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_data)
 {
 	if ( db_info.db2_sql.empty() )
 	{
@@ -478,7 +478,7 @@ void CAnaDB2::InsertResultData(AnaDBInfo& db_info, std::vector<std::vector<std::
 	m_pLog->Output("[DB2] Insert result data successfully, size: %llu", vec2_data.size());
 }
 
-size_t CAnaDB2::SelectResultData(const std::string& tab_name, const std::string& condition) throw(base::Exception)
+size_t CAnaDB2::SelectResultData(const std::string& tab_name, const std::string& condition)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -516,7 +516,7 @@ size_t CAnaDB2::SelectResultData(const std::string& tab_name, const std::string&
 	return num_of_data;
 }
 
-void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::Exception)
+void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all)
 {
 	if ( delete_all )		// 清空全表数据
 	{
@@ -565,7 +565,7 @@ void CAnaDB2::DeleteResultData(AnaDBInfo& db_info, bool delete_all) throw(base::
 	}
 }
 
-void CAnaDB2::DeleteTimeResultData(AnaDBInfo& db_info, int beg_time, int end_time) throw(base::Exception)
+void CAnaDB2::DeleteTimeResultData(AnaDBInfo& db_info, int beg_time, int end_time)
 {
 	const std::string ETLDAY_FIELD_NAME = db_info.GetEtlDayFieldName();
 
@@ -607,7 +607,7 @@ void CAnaDB2::DeleteTimeResultData(AnaDBInfo& db_info, int beg_time, int end_tim
 	}
 }
 
-void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_reportdata) throw(base::Exception)
+void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<std::string> >& vec2_reportdata)
 {
 	if ( db_info.db2_sql.empty() )
 	{
@@ -629,7 +629,7 @@ void CAnaDB2::InsertReportStatData(AnaDBInfo& db_info, std::vector<std::vector<s
 	m_pLog->Output("[DB2] Insert report statistics data successfully, size: %llu", vec2_reportdata.size());
 }
 
-void CAnaDB2::ExecuteSQL(const std::string& exe_sql) throw(base::Exception)
+void CAnaDB2::ExecuteSQL(const std::string& exe_sql)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -649,7 +649,7 @@ void CAnaDB2::ExecuteSQL(const std::string& exe_sql) throw(base::Exception)
 	}
 }
 
-void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
+void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std::vector<std::vector<std::string> >& vec2_data)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -716,7 +716,7 @@ void CAnaDB2::SelectTargetData(AnaDBInfo& db_info, const std::string& date, std:
 	v2_data.swap(vec2_data);
 }
 
-void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
+void CAnaDB2::SelectEtlRule(OneEtlRule& one)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -791,7 +791,7 @@ void CAnaDB2::SelectEtlRule(OneEtlRule& one) throw(base::Exception)
 	m_pLog->Output("[DB2] Select %s: (KPI_ID:%s, ETLRULE_ID:%s) [ETLRULE_TARGETPATCH:%s] [DIM_ID:%s] [VAL_ID:%s] [Record:%d]", m_tabEtlRule.c_str(), one.KpiID.c_str(), one.EtlRuleID.c_str(), one.TargetPatch.c_str(), one.DimID.c_str(), one.ValID.c_str(), counter);
 }
 
-void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim, std::vector<OneEtlDim>& vec_singledim) throw(base::Exception)
+void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim, std::vector<OneEtlDim>& vec_singledim)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -856,7 +856,7 @@ void CAnaDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 	v_singledim.swap(vec_singledim);
 }
 
-void CAnaDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception)
+void CAnaDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -911,7 +911,7 @@ void CAnaDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 	v_val.swap(vec_val);
 }
 
-void CAnaDB2::SelectAnaRule(AnalyseRule& ana) throw(base::Exception)
+void CAnaDB2::SelectAnaRule(AnalyseRule& ana)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -1029,7 +1029,7 @@ std::string CAnaDB2::GetCompareResultName(std::vector<KpiColumn>& vec_kpival)
 	return std::string();
 }
 
-void CAnaDB2::AlterEmptyTable(const std::string& tab_name) throw(base::Exception)
+void CAnaDB2::AlterEmptyTable(const std::string& tab_name)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -1053,7 +1053,7 @@ void CAnaDB2::AlterEmptyTable(const std::string& tab_name) throw(base::Exception
 	}
 }
 
-void CAnaDB2::DeleteFromTable(const std::string& tab_name, const std::string& condition) throw(base::Exception)
+void CAnaDB2::DeleteFromTable(const std::string& tab_name, const std::string& condition)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -1078,7 +1078,7 @@ void CAnaDB2::DeleteFromTable(const std::string& tab_name, const std::string& co
 	}
 }
 
-void CAnaDB2::ResultDataInsert(const std::string& db_sql, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
+void CAnaDB2::ResultDataInsert(const std::string& db_sql, std::vector<std::vector<std::string> >& vec2_data)
 {
 	if ( vec2_data.empty() )
 	{

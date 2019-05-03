@@ -11,13 +11,13 @@ public:
 
 public:
 	// 重建表数据
-	void RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field, const std::string& tab_location) throw(base::Exception);
+	void RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field, const std::string& tab_location);
 
 	// 执行采集Hive SQL 
-	void ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exception);
+	void ExecuteAcqSQL(std::vector<std::string>& vec_sql);
 
 	// 表是否存在
 	// 返回：true-表存在，false-表不存在
-	bool CheckTableExisted(const std::string& tab_name) throw(base::Exception);
+	bool CheckTableExisted(const std::string& tab_name);
 };
 

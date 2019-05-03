@@ -41,37 +41,37 @@ public:
 	void SetTabEtlRule(const std::string& tab_etlrule);
 
 	// 表是否存在
-	bool IsTableExists(const std::string& tab_name) throw(base::Exception);
+	bool IsTableExists(const std::string& tab_name);
 
 	// 获取任务日程记录
-	void GetTaskSchedule(std::map<int, TaskSchedule>& m_tasksche) throw(base::Exception);
+	void GetTaskSchedule(std::map<int, TaskSchedule>& m_tasksche);
 
 	// 任务日程是否存在？
-	bool IsTaskScheExist(int id) throw(base::Exception);
+	bool IsTaskScheExist(int id);
 
 	// 更新任务日程的任务时间
-	void UpdateTaskScheTaskTime(int id, const std::string& start_time, const std::string& finish_time) throw(base::Exception);
+	void UpdateTaskScheTaskTime(int id, const std::string& start_time, const std::string& finish_time);
 
 	// 设置任务日程为未激活
-	void SetTaskScheNotActive(int id) throw(base::Exception);
+	void SetTaskScheNotActive(int id);
 
 	// 获取指标规则的子ID
-	bool GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, std::string& ana_id) throw(base::Exception);
+	bool GetKpiRuleSubID(const std::string& kpi_id, std::string& etl_id, std::string& ana_id);
 
 	// 获取任务日程日志表的MAX序号
-	int GetTaskScheLogMaxID() throw(base::Exception);
+	int GetTaskScheLogMaxID();
 
 	// 新增任务日程日志
-	void InsertTaskScheLog(const TaskScheLog& ts_log) throw(base::Exception);
+	void InsertTaskScheLog(const TaskScheLog& ts_log);
 
 	// 查询任务日程日志状态
-	void SelectTaskScheLogState(TaskScheLog& ts_log) throw(base::Exception);
+	void SelectTaskScheLogState(TaskScheLog& ts_log);
 
 	// 更新采集时间
-	void UpdateEtlTime(const std::string& etl_id, const std::string& etl_time) throw(base::Exception);
+	void UpdateEtlTime(const std::string& etl_id, const std::string& etl_time);
 
 	// 更新任务日程日志
-	void UpdateTaskScheLog(const TaskScheLog& ts_log) throw(base::Exception);
+	void UpdateTaskScheLog(const TaskScheLog& ts_log);
 
 private:
 	std::string m_tabTaskSche;				// 任务日程表

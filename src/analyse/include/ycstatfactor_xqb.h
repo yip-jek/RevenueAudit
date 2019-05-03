@@ -17,33 +17,33 @@ public:
 
 public:
 	// 生成稽核统计结果
-	virtual void MakeResult(VEC3_STRING& v3_result) throw(base::Exception);
+	virtual void MakeResult(VEC3_STRING& v3_result);
 
 	// 获取维度因子值
-	virtual void GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val) throw(base::Exception);
+	virtual void GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val);
 
 protected:
 	// 释放因子资源
 	virtual void ReleaseFactors();
 
 	// 载入单个因子对
-	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception);
+	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat);
 
 	// 由因子规则生成结果数据
-	virtual void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception);
+	virtual void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result);
 
 private:
 	// 获取结果地市信息
 	std::string GetResultCity();
 
 	// 计算组合因子
-	void CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB& factor) throw(base::Exception);
+	void CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB& factor);
 
 	// 计算四则运算组合因子
-	void CalcArithmeticFactor(const std::string& expr, VEC_DOUBLE& vec_result) throw(base::Exception);
+	void CalcArithmeticFactor(const std::string& expr, VEC_DOUBLE& vec_result);
 
 	// 计算单个因子
-	void CalcOneFactor(VEC_DOUBLE& vec_result, const std::string& op, const std::string& dim) throw(base::Exception);
+	void CalcOneFactor(VEC_DOUBLE& vec_result, const std::string& op, const std::string& dim);
 
 	// 结果数据集类型转换
 	void ConvertVectorResultType(const VEC_DOUBLE& vec_dou, VEC_STRING& vec_result);

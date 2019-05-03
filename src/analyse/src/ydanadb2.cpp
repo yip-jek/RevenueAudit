@@ -22,7 +22,7 @@ void YDAnaDB2::SetTabAlarmRequest(const std::string& t_alarmreq)
 	m_tabAlarmRequest = t_alarmreq;
 }
 
-void YDAnaDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark) throw(base::Exception)
+void YDAnaDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -53,7 +53,7 @@ void YDAnaDB2::UpdateTaskScheLogState(int log, const std::string& end_time, cons
 	}
 }
 
-void YDAnaDB2::SelectAllCity(std::vector<std::string>& vec_city) throw(base::Exception)
+void YDAnaDB2::SelectAllCity(std::vector<std::string>& vec_city)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);

@@ -28,7 +28,7 @@ std::string YCStatFactor::GetStatReport() const
 	return m_statReport;
 }
 
-void YCStatFactor::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception)
+void YCStatFactor::LoadStatInfo(VEC_STATINFO& vec_statinfo)
 {
 	m_statID.clear();
 	m_statReport.clear();
@@ -66,7 +66,7 @@ void YCStatFactor::LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exceptio
 	m_pLog->Output("[YCStatFactor] 载入规则因子信息成功.");
 }
 
-int YCStatFactor::LoadFactors(const VEC3_STRING& v3_data) throw(base::Exception)
+int YCStatFactor::LoadFactors(const VEC3_STRING& v3_data)
 {
 	ReleaseFactors();
 
@@ -99,7 +99,7 @@ int YCStatFactor::LoadFactors(const VEC3_STRING& v3_data) throw(base::Exception)
 	return counter;
 }
 
-void YCStatFactor::GenerateStatResult(VEC2_STRING& v2_result) throw(base::Exception)
+void YCStatFactor::GenerateStatResult(VEC2_STRING& v2_result)
 {
 	VEC2_STRING vec2_result;
 
@@ -133,7 +133,7 @@ void YCStatFactor::GenerateStatResult(VEC2_STRING& v2_result) throw(base::Except
 	vec2_result.swap(v2_result);
 }
 
-double YCStatFactor::OperateOneFactor(double left, const std::string& op, const std::string& factor) throw(base::Exception)
+double YCStatFactor::OperateOneFactor(double left, const std::string& op, const std::string& factor)
 {
 	double d_factor = 0.0;
 	//if ( factor.empty() || !base::PubStr::Str2Double(factor, d_factor) )

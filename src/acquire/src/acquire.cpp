@@ -31,10 +31,10 @@ Acquire::~Acquire()
 
 const char* Acquire::Version()
 {
-	return ("Acquire: Version 6.0.0 released. Compiled at " __TIME__ " on " __DATE__);
+	return ("Acquire: Version 7.0.0 released. Compiled at " __TIME__ " on " __DATE__ ", by G++-" __VERSION__);
 }
 
-void Acquire::LoadConfig() throw(base::Exception)
+void Acquire::LoadConfig()
 {
 	m_cfg.SetCfgFile(GetConfigFile());
 
@@ -106,7 +106,7 @@ void Acquire::LoadConfig() throw(base::Exception)
 	m_pLog->Output("[Acquire] Load configuration OK.");
 }
 
-void Acquire::Init() throw(base::Exception)
+void Acquire::Init()
 {
 	GetParameterTaskInfo(GetTaskParaInfo());
 
@@ -151,7 +151,7 @@ void Acquire::Init() throw(base::Exception)
 	m_pLog->Output("[Acquire] Init OK.");
 }
 
-void Acquire::Run() throw(base::Exception)
+void Acquire::Run()
 {
 	base::AutoDisconnect a_disconn(new base::HiveConnector(m_pAcqHive));
 	a_disconn.Connect();
@@ -163,7 +163,7 @@ void Acquire::Run() throw(base::Exception)
 	DoDataAcquisition();
 }
 
-void Acquire::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
+void Acquire::End(int err_code, const std::string& err_msg /*= std::string()*/)
 {
 	// 断开数据库连接
 	if ( m_pAcqDB2 != NULL )
@@ -181,7 +181,7 @@ void Acquire::SQLTransRelease()
 	}
 }
 
-void Acquire::GetParameterTaskInfo(const std::string& para) throw(base::Exception)
+void Acquire::GetParameterTaskInfo(const std::string& para)
 {
 	// 格式：启动批号:指标ID:采集规则ID:...
 	std::vector<std::string> vec_str;
@@ -217,7 +217,7 @@ void Acquire::SetTaskInfo()
 	m_taskInfo.EtlRuleID = m_sEtlID;
 }
 
-void Acquire::FetchTaskInfo() throw(base::Exception)
+void Acquire::FetchTaskInfo()
 {
 	m_pLog->Output("[Acquire] 查询采集任务规则信息 ...");
 	m_pAcqDB2->SelectEtlTaskInfo(m_taskInfo);
@@ -226,7 +226,7 @@ void Acquire::FetchTaskInfo() throw(base::Exception)
 	CheckTaskInfo();
 }
 
-void Acquire::CheckTaskInfo() throw(base::Exception)
+void Acquire::CheckTaskInfo()
 {
 	if ( m_taskInfo.EtlRuleTime.empty() )
 	{
@@ -283,7 +283,7 @@ void Acquire::CheckTaskInfo() throw(base::Exception)
 	m_pLog->Output("[Acquire] 采集类型：[%s] (%s)", m_sType.c_str(), (m_isTest ? "测试":"发布"));
 }
 
-void Acquire::DoDataAcquisition() throw(base::Exception)
+void Acquire::DoDataAcquisition()
 {
 	m_pLog->Output("[Acquire] 分析采集规则 ...");
 
@@ -307,7 +307,7 @@ void Acquire::DoDataAcquisition() throw(base::Exception)
 	m_pLog->Output("[Acquire] 采集数据完成.");
 }
 
-void Acquire::GenerateEtlDate(const std::string& date_fmt) throw(base::Exception)
+void Acquire::GenerateEtlDate(const std::string& date_fmt)
 {
 	if ( !base::PubTime::DateApartFromNow(date_fmt, m_acqDateType, m_acqDate) )
 	{
@@ -324,7 +324,7 @@ void Acquire::GenerateEtlDate(const std::string& date_fmt) throw(base::Exception
 	m_pLog->Output("[Acquire] 完成采集时间转换：[%s] -> [%s]", date_fmt.c_str(), m_acqDate.c_str());
 }
 
-void Acquire::HiveDataAcquisition() throw(base::Exception)
+void Acquire::HiveDataAcquisition()
 {
 	RebuildHiveTable();
 
@@ -338,7 +338,7 @@ void Acquire::HiveDataAcquisition() throw(base::Exception)
 	m_pAcqHive->ExecuteAcqSQL(vec_hivesql);
 }
 
-void Acquire::DB2DataAcquisition() throw(base::Exception)
+void Acquire::DB2DataAcquisition()
 {
 	// 载入 HDFS 配置
 	LoadHdfsConfig();
@@ -372,7 +372,7 @@ void Acquire::DB2DataAcquisition() throw(base::Exception)
 	}
 }
 
-void Acquire::CheckSourceTable(bool hive) throw(base::Exception)
+void Acquire::CheckSourceTable(bool hive)
 {
 	m_pLog->Output("[Acquire] Check source table whether exist or not ...");
 
@@ -450,7 +450,7 @@ void Acquire::CheckSourceTable(bool hive) throw(base::Exception)
 	m_pLog->Output("[Acquire] Check source table OK.");
 }
 
-void Acquire::LoadHdfsConfig() throw(base::Exception)
+void Acquire::LoadHdfsConfig()
 {
 	m_cfg.RegisterItem("HDFS", "HOST");
 	m_cfg.RegisterItem("HDFS", "TMP_PATH");
@@ -488,7 +488,7 @@ std::string Acquire::GeneralHdfsFileName()
 	return hdfs_file_name;
 }
 
-std::string Acquire::DB2DataOutputHdfsFile(std::vector<std::vector<std::string> >& vec2_data, hdfsFS& hd_fs, const std::string& hdfs_file) throw(base::Exception)
+std::string Acquire::DB2DataOutputHdfsFile(std::vector<std::vector<std::string> >& vec2_data, hdfsFS& hd_fs, const std::string& hdfs_file)
 {
 	const std::string FULL_FILE_PATH = m_sHdfsTmpPath + hdfs_file;
 
@@ -560,7 +560,7 @@ std::string Acquire::DB2DataOutputHdfsFile(std::vector<std::vector<std::string> 
 	return FULL_FILE_PATH;
 }
 
-void Acquire::LoadHdfsFile2Hive(const std::string& target_tab, const std::string& hdfs_file) throw(base::Exception)
+void Acquire::LoadHdfsFile2Hive(const std::string& target_tab, const std::string& hdfs_file)
 {
 	if ( hdfs_file.empty() )
 	{
@@ -581,7 +581,7 @@ void Acquire::LoadHdfsFile2Hive(const std::string& target_tab, const std::string
 	m_pLog->Output("[Acquire] Load HDFS file to HIVE ---- done!");
 }
 
-int Acquire::RebuildHiveTable() throw(base::Exception)
+int Acquire::RebuildHiveTable()
 {
 	std::vector<std::string> vec_field;
 	TaskInfo2TargetFields(vec_field);
@@ -610,7 +610,7 @@ int Acquire::RebuildHiveTable() throw(base::Exception)
 	return vec_field.size();
 }
 
-void Acquire::TaskInfo2TargetFields(std::vector<std::string>& vec_field) throw(base::Exception)
+void Acquire::TaskInfo2TargetFields(std::vector<std::string>& vec_field)
 {
 	if ( m_taskInfo.vecEtlRuleDim.empty() )
 	{
@@ -675,7 +675,7 @@ void Acquire::TaskInfo2TargetFields(std::vector<std::string>& vec_field) throw(b
 	v_field.swap(vec_field);
 }
 
-void Acquire::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception)
+void Acquire::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive)
 {
 	switch ( m_taskInfo.EtlCondType )
 	{
@@ -698,7 +698,7 @@ void Acquire::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(b
 	}
 }
 
-void Acquire::OuterJoin2Sql(std::vector<std::string>& vec_sql, bool hive, bool with_cond /*= false*/) throw(base::Exception)
+void Acquire::OuterJoin2Sql(std::vector<std::string>& vec_sql, bool hive, bool with_cond /*= false*/)
 {
 	// 分析采集条件
 	// (不带条件)格式：[外连表名]:[关联的维度字段(逗号分隔)]
@@ -977,7 +977,7 @@ std::string Acquire::GetSQLCondition(const std::string& cond)
 	return sql_condition;
 }
 
-void Acquire::ExchangeSQLMark(std::string& sql) throw(base::Exception)
+void Acquire::ExchangeSQLMark(std::string& sql)
 {
 	if ( NULL == m_pSQLTrans )
 	{
@@ -991,7 +991,7 @@ void Acquire::ExchangeSQLMark(std::string& sql) throw(base::Exception)
 	}
 }
 
-std::string Acquire::TransSourceDate(const std::string& src_tabname) throw(base::Exception)
+std::string Acquire::TransSourceDate(const std::string& src_tabname)
 {
 	std::string date_mark;
 	if ( base::PubTime::DT_DAY == m_acqDateType )		// 日类型

@@ -15,26 +15,26 @@ public:
 
 public:
 	// 载入参数配置信息
-	virtual void LoadConfig() throw(base::Exception);
+	virtual void LoadConfig();
 
 	// 获取日志文件名称前缀
 	virtual std::string GetLogFilePrefix();
 
 	// 初始化
-	virtual void Init() throw(base::Exception);
+	virtual void Init();
 
 	// 任务结束（资源回收）
-	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(base::Exception);
+	virtual void End(int err_code, const std::string& err_msg = std::string());
 
 protected:
 	// 创建新的数据库连接
-	virtual CAnaDB2* CreateDBConnection() throw(base::Exception);
+	virtual CAnaDB2* CreateDBConnection();
 
 	// 获取后续参数任务信息
-	virtual void GetExtendParaTaskInfo(VEC_STRING& vec_str) throw(base::Exception);
+	virtual void GetExtendParaTaskInfo(VEC_STRING& vec_str);
 
 	// 解析分析规则，生成Hive取数逻辑
-	virtual void AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception);
+	virtual void AnalyseRules(VEC_STRING& vec_hivesql);
 
 	// Delete the SQL function: sum
 	void RemoveSumFunc(VEC_STRING& vec_hivesql);
@@ -43,25 +43,25 @@ protected:
 	bool CheckYCAnalyseType(std::string& cn_type) const;
 
 	// 生成数据库信息
-	virtual void GetAnaDBInfo() throw(base::Exception);
+	virtual void GetAnaDBInfo();
 
 	// 释放稽核统计因子资源
 	void ReleaseStatFactor();
 
 	// 获取任务信息
-	virtual void FetchTaskInfo() throw(base::Exception);
+	virtual void FetchTaskInfo();
 
 	// 采集时间转换
-	virtual void EtlTimeConvertion() throw(base::Exception);
+	virtual void EtlTimeConvertion();
 
 	// 取得详情表-业务侧更新字段列表
-	void FetchUpdateFields_YW() throw(base::Exception);
+	void FetchUpdateFields_YW();
 
 	// 从指标字段集中获取更新字段
 	void FetchUpdateFieldsFromKpiCol(std::vector<KpiColumn>& vec_kc, VEC_STRING& vec_up_fd);
 
 	// 创建稽核统计因子
-	void CreateStatFactor() throw(base::Exception);
+	void CreateStatFactor();
 
 	// 获取因子项目和值个数
 	void GetFactorItemValSize(int& item_size, int& val_size) const;
@@ -70,7 +70,7 @@ protected:
 	void CountKpiColumnItemValSize(const std::vector<KpiColumn>& vec_column, int& item_size, int& val_size) const;
 
 	// 分析业财稽核源数据，生成结果数据
-	virtual void AnalyseSourceData() throw(base::Exception);
+	virtual void AnalyseSourceData();
 
 	// 生成最新的批次
 	void GenerateNewBatch();
@@ -79,16 +79,16 @@ protected:
 	void SetNewBatch_HDB();
 
 	// 设置详情表稽核的最新批次
-	void SetNewBatch_XQB() throw(base::Exception);
+	void SetNewBatch_XQB();
 
 	// 统计因子转换
-	void ConvertStatFactor() throw(base::Exception);
+	void ConvertStatFactor();
 
 	// 生成稽核结果数据
-	void GenerateResultData() throw(base::Exception);
+	void GenerateResultData();
 
 	// 结果数据入库 [DB2]
-	virtual void StoreResult() throw(base::Exception);
+	virtual void StoreResult();
 
 	// 入库报表稽核统计结果
 	void StoreReportResult();
@@ -97,7 +97,7 @@ protected:
 	void StoreDetailResult_CW();
 
 	// 入库差异汇总结果
-	void StoreDiffSummaryResult() throw(base::Exception);
+	void StoreDiffSummaryResult();
 
 	// 保留上一批次的手工填列的数据
 	void KeepLastBatchManualData();

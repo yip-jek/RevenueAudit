@@ -15,7 +15,7 @@ public:
 	virtual ~BaseConnector() {}
 
 public:
-	virtual void ToConnect() throw(Exception) = 0;
+	virtual void ToConnect() = 0;
 	virtual void ToDisconnect() = 0;
 };
 
@@ -27,7 +27,7 @@ public:
 	virtual ~HiveConnector() {}
 
 public:
-	virtual void ToConnect() throw(Exception);
+	virtual void ToConnect();
 	virtual void ToDisconnect();
 
 private:
@@ -48,7 +48,7 @@ public:
 	virtual ~AutoDisconnect();
 
 public:
-	void Connect() throw(Exception);
+	void Connect();
 
 private:
 	// 只允许内部自动关闭连接

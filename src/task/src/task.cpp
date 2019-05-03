@@ -28,10 +28,10 @@ Task::~Task()
 
 std::string Task::Version()
 {
-	return ("Version 5.0.0 released. Compiled at " __TIME__ " on " __DATE__);
+	return ("Version 6.0.0 released. Compiled at " __TIME__ " on " __DATE__ ", by G++-" __VERSION__);
 }
 
-void Task::Run() throw(base::Exception)
+void Task::Run()
 {
 	InitBaseConfig();
 
@@ -42,7 +42,7 @@ void Task::Run() throw(base::Exception)
 	DealTasks();
 }
 
-void Task::InitBaseConfig() throw(base::Exception)
+void Task::InitBaseConfig()
 {
 	m_pCfg->RegisterItem("SYS", "TIME_SECONDS");
 	m_pCfg->RegisterItem("SYS", "TASK_SHOW_SECONDS");
@@ -111,7 +111,7 @@ bool Task::Running()
 	return (TS_QUIT != m_state);
 }
 
-void Task::DealTasks() throw(base::Exception)
+void Task::DealTasks()
 {
 	// 设置退出信号捕获
 	if ( !base::GSignal::Init(m_pLog) )
@@ -183,7 +183,7 @@ void Task::CheckTaskStatus()
 	m_taskContinue = (!pause && !frozen);
 }
 
-void Task::GetTasks() throw(base::Exception)
+void Task::GetTasks()
 {
 	// 是否准备退出？
 	if ( m_state != TS_END )
@@ -208,7 +208,7 @@ void Task::ShowTask()
 	}
 }
 
-void Task::ExecuteTask() throw(base::Exception)
+void Task::ExecuteTask()
 {
 	HandleAnaTask();
 
@@ -221,7 +221,7 @@ void Task::ExecuteTask() throw(base::Exception)
 	}
 }
 
-std::string Task::FetchPipeBuffer(const std::string& cmd) throw(base::Exception)
+std::string Task::FetchPipeBuffer(const std::string& cmd)
 {
 	FILE* fp_pipe = popen(cmd.c_str(), "r");
 	if ( NULL == fp_pipe )
@@ -236,7 +236,7 @@ std::string Task::FetchPipeBuffer(const std::string& cmd) throw(base::Exception)
 	return buffer;
 }
 
-bool Task::IsProcessAlive(long long proc_task_id) throw(base::Exception)
+bool Task::IsProcessAlive(long long proc_task_id)
 {
 	std::string str_cmd;
 	base::PubStr::SetFormatString(str_cmd, "ps -ef | grep -w %lld | grep -v grep", proc_task_id);
@@ -244,7 +244,7 @@ bool Task::IsProcessAlive(long long proc_task_id) throw(base::Exception)
 	return !FetchPipeBuffer(str_cmd).empty();
 }
 
-bool Task::IsProcessAlive(const TaskInfo& task_info, const TaskReqInfo& tri, bool IsGDAudiKPIType) throw(base::Exception)
+bool Task::IsProcessAlive(const TaskInfo& task_info, const TaskReqInfo& tri, bool IsGDAudiKPIType)
 {
     //keyword e.g. :00001:KPI_YC_BOSSYHQFDZXQBHFF_YW:ANA_YC_BOSSYHQFDZXQBHFF_YW:21219:
 	std::string str_cmd;
@@ -283,7 +283,7 @@ long long Task::GenerateTaskID()
 	return new_taskid;
 }
 
-std::string Task::EtlTimeTransform(const std::string& cycle) throw(base::Exception)
+std::string Task::EtlTimeTransform(const std::string& cycle)
 {
 	if ( cycle.size() != 8U )
 	{
@@ -333,7 +333,7 @@ std::string Task::EtlTimeTransform(const std::string& cycle) throw(base::Excepti
 	return etlrule_time;
 }
 
-void Task::GetUndoneTask() throw(base::Exception)
+void Task::GetUndoneTask()
 {
     //NOTHING
     return ;

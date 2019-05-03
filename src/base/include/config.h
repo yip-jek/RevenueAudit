@@ -39,16 +39,16 @@ public:
 	virtual ~Config() {}
 
 public:
-	void SetCfgFile(const std::string& cfg_file) throw(Exception);
+	void SetCfgFile(const std::string& cfg_file);
 	bool RegisterItem(const std::string& segment, const std::string& name);
 	bool UnregisterItem(const std::string& segment, const std::string& name);
 	void InitItems();
 	void DeleteItems();
-	void ReadConfig() throw(Exception);
-	std::string GetCfgValue(const std::string& segment, const std::string& name) throw(Exception);
-	double GetCfgDoubleVal(const std::string& segment, const std::string& name) throw(Exception);
-	long long GetCfgLongVal(const std::string& segment, const std::string& name) throw(Exception);
-	unsigned int GetCfgUIntVal(const std::string& segment, const std::string& name) throw(Exception);
+	void ReadConfig();
+	std::string GetCfgValue(const std::string& segment, const std::string& name);
+	double GetCfgDoubleVal(const std::string& segment, const std::string& name);
+	long long GetCfgLongVal(const std::string& segment, const std::string& name);
+	unsigned int GetCfgUIntVal(const std::string& segment, const std::string& name);
 	bool GetCfgBoolVal(const std::string& segment, const std::string& name);
 
 private:

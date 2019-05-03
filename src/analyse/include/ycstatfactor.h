@@ -36,32 +36,32 @@ public:
 	virtual std::string GetStatReport() const;
 
 	// 载入规则因子信息
-	virtual void LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception);
+	virtual void LoadStatInfo(VEC_STATINFO& vec_statinfo);
 
 	// 载入因子对
-	virtual int LoadFactors(const VEC3_STRING& v3_data) throw(base::Exception);
+	virtual int LoadFactors(const VEC3_STRING& v3_data);
 
 	// 生成稽核统计结果
-	virtual void MakeResult(VEC3_STRING& v3_result) throw(base::Exception) = 0;
+	virtual void MakeResult(VEC3_STRING& v3_result) = 0;
 
 	// 获取维度因子值
-	virtual void GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val) throw(base::Exception) = 0;
+	virtual void GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val) = 0;
 
 protected:
 	// 释放因子资源
 	virtual void ReleaseFactors() = 0;
 
 	// 载入单个因子对
-	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception) = 0;
+	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) = 0;
 
 	// 生成统计结果
-	virtual void GenerateStatResult(VEC2_STRING& v2_result) throw(base::Exception);
+	virtual void GenerateStatResult(VEC2_STRING& v2_result);
 
 	// 由因子规则生成结果数据
-	virtual void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception) = 0;
+	virtual void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) = 0;
 
 	// 计算单个因子
-	virtual double OperateOneFactor(double left, const std::string& op, const std::string& factor) throw(base::Exception);
+	virtual double OperateOneFactor(double left, const std::string& op, const std::string& factor);
 
 	// 结果数据类型转换：Double -> String，保留2位小数，“四舍五入”
 	std::string ConvertResultType(double result);

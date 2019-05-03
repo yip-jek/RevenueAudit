@@ -62,7 +62,7 @@ void CAcqDB2::SetTabYCTaskReq(const std::string& t_yc_taskreq)
 	m_tabYCTaskReq = t_yc_taskreq;
 }
 
-void CAcqDB2::SelectYCTaskRequest(YCTaskRequest& task_req) throw(base::Exception)
+void CAcqDB2::SelectYCTaskRequest(YCTaskRequest& task_req)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -104,7 +104,7 @@ void CAcqDB2::SelectYCTaskRequest(YCTaskRequest& task_req) throw(base::Exception
 	}
 }
 
-bool CAcqDB2::SelectYCTaskCityCN(const std::string& task_city, std::string& city_cn) throw(base::Exception)
+bool CAcqDB2::SelectYCTaskCityCN(const std::string& task_city, std::string& city_cn)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -135,7 +135,7 @@ bool CAcqDB2::SelectYCTaskCityCN(const std::string& task_city, std::string& city
 	}
 }
 
-std::string CAcqDB2::SelectKpiRuleType(const std::string& kpi_id) throw(base::Exception)
+std::string CAcqDB2::SelectKpiRuleType(const std::string& kpi_id)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -165,7 +165,7 @@ std::string CAcqDB2::SelectKpiRuleType(const std::string& kpi_id) throw(base::Ex
 	}
 }
 
-void CAcqDB2::UpdateYCTaskReq(const YCTaskRequest& task_req) throw(base::Exception)
+void CAcqDB2::UpdateYCTaskReq(const YCTaskRequest& task_req)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -193,7 +193,7 @@ void CAcqDB2::UpdateYCTaskReq(const YCTaskRequest& task_req) throw(base::Excepti
 	}
 }
 
-void CAcqDB2::SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception)
+void CAcqDB2::SelectEtlTaskInfo(AcqTaskInfo& info)
 {
 	// 获取采集规则信息
 	SelectEtlRule(info);
@@ -219,7 +219,7 @@ void CAcqDB2::SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception)
 	SelectEtlSrc(info.EtlRuleID, info.mapEtlSrc);
 }
 
-void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
+void CAcqDB2::SelectEtlRule(AcqTaskInfo& info)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -330,7 +330,7 @@ void CAcqDB2::SelectEtlRule(AcqTaskInfo& info) throw(base::Exception)
 	vec_val.swap(info.vecEtlRuleVal);
 }
 
-void CAcqDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception)
+void CAcqDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -380,7 +380,7 @@ void CAcqDB2::SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& ve
 	v_dim.swap(vec_dim);
 }
 
-void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception)
+void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -430,7 +430,7 @@ void CAcqDB2::SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& ve
 	v_val.swap(vec_val);
 }
 
-void CAcqDB2::SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcInfo>& map_src) throw(base::Exception)
+void CAcqDB2::SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcInfo>& map_src)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -488,7 +488,7 @@ void CAcqDB2::SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcIn
 	m_pLog->Output("[DB2] Select %s successfully! (ETLRULE_ID:%s) [Record(s):%lu]", m_tabEtlSrc.c_str(), etlrule_id.c_str(), map_src.size());
 }
 
-void CAcqDB2::FetchEtlData(const std::string& sql, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception)
+void CAcqDB2::FetchEtlData(const std::string& sql, std::vector<std::vector<std::string> >& vec2_data)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(false);
@@ -538,7 +538,7 @@ void CAcqDB2::FetchEtlData(const std::string& sql, std::vector<std::vector<std::
 	v2_data.swap(vec2_data);
 }
 
-bool CAcqDB2::CheckTableExisted(const std::string& tab_name) throw(base::Exception)
+bool CAcqDB2::CheckTableExisted(const std::string& tab_name)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -576,7 +576,7 @@ bool CAcqDB2::CheckTableExisted(const std::string& tab_name) throw(base::Excepti
 	}
 }
 
-void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& vec_ycinfo) throw(base::Exception)
+void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& vec_ycinfo)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -626,7 +626,7 @@ void CAcqDB2::SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& v
 	m_pLog->Output("[DB2] Select YCRA stat_rule successfully! Record(s): %lu", vec_ycinfo.size());
 }
 
-void CAcqDB2::SelectYCStatSQL(const std::string& src_sql, std::vector<std::string>& vec_sql) throw(base::Exception)
+void CAcqDB2::SelectYCStatSQL(const std::string& src_sql, std::vector<std::string>& vec_sql)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -653,7 +653,7 @@ void CAcqDB2::SelectYCStatSQL(const std::string& src_sql, std::vector<std::strin
 	m_pLog->Output("[DB2] Select external SQL size: %lu", vec_sql.size());
 }
 
-void CAcqDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark) throw(base::Exception)
+void CAcqDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -684,7 +684,7 @@ void CAcqDB2::UpdateTaskScheLogState(int log, const std::string& end_time, const
 	}
 }
 
-void CAcqDB2::UpdateInsertReportState(const YCReportState& report_state) throw(base::Exception)
+void CAcqDB2::UpdateInsertReportState(const YCReportState& report_state)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);

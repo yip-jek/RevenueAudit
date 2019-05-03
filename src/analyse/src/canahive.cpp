@@ -13,7 +13,7 @@ CAnaHive::~CAnaHive()
 {
 }
 
-void CAnaHive::FetchSourceData(const std::string& hive_sql, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception)
+void CAnaHive::FetchSourceData(const std::string& hive_sql, std::vector<std::vector<std::string> >& vec2_fields)
 {
 	if ( hive_sql.empty() )
 	{
@@ -32,7 +32,7 @@ void CAnaHive::FetchSourceData(const std::string& hive_sql, std::vector<std::vec
 	}
 }
 
-void CAnaHive::ExecuteAnaSQL(const std::string& hive_sql) throw(base::Exception)
+void CAnaHive::ExecuteAnaSQL(const std::string& hive_sql)
 {
 	if ( hive_sql.empty() )
 	{

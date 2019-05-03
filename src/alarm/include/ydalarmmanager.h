@@ -24,11 +24,11 @@ public:
 	virtual std::string GetLogFilePrefix();
 
 	// 初始化
-	virtual void Init() throw(base::Exception);
+	virtual void Init();
 
 protected:
 	// 载入扩展配置
-	virtual void LoadExtendedConfig() throw(base::Exception);
+	virtual void LoadExtendedConfig();
 
 	// 输出扩展配置信息
 	virtual void OutputExtendedConfig();
@@ -37,7 +37,7 @@ protected:
 	virtual bool ConfirmQuit();
 
 	// 告警处理
-	virtual void AlarmProcessing() throw(base::Exception);
+	virtual void AlarmProcessing();
 
 private:
 	// 释放数据库连接
@@ -47,13 +47,13 @@ private:
 	void ReleaseAlarmSMSFile();
 
 	// 初始化告警日志输出计时
-	void InitAlarmShowTime() throw(base::Exception);
+	void InitAlarmShowTime();
 
 	// 初始化数据库连接
-	void InitDBConnection() throw(base::Exception);
+	void InitDBConnection();
 
 	// 初始化告警短信文件
-	void InitAlarmSMSFile() throw(base::Exception);
+	void InitAlarmSMSFile();
 
 	// 响应告警请求
 	// 有新请求则返回true，否则返回false

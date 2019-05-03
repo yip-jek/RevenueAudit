@@ -11,7 +11,7 @@ UniformCodeTransfer::~UniformCodeTransfer()
 {
 }
 
-void UniformCodeTransfer::InputChannelUniformCode(std::vector<ChannelUniformCode>& vec_channunicode) throw(base::Exception)
+void UniformCodeTransfer::InputChannelUniformCode(std::vector<ChannelUniformCode>& vec_channunicode)
 {
 	m_mapChannelUniCode.clear();
 	m_mChannUniCodeCN.clear();
@@ -53,7 +53,7 @@ void UniformCodeTransfer::InputChannelUniformCode(std::vector<ChannelUniformCode
 	}
 }
 
-void UniformCodeTransfer::InputCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode) throw(base::Exception)
+void UniformCodeTransfer::InputCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode)
 {
 	m_mapCityUniCode.clear();
 	m_mCityUniCodeCN.clear();

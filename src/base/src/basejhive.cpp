@@ -130,7 +130,7 @@ bool BaseJHive::SetJaasConf(const std::string& jaas_conf)
 	return true;
 }
 
-void BaseJHive::Init(const std::string& load_jar_path) throw(Exception)
+void BaseJHive::Init(const std::string& load_jar_path)
 {
 	// JNI 接口是否已经初始化？
 	if ( m_pJNI != NULL )
@@ -152,7 +152,7 @@ void BaseJHive::Init(const std::string& load_jar_path) throw(Exception)
 	m_pLog->Output("[BASE HIVE] Init OK.");
 }
 
-void BaseJHive::Connect() throw(Exception)
+void BaseJHive::Connect()
 {
 	if ( NULL == m_pJNI )
 	{
@@ -228,7 +228,7 @@ std::string BaseJHive::GetErrorMsg()
 	return std::string();
 }
 
-void BaseJHive::ExecuteSQL(const std::string& sql) throw(Exception)
+void BaseJHive::ExecuteSQL(const std::string& sql)
 {
 	if ( NULL == m_pJNI )
 	{
@@ -248,7 +248,7 @@ void BaseJHive::ExecuteSQL(const std::string& sql) throw(Exception)
 	}
 }
 
-void BaseJHive::FetchSQL(const std::string& sql, std::vector<std::vector<std::string> >& vec2_data) throw(Exception)
+void BaseJHive::FetchSQL(const std::string& sql, std::vector<std::vector<std::string> >& vec2_data)
 {
 	if ( NULL == m_pJNI )
 	{
@@ -301,7 +301,7 @@ void BaseJHive::FetchSQL(const std::string& sql, std::vector<std::vector<std::st
 	m_pLog->Output("[BASE HIVE] Fetch data OK.");
 }
 
-std::string BaseJHive::GetJarClasspath(const std::string& load_jar_path) throw(Exception)
+std::string BaseJHive::GetJarClasspath(const std::string& load_jar_path)
 {
 	BaseDir dir_jar;
 	if ( !dir_jar.SetPath(load_jar_path) )
@@ -342,7 +342,7 @@ std::string BaseJHive::GetJarClasspath(const std::string& load_jar_path) throw(E
 	return str_classpath;
 }
 
-void BaseJHive::CreateJVM(const std::string& load_jar_path) throw(Exception)
+void BaseJHive::CreateJVM(const std::string& load_jar_path)
 {
 	m_pJNI->jvm_args.version = JNI_VERSION_1_6;
 	m_pJNI->jvm_args.nOptions = 1;
@@ -413,7 +413,7 @@ void BaseJHive::DestroyJVM()
 	}
 }
 
-void BaseJHive::InitHiveAgent() throw(Exception)
+void BaseJHive::InitHiveAgent()
 {
 	// 找寻 Java HIVE 代理类
 	jclass jclass_hiveagent = m_pJNI->p_jni_env->FindClass(m_hiveJClassName.c_str());

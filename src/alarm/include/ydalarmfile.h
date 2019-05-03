@@ -23,16 +23,16 @@ public:
 
 public:
 	// 设置文件路径
-	void SetPath(const std::string& path) throw(base::Exception);
+	void SetPath(const std::string& path);
 
 	// 设置文件名格式
-	void SetFileFormat(const std::string& file_fmt) throw(base::Exception);
+	void SetFileFormat(const std::string& file_fmt);
 
 	// 设置文件最大行数
-	void SetMaxLine(int max_line) throw(base::Exception);
+	void SetMaxLine(int max_line);
 
 	// 打开新的告警（短信）文件
-	void OpenNewAlarmFile() throw(base::Exception);
+	void OpenNewAlarmFile();
 
 	// 关闭告警（短信）文件
 	void CloseAlarmFile();

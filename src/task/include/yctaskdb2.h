@@ -38,27 +38,27 @@ public:
     void SetTabReportKpiRela(const std::string &tab_reportkpirela);
 
 	// 表是否存在
-	bool IsTableExists(const std::string& tab_name) throw(base::Exception);
+	bool IsTableExists(const std::string& tab_name);
 
 	// 查询新的任务请求
-	void SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(base::Exception);
+	void SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo);
 
 	// 查询任务状态
-	void SelectTaskState(TaskState& t_state) throw(base::Exception);
+	void SelectTaskState(TaskState& t_state);
 
 	// 更新任务请求
-	void UpdateTaskRequest(TaskReqInfo& task_req) throw(base::Exception);
+	void UpdateTaskRequest(TaskReqInfo& task_req);
 
 	// 查询指标规则信息
-	void SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info) throw(base::Exception);
+	void SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info);
 
 	// 更新采集时间
-	void UpdateEtlTime(const std::string& etl_id, const std::string& etl_time) throw(base::Exception);
+	void UpdateEtlTime(const std::string& etl_id, const std::string& etl_time);
 
     // 统计21个地市详情表状态为已提交个数
-    int CountAllSubmitStatu(TaskReqInfo& ref_taskreq) throw(base::Exception);
+    int CountAllSubmitStatu(TaskReqInfo& ref_taskreq);
 
-    void SelectUndoneTaskRequest(std::vector<TaskReqInfo>& vec_Undone,const std::string& FinalStage) throw(base::Exception);
+    void SelectUndoneTaskRequest(std::vector<TaskReqInfo>& vec_Undone,const std::string& FinalStage);
 
 private:
 	std::string m_tabTaskReq;				// 任务请求表

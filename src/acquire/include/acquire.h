@@ -28,82 +28,82 @@ public:
 	virtual const char* Version();
 
 	// 载入参数配置信息
-	virtual void LoadConfig() throw(base::Exception);
+	virtual void LoadConfig();
 
 	// 获取日志文件名称前缀
 	virtual std::string GetLogFilePrefix() = 0;
 
 	// 初始化
-	virtual void Init() throw(base::Exception);
+	virtual void Init();
 
 	// 任务执行
-	virtual void Run() throw(base::Exception);
+	virtual void Run();
 
 	// 任务结束（资源回收）
-	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(base::Exception);
+	virtual void End(int err_code, const std::string& err_msg = std::string());
 
 protected:
 	// 释放 SQLTranslator 资源
 	void SQLTransRelease();
 
 	// 获取参数任务信息
-	void GetParameterTaskInfo(const std::string& para) throw(base::Exception);
+	void GetParameterTaskInfo(const std::string& para);
 
 	// 获取后续参数任务信息
-	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception) = 0;
+	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) = 0;
 
 	// 设置任务信息
 	void SetTaskInfo();
 
 	// 获取任务信息
-	virtual void FetchTaskInfo() throw(base::Exception);
+	virtual void FetchTaskInfo();
 
 	// 检查采集任务信息
-	virtual void CheckTaskInfo() throw(base::Exception);
+	virtual void CheckTaskInfo();
 
 	// 进行数据采集
-	virtual void DoDataAcquisition() throw(base::Exception);
+	virtual void DoDataAcquisition();
 
 	// 生成采集时间
-	virtual void GenerateEtlDate(const std::string& date_fmt) throw(base::Exception);
+	virtual void GenerateEtlDate(const std::string& date_fmt);
 
 	// HIVE数据采集
-	void HiveDataAcquisition() throw(base::Exception);
+	void HiveDataAcquisition();
 
 	// DB2数据采集
-	void DB2DataAcquisition() throw(base::Exception);
+	void DB2DataAcquisition();
 
 	// 检查源表是否存在
-	virtual void CheckSourceTable(bool hive) throw(base::Exception);
+	virtual void CheckSourceTable(bool hive);
 
 	// 载入HDFS配置
-	void LoadHdfsConfig() throw(base::Exception);
+	void LoadHdfsConfig();
 
 	// 生成hdfs临时文件名
 	virtual std::string GeneralHdfsFileName();
 
 	// 将DB2数据写到HDFS文件
 	// 返回：文件存在于HDFS的详细路径
-	std::string DB2DataOutputHdfsFile(std::vector<std::vector<std::string> >& vec2_data, hdfsFS& hd_fs, const std::string& hdfs_file) throw(base::Exception);
+	std::string DB2DataOutputHdfsFile(std::vector<std::vector<std::string> >& vec2_data, hdfsFS& hd_fs, const std::string& hdfs_file);
 
 	// 从HDFS文件load数据到Hive
-	void LoadHdfsFile2Hive(const std::string& target_tab, const std::string& hdfs_file) throw(base::Exception);
+	void LoadHdfsFile2Hive(const std::string& target_tab, const std::string& hdfs_file);
 
 	// 重建Hive目标表
 	// 返回：目标表的字段数
-	virtual int RebuildHiveTable() throw(base::Exception);
+	virtual int RebuildHiveTable();
 
 	// 分析采集规则，生成目标表字段
-	void TaskInfo2TargetFields(std::vector<std::string>& vec_field) throw(base::Exception);
+	void TaskInfo2TargetFields(std::vector<std::string>& vec_field);
 
 	// 分析采集任务规则，生成采集SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
-	virtual void TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception);
+	virtual void TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive);
 
 	// 外连条件下：分析采集规则，生成采集SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
 	// 参数 with_cond：true-带 SQL 条件，false-不带 SQL 条件(默认值)
-	void OuterJoin2Sql(std::vector<std::string>& vec_sql, bool hive, bool with_cond = false) throw(base::Exception);
+	void OuterJoin2Sql(std::vector<std::string>& vec_sql, bool hive, bool with_cond = false);
 
 	// 不带条件或者直接条件下：分析采集规则，生成采集SQL
 	// 参数 hive：true-数据来源于 HIVE，false-数据来源于 DB2
@@ -113,10 +113,10 @@ protected:
 	std::string GetSQLCondition(const std::string& cond);
 
 	// 标识转换
-	void ExchangeSQLMark(std::string& sql) throw(base::Exception);
+	void ExchangeSQLMark(std::string& sql);
 
 	// 采集源数据表名日期转换
-	std::string TransSourceDate(const std::string& src_tabname) throw(base::Exception);
+	std::string TransSourceDate(const std::string& src_tabname);
 
 protected:
 	bool        m_bRetainResult;		// 是否保留结果数据

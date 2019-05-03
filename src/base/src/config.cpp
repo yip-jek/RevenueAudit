@@ -33,7 +33,7 @@ Config::Config(const std::string& cfg_file /*= std::string()*/)
 	}
 }
 
-void Config::SetCfgFile(const std::string& cfg_file) throw(Exception)
+void Config::SetCfgFile(const std::string& cfg_file)
 {
 	if ( cfg_file.empty() )
 	{
@@ -91,7 +91,7 @@ void Config::DeleteItems()
 	m_listItems.clear();
 }
 
-void Config::ReadConfig() throw(Exception)
+void Config::ReadConfig()
 {
 	if ( m_cfgFile.empty() )
 	{
@@ -139,7 +139,7 @@ void Config::ReadConfig() throw(Exception)
 	m_bfCfg.Close();
 }
 
-std::string Config::GetCfgValue(const std::string& segment, const std::string& name) throw(Exception)
+std::string Config::GetCfgValue(const std::string& segment, const std::string& name)
 {
 	std::string str_seg  = PubStr::TrimUpperB(segment);
 	std::string str_name = PubStr::TrimUpperB(name);
@@ -165,7 +165,7 @@ std::string Config::GetCfgValue(const std::string& segment, const std::string& n
 	}
 }
 
-double Config::GetCfgDoubleVal(const std::string& segment, const std::string& name) throw(Exception)
+double Config::GetCfgDoubleVal(const std::string& segment, const std::string& name)
 {
 	double d_val = 0.0;
 	std::string d_str = GetCfgValue(segment, name);
@@ -177,7 +177,7 @@ double Config::GetCfgDoubleVal(const std::string& segment, const std::string& na
 	return d_val;
 }
 
-long long Config::GetCfgLongVal(const std::string& segment, const std::string& name) throw(Exception)
+long long Config::GetCfgLongVal(const std::string& segment, const std::string& name)
 {
 	long long ll_val = 0;
 	std::string ll_str = GetCfgValue(segment, name);
@@ -189,7 +189,7 @@ long long Config::GetCfgLongVal(const std::string& segment, const std::string& n
 	return ll_val;
 }
 
-unsigned int Config::GetCfgUIntVal(const std::string& segment, const std::string& name) throw(Exception)
+unsigned int Config::GetCfgUIntVal(const std::string& segment, const std::string& name)
 {
 	unsigned int u_val = 0;
 	std::string u_str = GetCfgValue(segment, name);

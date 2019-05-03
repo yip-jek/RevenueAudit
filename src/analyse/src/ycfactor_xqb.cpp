@@ -158,7 +158,7 @@ void YCFactor_XQB::ExportValue(VEC_STRING& vec_value) const
 	vec_value.assign(m_vecVals.begin(), m_vecVals.end());
 }
 
-void YCFactor_XQB::Init(int item_size, int val_size) throw(base::Exception)
+void YCFactor_XQB::Init(int item_size, int val_size)
 {
 	if ( item_size <= 0 )
 	{

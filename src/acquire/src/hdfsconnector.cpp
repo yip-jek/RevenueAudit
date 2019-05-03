@@ -17,7 +17,7 @@ HdfsConnector::~HdfsConnector()
 	base::Log::Release();
 }
 
-void HdfsConnector::ToConnect() throw(base::Exception)
+void HdfsConnector::ToConnect()
 {
 	if ( m_hdfsFS != NULL )
 	{

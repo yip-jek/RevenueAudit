@@ -17,19 +17,19 @@ public:
 
 public:
 	// 连接数据库
-	virtual void Connect() throw(Exception);
+	virtual void Connect();
 
 	// 断开数据库连接
-	virtual void Disconnect() throw(Exception);
+	virtual void Disconnect();
 
 	// 开始事务
-	virtual void Begin() throw(Exception);
+	virtual void Begin();
 
 	// 提交事务
-	virtual void Commit(bool output = true) throw(Exception);
+	virtual void Commit(bool output = true);
 
 	// 回滚事务
-	virtual void Rollback() throw(Exception);
+	virtual void Rollback();
 
 protected:
 	Log*			m_pLog;

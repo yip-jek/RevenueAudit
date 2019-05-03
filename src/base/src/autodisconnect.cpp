@@ -12,7 +12,7 @@ HiveConnector::HiveConnector(BaseJHive* pHive)
 {
 }
 
-void HiveConnector::ToConnect() throw(Exception)
+void HiveConnector::ToConnect()
 {
 	if ( NULL == m_pHive )
 	{
@@ -53,7 +53,7 @@ AutoDisconnect::~AutoDisconnect()
 	}
 }
 
-void AutoDisconnect::Connect() throw(Exception)
+void AutoDisconnect::Connect()
 {
 	if ( NULL == m_pConnector )
 	{

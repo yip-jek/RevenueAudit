@@ -38,54 +38,54 @@ public:
 	void SetTabYCDictCity(const std::string& t_dictcity);
 
 	// 查询采集规则任务信息
-	void SelectEtlTaskInfo(AcqTaskInfo& info) throw(base::Exception);
+	void SelectEtlTaskInfo(AcqTaskInfo& info);
 
 	// 执行数据采集
-	void FetchEtlData(const std::string& sql, std::vector<std::vector<std::string> >& vec2_data) throw(base::Exception);
+	void FetchEtlData(const std::string& sql, std::vector<std::vector<std::string> >& vec2_data);
 
 	// 表是否存在
 	// 返回：true-表存在，false-表不存在
-	bool CheckTableExisted(const std::string& tab_name) throw(base::Exception);
+	bool CheckTableExisted(const std::string& tab_name);
 
 	// 查询业财稽核因子规则信息
-	void SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& vec_ycinfo) throw(base::Exception);
+	void SelectYCStatRule(const std::string& kpi_id, std::vector<YCInfo>& vec_ycinfo);
 
 	// 获取业财稽核因子的SQL语句
-	void SelectYCStatSQL(const std::string& src_sql, std::vector<std::string>& vec_sql) throw(base::Exception);
+	void SelectYCStatSQL(const std::string& src_sql, std::vector<std::string>& vec_sql);
 
 	// 设置任务请求表
 	void SetTabYCTaskReq(const std::string& t_yc_taskreq);
 
 	// 查询任务请求表的信息
-	void SelectYCTaskRequest(YCTaskRequest& task_req) throw(base::Exception);
+	void SelectYCTaskRequest(YCTaskRequest& task_req);
 
 	// 查询任务地市的中文名称
-	bool SelectYCTaskCityCN(const std::string& task_city, std::string& city_cn) throw(base::Exception);
+	bool SelectYCTaskCityCN(const std::string& task_city, std::string& city_cn);
 
 	// 查询指标规则类型
-	std::string SelectKpiRuleType(const std::string& kpi_id) throw(base::Exception);
+	std::string SelectKpiRuleType(const std::string& kpi_id);
 
 	// 更新任务请求表
-	void UpdateYCTaskReq(const YCTaskRequest& task_req) throw(base::Exception);
+	void UpdateYCTaskReq(const YCTaskRequest& task_req);
 
 	// 更新任务日程日志表状态
-	void UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark) throw(base::Exception);
+	void UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark);
 
 	// 更新或插入报表状态表
-	void UpdateInsertReportState(const YCReportState& report_state) throw(base::Exception);
+	void UpdateInsertReportState(const YCReportState& report_state);
 
 private:
 	// 查询采集规则信息
-	void SelectEtlRule(AcqTaskInfo& info) throw(base::Exception);
+	void SelectEtlRule(AcqTaskInfo& info);
 
 	// 查询采集维度规则信息
-	void SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim) throw(base::Exception);
+	void SelectEtlDim(const std::string& dim_id, std::vector<OneEtlDim>& vec_dim);
 
 	// 查询采集值规则信息
-	void SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val) throw(base::Exception);
+	void SelectEtlVal(const std::string& val_id, std::vector<OneEtlVal>& vec_val);
 
 	// 查询采集数据源信息
-	void SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcInfo>& map_src) throw(base::Exception);
+	void SelectEtlSrc(const std::string& etlrule_id, std::map<int, EtlSrcInfo>& map_src);
 
 private:
 	// 数据库表名

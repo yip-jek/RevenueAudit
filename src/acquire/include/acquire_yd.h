@@ -11,20 +11,20 @@ public:
 
 public:
 	// 载入参数配置信息
-	virtual void LoadConfig() throw(base::Exception);
+	virtual void LoadConfig();
 
 	// 获取日志文件名称前缀
 	virtual std::string GetLogFilePrefix();
 
 	// 初始化
-	virtual void Init() throw(base::Exception);
+	virtual void Init();
 
 	// 任务结束（资源回收）
-	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(base::Exception);
+	virtual void End(int err_code, const std::string& err_msg = std::string());
 
 protected:
 	// 获取后续参数任务信息
-	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception);
+	virtual void GetExtendParaTaskInfo(std::vector<std::string>& vec_str);
 
 protected:
 	int         m_taskScheLogID;			// 任务日程日志ID

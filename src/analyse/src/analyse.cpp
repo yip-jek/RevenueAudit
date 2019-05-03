@@ -29,10 +29,10 @@ Analyse::~Analyse()
 
 const char* Analyse::Version()
 {
-	return ("Analyse: Version 6.0.0 released. Compiled at " __TIME__ " on " __DATE__);
+	return ("Analyse: Version 7.0.0 released. Compiled at " __TIME__ " on " __DATE__ ", by G++-" __VERSION__);
 }
 
-void Analyse::LoadConfig() throw(base::Exception)
+void Analyse::LoadConfig()
 {
 	m_cfg.SetCfgFile(GetConfigFile());
 
@@ -92,7 +92,7 @@ void Analyse::LoadConfig() throw(base::Exception)
 	m_pLog->Output("[Analyse] Load configuration OK.");
 }
 
-void Analyse::Init() throw(base::Exception)
+void Analyse::Init()
 {
 	GetParameterTaskInfo(GetTaskParaInfo());
 
@@ -141,7 +141,7 @@ void Analyse::Init() throw(base::Exception)
 	m_pLog->Output("[Analyse] Init OK.");
 }
 
-void Analyse::Run() throw(base::Exception)
+void Analyse::Run()
 {
 	base::AutoDisconnect a_disconn(new base::HiveConnector(m_pAnaHive));
 	a_disconn.Connect();
@@ -153,7 +153,7 @@ void Analyse::Run() throw(base::Exception)
 	DoDataAnalyse();
 }
 
-void Analyse::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
+void Analyse::End(int err_code, const std::string& err_msg /*= std::string()*/)
 {
 	// 断开数据库连接
 	if ( m_pAnaDB2 != NULL )
@@ -162,7 +162,7 @@ void Analyse::End(int err_code, const std::string& err_msg /*= std::string()*/) 
 	}
 }
 
-CAnaDB2* Analyse::CreateDBConnection() throw(base::Exception)
+CAnaDB2* Analyse::CreateDBConnection()
 {
 	return new CAnaDB2(m_sDBName, m_sUsrName, m_sPasswd);
 }
@@ -176,7 +176,7 @@ void Analyse::ReleaseSQLTranslator()
 	}
 }
 
-void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exception)
+void Analyse::GetParameterTaskInfo(const std::string& para)
 {
 	// 格式：启动批号:指标ID:分析规则ID:...
 	VEC_STRING vec_str;
@@ -204,7 +204,7 @@ void Analyse::GetParameterTaskInfo(const std::string& para) throw(base::Exceptio
 	GetExtendParaTaskInfo(vec_str);
 }
 
-void Analyse::GetAnaDBInfo() throw(base::Exception)
+void Analyse::GetAnaDBInfo()
 {
 	AnaField ana_field;
 	std::vector<AnaField> v_fields;
@@ -286,7 +286,7 @@ void Analyse::GetAnaDBInfo() throw(base::Exception)
 	m_dbinfo.SetAnaFields(v_fields);
 }
 
-void Analyse::ExchangeSQLMark(std::string& sql) throw(base::Exception)
+void Analyse::ExchangeSQLMark(std::string& sql)
 {
 	if ( NULL == m_pSQLTranslator )
 	{
@@ -300,7 +300,7 @@ void Analyse::ExchangeSQLMark(std::string& sql) throw(base::Exception)
 	}
 }
 
-void Analyse::FetchHiveSource(VEC_STRING& vec_hivesql) throw(base::Exception)
+void Analyse::FetchHiveSource(VEC_STRING& vec_hivesql)
 {
 	VEC2_STRING vec2_fields;
 
@@ -364,7 +364,7 @@ void Analyse::SetTaskInfo()
 	m_taskInfo.AnaRule.AnaID = m_sAnaID;
 }
 
-void Analyse::FetchTaskInfo() throw(base::Exception)
+void Analyse::FetchTaskInfo()
 {
 	m_pLog->Output("[Analyse] 查询分析任务规则信息 ...");
 	m_pAnaDB2->SelectAnaTaskInfo(m_taskInfo);
@@ -378,7 +378,7 @@ void Analyse::FetchTaskInfo() throw(base::Exception)
 	EtlTimeConvertion();
 }
 
-void Analyse::CheckAnaTaskInfo() throw(base::Exception)
+void Analyse::CheckAnaTaskInfo()
 {
 	if ( AnaTaskInfo::TABTYPE_UNKNOWN == m_taskInfo.ResultType )
 	{
@@ -443,7 +443,7 @@ void Analyse::CheckAnaTaskInfo() throw(base::Exception)
 	m_pLog->Output("[Analyse] 分析类型：[%s] (%s)", m_sType.c_str(), (m_isTest ? "测试":"发布"));
 }
 
-void Analyse::CheckExpWayType() throw(base::Exception)
+void Analyse::CheckExpWayType()
 {
 	// 检查维度：是否存在重复的 '地市' 和 '渠道' 表示类型
 	bool etlday_existed  = false;
@@ -522,7 +522,7 @@ void Analyse::CheckExpWayType() throw(base::Exception)
 	}
 }
 
-void Analyse::FetchUniformCode() throw(base::Exception)
+void Analyse::FetchUniformCode()
 {
 	m_pLog->Output("[Analyse] Fetch channel uniform code ...");
 	std::vector<ChannelUniformCode> vec_channel_uni_code;
@@ -539,7 +539,7 @@ void Analyse::FetchUniformCode() throw(base::Exception)
 	m_UniCodeTransfer.InputCityUniformCode(vec_city_uni_code);
 }
 
-void Analyse::EtlTimeConvertion() throw(base::Exception)
+void Analyse::EtlTimeConvertion()
 {
 	// 取第一个采集规则的采集时间
 	const std::string& REF_ETLTIME = m_taskInfo.vecEtlRule[0].EtlTime;
@@ -550,7 +550,7 @@ void Analyse::EtlTimeConvertion() throw(base::Exception)
 	m_pLog->Output("[Analyse] 完成采集时间转换：[%s] -> [%s]", REF_ETLTIME.c_str(), m_dbinfo.GetEtlDay().c_str());
 }
 
-void Analyse::DoDataAnalyse() throw(base::Exception)
+void Analyse::DoDataAnalyse()
 {
 	m_pLog->Output("[Analyse] 解析分析规则 ...");
 
@@ -570,7 +570,7 @@ void Analyse::DoDataAnalyse() throw(base::Exception)
 	UpdateDimValue();
 }
 
-void Analyse::AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception)
+void Analyse::AnalyseRules(VEC_STRING& vec_hivesql)
 {
 	base::PubStr::Trim(m_taskInfo.AnaRule.AnaExpress);
 	std::string& ref_exp = m_taskInfo.AnaRule.AnaExpress;
@@ -613,7 +613,7 @@ void Analyse::AnalyseRules(VEC_STRING& vec_hivesql) throw(base::Exception)
 }
 
 // 暂时只支持两组数据的汇总对比
-void Analyse::GetSummaryCompareHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception)
+void Analyse::GetSummaryCompareHiveSQL(VEC_STRING& vec_hivesql)
 {
 	switch ( TaskInfoUtil::CheckDualEtlRule(m_taskInfo.vecEtlRule) )
 	{
@@ -771,7 +771,7 @@ void Analyse::GetSummaryCompareHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exce
 }
 
 // 暂时只支持两组数据的明细对比
-void Analyse::GetDetailCompareHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception)
+void Analyse::GetDetailCompareHiveSQL(VEC_STRING& vec_hivesql)
 {
 	switch ( TaskInfoUtil::CheckDualEtlRule(m_taskInfo.vecEtlRule) )
 	{
@@ -865,7 +865,7 @@ void Analyse::GetDetailCompareHiveSQL(VEC_STRING& vec_hivesql) throw(base::Excep
 	v_hive_sql.swap(vec_hivesql);
 }
 
-void Analyse::GetStatisticsHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception)
+void Analyse::GetStatisticsHiveSQL(VEC_STRING& vec_hivesql)
 {
 	switch ( TaskInfoUtil::CheckPluralEtlRule(m_taskInfo.vecEtlRule) )
 	{
@@ -897,7 +897,7 @@ void Analyse::GetStatisticsHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exceptio
 	//AddAnalysisCondition(m_taskInfo.AnaRule, vec_hivesql);
 }
 
-void Analyse::GetReportStatisticsHiveSQL(VEC_STRING& vec_hivesql) throw(base::Exception)
+void Analyse::GetReportStatisticsHiveSQL(VEC_STRING& vec_hivesql)
 {
 	switch ( TaskInfoUtil::CheckPluralEtlRule(m_taskInfo.vecEtlRule) )
 	{
@@ -925,7 +925,7 @@ void Analyse::GetReportStatisticsHiveSQL(VEC_STRING& vec_hivesql) throw(base::Ex
 	//AddAnalysisCondition(m_taskInfo.AnaRule, vec_hivesql);
 }
 
-void Analyse::GetStatisticsHiveSQLBySet(VEC_STRING& vec_hivesql, bool union_all) throw(base::Exception)
+void Analyse::GetStatisticsHiveSQLBySet(VEC_STRING& vec_hivesql, bool union_all)
 {
 	std::set<int> set_int;
 	const int RESULT = base::PubStr::Express2IntSet(m_taskInfo.AnaRule.AnaExpress, set_int);
@@ -957,7 +957,7 @@ void Analyse::GetStatisticsHiveSQLBySet(VEC_STRING& vec_hivesql, bool union_all)
 	}
 }
 
-void Analyse::SplitHiveSqlExpress(const std::string& exp_sqls, VEC_STRING& vec_hivesql) throw(base::Exception)
+void Analyse::SplitHiveSqlExpress(const std::string& exp_sqls, VEC_STRING& vec_hivesql)
 {
 	std::string exp = base::PubStr::TrimB(exp_sqls);
 	if ( exp.empty() )
@@ -983,7 +983,7 @@ void Analyse::SplitHiveSqlExpress(const std::string& exp_sqls, VEC_STRING& vec_h
 	v_hive_sql.swap(vec_hivesql);
 }
 
-void Analyse::DetermineDataGroup(const std::string& exp, int& first, int& second) throw(base::Exception)
+void Analyse::DetermineDataGroup(const std::string& exp, int& first, int& second)
 {
 	VEC_STRING vec_str;
 	base::PubStr::Str2StrVector(exp, "-", vec_str);
@@ -1041,7 +1041,7 @@ void Analyse::DetermineDataGroup(const std::string& exp, int& first, int& second
 	second = second_index;
 }
 
-void Analyse::GenerateTableNameByType() throw(base::Exception)
+void Analyse::GenerateTableNameByType()
 {
 	const base::PubTime::DATE_TYPE DT = m_dbinfo.GetEtlDateType();
 	const std::string DT_DESC         = base::PubTime::DateType2String(DT);
@@ -1109,7 +1109,7 @@ void Analyse::GenerateTableNameByType() throw(base::Exception)
 	}
 }
 
-void Analyse::AnalyseSourceData() throw(base::Exception)
+void Analyse::AnalyseSourceData()
 {
 	// 先进行数据补全
 	DataSupplement();
@@ -1153,7 +1153,7 @@ void Analyse::AnalyseSourceData() throw(base::Exception)
 	m_pLog->Output("[Analyse] 分析完成!");
 }
 
-void Analyse::SrcDataUnifiedCoding() throw(base::Exception)
+void Analyse::SrcDataUnifiedCoding()
 {
 	const int DIM_REGION_INDEX  = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_REGION);
 	const int DIM_CHANNEL_INDEX = m_taskInfo.GetDimEWTypeIndex(KpiColumn::EWTYPE_CHANNEL);
@@ -1237,7 +1237,7 @@ void Analyse::GenerateReportStatData()
 	input.ReleaseSourceData();
 }
 
-//void Analyse::CompareResultData() throw(base::Exception)
+//void Analyse::CompareResultData()
 //{
 //	// 是否为对比分析类型？
 //	if ( AnalyseRule::ANATYPE_DETAIL_COMPARE == m_taskInfo.AnaRule.AnaType 
@@ -1394,7 +1394,7 @@ void Analyse::CollectDimVal()
 	m_pLog->Output("[Analyse] 收集到源数据的维度取值数: %llu", m_DVDiffer.GetSrcDimValSize());
 }
 
-void Analyse::StoreResult() throw(base::Exception)
+void Analyse::StoreResult()
 {
 	// 删除旧的数据
 	RemoveOldResult(m_taskInfo.ResultType);
@@ -1418,7 +1418,7 @@ void Analyse::StoreResult() throw(base::Exception)
 	m_pLog->Output("[Analyse] 结果数据存储完毕!");
 }
 
-void Analyse::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype) throw(base::Exception)
+void Analyse::RemoveOldResult(const AnaTaskInfo::ResultTableType& result_tabtype)
 {
 	// 是否带时间戳
 	// 只有带时间戳才可以按采集时间删除结果数据

@@ -94,7 +94,7 @@ bool SQLExtendConverter::NoNeedExtend(std::string& sql)
 	return false;
 }
 
-void SQLExtendConverter::DoExtend(std::string& sql) throw(base::Exception)
+void SQLExtendConverter::DoExtend(std::string& sql)
 {
 	const std::string MARK_FROM  = " FROM ";
 	const std::string MARK_WHERE = "WHERE ";

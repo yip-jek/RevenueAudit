@@ -19,7 +19,7 @@ std::string Acquire_YD::GetLogFilePrefix()
 	return std::string("Acquire_YD");
 }
 
-void Acquire_YD::LoadConfig() throw(base::Exception)
+void Acquire_YD::LoadConfig()
 {
 	Acquire::LoadConfig();
 
@@ -31,7 +31,7 @@ void Acquire_YD::LoadConfig() throw(base::Exception)
 	m_pLog->Output("[Acquire_YD] Load configuration OK.");
 }
 
-void Acquire_YD::Init() throw(base::Exception)
+void Acquire_YD::Init()
 {
 	Acquire::Init();
 
@@ -40,7 +40,7 @@ void Acquire_YD::Init() throw(base::Exception)
 	m_pLog->Output("[Acquire_YD] Init OK.");
 }
 
-void Acquire_YD::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
+void Acquire_YD::End(int err_code, const std::string& err_msg /*= std::string()*/)
 {
 	// 更新任务日程日志状态
 	if ( 0 == err_code )	// 采集成功
@@ -59,7 +59,7 @@ void Acquire_YD::End(int err_code, const std::string& err_msg /*= std::string()*
 	Acquire::End(err_code, err_msg);
 }
 
-void Acquire_YD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
+void Acquire_YD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str)
 {
 	if ( vec_str.size() < 4 )
 	{

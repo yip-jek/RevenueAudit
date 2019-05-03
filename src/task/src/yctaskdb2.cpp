@@ -38,7 +38,7 @@ void YCTaskDB2::SetTabReportKpiRela(const std::string &tabCfgPfLfRela){
 }
 
 
-bool YCTaskDB2::IsTableExists(const std::string& tab_name) throw(base::Exception)
+bool YCTaskDB2::IsTableExists(const std::string& tab_name)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -75,7 +75,7 @@ bool YCTaskDB2::IsTableExists(const std::string& tab_name) throw(base::Exception
 	}
 }
 
-void YCTaskDB2::SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw(base::Exception)
+void YCTaskDB2::SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo)
 {
     std::string datestr_yyyymm = "yyyyMM";
 	XDBO2::CRecordset rs(&m_CDB);
@@ -121,7 +121,7 @@ void YCTaskDB2::SelectNewTaskRequest(std::vector<TaskReqInfo>& vec_trinfo) throw
 	v_tri.swap(vec_trinfo);
 }
 
-void YCTaskDB2::SelectTaskState(TaskState& t_state) throw(base::Exception)
+void YCTaskDB2::SelectTaskState(TaskState& t_state)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -160,7 +160,7 @@ void YCTaskDB2::SelectTaskState(TaskState& t_state) throw(base::Exception)
 	}
 }
 
-void YCTaskDB2::UpdateTaskRequest(TaskReqInfo& task_req) throw(base::Exception)
+void YCTaskDB2::UpdateTaskRequest(TaskReqInfo& task_req)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -191,7 +191,7 @@ void YCTaskDB2::UpdateTaskRequest(TaskReqInfo& task_req) throw(base::Exception)
 	}
 }
 
-void YCTaskDB2::SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info) throw(base::Exception)
+void YCTaskDB2::SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -230,7 +230,7 @@ void YCTaskDB2::SelectKpiRule(const std::string& kpi, KpiRuleInfo& kpi_info) thr
 	}
 }
 
-void YCTaskDB2::UpdateEtlTime(const std::string& etl_id, const std::string& etl_time) throw(base::Exception)
+void YCTaskDB2::UpdateEtlTime(const std::string& etl_id, const std::string& etl_time)
 {
 	XDBO2::CRecordset rs(&m_CDB);
 	rs.EnableWarning(true);
@@ -253,7 +253,7 @@ void YCTaskDB2::UpdateEtlTime(const std::string& etl_id, const std::string& etl_
 	}
 }
 
-int YCTaskDB2::CountAllSubmitStatu(TaskReqInfo& ref_taskreq) throw(base::Exception)
+int YCTaskDB2::CountAllSubmitStatu(TaskReqInfo& ref_taskreq)
 {
     int i_SubmitStatuCount = 0;
 	XDBO2::CRecordset rs(&m_CDB);
@@ -286,7 +286,7 @@ int YCTaskDB2::CountAllSubmitStatu(TaskReqInfo& ref_taskreq) throw(base::Excepti
     return i_SubmitStatuCount;
 }
 
-void YCTaskDB2::SelectUndoneTaskRequest(std::vector<TaskReqInfo>& vec_Undone,const std::string& FinalStage) throw(base::Exception)
+void YCTaskDB2::SelectUndoneTaskRequest(std::vector<TaskReqInfo>& vec_Undone,const std::string& FinalStage)
 {
     std::string datestr_yyyymm = "yyyyMM";
 	XDBO2::CRecordset rs(&m_CDB);

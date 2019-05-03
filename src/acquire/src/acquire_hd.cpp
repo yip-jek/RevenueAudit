@@ -20,12 +20,12 @@ std::string Acquire_HD::GetLogFilePrefix()
 	return std::string("Acquire_HD");
 }
 
-void Acquire_HD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str) throw(base::Exception)
+void Acquire_HD::GetExtendParaTaskInfo(std::vector<std::string>& vec_str)
 {
 	// Do nothing !
 }
 
-void Acquire_HD::CheckTaskInfo() throw(base::Exception)
+void Acquire_HD::CheckTaskInfo()
 {
 	if ( m_taskInfo.EtlRuleTime.empty() )
 	{
@@ -56,7 +56,7 @@ void Acquire_HD::CheckTaskInfo() throw(base::Exception)
 	m_pLog->Output("[Acquire_HD] 采集类型：[%s] (%s)", m_sType.c_str(), (m_isTest ? "测试":"发布"));
 }
 
-void Acquire_HD::DoDataAcquisition() throw(base::Exception)
+void Acquire_HD::DoDataAcquisition()
 {
 	if ( m_taskInfo.DataSrcType != AcqTaskInfo::DSTYPE_HIVE )
 	{
@@ -66,14 +66,14 @@ void Acquire_HD::DoDataAcquisition() throw(base::Exception)
 	Acquire::DoDataAcquisition();
 }
 
-int Acquire_HD::RebuildHiveTable() throw(base::Exception)
+int Acquire_HD::RebuildHiveTable()
 {
 	// 话单稽核 HIVE 目标表无需重建！
 	// DO Nothing!
 	return 0;
 }
 
-void Acquire_HD::CheckSourceTable(bool hive) throw(base::Exception)
+void Acquire_HD::CheckSourceTable(bool hive)
 {
 	m_pLog->Output("[Acquire_HD] Check source table whether exists or not ?");
 
@@ -117,7 +117,7 @@ void Acquire_HD::CheckSourceTable(bool hive) throw(base::Exception)
 	}
 }
 
-void Acquire_HD::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive) throw(base::Exception)
+void Acquire_HD::TaskInfo2Sql(std::vector<std::string>& vec_sql, bool hive)
 {
 	// 不支持从 DB2 采集源数据
 	if ( !hive )

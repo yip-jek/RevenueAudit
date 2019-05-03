@@ -17,10 +17,10 @@ public:
 	void SetTabAlarmRequest(const std::string& t_alarmreq);
 
 	// 更新任务日程日志表状态
-	void UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark) throw(base::Exception);
+	void UpdateTaskScheLogState(int log, const std::string& end_time, const std::string& state, const std::string& state_desc, const std::string& remark);
 
 	// 获取全量地市（唯一）
-	void SelectAllCity(std::vector<std::string>& vec_city) throw(base::Exception);
+	void SelectAllCity(std::vector<std::string>& vec_city);
 
 protected:
 	std::string m_tabTaskScheLog;		// 任务日程日志表

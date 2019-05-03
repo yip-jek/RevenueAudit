@@ -27,7 +27,7 @@ void YCStatFactor_XQB::ReleaseFactors()
 	}
 }
 
-void YCStatFactor_XQB::LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception)
+void YCStatFactor_XQB::LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat)
 {
 	YCStatInfo yc_si;
 	yc_si.SetDim(dim);
@@ -51,7 +51,7 @@ void YCStatFactor_XQB::LoadOneFactor(const std::string& dim, const VEC_STRING& v
 	m_mFactor.insert(PAIR_FACTOR(SI_DIM, factor));
 }
 
-void YCStatFactor_XQB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
+void YCStatFactor_XQB::MakeResult(VEC3_STRING& v3_result)
 {
 	VEC2_STRING vec2_result;
 	VEC3_STRING vec3_result;
@@ -63,7 +63,7 @@ void YCStatFactor_XQB::MakeResult(VEC3_STRING& v3_result) throw(base::Exception)
 	vec3_result.swap(v3_result);
 }
 
-void YCStatFactor_XQB::GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val) throw(base::Exception)
+void YCStatFactor_XQB::GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val)
 {
 	MAP_FACTOR::iterator m_it = m_mFactor.find(dim);
 	if ( m_it != m_mFactor.end() )
@@ -76,7 +76,7 @@ void YCStatFactor_XQB::GetDimFactorValue(const std::string& dim, VEC_STRING& vec
 	}
 }
 
-void YCStatFactor_XQB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception)
+void YCStatFactor_XQB::MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result)
 {
 	YCResult_XQB ycr(ANA_TYPE, ITEM_SIZE, VAL_SIZE);
 	ycr.bill_cyc = m_etlDay.substr(0, 6);			// 账期为月份：YYYYMM
@@ -139,7 +139,7 @@ std::string YCStatFactor_XQB::GetResultCity()
 	}
 }
 
-void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB& factor) throw(base::Exception)
+void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_XQB& factor)
 {
 	VEC_STRING vec_fmt_first;
 	VEC_STRING vec_fmt_second;
@@ -221,7 +221,7 @@ void YCStatFactor_XQB::CalcComplexFactor(const std::string& cmplx_fmt, YCFactor_
 	}
 }
 
-void YCStatFactor_XQB::CalcArithmeticFactor(const std::string& expr, VEC_DOUBLE& vec_result) throw(base::Exception)
+void YCStatFactor_XQB::CalcArithmeticFactor(const std::string& expr, VEC_DOUBLE& vec_result)
 {
 	m_pLog->Output("[YCStatFactor_XQB] 四则运算表达式：%s", expr.c_str());
 
@@ -229,7 +229,7 @@ void YCStatFactor_XQB::CalcArithmeticFactor(const std::string& expr, VEC_DOUBLE&
 	m_statArithmet.Calculate(vec_result);
 }
 
-void YCStatFactor_XQB::CalcOneFactor(VEC_DOUBLE& vec_result, const std::string& op, const std::string& dim) throw(base::Exception)
+void YCStatFactor_XQB::CalcOneFactor(VEC_DOUBLE& vec_result, const std::string& op, const std::string& dim)
 {
 	VEC_STRING vec_value;
 	double     dou      = 0.0;

@@ -11,9 +11,9 @@ public:
 
 public:
 	// 获取源数据
-	void FetchSourceData(const std::string& hive_sql, std::vector<std::vector<std::string> >& vec2_fields) throw(base::Exception);
+	void FetchSourceData(const std::string& hive_sql, std::vector<std::vector<std::string> >& vec2_fields);
 
 	// 执行分析 HIVE SQL
-	void ExecuteAnaSQL(const std::string& hive_sql) throw(base::Exception);
+	void ExecuteAnaSQL(const std::string& hive_sql);
 };
 

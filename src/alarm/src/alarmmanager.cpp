@@ -16,10 +16,10 @@ AlarmManager::~AlarmManager()
 
 const char* AlarmManager::Version()
 {
-	return ("AlarmManager: Version 3.0.0.1 released. Compiled at " __TIME__ " on " __DATE__);
+	return ("AlarmManager: Version 4.0.0 released. Compiled at " __TIME__ " on " __DATE__ ", by G++-" __VERSION__);
 }
 
-void AlarmManager::LoadConfig() throw(base::Exception)
+void AlarmManager::LoadConfig()
 {
 	LoadBasicConfig();
 	OutputBasicConfig();
@@ -28,7 +28,7 @@ void AlarmManager::LoadConfig() throw(base::Exception)
 	OutputExtendedConfig();
 }
 
-void AlarmManager::LoadBasicConfig() throw(base::Exception)
+void AlarmManager::LoadBasicConfig()
 {
 	m_cfg.SetCfgFile(GetConfigFile());
 
@@ -60,7 +60,7 @@ void AlarmManager::OutputBasicConfig()
 	m_pLog->Output("================================================================================");
 }
 
-void AlarmManager::Init() throw(base::Exception)
+void AlarmManager::Init()
 {
 	if ( m_timeInterval <= 0 )
 	{
@@ -70,7 +70,7 @@ void AlarmManager::Init() throw(base::Exception)
 	m_pLog->Output("[AlarmManager] Init OK.");
 }
 
-void AlarmManager::Run() throw(base::Exception)
+void AlarmManager::Run()
 {
 	// 设置退出信号捕获
 	if ( !base::GSignal::Init(m_pLog) )
@@ -91,7 +91,7 @@ void AlarmManager::Run() throw(base::Exception)
 	}
 }
 
-void AlarmManager::End(int err_code, const std::string& err_msg /*= std::string()*/) throw(base::Exception)
+void AlarmManager::End(int err_code, const std::string& err_msg /*= std::string()*/)
 {
 	m_pLog->Output("[AlarmManager] END: MSG=[%s], CODE=[%d]", err_msg.c_str(), err_code);
 }

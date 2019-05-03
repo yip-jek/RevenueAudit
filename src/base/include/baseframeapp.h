@@ -29,7 +29,7 @@ public:
 	virtual void SetArgv(char** pp_arg);
 
 	// 载入配置信息
-	virtual void LoadConfig() throw(Exception) = 0;
+	virtual void LoadConfig() = 0;
 
 	// 获取配置文件名(含路径)
 	virtual std::string GetConfigFile();
@@ -44,13 +44,13 @@ public:
 	virtual std::string GetLogFilePrefix() = 0;
 
 	// 初始化
-	virtual void Init() throw(Exception) = 0;
+	virtual void Init() = 0;
 
 	// 任务执行
-	virtual void Run() throw(Exception) = 0;
+	virtual void Run() = 0;
 
 	// 任务结束（资源回收）
-	virtual void End(int err_code, const std::string& err_msg = std::string()) throw(Exception) = 0;
+	virtual void End(int err_code, const std::string& err_msg = std::string()) = 0;
 
 protected:
 	bool       m_isTest;				// 是否为测试版本

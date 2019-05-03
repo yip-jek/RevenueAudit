@@ -52,17 +52,17 @@ public:
 	virtual std::string LogPrefix() const = 0;
 
 	// 执行
-	void Run() throw(base::Exception);
+	void Run();
 
 protected:
 	// 初始化基础任务配置
-	virtual void InitBaseConfig() throw(base::Exception);
+	virtual void InitBaseConfig();
 
 	// 载入配置
-	virtual void LoadConfig() throw(base::Exception) = 0;
+	virtual void LoadConfig() = 0;
 
 	// 初始化
-	virtual void Init() throw(base::Exception) = 0;
+	virtual void Init() = 0;
 
 	// 是否继续运行
 	virtual bool Running();
@@ -74,16 +74,16 @@ protected:
 	virtual void CheckTaskStatus();
 
 	// 处理任务
-	virtual void DealTasks() throw(base::Exception);
+	virtual void DealTasks();
 
 	// 获取任务
-	virtual void GetTasks() throw(base::Exception);
+	virtual void GetTasks();
 
 	// 获取新任务
-	virtual void GetNewTask() throw(base::Exception) = 0;
+	virtual void GetNewTask() = 0;
 
 	// 不获取任务
-	virtual void GetNoTask() throw(base::Exception) = 0;
+	virtual void GetNoTask() = 0;
 
 	// 定时输出任务当前状态
 	virtual void ShowTask();
@@ -92,34 +92,34 @@ protected:
 	virtual void ShowTasksInfo() = 0;
 
 	// 执行任务
-	virtual void ExecuteTask() throw(base::Exception);
+	virtual void ExecuteTask();
 
 	// 任务完成
-	virtual void FinishTask() throw(base::Exception) = 0;
+	virtual void FinishTask() = 0;
 
 	// 处理分析任务
-	virtual void HandleAnaTask() throw(base::Exception) = 0;
+	virtual void HandleAnaTask() = 0;
 
 	// 处理采集任务
-	virtual void HandleEtlTask() throw(base::Exception) = 0;
+	virtual void HandleEtlTask() = 0;
 
 	// 创建新任务
-	virtual void BuildNewTask() throw(base::Exception) = 0;
+	virtual void BuildNewTask() = 0;
 
 	// 查看进程是否存在
-	virtual bool IsProcessAlive(long long proc_task_id) throw(base::Exception);
-    virtual bool IsProcessAlive(const TaskInfo& task_info, const TaskReqInfo& tri, bool IsGDAudiKPIType) throw(base::Exception);
+	virtual bool IsProcessAlive(long long proc_task_id);
+    virtual bool IsProcessAlive(const TaskInfo& task_info, const TaskReqInfo& tri, bool IsGDAudiKPIType);
 
 	// 生成新的任务ID
 	long long GenerateTaskID();
 
 	// 采集时间转换
-	std::string EtlTimeTransform(const std::string& cycle) throw(base::Exception);
+	std::string EtlTimeTransform(const std::string& cycle);
 
-    virtual void GetUndoneTask() throw(base::Exception);
+    virtual void GetUndoneTask();
 
 private:
-	std::string FetchPipeBuffer(const std::string& cmd) throw(base::Exception);
+	std::string FetchPipeBuffer(const std::string& cmd);
 
 protected:
 	base::Config*    m_pCfg;					// 配置文件

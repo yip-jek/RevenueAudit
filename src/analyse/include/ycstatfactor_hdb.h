@@ -17,39 +17,39 @@ public:
 
 public:
 	// 载入规则因子信息
-	virtual void LoadStatInfo(VEC_STATINFO& vec_statinfo) throw(base::Exception);
+	virtual void LoadStatInfo(VEC_STATINFO& vec_statinfo);
 
 	// 生成稽核统计结果
-	virtual void MakeResult(VEC3_STRING& v3_result) throw(base::Exception);
+	virtual void MakeResult(VEC3_STRING& v3_result);
 
 	// 获取维度因子值
-	virtual void GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val) throw(base::Exception);
+	virtual void GetDimFactorValue(const std::string& dim, VEC_STRING& vec_val);
 
 protected:
 	// 释放因子资源
 	virtual void ReleaseFactors();
 
 	// 载入单个因子对
-	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat) throw(base::Exception);
+	virtual void LoadOneFactor(const std::string& dim, const VEC_STRING& vec_dat);
 
 	// 由因子规则生成结果数据
-	virtual void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result) throw(base::Exception);
+	virtual void MakeStatInfoResult(int batch, const YCStatInfo& st_info, bool agg, VEC2_STRING& vec2_result);
 
 private:
 	// 生成差异汇总结果
-	void GenerateDiffSummaryResult(VEC2_STRING& v2_result) throw(base::Exception);
+	void GenerateDiffSummaryResult(VEC2_STRING& v2_result);
 
 	// 计算组合因子的维度值
-	std::string CalcComplexFactor(const std::string& cmplx_fmt) throw(base::Exception);
+	std::string CalcComplexFactor(const std::string& cmplx_fmt);
 
 	// 计算四则运算组合因子
-	std::string CalcArithmeticFactor(const std::string& expr) throw(base::Exception);
+	std::string CalcArithmeticFactor(const std::string& expr);
 
 	// 计算单个因子的维度值
-	double CalcOneFactor(double result, const std::string& op, const std::string& dim) throw(base::Exception);
+	double CalcOneFactor(double result, const std::string& op, const std::string& dim);
 
 	// 计算组合分类因子的维度值
-	std::string CalcCategoryFactor(const std::string& ctg_fmt) throw(base::Exception);
+	std::string CalcCategoryFactor(const std::string& ctg_fmt);
 
 	// 生成分类因子维度ID
 	std::string ExtendCategoryDim(const std::string& dim, int index);
@@ -61,7 +61,7 @@ private:
 	bool IsCategoryDim(const std::string& dim);
 
 	// 扩展分类因子信息
-	void ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, VEC_CATEGORYFACTOR& vec_ctgfctr) throw(base::Exception);
+	void ExpandCategoryStatInfo(const YCStatInfo& st_info, bool agg, VEC_CATEGORYFACTOR& vec_ctgfctr);
 
 	// 匹配一般分类因子
 	void MatchCategoryFactor(const std::string& dim, const std::string& dim_a, const std::string& dim_b, VEC_CATEGORYFACTOR& vec_ctgfctr);

@@ -22,7 +22,7 @@ BaseDB2::~BaseDB2()
 	Log::Release();
 }
 
-void BaseDB2::Connect() throw(Exception)
+void BaseDB2::Connect()
 {
 	if ( !m_bConnected )
 	{
@@ -45,7 +45,7 @@ void BaseDB2::Connect() throw(Exception)
 	}
 }
 
-void BaseDB2::Disconnect() throw(Exception)
+void BaseDB2::Disconnect()
 {
 	if ( m_bConnected )
 	{
@@ -68,7 +68,7 @@ void BaseDB2::Disconnect() throw(Exception)
 	}
 }
 
-void BaseDB2::Begin() throw(Exception)
+void BaseDB2::Begin()
 {
 	if ( m_bConnected )
 	{
@@ -89,7 +89,7 @@ void BaseDB2::Begin() throw(Exception)
 	}
 }
 
-void BaseDB2::Commit(bool output /*= true*/) throw(Exception)
+void BaseDB2::Commit(bool output /*= true*/)
 {
 	if ( m_bConnected )
 	{
@@ -113,7 +113,7 @@ void BaseDB2::Commit(bool output /*= true*/) throw(Exception)
 	}
 }
 
-void BaseDB2::Rollback() throw(Exception)
+void BaseDB2::Rollback()
 {
 	if ( m_bConnected )
 	{

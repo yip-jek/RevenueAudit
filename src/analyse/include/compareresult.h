@@ -68,11 +68,11 @@
 //
 //public:
 //	// 设置对比数据，返回数据索引
-//	ComDataIndex SetCompareData(std::vector<std::vector<std::string> >& vec2_data, int size_dim, int size_val, int size_singledim) throw(base::Exception);
+//	ComDataIndex SetCompareData(std::vector<std::vector<std::string> >& vec2_data, int size_dim, int size_val, int size_singledim);
 //
 //	// 获取对比结果数据
 //	void GetCompareResult(const ComDataIndex& left_index, const ComDataIndex& right_index, COMPARE_TYPE com_type, 
-//		const std::string& result_desc, std::vector<std::vector<std::string> >& vec2_result) throw(base::Exception);
+//		const std::string& result_desc, std::vector<std::vector<std::string> >& vec2_result);
 //
 //private:
 //	// 生成 "左有右无" 的对比结果

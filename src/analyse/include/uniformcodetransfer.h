@@ -33,10 +33,10 @@ public:
 
 public:
 	// 录入渠道统一编码信息
-	void InputChannelUniformCode(std::vector<ChannelUniformCode>& vec_channunicode) throw(base::Exception);
+	void InputChannelUniformCode(std::vector<ChannelUniformCode>& vec_channunicode);
 
 	// 录入地市统一编码信息
-	void InputCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode) throw(base::Exception);
+	void InputCityUniformCode(std::vector<CityUniformCode>& vec_cityunicode);
 
 	// 地市统一编码转换
 	// 输出参数 unicode：成功-返回转换后的统一编码，失败-返回源编码

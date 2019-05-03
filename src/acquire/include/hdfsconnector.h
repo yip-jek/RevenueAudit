@@ -17,7 +17,7 @@ public:
 	virtual ~HdfsConnector();
 
 public:
-	virtual void ToConnect() throw(base::Exception);
+	virtual void ToConnect();
 	virtual void ToDisconnect();
 
 public:

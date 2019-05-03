@@ -14,7 +14,7 @@ bool YCStatArithmet::IsLowLevelOper(const std::string& str)
 	return ("(" == str || "+" == str || "-" == str);
 }
 
-std::string YCStatArithmet::Operate(const std::string& left, const std::string& right, const char op) throw(base::Exception)
+std::string YCStatArithmet::Operate(const std::string& left, const std::string& right, const char op)
 {
 	double d_left  = 0.0;
 	double d_right = 0.0;
@@ -49,7 +49,7 @@ std::string YCStatArithmet::Operate(const std::string& left, const std::string& 
 	return base::PubStr::Double2Str(d_left);
 }
 
-std::string YCStatArithmet::OperatePlus(const std::string& left, const std::string& right) throw(base::Exception)
+std::string YCStatArithmet::OperatePlus(const std::string& left, const std::string& right)
 {
 	return Operate(left, right, '+');
 
@@ -66,7 +66,7 @@ std::string YCStatArithmet::OperatePlus(const std::string& left, const std::stri
 	//return base::PubStr::Double2Str(d_left);
 }
 
-std::string YCStatArithmet::OperateMinus(const std::string& left, const std::string& right) throw(base::Exception)
+std::string YCStatArithmet::OperateMinus(const std::string& left, const std::string& right)
 {
 	return Operate(left, right, '-');
 
@@ -83,7 +83,7 @@ std::string YCStatArithmet::OperateMinus(const std::string& left, const std::str
 	//return base::PubStr::Double2Str(d_left);
 }
 
-std::string YCStatArithmet::OperateMultiply(const std::string& left, const std::string& right) throw(base::Exception)
+std::string YCStatArithmet::OperateMultiply(const std::string& left, const std::string& right)
 {
 	return Operate(left, right, '*');
 
@@ -100,7 +100,7 @@ std::string YCStatArithmet::OperateMultiply(const std::string& left, const std::
 	//return base::PubStr::Double2Str(d_left);
 }
 
-std::string YCStatArithmet::OperateDivide(const std::string& left, const std::string& right) throw(base::Exception)
+std::string YCStatArithmet::OperateDivide(const std::string& left, const std::string& right)
 {
 	return Operate(left, right, '/');
 
@@ -126,7 +126,7 @@ YCStatArithmet::~YCStatArithmet()
 {
 }
 
-void YCStatArithmet::Load(const std::string& expression) throw(base::Exception)
+void YCStatArithmet::Load(const std::string& expression)
 {
 	if ( expression.empty() )
 	{
@@ -140,7 +140,7 @@ void YCStatArithmet::Load(const std::string& expression) throw(base::Exception)
 	Convert2Postorder(expression);
 }
 
-void YCStatArithmet::Calculate(std::vector<double>& vec_val) throw(base::Exception)
+void YCStatArithmet::Calculate(std::vector<double>& vec_val)
 {
 	if ( m_vecOutputItem.empty() )
 	{
@@ -176,7 +176,7 @@ void YCStatArithmet::Clear()
 	std::vector<YCOutputItem>().swap(m_vecOutputItem);
 }
 
-void YCStatArithmet::Convert2Postorder(const std::string& expression) throw(base::Exception)
+void YCStatArithmet::Convert2Postorder(const std::string& expression)
 {
 	int         index = 0;
 	std::string element;
@@ -245,7 +245,7 @@ bool YCStatArithmet::IsOper(const std::string& str)
 			|| ")" == str);
 }
 
-void YCStatArithmet::Postorder(const std::vector<std::string>& vec_element) throw(base::Exception)
+void YCStatArithmet::Postorder(const std::vector<std::string>& vec_element)
 {
 	if ( vec_element.empty() )
 	{
@@ -309,7 +309,7 @@ void YCStatArithmet::Postorder(const std::vector<std::string>& vec_element) thro
 	}
 }
 
-void YCStatArithmet::DealWithOper(const std::string& oper) throw(base::Exception)
+void YCStatArithmet::DealWithOper(const std::string& oper)
 {
 	if ( "(" == oper )
 	{
@@ -370,7 +370,7 @@ void YCStatArithmet::PopStack(pFunIsCondition fun_cond)
 	}
 }
 
-void YCStatArithmet::CalcOnce() throw(base::Exception)
+void YCStatArithmet::CalcOnce()
 {
 	const int VEC_SIZE = m_vecOutputItem.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
@@ -440,7 +440,7 @@ YCStatArithmet::pFunOperate YCStatArithmet::GetOperate(const std::string& oper)
 	}
 }
 
-void YCStatArithmet::OperateResult(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception)
+void YCStatArithmet::OperateResult(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result)
 {
 	if ( YCOutputItem::OIT_CONSTANT == item_left.item_type 
 		&& YCOutputItem::OIT_CONSTANT == item_right.item_type )	// 左右操作数同为常量
@@ -465,7 +465,7 @@ void YCStatArithmet::OperateResult(YCOutputItem& item_left, YCOutputItem& item_r
 	}
 }
 
-void YCStatArithmet::TryGetDimDataValue(YCOutputItem& item) throw(base::Exception)
+void YCStatArithmet::TryGetDimDataValue(YCOutputItem& item)
 {
 	if ( YCOutputItem::OIT_DIM == item.item_type )
 	{
@@ -488,7 +488,7 @@ void YCStatArithmet::TryMatchOutputItem(const YCOutputItem& item_val, YCOutputIt
 	}
 }
 
-void YCStatArithmet::OperateValue(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception)
+void YCStatArithmet::OperateValue(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result)
 {
 	const int VEC_SIZE = item_left.vec_out.size();
 	if ( (size_t)VEC_SIZE != item_right.vec_out.size() )
@@ -506,7 +506,7 @@ void YCStatArithmet::OperateValue(YCOutputItem& item_left, YCOutputItem& item_ri
 	item_result.vec_out.swap(vec_val);
 }
 
-void YCStatArithmet::OutputResult(std::vector<double>& vec_result) throw(base::Exception)
+void YCStatArithmet::OutputResult(std::vector<double>& vec_result)
 {
 	double d_val = 0.0;
 	std::vector<double> vec_val;

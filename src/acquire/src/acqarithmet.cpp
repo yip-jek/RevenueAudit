@@ -34,7 +34,7 @@ bool AcqArithmet::IsLowLevelOper(const std::string& str)
 	return ("(" == str || "+" == str || "-" == str);
 }
 
-std::string AcqArithmet::Operate(const std::string& left, const std::string& right, const char op) throw(base::Exception)
+std::string AcqArithmet::Operate(const std::string& left, const std::string& right, const char op)
 {
 	double d_left  = 0.0;
 	double d_right = 0.0;
@@ -69,7 +69,7 @@ std::string AcqArithmet::Operate(const std::string& left, const std::string& rig
 	return base::PubStr::Double2Str(d_left);
 }
 
-std::string AcqArithmet::OperatePlus(const std::string& left, const std::string& right) throw(base::Exception)
+std::string AcqArithmet::OperatePlus(const std::string& left, const std::string& right)
 {
 	return Operate(left, right, '+');
 
@@ -86,7 +86,7 @@ std::string AcqArithmet::OperatePlus(const std::string& left, const std::string&
 	//return base::PubStr::Double2Str(d_left);
 }
 
-std::string AcqArithmet::OperateMinus(const std::string& left, const std::string& right) throw(base::Exception)
+std::string AcqArithmet::OperateMinus(const std::string& left, const std::string& right)
 {
 	return Operate(left, right, '-');
 
@@ -103,7 +103,7 @@ std::string AcqArithmet::OperateMinus(const std::string& left, const std::string
 	//return base::PubStr::Double2Str(d_left);
 }
 
-std::string AcqArithmet::OperateMultiply(const std::string& left, const std::string& right) throw(base::Exception)
+std::string AcqArithmet::OperateMultiply(const std::string& left, const std::string& right)
 {
 	return Operate(left, right, '*');
 
@@ -120,7 +120,7 @@ std::string AcqArithmet::OperateMultiply(const std::string& left, const std::str
 	//return base::PubStr::Double2Str(d_left);
 }
 
-std::string AcqArithmet::OperateDivide(const std::string& left, const std::string& right) throw(base::Exception)
+std::string AcqArithmet::OperateDivide(const std::string& left, const std::string& right)
 {
 	return Operate(left, right, '/');
 
@@ -146,7 +146,7 @@ AcqArithmet::~AcqArithmet()
 {
 }
 
-void AcqArithmet::DoCalculate(std::vector<std::vector<std::string> >& vec2_srcdata) throw(base::Exception)
+void AcqArithmet::DoCalculate(std::vector<std::vector<std::string> >& vec2_srcdata)
 {
 	if ( vec2_srcdata.empty() )
 	{
@@ -189,7 +189,7 @@ void AcqArithmet::Clear()
 	std::vector<YCOutputItem>().swap(m_vecOutputItem);
 }
 
-void AcqArithmet::LoadExpression() throw(base::Exception)
+void AcqArithmet::LoadExpression()
 {
 	int level = 0;
 	ExprInfo expInfo;
@@ -227,7 +227,7 @@ void AcqArithmet::LoadExpression() throw(base::Exception)
 	}
 }
 
-void AcqArithmet::Convert2Postorder(const std::string& expression) throw(base::Exception)
+void AcqArithmet::Convert2Postorder(const std::string& expression)
 {
 	int         index = 0;
 	std::string element;
@@ -296,7 +296,7 @@ bool AcqArithmet::IsOper(const std::string& str)
 			|| ")" == str);
 }
 
-void AcqArithmet::Postorder(const std::vector<std::string>& vec_element) throw(base::Exception)
+void AcqArithmet::Postorder(const std::vector<std::string>& vec_element)
 {
 	if ( vec_element.empty() )
 	{
@@ -360,7 +360,7 @@ void AcqArithmet::Postorder(const std::vector<std::string>& vec_element) throw(b
 	}
 }
 
-void AcqArithmet::DealWithOper(const std::string& oper) throw(base::Exception)
+void AcqArithmet::DealWithOper(const std::string& oper)
 {
 	if ( "(" == oper )
 	{
@@ -421,7 +421,7 @@ void AcqArithmet::PopStack(pFunIsCondition fun_cond)
 	}
 }
 
-std::string AcqArithmet::CalcResult() throw(base::Exception)
+std::string AcqArithmet::CalcResult()
 {
 	if ( m_vecOutputItem.empty() )
 	{
@@ -439,7 +439,7 @@ std::string AcqArithmet::CalcResult() throw(base::Exception)
 	return m_vecOutputItem[0].vec_out[0];
 }
 
-void AcqArithmet::CalcOnce() throw(base::Exception)
+void AcqArithmet::CalcOnce()
 {
 	const int VEC_SIZE = m_vecOutputItem.size();
 	for ( int i = 0; i < VEC_SIZE; ++i )
@@ -509,7 +509,7 @@ AcqArithmet::pFunOperate AcqArithmet::GetOperate(const std::string& oper)
 	}
 }
 
-void AcqArithmet::OperateResult(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception)
+void AcqArithmet::OperateResult(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result)
 {
 	if ( YCOutputItem::OIT_CONSTANT == item_left.item_type 
 		&& YCOutputItem::OIT_CONSTANT == item_right.item_type )	// 左右操作数同为常量
@@ -534,7 +534,7 @@ void AcqArithmet::OperateResult(YCOutputItem& item_left, YCOutputItem& item_righ
 	}
 }
 
-void AcqArithmet::TryGetDataValue(YCOutputItem& item) throw(base::Exception)
+void AcqArithmet::TryGetDataValue(YCOutputItem& item)
 {
 	if ( YCOutputItem::OIT_DIM == item.item_type )
 	{
@@ -581,7 +581,7 @@ void AcqArithmet::TryMatchOutputItem(const YCOutputItem& item_val, YCOutputItem&
 	}
 }
 
-void AcqArithmet::OperateValue(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result) throw(base::Exception)
+void AcqArithmet::OperateValue(YCOutputItem& item_left, YCOutputItem& item_right, pFunOperate pfun_oper, YCOutputItem& item_result)
 {
 	const int VEC_SIZE = item_left.vec_out.size();
 	if ( (size_t)VEC_SIZE != item_right.vec_out.size() )

@@ -12,7 +12,7 @@ CAcqHive::~CAcqHive()
 {
 }
 
-void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field, const std::string& tab_location) throw(base::Exception)
+void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string>& vec_field, const std::string& tab_location)
 {
 	if ( tab_name.empty() )
 	{
@@ -71,7 +71,7 @@ void CAcqHive::RebuildTable(const std::string& tab_name, std::vector<std::string
 	}
 }
 
-void CAcqHive::ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exception)
+void CAcqHive::ExecuteAcqSQL(std::vector<std::string>& vec_sql)
 {
 	if ( vec_sql.empty() )
 	{
@@ -94,7 +94,7 @@ void CAcqHive::ExecuteAcqSQL(std::vector<std::string>& vec_sql) throw(base::Exce
 	}
 }
 
-bool CAcqHive::CheckTableExisted(const std::string& tab_name) throw(base::Exception)
+bool CAcqHive::CheckTableExisted(const std::string& tab_name)
 {
 	try
 	{

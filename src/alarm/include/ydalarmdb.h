@@ -32,19 +32,19 @@ public:
 
 public:
 	// 获取告警请求
-	void SelectAlarmRequest(std::map<int, YDAlarmReq>& mapAlarmReq) throw(base::Exception);
+	void SelectAlarmRequest(std::map<int, YDAlarmReq>& mapAlarmReq);
 
 	// 更新告警请求
-	void UpdateAlarmRequest(const YDAlarmReq& alarm_req) throw(base::Exception);
+	void UpdateAlarmRequest(const YDAlarmReq& alarm_req);
 
 	// 获取告警阈值
-	void SelectAlarmThreshold(std::vector<YDAlarmThreshold>& vecAlarmThres) throw(base::Exception);
+	void SelectAlarmThreshold(std::vector<YDAlarmThreshold>& vecAlarmThres);
 
 	// 采集告警数据
-	void SelectAlarmData(int seq, const std::string& condition, std::vector<YDAlarmData>& vecData) throw(base::Exception);
+	void SelectAlarmData(int seq, const std::string& condition, std::vector<YDAlarmData>& vecData);
 
 	// 存储告警信息
-	void InsertAlarmInfo(const YDAlarmInfo& alarm_info) throw(base::Exception);
+	void InsertAlarmInfo(const YDAlarmInfo& alarm_info);
 
 private:
 	std::string m_tabAlarmRequest;				// 告警请求表
